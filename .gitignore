@@ -61,3 +61,7 @@ target/
 
 # vim temporary files
 .*.swp
+
+# benchmark subjects and results
+bench/.venvs/
+bench/results/
