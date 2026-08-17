@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import pytest
 from thefuck.const import ARGUMENT_PLACEHOLDER
 from thefuck.shells import Fish
@@ -95,6 +96,21 @@ class TestFish(object):
         settings.alter_history = False
         assert 'builtin history delete' not in shell.app_alias('FUCK')
         assert 'builtin history merge' not in shell.app_alias('FUCK')
+
+    @pytest.mark.parametrize('env, history_file_name', [
+        ({}, '~/.local/share/fish/fish_history'),
+        ({'XDG_DATA_HOME': '/xdg/data'}, '/xdg/data/fish/fish_history'),
+        ({'fish_history': 'work'}, '~/.local/share/fish/work_history')])
+    def test_get_history_file_name(self, shell, os_environ, env,
+                                   history_file_name):
+        os_environ.update(env)
+        assert (shell._get_history_file_name()
+                == os.path.expanduser(history_file_name))
+
+    def test_get_history_file_name_legacy(self, shell, isfile):
+        legacy = os.path.expanduser('~/.config/fish/fish_history')
+        isfile.side_effect = lambda path: path == legacy
+        assert shell._get_history_file_name() == legacy
 
     def test_get_history(self, history_lines, shell):
         history_lines(['- cmd: ls', '  when: 1432613911',
