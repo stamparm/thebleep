@@ -287,10 +287,14 @@ def entries_for(paths):
             dirty = True
         entries[key] = entry
 
-    # The pack is rewritten when a rule changed, and also when the set of rules
-    # changed, so removed and third-party rules don't linger in it.
-    if dirty or set(entries) != set(cached):
-        _write_pack(entries)
+    # Rules belonging to another installation are kept rather than evicted:
+    # a checkout and an installed copy share this file, and dropping each
+    # other's entries would have them rebuilding the pack in turn, forever.
+    # Entries whose file has gone are the ones that get pruned.
+    keep = {key: entry for key, entry in cached.items()
+            if key not in entries and os.path.exists(key)}
+    if dirty or set(keep) != set(cached) - set(entries):
+        _write_pack(dict(keep, **entries))
     return entries
 
 

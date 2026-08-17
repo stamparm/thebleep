@@ -79,6 +79,27 @@ class TestPack(object):
     def test_written_where_the_next_run_finds_it(self, entries, cache_home):
         assert rulepack._cache_path().is_file()
 
+    def test_another_installations_rules_are_kept(self, cache_home, tmpdir,
+                                                  rule_paths):
+        """A checkout and an installed copy share this file; neither may
+        evict the other, or they rebuild it in turn forever."""
+        other = tmpdir.join('elsewhere_rule.py')
+        other.write('def match(command):\n    return True\n')
+        rulepack.entries_for([Path(str(other))])
+
+        rulepack.entries_for(rule_paths)
+        assert str(other) in rulepack._read_pack()
+
+    def test_rules_that_are_gone_are_pruned(self, cache_home, tmpdir,
+                                            rule_paths):
+        removed = tmpdir.join('removed_rule.py')
+        removed.write('def match(command):\n    return True\n')
+        rulepack.entries_for([Path(str(removed))])
+        os.unlink(str(removed))
+
+        rulepack.entries_for(rule_paths)
+        assert str(removed) not in rulepack._read_pack()
+
     def test_reused_without_rebuilding(self, entries, rule_paths, mocker):
         build = mocker.patch('thebleep.rulepack._build_entry')
         again = rulepack.entries_for(rule_paths)
