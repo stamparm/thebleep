@@ -52,6 +52,10 @@ def test_command_selector():
 
 @pytest.mark.usefixtures('no_colors')
 class TestSelectCommand(object):
+    @pytest.fixture(autouse=True)
+    def is_interactive(self, mocker):
+        return mocker.patch('thefuck.ui._is_interactive', return_value=True)
+
     @pytest.fixture
     def commands_with_side_effect(self):
         return [CorrectedCommand('ls', lambda *_: None, 100),
@@ -97,6 +101,11 @@ class TestSelectCommand(object):
                 == commands_with_side_effect[0])
         assert capsys.readouterr() == (
             '', const.USER_COMMAND_MARK + u'\x1b[1K\rls (+side effect) [enter/↑/↓/ctrl+c]\n')
+
+    def test_without_tty(self, capsys, commands, is_interactive):
+        is_interactive.return_value = False
+        assert ui.select_command(iter(commands)) == commands[0]
+        assert capsys.readouterr() == ('', const.USER_COMMAND_MARK + 'ls\n')
 
     def test_with_confirmation_select_second(self, capsys, patch_get_key, commands):
         patch_get_key([const.KEY_DOWN, '\n'])
