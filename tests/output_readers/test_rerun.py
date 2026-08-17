@@ -32,6 +32,16 @@ class TestRerun(object):
         actual = rerun.get_output('', '')
         assert actual == expected
 
+    @patch('thefuck.output_readers.rerun._wait_output', return_value=False)
+    @patch('thefuck.output_readers.rerun.Popen')
+    def test_get_output_doesnt_log_whole_env(self, popen_mock,
+                                             wait_output_mock, settings,
+                                             os_environ, capsys):
+        settings.debug = True
+        os_environ['SECRET_TOKEN'] = 'secret-value'
+        rerun.get_output('ls', 'ls')
+        assert 'secret-value' not in capsys.readouterr()[1]
+
     @pytest.mark.skipif(sys.platform == 'win32', reason="skip when running on Windows")
     @patch('thefuck.output_readers.rerun._wait_output')
     def test_get_output_unicode_misspell(self, wait_output_mock):
