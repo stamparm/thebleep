@@ -153,21 +153,27 @@ def _scan_executables(paths, skip):
         # is the one separator that is always safe.
         return cached.split('\0') if cached else []
 
+    # A name that appears in several directories on $PATH is one command as
+    # far as anyone typing it is concerned, and comparing it to a typo more
+    # than once is work for nothing: nearly half the entries are repeats.
     found = []
+    seen = set()
     for path in paths:
         try:
             entries = list(os.scandir(path))
         except OSError:
             continue
         for entry in entries:
-            if entry.name in skip:
+            name = entry.name
+            if name in skip or name in seen:
                 continue
             try:
                 if entry.is_dir():
                     continue
             except OSError:
                 continue
-            found.append(entry.name)
+            seen.add(name)
+            found.append(name)
 
     cachefile.save('executables', fingerprint, '\0'.join(found))
     return found

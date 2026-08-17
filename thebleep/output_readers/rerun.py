@@ -83,7 +83,13 @@ def get_output(script, expanded):
     logged_env = {key: value for key, value in env.items()
                   if key in settings.env or key.startswith('TB_')}
 
-    split_expand = shlex.split(expanded)
+    try:
+        split_expand = shlex.split(expanded)
+    except ValueError:
+        # An unbalanced quote is the sort of thing people ask to have fixed, so
+        # it cannot be a crash. It only decides whether this counts as one of
+        # the slow commands, and an unparseable one does not.
+        split_expand = []
     is_slow = split_expand[0] in settings.slow_commands if split_expand else False
     with logs.debug_time(u'Call: {}; with env: {}; is slow: {}'.format(
             script, logged_env, is_slow)):

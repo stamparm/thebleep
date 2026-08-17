@@ -59,6 +59,13 @@ class TestRerun(object):
         rerun.get_output(u'pácman', u'pácman')
         wait_output_mock.assert_called_once()
 
+    @patch('thebleep.output_readers.rerun.Popen')
+    def test_get_output_with_an_unbalanced_quote(self, popen_mock):
+        """A command with a quote left open is a thing people mistype."""
+        popen_mock.return_value = _popen(b'sh: unexpected EOF')
+        assert rerun.get_output('echo "oops', 'echo "oops') \
+            == 'sh: unexpected EOF'
+
     def test_wait_output_is_slow(self, settings):
         popen = _popen(b'output')
         assert rerun._wait_output(popen, True) == b'output'
