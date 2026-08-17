@@ -1,4 +1,4 @@
-# The Bleep [![Version][version-badge]][version-link] [![Build Status][workflow-badge]][workflow-link] [![Coverage][coverage-badge]][coverage-link] [![MIT License][license-badge]](LICENSE.md)
+# The Bleep [![Version][version-badge]][version-link] [![Build Status][workflow-badge]][workflow-link] [![MIT License][license-badge]](LICENSE.md)
 
 *The Bleep* is a maintained successor to [*The Fuck*](https://github.com/nvbn/thefuck)
 by Vladimir Iakovlev, and is based on its original codebase. All credit for the
@@ -544,8 +544,6 @@ Project License can be found [here](LICENSE.md).
 [version-link]:    https://pypi.python.org/pypi/thebleep/
 [workflow-badge]:  https://github.com/stamparm/thebleep/workflows/Tests/badge.svg
 [workflow-link]:   https://github.com/stamparm/thebleep/actions?query=workflow%3ATests
-[coverage-badge]:  https://img.shields.io/coveralls/stamparm/thebleep.svg
-[coverage-link]:   https://coveralls.io/github/stamparm/thebleep
 [license-badge]:   https://img.shields.io/badge/license-MIT-007EC7.svg
 [examples-link]:   https://raw.githubusercontent.com/stamparm/thebleep/master/example.gif
 [instant-mode-gif-link]:   https://raw.githubusercontent.com/stamparm/thebleep/master/example_instant_mode.gif
