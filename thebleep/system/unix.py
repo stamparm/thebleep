@@ -4,7 +4,6 @@ import sys
 import tty
 import termios
 from pathlib import Path  # noqa: F401
-from shutil import which
 from .. import const
 
 
@@ -72,5 +71,7 @@ def get_key():
 
 def open_command(arg):
     """Get a shell command calling the system's generic opener."""
+    from shutil import which
+
     opener = 'xdg-open' if which('xdg-open') else 'open'
     return opener + ' ' + arg

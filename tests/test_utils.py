@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import pickle
 import pytest
 import warnings
 from unittest.mock import Mock, call, patch
@@ -60,6 +61,27 @@ class TestGetCloseMatches(object):
     def test_call_without_n(self, difflib_mock, settings):
         get_close_matches('', [])
         assert difflib_mock.call_args[0][2] == settings.get('num_close_matches')
+
+
+def test_memoize_does_not_copy_the_output(mocker):
+    """A memoized call must not cost anything proportional to the output.
+
+    Pickling the command to build a cache key copied the whole output of the
+    failed command, once per memoized call made about it.
+
+    """
+    dumps = mocker.patch('pickle.dumps', wraps=pickle.dumps)
+    calls = []
+
+    @memoize
+    def counted(command):
+        calls.append(command)
+        return len(calls)
+
+    command = Command('git brnch', 'x' * 100000)
+    assert counted(command) == 1
+    assert counted(command) == 1
+    assert not dumps.called
 
 
 @pytest.fixture(autouse=True)

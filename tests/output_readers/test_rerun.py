@@ -2,10 +2,21 @@
 
 import pytest
 import sys
+from subprocess import TimeoutExpired
 from unittest.mock import Mock, patch
-from psutil import AccessDenied, TimeoutExpired
+from psutil import AccessDenied
 
 from thebleep.output_readers import rerun
+
+
+def _popen(output=b'', timeout=False):
+    """A stand-in for a command that is running."""
+    popen = Mock(pid=1234)
+    if timeout:
+        popen.communicate.side_effect = [TimeoutExpired('cmd', 3), (b'', None)]
+    else:
+        popen.communicate.return_value = (output, None)
+    return popen
 
 
 class TestRerun(object):
@@ -14,26 +25,25 @@ class TestRerun(object):
         self.patcher = patch('psutil.Process')
         process_mock = self.patcher.start()
         self.proc_mock = process_mock.return_value = Mock()
+        self.proc_mock.children.return_value = []
 
     def teardown_method(self, test_method):
         self.patcher.stop()
 
-    @patch('thebleep.output_readers.rerun._wait_output', return_value=False)
+    @patch('thebleep.output_readers.rerun._wait_output', return_value=None)
     @patch('thebleep.output_readers.rerun.Popen')
     def test_get_output(self, popen_mock, wait_output_mock):
-        popen_mock.return_value.stdout.read.return_value = b'output'
         assert rerun.get_output('', '') is None
         wait_output_mock.assert_called_once()
 
     @patch('thebleep.output_readers.rerun.Popen')
     def test_get_output_invalid_continuation_byte(self, popen_mock):
         output = b'ls: illegal option -- \xc3\nusage: ls [-@ABC...] [file ...]\n'
-        expected = u'ls: illegal option -- \ufffd\nusage: ls [-@ABC...] [file ...]\n'
-        popen_mock.return_value.stdout.read.return_value = output
-        actual = rerun.get_output('', '')
-        assert actual == expected
+        expected = u'ls: illegal option -- �\nusage: ls [-@ABC...] [file ...]\n'
+        popen_mock.return_value = _popen(output)
+        assert rerun.get_output('', '') == expected
 
-    @patch('thebleep.output_readers.rerun._wait_output', return_value=False)
+    @patch('thebleep.output_readers.rerun._wait_output', return_value=None)
     @patch('thebleep.output_readers.rerun.Popen')
     def test_get_output_doesnt_log_whole_env(self, popen_mock,
                                              wait_output_mock, settings,
@@ -44,31 +54,40 @@ class TestRerun(object):
         assert 'secret-value' not in capsys.readouterr()[1]
 
     @pytest.mark.skipif(sys.platform == 'win32', reason="skip when running on Windows")
-    @patch('thebleep.output_readers.rerun._wait_output')
+    @patch('thebleep.output_readers.rerun._wait_output', return_value=b'')
     def test_get_output_unicode_misspell(self, wait_output_mock):
         rerun.get_output(u'pácman', u'pácman')
         wait_output_mock.assert_called_once()
 
     def test_wait_output_is_slow(self, settings):
-        assert rerun._wait_output(Mock(), True)
-        self.proc_mock.wait.assert_called_once_with(settings.wait_slow_command)
+        popen = _popen(b'output')
+        assert rerun._wait_output(popen, True) == b'output'
+        assert popen.communicate.call_args[1]['timeout'] \
+            == settings.wait_slow_command
 
     def test_wait_output_is_not_slow(self, settings):
-        assert rerun._wait_output(Mock(), False)
-        self.proc_mock.wait.assert_called_once_with(settings.wait_command)
+        popen = _popen(b'output')
+        assert rerun._wait_output(popen, False) == b'output'
+        assert popen.communicate.call_args[1]['timeout'] \
+            == settings.wait_command
+
+    def test_wait_output_reads_while_the_command_runs(self):
+        """A command that fills the pipe buffer blocks until someone reads it,
+        so waiting for it to exit before reading is a deadlock."""
+        popen = _popen(b'a lot of output')
+        rerun._wait_output(popen, False)
+        assert popen.communicate.called
+        assert not popen.stdout.read.called
 
     @patch('thebleep.output_readers.rerun._kill_process')
     def test_wait_output_timeout(self, kill_process_mock):
-        self.proc_mock.wait.side_effect = TimeoutExpired(3)
-        self.proc_mock.children.return_value = []
-        assert not rerun._wait_output(Mock(), False)
+        assert rerun._wait_output(_popen(timeout=True), False) is None
         kill_process_mock.assert_called_once_with(self.proc_mock)
 
     @patch('thebleep.output_readers.rerun._kill_process')
     def test_wait_output_timeout_children(self, kill_process_mock):
-        self.proc_mock.wait.side_effect = TimeoutExpired(3)
         self.proc_mock.children.return_value = [Mock()] * 2
-        assert not rerun._wait_output(Mock(), False)
+        assert rerun._wait_output(_popen(timeout=True), False) is None
         assert kill_process_mock.call_count == 3
 
     def test_kill_process(self):

@@ -50,6 +50,11 @@ class Command(object):
         else:
             return False
 
+    def __hash__(self):
+        # Hashable so that memoized rule helpers can key on the command
+        # without pickling its entire output.
+        return hash((self.script, self.output))
+
     def __repr__(self):
         return u'Command(script={}, output={})'.format(
             self.script, self.output)

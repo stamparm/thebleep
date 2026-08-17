@@ -1,6 +1,6 @@
 import os
 import shlex
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE, STDOUT, TimeoutExpired
 from .. import logs
 from ..conf import settings
 
@@ -26,28 +26,45 @@ def _kill_process(proc):
             proc.pid, executable))
 
 
-def _wait_output(popen, is_slow):
-    """Returns `True` if we can get output of the command in the
-    `settings.wait_command` time.
+def _kill_tree(popen):
+    """Kills the command and anything it started."""
+    from psutil import Process
 
-    Command will be killed if it wasn't finished in the time.
+    try:
+        proc = Process(popen.pid)
+    except Exception:
+        popen.kill()
+        return
+
+    for child in proc.children(recursive=True):
+        _kill_process(child)
+    _kill_process(proc)
+
+
+def _wait_output(popen, is_slow):
+    """Returns the command's output, or `None` if it ran out of time.
+
+    The output is read while the command runs rather than after it exits. A
+    command that writes more than fits in the pipe buffer blocks until someone
+    reads it, so waiting for it to finish first is a deadlock: it used to mean
+    anything printing more than about 64KB — a failed build, a noisy test run —
+    hit the timeout and produced no output at all, leaving nothing to correct
+    from.
 
     :type popen: Popen
-    :rtype: bool
+    :rtype: bytes | None
 
     """
-    from psutil import Process, TimeoutExpired
-
-    proc = Process(popen.pid)
+    timeout = settings.wait_slow_command if is_slow else settings.wait_command
     try:
-        proc.wait(settings.wait_slow_command if is_slow
-                  else settings.wait_command)
-        return True
+        return popen.communicate(timeout=timeout)[0]
     except TimeoutExpired:
-        for child in proc.children(recursive=True):
-            _kill_process(child)
-        _kill_process(proc)
-        return False
+        _kill_tree(popen)
+        try:
+            popen.communicate(timeout=1)
+        except Exception:
+            pass
+        return None
 
 
 def get_output(script, expanded):
@@ -72,10 +89,13 @@ def get_output(script, expanded):
             script, logged_env, is_slow)):
         result = Popen(expanded, shell=True, stdin=PIPE,
                        stdout=PIPE, stderr=STDOUT, env=env)
-        if _wait_output(result, is_slow):
-            output = result.stdout.read().decode('utf-8', errors='replace')
-            logs.debug(u'Received output: {}'.format(output))
-            return output
-        else:
+        output = _wait_output(result, is_slow)
+        if output is None:
             logs.debug(u'Execution timed out!')
             return None
+
+        output = output.decode('utf-8', errors='replace')
+        if settings.debug:
+            # Formatting this is not free when the command printed a megabyte.
+            logs.debug(u'Received output: {}'.format(output))
+        return output

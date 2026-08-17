@@ -34,13 +34,25 @@ def decorator(caller):
 
 
 def memoize(fn):
-    """Caches previous calls to the function."""
+    """Caches previous calls to the function.
+
+    The key is the arguments themselves when they can be hashed, and a pickle
+    of them when they cannot. That distinction matters more than it looks:
+    pickling a `Command` copies the whole output of the failed command, so a
+    build that printed a megabyte used to be copied again for every memoized
+    call made about it.
+
+    """
     memo = {}
 
     @wraps(fn)
     def wrapper(*args, **kwargs):
         if not memoize.disabled:
-            key = pickle.dumps((args, kwargs))
+            try:
+                key = (args, tuple(sorted(kwargs.items())))
+                hash(key)
+            except TypeError:
+                key = pickle.dumps((args, kwargs))
             if key not in memo:
                 memo[key] = fn(*args, **kwargs)
             value = memo[key]
@@ -210,9 +222,13 @@ def replace_command(command, broken, matched):
             for new_cmd in new_cmds]
 
 
-@memoize
 def is_app(command, *app_names, **kwargs):
-    """Returns `True` if command is call to one of passed app names."""
+    """Returns `True` if command is call to one of passed app names.
+
+    Not memoized: it reads `script_parts`, which the command already keeps, so
+    remembering the answer costs more than working it out again.
+
+    """
 
     at_least = kwargs.pop('at_least', 0)
     if kwargs:

@@ -117,14 +117,14 @@ class TestCommand(object):
     @pytest.fixture(autouse=True)
     def Popen(self, monkeypatch):
         Popen = Mock()
-        Popen.return_value.stdout.read.return_value = b'output'
+        Popen.return_value.communicate.return_value = (b'output', None)
         monkeypatch.setattr('thebleep.output_readers.rerun.Popen', Popen)
         return Popen
 
     @pytest.fixture(autouse=True)
     def prepare(self, monkeypatch):
         monkeypatch.setattr('thebleep.output_readers.rerun._wait_output',
-                            lambda *_: True)
+                            lambda *_: b'output')
 
     def test_from_script_calls(self, Popen, settings, os_environ):
         settings.env = {}

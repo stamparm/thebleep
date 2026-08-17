@@ -89,6 +89,14 @@ SCENARIOS = [
                                   history='', REQUIRE_CONFIRMATION='false'),
     },
     {
+        'name': 'correct-big-output',
+        'what': 'the failed command printed a megabyte, as builds do',
+        'args': ['--force-command',
+                 'sh -c "yes abcdefghijklmnopqrstuvwxyz | head -n 40000; exit 1"'],
+        'env': lambda style: _env(style, shell='bash', alias='bleep',
+                                  history='', REQUIRE_CONFIRMATION='false'),
+    },
+    {
         'name': 'correct-in-repo',
         'what': 'correct inside a git repository, where git rules do work',
         'args': ['git', 'stats'],
