@@ -2,8 +2,8 @@ from io import BytesIO
 
 import pytest
 
-from thefuck.rules.gem_unknown_command import match, get_new_command
-from thefuck.types import Command
+from thebleep.rules.gem_unknown_command import match, get_new_command
+from thebleep.types import Command
 
 output = '''
 ERROR:  While executing gem ... (Gem::CommandLineError)

@@ -1,25 +1,25 @@
-name: thefuck
+name: thebleep
 version: stable
-version-script: git -C parts/thefuck/build describe --abbrev=0 --tags
+version-script: git -C parts/thebleep/build describe --abbrev=0 --tags
 summary: Magnificent app which corrects your previous console command.
 description: |
-  The Fuck tries to match a rule for the previous command,
+  The Bleep tries to match a rule for the previous command,
   creates a new command using the matched rule and runs it.
 
 grade: stable
 confinement: classic
 
 apps:
-  thefuck:
-    command: bin/thefuck
+  thebleep:
+    command: bin/thebleep
     environment:
         PYTHONIOENCODING: utf-8
-  fuck:
-    command: bin/fuck
+  bleep:
+    command: bin/bleep
     environment:
         PYTHONIOENCODING: utf-8
 
 parts:
-  thefuck:
-    source: https://github.com/nvbn/thefuck.git
+  thebleep:
+    source: https://github.com/stamparm/thebleep.git
     plugin: python

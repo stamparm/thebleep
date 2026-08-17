@@ -6,13 +6,13 @@ import pytest
 import sys
 import termios
 import tty
-from thefuck import const
+from thebleep import const
 
 pytestmark = pytest.mark.skipif(sys.platform == 'win32',
                                 reason="skip when running on Windows")
 
 if sys.platform != 'win32':
-    from thefuck.system import unix
+    from thebleep.system import unix
 
 
 @pytest.fixture

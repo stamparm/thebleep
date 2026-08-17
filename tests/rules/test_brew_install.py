@@ -1,6 +1,6 @@
 import pytest
-from thefuck.rules.brew_install import match, get_new_command, _get_suggestions
-from thefuck.types import Command
+from thebleep.rules.brew_install import match, get_new_command, _get_suggestions
+from thebleep.types import Command
 
 
 @pytest.fixture

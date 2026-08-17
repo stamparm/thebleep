@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import Mock
-from thefuck.entrypoints.fix_command import _get_raw_command
+from thebleep.entrypoints.fix_command import _get_raw_command
 
 
 class TestGetRawCommand(object):
@@ -9,18 +9,18 @@ class TestGetRawCommand(object):
         assert _get_raw_command(known_args) == ['git brunch']
 
     def test_from_command_argument(self, os_environ):
-        os_environ['TF_HISTORY'] = None
+        os_environ['TB_HISTORY'] = None
         known_args = Mock(force_command=None,
                           command=['sl'])
         assert _get_raw_command(known_args) == ['sl']
 
     @pytest.mark.parametrize('history, result', [
         ('git br', 'git br'),
-        ('git br\nfcuk', 'git br'),
-        ('git br\nfcuk\nls', 'ls'),
-        ('git br\nfcuk\nls\nfuk', 'ls')])
+        ('git br\nbelep', 'git br'),
+        ('git br\nbelep\nls', 'ls'),
+        ('git br\nbelep\nls\nblep', 'ls')])
     def test_from_history(self, os_environ, history, result):
-        os_environ['TF_HISTORY'] = history
+        os_environ['TB_HISTORY'] = history
         known_args = Mock(force_command=None,
                           command=None)
         assert _get_raw_command(known_args) == [result]

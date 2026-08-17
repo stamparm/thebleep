@@ -1,6 +1,6 @@
 import pytest
-from thefuck.rules.sudo_command_from_user_path import match, get_new_command
-from thefuck.types import Command
+from thebleep.rules.sudo_command_from_user_path import match, get_new_command
+from thebleep.types import Command
 
 
 output = 'sudo: {}: command not found'
@@ -8,7 +8,7 @@ output = 'sudo: {}: command not found'
 
 @pytest.fixture(autouse=True)
 def which(mocker):
-    return mocker.patch('thefuck.rules.sudo_command_from_user_path.which',
+    return mocker.patch('thebleep.rules.sudo_command_from_user_path.which',
                         return_value='/usr/bin/app')
 
 

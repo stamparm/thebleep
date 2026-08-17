@@ -2,7 +2,7 @@ import pytest
 from tests.functional.plots import with_confirmation, without_confirmation, \
     refuse_with_confirmation, select_command_with_arrows
 
-containers = ((u'thefuck/python3', u'', u'tcsh'),)
+containers = ((u'thebleep/python3', u'', u'tcsh'),)
 
 
 @pytest.fixture(params=containers)
@@ -10,7 +10,7 @@ def proc(request, spawnu, TIMEOUT):
     proc = spawnu(*request.param)
     proc.sendline(u'tcsh')
     proc.sendline(u'setenv PYTHONIOENCODING utf8')
-    proc.sendline(u'eval `thefuck --alias`')
+    proc.sendline(u'eval `thebleep --alias`')
     return proc
 
 

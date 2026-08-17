@@ -1,7 +1,7 @@
 import pytest
-from thefuck.rules.yarn_help import match, get_new_command
-from thefuck.types import Command
-from thefuck.system import open_command
+from thebleep.rules.yarn_help import match, get_new_command
+from thebleep.types import Command
+from thebleep.system import open_command
 
 
 output_clean = '''

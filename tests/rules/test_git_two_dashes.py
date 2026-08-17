@@ -1,6 +1,6 @@
 import pytest
-from thefuck.rules.git_two_dashes import match, get_new_command
-from thefuck.types import Command
+from thebleep.rules.git_two_dashes import match, get_new_command
+from thebleep.types import Command
 
 
 output = 'error: did you mean `{}` (with two dashes ?)'.format

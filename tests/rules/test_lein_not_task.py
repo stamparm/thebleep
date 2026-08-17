@@ -1,6 +1,6 @@
 import pytest
-from thefuck.rules.lein_not_task import match, get_new_command
-from thefuck.types import Command
+from thebleep.rules.lein_not_task import match, get_new_command
+from thebleep.types import Command
 
 
 @pytest.fixture

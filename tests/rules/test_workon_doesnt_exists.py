@@ -1,29 +1,29 @@
 import pytest
-from thefuck.rules.workon_doesnt_exists import match, get_new_command
-from thefuck.types import Command
+from thebleep.rules.workon_doesnt_exists import match, get_new_command
+from thebleep.types import Command
 
 
 @pytest.fixture(autouse=True)
 def envs(mocker):
     return mocker.patch(
-        'thefuck.rules.workon_doesnt_exists._get_all_environments',
-        return_value=['thefuck', 'code_view'])
+        'thebleep.rules.workon_doesnt_exists._get_all_environments',
+        return_value=['thebleep', 'code_view'])
 
 
 @pytest.mark.parametrize('script', [
-    'workon tehfuck', 'workon code-view', 'workon new-env'])
+    'workon tehbleep', 'workon code-view', 'workon new-env'])
 def test_match(script):
     assert match(Command(script, ''))
 
 
 @pytest.mark.parametrize('script', [
-    'workon thefuck', 'workon code_view', 'work on tehfuck'])
+    'workon thebleep', 'workon code_view', 'work on tehbleep'])
 def test_not_match(script):
     assert not match(Command(script, ''))
 
 
 @pytest.mark.parametrize('script, result', [
-    ('workon tehfuck', 'workon thefuck'),
+    ('workon tehbleep', 'workon thebleep'),
     ('workon code-view', 'workon code_view'),
     ('workon zzzz', 'mkvirtualenv zzzz')])
 def test_get_new_command(script, result):

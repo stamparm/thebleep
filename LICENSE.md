@@ -1,6 +1,7 @@
 The MIT License (MIT)
 =====================
 
+Copyright (c) 2026 Miroslav Stampar
 Copyright (c) 2015-2022 Vladimir Iakovlev
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

@@ -1,6 +1,6 @@
 import pytest
-from thefuck.rules.choco_install import match, get_new_command
-from thefuck.types import Command
+from thebleep.rules.choco_install import match, get_new_command
+from thebleep.types import Command
 
 
 package_not_found_error = (

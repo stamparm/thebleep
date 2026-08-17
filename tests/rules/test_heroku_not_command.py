@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from thefuck.types import Command
-from thefuck.rules.heroku_not_command import match, get_new_command
+from thebleep.types import Command
+from thebleep.rules.heroku_not_command import match, get_new_command
 
 
 suggest_output = '''

@@ -2,16 +2,16 @@
 
 import pytest
 from itertools import islice
-from thefuck import ui
-from thefuck.types import CorrectedCommand
-from thefuck import const
+from thebleep import ui
+from thebleep.types import CorrectedCommand
+from thebleep import const
 
 
 @pytest.fixture
 def patch_get_key(monkeypatch):
     def patch(vals):
         vals = iter(vals)
-        monkeypatch.setattr('thefuck.ui.get_key', lambda: next(vals))
+        monkeypatch.setattr('thebleep.ui.get_key', lambda: next(vals))
 
     return patch
 
@@ -57,7 +57,7 @@ def test_command_selector():
 class TestSelectCommand(object):
     @pytest.fixture(autouse=True)
     def is_interactive(self, mocker):
-        return mocker.patch('thefuck.ui._is_interactive', return_value=True)
+        return mocker.patch('thebleep.ui._is_interactive', return_value=True)
 
     @pytest.fixture
     def commands_with_side_effect(self):
@@ -71,7 +71,7 @@ class TestSelectCommand(object):
 
     def test_without_commands(self, capsys):
         assert ui.select_command(iter([])) is None
-        assert capsys.readouterr() == ('', 'No fucks given\n')
+        assert capsys.readouterr() == ('', 'No bleeps given\n')
 
     def test_without_confirmation(self, capsys, commands, settings):
         settings.require_confirmation = False

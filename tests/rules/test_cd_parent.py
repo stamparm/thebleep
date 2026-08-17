@@ -1,5 +1,5 @@
-from thefuck.rules.cd_parent import match, get_new_command
-from thefuck.types import Command
+from thebleep.rules.cd_parent import match, get_new_command
+from thebleep.types import Command
 
 
 def test_match():

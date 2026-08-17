@@ -3,8 +3,8 @@ import pytest
 
 @pytest.fixture
 def main_module(mocker):
-    mocker.patch('thefuck.system.init_output')
-    from thefuck.entrypoints import main
+    mocker.patch('thebleep.system.init_output')
+    from thebleep.entrypoints import main
     return main
 
 

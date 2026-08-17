@@ -14,7 +14,7 @@ else:
 
 version = sys.version_info[:2]
 if version < (3, 9):
-    print('thefuck requires Python version 3.9 or later' +
+    print('thebleep requires Python version 3.9 or later' +
           ' ({}.{} detected).'.format(*version))
     sys.exit(-1)
 
@@ -24,23 +24,23 @@ install_requires = ['psutil', 'colorama', 'decorator', 'pyte']
 extras_require = {":sys_platform=='win32'": ['win_unicode_console']}
 
 if sys.platform == "win32":
-    scripts = ['scripts\\fuck.bat', 'scripts\\fuck.ps1']
+    scripts = ['scripts\\bleep.bat', 'scripts\\bleep.ps1']
     entry_points = {'console_scripts': [
-                  'thefuck = thefuck.entrypoints.main:main',
-                  'thefuck_firstuse = thefuck.entrypoints.not_configured:main']}
+                  'thebleep = thebleep.entrypoints.main:main',
+                  'thebleep_firstuse = thebleep.entrypoints.not_configured:main']}
 else:
     scripts = []
     entry_points = {'console_scripts': [
-                  'thefuck = thefuck.entrypoints.main:main',
-                  'fuck = thefuck.entrypoints.not_configured:main']}
+                  'thebleep = thebleep.entrypoints.main:main',
+                  'bleep = thebleep.entrypoints.not_configured:main']}
 
-setup(name='thefuck',
+setup(name='thebleep',
       version=VERSION,
       description="Magnificent app which corrects your previous console command",
       long_description=long_description,
-      author='Vladimir Iakovlev',
-      author_email='nvbn.rm@gmail.com',
-      url='https://github.com/nvbn/thefuck',
+      author='Miroslav Stampar',
+      author_email='miroslav.stampar@gmail.com',
+      url='https://github.com/stamparm/thebleep',
       license='MIT',
       packages=find_packages(exclude=['ez_setup', 'examples',
                                       'tests', 'tests.*', 'release']),

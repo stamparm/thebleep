@@ -1,6 +1,6 @@
 import pytest
-from thefuck.rules.mkdir_p import match, get_new_command
-from thefuck.types import Command
+from thebleep.rules.mkdir_p import match, get_new_command
+from thebleep.types import Command
 
 
 @pytest.mark.parametrize('command', [

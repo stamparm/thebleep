@@ -1,6 +1,6 @@
 import pytest
-from thefuck.types import Command
-from thefuck.rules.yarn_command_replaced import match, get_new_command
+from thebleep.types import Command
+from thebleep.rules.yarn_command_replaced import match, get_new_command
 
 
 output = ('error `install` has been replaced with `add` to add new '

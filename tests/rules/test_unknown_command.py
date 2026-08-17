@@ -1,6 +1,6 @@
 import pytest
-from thefuck.rules.unknown_command import match, get_new_command
-from thefuck.types import Command
+from thebleep.rules.unknown_command import match, get_new_command
+from thebleep.types import Command
 
 
 @pytest.mark.parametrize('command', [

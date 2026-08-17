@@ -1,6 +1,6 @@
 import pytest
-from thefuck.rules.npm_wrong_command import match, get_new_command
-from thefuck.types import Command
+from thebleep.rules.npm_wrong_command import match, get_new_command
+from thebleep.types import Command
 
 output = '''
 Usage: npm <command>

@@ -1,11 +1,11 @@
 import pytest
-from thefuck.rules.git_add import match, get_new_command
-from thefuck.types import Command
+from thebleep.rules.git_add import match, get_new_command
+from thebleep.types import Command
 
 
 @pytest.fixture(autouse=True)
 def path_exists(mocker):
-    return mocker.patch('thefuck.rules.git_add.Path.exists',
+    return mocker.patch('thebleep.rules.git_add.Path.exists',
                         return_value=True)
 
 

@@ -1,8 +1,8 @@
 from io import BytesIO
 
 import pytest
-from thefuck.rules.port_already_in_use import match, get_new_command
-from thefuck.types import Command
+from thebleep.rules.port_already_in_use import match, get_new_command
+from thebleep.types import Command
 
 outputs = [
     '''
@@ -68,7 +68,7 @@ node    18233 nvbn   16u  IPv4 557134      0t0  TCP localhost:http-alt (LISTEN)
 
 @pytest.fixture(autouse=True)
 def lsof(mocker):
-    patch = mocker.patch('thefuck.rules.port_already_in_use.Popen')
+    patch = mocker.patch('thebleep.rules.port_already_in_use.Popen')
     patch.return_value.stdout = BytesIO(lsof_stdout)
     return patch
 

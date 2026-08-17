@@ -1,6 +1,6 @@
 import pytest
-from thefuck.rules.git_stash_pop import match, get_new_command
-from thefuck.types import Command
+from thebleep.rules.git_stash_pop import match, get_new_command
+from thebleep.types import Command
 
 
 @pytest.fixture

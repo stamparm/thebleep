@@ -2,13 +2,13 @@ import pytest
 from tests.functional.plots import with_confirmation, without_confirmation, \
     refuse_with_confirmation, select_command_with_arrows
 
-containers = ((u'thefuck/python3', u'', u'fish'),)
+containers = ((u'thebleep/python3', u'', u'fish'),)
 
 
 @pytest.fixture(params=containers)
 def proc(request, spawnu, TIMEOUT):
     proc = spawnu(*request.param)
-    proc.sendline(u'thefuck --alias > ~/.config/fish/config.fish')
+    proc.sendline(u'thebleep --alias > ~/.config/fish/config.fish')
     proc.sendline(u'fish')
     return proc
 

@@ -1,6 +1,6 @@
 import pytest
-from thefuck.rules.git_push_different_branch_names import get_new_command, match
-from thefuck.types import Command
+from thebleep.rules.git_push_different_branch_names import get_new_command, match
+from thebleep.types import Command
 
 
 output = """fatal: The upstream branch of your current branch does not match

@@ -1,8 +1,8 @@
 import os
 import pytest
-from thefuck.rules.ssh_known_hosts import match, get_new_command, \
+from thebleep.rules.ssh_known_hosts import match, get_new_command, \
     side_effect
-from thefuck.types import Command
+from thebleep.types import Command
 
 
 @pytest.fixture

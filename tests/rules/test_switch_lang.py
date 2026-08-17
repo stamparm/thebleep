@@ -2,8 +2,8 @@
 
 import pytest
 
-from thefuck.rules import switch_lang
-from thefuck.types import Command
+from thebleep.rules import switch_lang
+from thebleep.types import Command
 
 
 @pytest.mark.parametrize('command', [
@@ -19,7 +19,7 @@ def test_match(command):
 @pytest.mark.parametrize('command', [
     Command(u'pat-get', 'command not found: pat-get'),
     Command(u'ls', 'command not found: ls'),
-    Command(u'агсл', 'command not found: агсл'),
+    Command(u'идууз', 'command not found: идууз'),
     Command(u'фзе-пуе', 'some info'),
     Command(u'שפא-עקא', 'some info'),
     Command(u'녀애 ㅣㄴ', 'some info')])
