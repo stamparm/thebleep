@@ -144,6 +144,16 @@ class Rule(object):
             except Exception:
                 logs.exception(u"Rule {} failed to load".format(name), sys.exc_info())
                 return
+        return cls.from_module(name, rule_module)
+
+    @classmethod
+    def from_module(cls, name, rule_module):
+        """Creates rule instance from an already executed rule module.
+
+        :type name: basestring
+        :rtype: Rule
+
+        """
         priority = getattr(rule_module, 'priority', DEFAULT_PRIORITY)
         return cls(name, rule_module.match,
                    rule_module.get_new_command,

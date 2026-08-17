@@ -2,7 +2,7 @@ import sys
 from .conf import settings
 from .types import Rule
 from .system import Path
-from . import logs
+from . import logs, rulepack
 
 
 def get_loaded_rules(rules_paths):
@@ -37,14 +37,26 @@ def get_rules_import_paths():
                 yield contrib_rules
 
 
-def get_rules():
+def get_rules(command=None):
     """Returns all enabled rules.
 
+    When a command is given, only the rules that could possibly match it are
+    loaded, which is most of the reason a correction is fast. Rules that don't
+    say what they are about are always loaded, so a rule is never skipped on a
+    guess.
+
+    :type command: thebleep.types.Command | None
     :rtype: [Rule]
 
     """
     paths = [rule_path for path in get_rules_import_paths()
              for rule_path in sorted(path.glob('*.py'))]
+
+    if command is not None:
+        rules = rulepack.get_rules_for(command, paths)
+        if rules is not None:
+            return rules
+
     return sorted(get_loaded_rules(paths),
                   key=lambda rule: rule.priority)
 
@@ -85,7 +97,7 @@ def get_corrected_commands(command):
 
     """
     corrected_commands = (
-        corrected for rule in get_rules()
+        corrected for rule in get_rules(command)
         if rule.is_match(command)
         for corrected in rule.get_corrected_commands(command))
     return organize_commands(corrected_commands)
