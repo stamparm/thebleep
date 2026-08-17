@@ -564,11 +564,15 @@ medians, measured with the harness in [`bench/`](bench/README.md):
 
 | What you do | The Fuck 3.32 | The Bleep | |
 | --- | ---: | ---: | ---: |
-| Open a shell (`--alias` in your rc) | 211 ms | 38 ms | **5.6x** |
-| Open a shell (pasted `--alias-loader`) | 211 ms | ~0 ms | **no Python at all** |
-| Correct a mistyped command | 243 ms | 55 ms | **4.4x** |
-| Correct when nothing matches | 336 ms | 78 ms | **4.3x** |
-| Correct after a command printed a megabyte | 3248 ms | 132 ms | **24.5x** |
+| Open a shell (`--alias` in your rc) | 209 ms | 38 ms | **5.9x** |
+| Open a shell (pasted `--alias-loader`) | 209 ms | 0.3 ms | **no Python at all** |
+| Correct a mistyped command | 248 ms | 56 ms | **4.5x** |
+| Correct when nothing matches | 344 ms | 70 ms | **4.9x** |
+| Correct after a command printed a megabyte | 3248 ms | 133 ms | **24.5x** |
+
+The shell startup row is not a typo: with the loader pasted into your rc, a
+shell takes 2.5 ms to start against 2.2 ms with nothing configured at all, so
+what The Bleep costs you there is a third of a millisecond.
 
 Reproduce it yourself:
 
