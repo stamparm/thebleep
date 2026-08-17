@@ -62,6 +62,14 @@ class TestGetCloseMatches(object):
         assert difflib_mock.call_args[0][2] == settings.get('num_close_matches')
 
 
+@pytest.fixture(autouse=True)
+def no_disk_cache(mocker):
+    """Keeps the tests off whatever the machine cached for itself."""
+    mocker.patch('thebleep.cachefile.load', return_value=None)
+    mocker.patch('thebleep.cachefile.save',
+                 side_effect=lambda name, fingerprint, value: value)
+
+
 @pytest.fixture
 def get_aliases(mocker):
     mocker.patch('thebleep.shells.shell.get_aliases',
@@ -88,24 +96,26 @@ def os_environ_pathsep(monkeypatch, path, pathsep):
 @pytest.mark.parametrize('path, pathsep', [
     ('/foo:/bar:/baz:/foo/bar', ':'),
     (r'C:\\foo;C:\\bar;C:\\baz;C:\\foo\\bar', ';')])
-def test_get_all_executables_pathsep(path, pathsep):
-    with patch('thebleep.utils.Path') as Path_mock:
+def test_get_all_executables_pathsep(path, pathsep, no_disk_cache):
+    with patch('os.scandir', return_value=[]) as scandir_mock:
         get_all_executables()
-        Path_mock.assert_has_calls([call(p) for p in path.split(pathsep)], True)
+        scandir_mock.assert_has_calls([call(p) for p in path.split(pathsep)],
+                                      True)
 
 
 @pytest.mark.usefixtures('no_memoize', 'os_environ_pathsep')
 @pytest.mark.parametrize('path, pathsep, excluded', [
     ('/foo:/bar:/baz:/foo/bar:/mnt/foo', ':', '/mnt/foo'),
     (r'C:\\foo;C:\\bar;C:\\baz;C:\\foo\\bar;Z:\\foo', ';', r'Z:\\foo')])
-def test_get_all_executables_exclude_paths(path, pathsep, excluded, settings):
+def test_get_all_executables_exclude_paths(path, pathsep, excluded, settings,
+                                           no_disk_cache):
     settings.init()
     settings.excluded_search_path_prefixes = [excluded]
-    with patch('thebleep.utils.Path') as Path_mock:
+    with patch('os.scandir', return_value=[]) as scandir_mock:
         get_all_executables()
         path_list = path.split(pathsep)
-        assert call(path_list[-1]) not in Path_mock.mock_calls
-        assert all(call(p) in Path_mock.mock_calls for p in path_list[:-1])
+        assert call(path_list[-1]) not in scandir_mock.mock_calls
+        assert all(call(p) in scandir_mock.mock_calls for p in path_list[:-1])
 
 
 @pytest.mark.parametrize('args, result', [
@@ -191,7 +201,7 @@ class TestCache(object):
             def close(self):
                 return
 
-        mocker.patch('thebleep.utils.shelve.open', new_callable=lambda: _Shelve)
+        mocker.patch('shelve.open', new_callable=lambda: _Shelve)
         return value
 
     @pytest.fixture(autouse=True)
@@ -258,13 +268,12 @@ class TestGetValidHistoryWithoutCurrent(object):
 
     @pytest.fixture(autouse=True)
     def bins(self, mocker):
-        callables = list()
+        entries = list()
         for name in ['diff', 'ls', 'café']:
-            bin_mock = mocker.Mock(name=name)
-            bin_mock.configure_mock(name=name, is_dir=lambda: False)
-            callables.append(bin_mock)
-        path_mock = mocker.Mock(iterdir=mocker.Mock(return_value=callables))
-        return mocker.patch('thebleep.utils.Path', return_value=path_mock)
+            entry_mock = mocker.Mock(name=name)
+            entry_mock.configure_mock(name=name, is_dir=lambda: False)
+            entries.append(entry_mock)
+        return mocker.patch('os.scandir', return_value=entries)
 
     @pytest.mark.parametrize('script, result', [
         ('le cat', ['ls cat', 'diff x', u'café ô']),

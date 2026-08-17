@@ -1,20 +1,17 @@
 import atexit
-import dbm
 import os
 import pickle
 import re
-import shelve
 import shutil
 import sys
 from difflib import get_close_matches as difflib_get_close_matches
 from functools import wraps
+from . import cachefile
 from .logs import warn, exception
 from .conf import settings
 from .system import Path
 
 DEVNULL = open(os.devnull, 'w')
-
-shelve_open_error = dbm.error
 
 
 def decorator(caller):
@@ -103,25 +100,72 @@ def include_path_in_search(path):
     return not any(path.startswith(x) for x in settings.excluded_search_path_prefixes)
 
 
+def _search_path():
+    return [path for path in os.environ.get('PATH', '').split(os.pathsep)
+            if include_path_in_search(path)]
+
+
+def _path_fingerprint(paths):
+    """What makes a listing of `paths` valid: the directories and their mtimes.
+
+    A directory's mtime changes when something is installed into it or removed
+    from it, which is exactly when the listing stops being true.
+
+    """
+    fingerprint = []
+    for path in paths:
+        try:
+            fingerprint.append((path, os.stat(path).st_mtime_ns))
+        except OSError:
+            fingerprint.append((path, 0))
+    return tuple(fingerprint)
+
+
+# How long a listing may be trusted even if no directory looks changed.
+EXECUTABLES_CACHE_MAX_AGE = 600
+
+
+def _scan_executables(paths, skip):
+    """Every non-directory entry in `paths`, cached until a directory changes.
+
+    Scanning is a five-figure number of directory entries on a normal machine,
+    which is far and away the slowest thing a correction used to do.
+
+    """
+    fingerprint = _path_fingerprint(paths) + (tuple(sorted(skip)),)
+    cached = cachefile.load('executables', fingerprint,
+                            EXECUTABLES_CACHE_MAX_AGE)
+    if cached is not None:
+        return list(cached)
+
+    found = []
+    for path in paths:
+        try:
+            entries = list(os.scandir(path))
+        except OSError:
+            continue
+        for entry in entries:
+            if entry.name in skip:
+                continue
+            try:
+                if entry.is_dir():
+                    continue
+            except OSError:
+                continue
+            found.append(entry.name)
+
+    cachefile.save('executables', fingerprint, tuple(found))
+    return found
+
+
 @memoize
 def get_all_executables():
     from thebleep.shells import shell
 
-    def _safe(fn, fallback):
-        try:
-            return fn()
-        except OSError:
-            return fallback
-
     tb_alias = get_alias()
-    tb_entry_points = ['thebleep', 'bleep']
+    tb_entry_points = ('thebleep', 'bleep')
 
-    bins = [exe.name
-            for path in os.environ.get('PATH', '').split(os.pathsep)
-            if include_path_in_search(path)
-            for exe in _safe(lambda: list(Path(path).iterdir()), [])
-            if not _safe(exe.is_dir, True)
-            and exe.name not in tb_entry_points]
+    bins = _scan_executables(_search_path(), tb_entry_points)
     aliases = [alias
                for alias in shell.get_aliases() if alias != tb_alias]
 
@@ -205,12 +249,17 @@ class Cache(object):
             self._db = {}
 
     def _setup_db(self):
+        # shelve costs dbm and pickle at import time, so it arrives only for
+        # the rules that actually keep a cache.
+        import dbm
+        import shelve
+
         cache_dir = self._get_cache_dir()
         cache_path = Path(cache_dir).joinpath('thebleep').as_posix()
 
         try:
             self._db = shelve.open(cache_path)
-        except shelve_open_error + (ImportError,):
+        except dbm.error + (ImportError,):
             # Caused when switching between Python versions
             warn("Removing possibly out-dated cache")
             os.remove(cache_path)

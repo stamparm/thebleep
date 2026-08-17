@@ -287,6 +287,8 @@ def report(results, baseline_path=None):
     if len(names) == 2:
         head += '{:>10}'.format('ratio')
     if baseline:
+        # The subject under test is the last one given; comparing the upstream
+        # baseline against itself would say nothing.
         head += '{:>12}'.format('vs base')
     print(head)
     print('-' * len(head))
@@ -312,8 +314,8 @@ def report(results, baseline_path=None):
             line += '{:>10}'.format('{:.2f}x'.format(medians[0] / medians[1])
                                     if medians[1] else '-')
         if baseline:
-            line += '{:>12}'.format(_delta(baseline, names[0], scenario,
-                                           medians[0]))
+            line += '{:>12}'.format(_delta(baseline, names[-1], scenario,
+                                           medians[-1]))
         print(line)
 
 

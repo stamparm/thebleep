@@ -417,10 +417,19 @@ def get_rules_for(command, paths):
 
 
 def clear():
-    """Removes the pack. Returns the path it tried to remove."""
-    path = _cache_path()
+    """Removes every rule pack, including ones left by other interpreters.
+
+    Returns how many were removed.
+
+    """
+    removed = 0
     try:
-        os.unlink(str(path))
-    except OSError:
+        for path in _cache_path().parent.glob('rules-*.pack'):
+            try:
+                os.unlink(str(path))
+                removed += 1
+            except OSError:
+                pass
+    except Exception:
         pass
-    return path
+    return removed

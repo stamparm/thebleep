@@ -13,6 +13,7 @@ import ast
 import marshal
 import os
 import pytest
+import time
 from thebleep import rulepack
 from thebleep.system import Path
 from thebleep.types import Command, Rule
@@ -124,8 +125,74 @@ class TestPack(object):
     def test_clear_removes_the_pack(self, cache_home, rule_paths):
         rulepack.entries_for(rule_paths)
         assert rulepack._cache_path().is_file()
-        rulepack.clear()
+        # A pack left by another interpreter or an older format goes too.
+        stale = rulepack._cache_path().parent.joinpath('rules-0-abcdef.pack')
+        stale.open('wb').close()
+        assert rulepack.clear() == 2
         assert not rulepack._cache_path().is_file()
+        assert not stale.is_file()
+
+
+class TestExecutablesCache(object):
+    """The listing of everything on $PATH is remembered between runs, and has
+    to stop being remembered the moment a directory changes."""
+
+    @pytest.fixture
+    def bin_dir(self, tmpdir, os_environ, cache_home):
+        directory = tmpdir.mkdir('bin')
+        directory.join('already-here').write('')
+        os_environ['PATH'] = str(directory)
+        return directory
+
+    def test_lists_what_is_there(self, bin_dir):
+        from thebleep import utils
+        assert 'already-here' in utils._scan_executables([str(bin_dir)], ())
+
+    def test_second_call_is_served_from_the_cache(self, bin_dir, mocker):
+        from thebleep import utils
+        utils._scan_executables([str(bin_dir)], ())
+        scandir = mocker.patch('os.scandir', return_value=[])
+        assert 'already-here' in utils._scan_executables([str(bin_dir)], ())
+        assert not scandir.called
+
+    def test_a_new_executable_is_picked_up(self, bin_dir):
+        from thebleep import utils
+        utils._scan_executables([str(bin_dir)], ())
+        # Directory timestamps come from a coarse clock, so an install has to
+        # land in a later tick than the read for the mtime to differ. Anything
+        # a person can actually do takes longer than this.
+        time.sleep(0.02)
+        bin_dir.join('just-installed').write('')
+        found = utils._scan_executables([str(bin_dir)], ())
+        assert 'just-installed' in found
+
+    def test_a_stale_listing_expires(self, bin_dir, mocker):
+        from thebleep import utils
+        utils._scan_executables([str(bin_dir)], ())
+        scandir = mocker.patch('os.scandir', return_value=[])
+        mocker.patch('time.time',
+                     return_value=time.time()
+                     + utils.EXECUTABLES_CACHE_MAX_AGE + 1)
+        utils._scan_executables([str(bin_dir)], ())
+        assert scandir.called
+
+    def test_entry_points_are_left_out(self, bin_dir):
+        from thebleep import utils
+        bin_dir.join('bleep').write('')
+        found = utils._scan_executables([str(bin_dir)], ('bleep',))
+        assert 'bleep' not in found
+        assert 'already-here' in found
+
+    def test_directories_are_not_executables(self, bin_dir):
+        from thebleep import utils
+        bin_dir.mkdir('a-directory')
+        assert 'a-directory' not in utils._scan_executables([str(bin_dir)], ())
+
+    def test_missing_directory_is_not_fatal(self, bin_dir):
+        from thebleep import utils
+        found = utils._scan_executables(
+            [str(bin_dir), str(bin_dir.join('nope'))], ())
+        assert 'already-here' in found
 
 
 class TestMetadata(object):

@@ -32,6 +32,10 @@ class Parser(object):
             help='[custom-alias-name] prints shell code that defines the alias'
                  ' on first use, so shell startup costs nothing')
         self._parser.add_argument(
+            '--clear-cache',
+            action='store_true',
+            help='forget the compiled rules and the cached command lookups')
+        self._parser.add_argument(
             '-l', '--shell-logger',
             action='store',
             help='log shell output to the file')
