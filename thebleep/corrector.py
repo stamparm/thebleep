@@ -1,19 +1,19 @@
+import os
 import sys
 from .conf import settings
 from .types import Rule
-from .system import Path
 from . import logs, rulepack
 
 
 def get_loaded_rules(rules_paths):
     """Yields all available rules.
 
-    :type rules_paths: [Path]
+    :type rules_paths: [str]
     :rtype: Iterable[Rule]
 
     """
     for path in rules_paths:
-        if path.name != '__init__.py':
+        if os.path.basename(str(path)) != '__init__.py':
             rule = Rule.from_path(path)
             if rule and rule.is_enabled:
                 yield rule
@@ -22,19 +22,44 @@ def get_loaded_rules(rules_paths):
 def get_rules_import_paths():
     """Yields all rules import paths.
 
-    :rtype: Iterable[Path]
+    :rtype: Iterable[str]
 
     """
     # Bundled rules:
-    yield Path(__file__).parent.joinpath('rules')
+    yield os.path.join(os.path.dirname(os.path.abspath(__file__)), 'rules')
     # Rules defined by user:
-    yield settings.user_dir.joinpath('rules')
+    yield os.path.join(str(settings.user_dir), 'rules')
     # Packages with third-party rules:
     for path in sys.path:
-        for contrib_module in Path(path).glob('thebleep_contrib_*'):
-            contrib_rules = contrib_module.joinpath('rules')
-            if contrib_rules.is_dir():
+        for contrib_module in _contrib_modules(path):
+            contrib_rules = os.path.join(contrib_module, 'rules')
+            if os.path.isdir(contrib_rules):
                 yield contrib_rules
+
+
+def _contrib_modules(path):
+    """Third-party rule packages sitting in one entry of `sys.path`."""
+    try:
+        entries = list(os.scandir(path))
+    except OSError:
+        return []
+    return [entry.path for entry in entries
+            if entry.name.startswith('thebleep_contrib_')]
+
+
+def _rule_files(directory):
+    """The rule files in a directory, in a stable order.
+
+    `os.scandir` rather than `Path.glob`: listing the bundled rules is done on
+    every single invocation, and globbing them took longer than loading them.
+
+    """
+    try:
+        entries = list(os.scandir(str(directory)))
+    except OSError:
+        return []
+    return sorted(entry.path for entry in entries
+                  if entry.name.endswith('.py'))
 
 
 def get_rules(command=None):
@@ -50,7 +75,7 @@ def get_rules(command=None):
 
     """
     paths = [rule_path for path in get_rules_import_paths()
-             for rule_path in sorted(path.glob('*.py'))]
+             for rule_path in _rule_files(path)]
 
     if command is not None:
         rules = rulepack.get_rules_for(command, paths)

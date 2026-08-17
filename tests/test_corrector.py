@@ -3,15 +3,15 @@
 import pytest
 from tests.utils import Rule, CorrectedCommand
 from thebleep import corrector, const
-from thebleep.system import Path
 from thebleep.types import Command
 from thebleep.corrector import get_corrected_commands, organize_commands
 
 
 @pytest.fixture
 def glob(mocker):
+    """Stands in for the rule files found on disk."""
     results = {}
-    mocker.patch('thebleep.system.Path.glob',
+    mocker.patch('thebleep.corrector._rule_files',
                  new_callable=lambda: lambda *_: results.pop('value', []))
     return lambda value: results.update({'value': value})
 
@@ -32,7 +32,7 @@ class TestGetRules(object):
         (['git.py', 'bash.py'], ['git'], ['git'], [])])
     def test_get_rules(self, glob, settings, paths, conf_rules, exclude_rules,
                        loaded_rules):
-        glob([Path(path) for path in paths])
+        glob(paths)
         settings.update(rules=conf_rules,
                         priority={},
                         exclude_rules=exclude_rules)
@@ -43,7 +43,7 @@ class TestGetRules(object):
 def test_get_rules_rule_exception(mocker, glob):
     load_source = mocker.patch('thebleep.types.load_source',
                                side_effect=ImportError("No module named foo..."))
-    glob([Path('git.py')])
+    glob(['git.py'])
     assert not corrector.get_rules()
     load_source.assert_called_once_with('git', 'git.py')
 

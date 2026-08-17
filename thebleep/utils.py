@@ -147,8 +147,11 @@ def _scan_executables(paths, skip):
     fingerprint = _path_fingerprint(paths) + (tuple(sorted(skip)),)
     cached = cachefile.load('executables', fingerprint,
                             EXECUTABLES_CACHE_MAX_AGE)
-    if cached is not None:
-        return list(cached)
+    if isinstance(cached, str):
+        # One string split in C, rather than thirteen thousand strings
+        # unmarshalled one at a time. A file name cannot contain a NUL, so it
+        # is the one separator that is always safe.
+        return cached.split('\0') if cached else []
 
     found = []
     for path in paths:
@@ -166,7 +169,7 @@ def _scan_executables(paths, skip):
                 continue
             found.append(entry.name)
 
-    cachefile.save('executables', fingerprint, tuple(found))
+    cachefile.save('executables', fingerprint, '\0'.join(found))
     return found
 
 

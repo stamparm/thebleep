@@ -135,11 +135,11 @@ class Rule(object):
     def from_path(cls, path):
         """Creates rule instance from path.
 
-        :type path: pathlib.Path
+        :type path: pathlib.Path | str
         :rtype: Rule
 
         """
-        name = path.name[:-3]
+        name = os.path.basename(str(path))[:-3]
         if name in settings.exclude_rules:
             logs.debug(u'Ignoring excluded rule: {}'.format(name))
             return

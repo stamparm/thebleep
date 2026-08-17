@@ -14,7 +14,7 @@ import os
 import time
 from .system import Path
 
-FORMAT = 1
+FORMAT = 2
 
 
 def _directory():

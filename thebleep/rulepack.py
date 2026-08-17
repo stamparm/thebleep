@@ -214,7 +214,7 @@ def _build_entry(path):
     with open(str(path), 'rb') as handle:
         source = handle.read()
     stat = os.stat(str(path))
-    entry = {'name': path.name[:-3],
+    entry = {'name': os.path.basename(str(path))[:-3],
              'mtime': int(stat.st_mtime_ns),
              'size': int(stat.st_size),
              'code': marshal.dumps(compile(source, str(path), 'exec'))}
