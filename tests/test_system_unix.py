@@ -1,17 +1,17 @@
 # -*- encoding: utf-8 -*-
 
 import os
-import pty
 import pytest
 import sys
-import termios
-import tty
 from thebleep import const
 
 pytestmark = pytest.mark.skipif(sys.platform == 'win32',
                                 reason="skip when running on Windows")
 
 if sys.platform != 'win32':
+    import pty
+    import termios
+    import tty
     from thebleep.system import unix
 
 
