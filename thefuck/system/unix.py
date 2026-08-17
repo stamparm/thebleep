@@ -27,8 +27,8 @@ def read_key_sequence():
         old = termios.tcgetattr(fd)
     except termios.error:
         # Not a TTY (a pipe, a subprocess or CI), so there's nobody to press
-        # a key: behave as if enter was.
-        return '\n'
+        # a key: abort rather than run something nobody agreed to.
+        return '\x03'
 
     try:
         tty.setraw(fd)

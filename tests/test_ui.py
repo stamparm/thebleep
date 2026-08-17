@@ -114,6 +114,15 @@ class TestSelectCommand(object):
 
     def test_without_tty(self, capsys, commands, is_interactive):
         is_interactive.return_value = False
+        assert ui.select_command(iter(commands)) is None
+        assert capsys.readouterr() == (
+            '', const.USER_COMMAND_MARK + 'ls\n'
+            'Aborted: no terminal to confirm on, rerun with --yes\n')
+
+    def test_without_tty_and_confirmation(self, capsys, commands, settings,
+                                          is_interactive):
+        is_interactive.return_value = False
+        settings.require_confirmation = False
         assert ui.select_command(iter(commands)) == commands[0]
         assert capsys.readouterr() == ('', const.USER_COMMAND_MARK + 'ls\n')
 

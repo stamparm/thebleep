@@ -444,7 +444,7 @@ Several *The Fuck* parameters can be changed in the file `$XDG_CONFIG_HOME/thefu
 * `exclude_rules` &ndash; list of disabled rules, by default `[]`;
 * `require_confirmation` &ndash; requires confirmation before running new command, by default `True`;
   when there's no terminal attached (a pipe, a subprocess or CI) confirmation is impossible,
-  so the first suggestion is used;
+  so the suggestion is only printed and nothing is run &ndash; pass `--yes` to apply it;
 * `wait_command` &ndash; the max amount of time in seconds for getting previous command output;
 * `no_colors` &ndash; disable colored output;
 * `priority` &ndash; dict with rules priorities, rule with lower `priority` will be matched first;

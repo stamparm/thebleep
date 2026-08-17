@@ -69,7 +69,7 @@ def select_command(corrected_commands):
     """Returns:
 
      - the first command when confirmation disabled;
-     - None when ctrl+c pressed;
+     - None when ctrl+c pressed or when there's no terminal to confirm on;
      - selected command.
 
     :type corrected_commands: Iterable[thefuck.types.CorrectedCommand]
@@ -83,9 +83,16 @@ def select_command(corrected_commands):
                     else 'Nothing found')
         return
 
-    if not settings.require_confirmation or not _is_interactive():
+    if not settings.require_confirmation:
         logs.show_corrected_command(selector.value)
         return selector.value
+
+    if not _is_interactive():
+        # Nobody is there to confirm, so show what we'd run and leave the
+        # decision to whoever reads the output.
+        logs.show_corrected_command(selector.value)
+        logs.failed('Aborted: no terminal to confirm on, rerun with --yes')
+        return
 
     logs.confirm_text(selector.value)
 

@@ -49,4 +49,4 @@ def test_get_key(pressed, keys, key):
 def test_get_key_without_tty(monkeypatch, tmpdir):
     with tmpdir.join('stdin').ensure().open() as stdin:
         monkeypatch.setattr('sys.stdin', stdin)
-        assert unix.get_key() == '\n'
+        assert unix.get_key() == const.KEY_CTRL_C
