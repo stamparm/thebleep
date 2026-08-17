@@ -1,9 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-from contextlib import contextmanager
-from datetime import datetime
 import sys
-from traceback import format_exception
 from .conf import settings
 from . import const
 
@@ -67,6 +64,10 @@ def warn(title):
 
 
 def exception(title, exc_info):
+    # traceback is one of the more expensive imports in the standard library
+    # and this is the only thing that needs it.
+    from traceback import format_exception
+
     sys.stderr.write(
         u'{warn}[WARN] {title}:{reset}\n{trace}'
         u'{warn}----------------------------{reset}\n\n'.format(
@@ -122,13 +123,32 @@ def debug(msg):
             bold=color(colorama.Style.BRIGHT)))
 
 
-@contextmanager
-def debug_time(msg):
-    started = datetime.now()
-    try:
-        yield
-    finally:
-        debug(u'{} took: {}'.format(msg, datetime.now() - started))
+class debug_time(object):
+    """Times a block of work and reports it, when debugging is on.
+
+    A class rather than a `contextlib` generator because this wraps every rule
+    import and every rule match: with debugging off it should cost as close to
+    nothing as a context manager can, and it should not need a clock at all.
+
+    """
+
+    def __init__(self, msg):
+        self._msg = msg
+        self._started = None
+
+    def __enter__(self):
+        if settings.debug:
+            from datetime import datetime
+
+            self._started = datetime.now()
+        return self
+
+    def __exit__(self, *exc_info):
+        if self._started is not None:
+            from datetime import datetime
+
+            debug(u'{} took: {}'.format(
+                self._msg, datetime.now() - self._started))
 
 
 def how_to_configure_alias(configuration_details):

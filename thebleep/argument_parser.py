@@ -1,7 +1,68 @@
 import sys
-from argparse import ArgumentParser, SUPPRESS
 from .const import ARGUMENT_PLACEHOLDER
 from .utils import get_alias
+
+# The defaults every parse starts from, and the flags the fast path below can
+# account for on its own. Everything else means argparse gets the job.
+DEFAULTS = {'alias': None,
+            'alias_loader': None,
+            'clear_cache': False,
+            'command': [],
+            'debug': False,
+            'enable_experimental_instant_mode': False,
+            'force_command': None,
+            'help': False,
+            'repeat': False,
+            'shell_logger': None,
+            'version': False,
+            'yes': False}
+
+SIMPLE_FLAGS = {'-y': 'yes',
+                '--yes': 'yes',
+                '--yeah': 'yes',
+                '--hard': 'yes',
+                '-r': 'repeat',
+                '--repeat': 'repeat',
+                '-d': 'debug',
+                '--debug': 'debug'}
+
+
+class Arguments(object):
+    """What argparse would have returned, without importing argparse."""
+
+    def __init__(self, **values):
+        self.__dict__.update(DEFAULTS)
+        self.__dict__.update(values)
+
+
+def _fast_parse(arguments):
+    """Parses the shapes the alias actually produces, or returns None.
+
+    Correcting a command is the overwhelmingly common case and it only ever
+    involves a command and a couple of switches. argparse costs more to import
+    than the rest of a correction takes, so it is kept for the command lines
+    that need it: `--help`, `--version`, anything taking a value, anything
+    unrecognised, and anything contradictory.
+
+    """
+    values = {}
+    for index, argument in enumerate(arguments):
+        if argument == '--':
+            command = arguments[index + 1:]
+            if any(item == '--' for item in command):
+                return None
+            values['command'] = command
+            break
+        flag = SIMPLE_FLAGS.get(argument)
+        if flag is None:
+            return None
+        if flag == 'yes' and values.get('repeat'):
+            return None     # `-y` with `-r` is an error argparse must report
+        if flag == 'repeat' and values.get('yes'):
+            return None
+        values[flag] = True
+
+    return Arguments(**values)
 
 
 class Parser(object):
@@ -11,8 +72,18 @@ class Parser(object):
     """
 
     def __init__(self):
+        self._parser = None
+
+    def _build(self):
+        """Builds the real parser, for the command lines that need one."""
+        if self._parser is not None:
+            return self._parser
+
+        from argparse import ArgumentParser
+
         self._parser = ArgumentParser(prog='thebleep', add_help=False)
         self._add_arguments()
+        return self._parser
 
     def _add_arguments(self):
         """Adds arguments to parser."""
@@ -52,6 +123,8 @@ class Parser(object):
             '-d', '--debug',
             action='store_true',
             help='enable debug output')
+        from argparse import SUPPRESS
+
         self._parser.add_argument(
             '--force-command',
             action='store',
@@ -93,10 +166,13 @@ class Parser(object):
 
     def parse(self, argv):
         arguments = self._prepare_arguments(argv[1:])
-        return self._parser.parse_args(arguments)
+        fast = _fast_parse(arguments)
+        if fast is not None:
+            return fast
+        return self._build().parse_args(arguments)
 
     def print_usage(self):
-        self._parser.print_usage(sys.stderr)
+        self._build().print_usage(sys.stderr)
 
     def print_help(self):
-        self._parser.print_help(sys.stderr)
+        self._build().print_help(sys.stderr)
