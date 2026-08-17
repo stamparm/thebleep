@@ -4,6 +4,7 @@ import os
 import pickle
 import re
 import shelve
+import shutil
 import sys
 from decorator import decorator
 from difflib import get_close_matches as difflib_get_close_matches
@@ -43,26 +44,7 @@ memoize.disabled = False
 @memoize
 def which(program):
     """Returns `program` path or `None`."""
-    try:
-        from shutil import which
-
-        return which(program)
-    except ImportError:
-        def is_exe(fpath):
-            return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-        fpath, fname = os.path.split(program)
-        if fpath:
-            if is_exe(program):
-                return program
-        else:
-            for path in os.environ["PATH"].split(os.pathsep):
-                path = path.strip('"')
-                exe_file = os.path.join(path, program)
-                if is_exe(exe_file):
-                    return exe_file
-
-        return None
+    return shutil.which(program)
 
 
 def default_settings(params):
