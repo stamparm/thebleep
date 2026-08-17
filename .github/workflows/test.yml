@@ -45,6 +45,9 @@ jobs:
           docker build -t thebleep/python3 -f tests/Dockerfile --build-arg PYTHON_VERSION=3 .
           coverage run --source=thebleep,tests -m pytest -v --capture=sys tests --enable-functional
       - name: Post coverage results
+        # Reporting is a courtesy, not a verdict on the code: don't fail the
+        # build when coveralls.io has nothing set up for this repository.
+        continue-on-error: true
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == env.PYTHON_LATEST
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
