@@ -11,10 +11,12 @@ def main_module(mocker):
 def test_broken_pipe_is_not_an_error(main_module, mocker):
     mocker.patch.object(main_module, '_main', side_effect=BrokenPipeError)
     mocker.patch('os.open', return_value=42)
+    # The stdout pytest captures has no descriptor to redirect, a real one has.
+    mocker.patch('sys.stdout', new=mocker.Mock(fileno=lambda: 1))
     dup2 = mocker.patch('os.dup2')
 
     with pytest.raises(SystemExit) as exc_info:
         main_module.main()
 
     assert exc_info.value.code == 0
-    assert dup2.call_args[0][0] == 42
+    assert dup2.call_args[0] == (42, 1)
