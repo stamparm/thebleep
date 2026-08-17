@@ -1,5 +1,12 @@
 # -*- encoding: utf-8 -*-
 
+import os
+
+
+def get_alias():
+    """The name the alias was defined under, `bleep` unless told otherwise."""
+    return os.environ.get('TB_ALIAS', 'bleep')
+
 
 class _GenConst(object):
     def __init__(self, name):

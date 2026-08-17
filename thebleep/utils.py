@@ -6,7 +6,7 @@ import shutil
 import sys
 from difflib import get_close_matches as difflib_get_close_matches
 from functools import wraps
-from . import cachefile
+from . import cachefile, const
 from .logs import warn, exception
 from .conf import settings
 from .system import Path
@@ -368,8 +368,9 @@ def get_installation_version():
         return pkg_resources.require('thebleep')[0].version
 
 
-def get_alias():
-    return os.environ.get('TB_ALIAS', 'bleep')
+# Re-exported: rules import it from here, and it lives in `const` so that
+# printing an alias doesn't have to import this module.
+get_alias = const.get_alias
 
 
 @memoize

@@ -1,13 +1,14 @@
 from ..conf import settings
 from ..logs import warn
 from ..shells import shell
-from ..utils import which
 
 
 def _get_alias(known_args):
     alias = shell.app_alias(known_args.alias)
 
     if known_args.enable_experimental_instant_mode:
+        from ..utils import which
+
         if not which('script'):
             warn("Instant mode requires `script` app")
         else:

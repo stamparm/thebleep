@@ -1,6 +1,5 @@
 import sys
-from .const import ARGUMENT_PLACEHOLDER
-from .utils import get_alias
+from .const import ARGUMENT_PLACEHOLDER, get_alias
 
 # The defaults every parse starts from, and the flags the fast path below can
 # account for on its own. Everything else means argparse gets the job.

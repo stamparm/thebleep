@@ -14,7 +14,8 @@ def test_get_alias(monkeypatch, mocker,
     args = Mock(
         enable_experimental_instant_mode=enable_experimental_instant_mode,
         alias='bleep', )
-    mocker.patch('thebleep.entrypoints.alias.which', return_value=which)
+    # `alias` imports `which` only when instant mode asks for it.
+    mocker.patch('thebleep.utils.which', return_value=which)
     shell = Mock(app_alias=lambda _: 'app_alias',
                  instant_mode_alias=lambda _: 'instant_mode_alias')
     monkeypatch.setattr('thebleep.entrypoints.alias.shell', shell)
