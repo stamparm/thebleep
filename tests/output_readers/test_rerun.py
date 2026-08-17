@@ -10,7 +10,8 @@ from thebleep.output_readers import rerun
 
 class TestRerun(object):
     def setup_method(self, test_method):
-        self.patcher = patch('thebleep.output_readers.rerun.Process')
+        # `rerun` imports psutil when it needs it, so the patch goes there.
+        self.patcher = patch('psutil.Process')
         process_mock = self.patcher.start()
         self.proc_mock = process_mock.return_value = Mock()
 

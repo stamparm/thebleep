@@ -2,7 +2,6 @@ import json
 import os
 import socket
 from shutil import get_terminal_size
-import pyte
 from .. import const, logs
 
 
@@ -36,6 +35,9 @@ def _get_last_n(n):
 
 
 def _get_output_lines(output):
+    # See read_log: pyte is only needed once there is a screen to render.
+    import pyte
+
     lines = output.split('\n')
     screen = pyte.Screen(get_terminal_size().columns, len(lines))
     stream = pyte.Stream(screen)

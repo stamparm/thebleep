@@ -3,7 +3,6 @@ import shlex
 import mmap
 import re
 from shutil import get_terminal_size
-import pyte
 from ..exceptions import ScriptNotInLog
 from .. import const, logs
 
@@ -46,6 +45,10 @@ def _get_script_group_lines(grouped, script):
 
 
 def _get_output_lines(script, log_file):
+    # Imported here because rendering a terminal is only needed in instant
+    # mode, and pyte is one of the slowest imports we have.
+    import pyte
+
     data = log_file.read().decode()
     data = re.sub(r'\x00+$', '', data)
     lines = data.split('\n')

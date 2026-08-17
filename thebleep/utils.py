@@ -6,7 +6,6 @@ import re
 import shelve
 import shutil
 import sys
-from decorator import decorator
 from difflib import get_close_matches as difflib_get_close_matches
 from functools import wraps
 from .logs import warn, exception
@@ -16,6 +15,25 @@ from .system import Path
 DEVNULL = open(os.devnull, 'w')
 
 shelve_open_error = dbm.error
+
+
+def decorator(caller):
+    """Turns a `caller(fn, *args, **kwargs)` function into a decorator.
+
+    This used to come from the `decorator` package, which preserved the
+    wrapped function's signature. Nothing here or in a rule inspects those
+    signatures, and importing the package cost more than every rule's own
+    import put together, so the four lines it was doing live here now.
+
+    """
+    def decorate(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            return caller(fn, *args, **kwargs)
+
+        return wrapper
+
+    return decorate
 
 
 def memoize(fn):

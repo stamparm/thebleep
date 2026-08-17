@@ -1,6 +1,5 @@
 import re
-from decorator import decorator
-from ..utils import is_app
+from ..utils import decorator, is_app
 from ..shells import shell
 
 

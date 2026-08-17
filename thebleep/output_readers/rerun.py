@@ -1,7 +1,6 @@
 import os
 import shlex
 from subprocess import Popen, PIPE, STDOUT
-from psutil import AccessDenied, Process, TimeoutExpired
 from .. import logs
 from ..conf import settings
 
@@ -13,6 +12,8 @@ def _kill_process(proc):
     :type proc: Process
 
     """
+    from psutil import AccessDenied
+
     try:
         proc.kill()
     except AccessDenied:
@@ -35,6 +36,8 @@ def _wait_output(popen, is_slow):
     :rtype: bool
 
     """
+    from psutil import Process, TimeoutExpired
+
     proc = Process(popen.pid)
     try:
         proc.wait(settings.wait_slow_command if is_slow

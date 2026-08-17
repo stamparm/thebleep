@@ -1,4 +1,3 @@
-from pprint import pformat
 import os
 import sys
 from difflib import SequenceMatcher
@@ -30,7 +29,12 @@ def fix_command(known_args):
     """Fixes previous command. Used when `thebleep` called without arguments."""
     settings.init(known_args)
     with logs.debug_time('Total'):
-        logs.debug(u'Run with settings: {}'.format(pformat(settings)))
+        if settings.debug:
+            # pprint drags in dataclasses and inspect, which is a lot to pay
+            # for a line nobody sees unless they asked for it.
+            from pprint import pformat
+
+            logs.debug(u'Run with settings: {}'.format(pformat(settings)))
         raw_command = _get_raw_command(known_args)
 
         try:

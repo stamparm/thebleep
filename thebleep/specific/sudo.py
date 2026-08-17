@@ -1,4 +1,4 @@
-from decorator import decorator
+from ..utils import decorator
 
 
 @decorator
