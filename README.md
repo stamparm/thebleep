@@ -106,8 +106,9 @@ Reading package lists... Done
 6. [Settings](#settings)
 7. [Third party packages with rules](#third-party-packages-with-rules)
 8. [Experimental instant mode](#experimental-instant-mode)
-9. [Developing](#developing)
-10. [License](#license-mit)
+9. [Performance](#performance)
+10. [Developing](#developing)
+11. [License](#license-mit)
 
 ## Requirements
 
@@ -552,6 +553,60 @@ For example:
 ```bash
 eval $(thebleep --alias --enable-experimental-instant-mode)
 ```
+
+##### [Back to Contents](#contents)
+
+## Performance
+
+*The Bleep* is substantially faster than *The Fuck*, and the numbers are meant
+to be checked rather than believed. Same machine, same Python, 30 runs each,
+medians, measured with the harness in [`bench/`](bench/README.md):
+
+| What you do | The Fuck 3.32 | The Bleep | |
+| --- | ---: | ---: | ---: |
+| Open a shell (`--alias` in your rc) | 211 ms | 38 ms | **5.6x** |
+| Open a shell (pasted `--alias-loader`) | 211 ms | ~0 ms | **no Python at all** |
+| Correct a mistyped command | 243 ms | 55 ms | **4.4x** |
+| Correct when nothing matches | 336 ms | 78 ms | **4.3x** |
+| Correct after a command printed a megabyte | 3248 ms | 132 ms | **24.5x** |
+
+Reproduce it yourself:
+
+```bash
+./bench/setup_subjects.sh python3.11      # builds both, from their own packages
+BENCH_CPU=2,3 ./bench/bench.py \
+    --subject fuck=bench/.venvs/fuck-3.11/bin/thefuck \
+    --subject bleep=bench/.venvs/bleep-3.11/bin/thebleep
+```
+
+Python 3.11 is used for the comparison because *The Fuck* cannot start on 3.12
+or newer — it imports `distutils`, which is no longer in the standard library.
+On this machine the interpreter itself costs 11 ms before either app runs a
+line, so that is the floor both are measured against.
+
+Where the time went:
+
+- **Rules are compiled once, not on every command.** The compiled rules live in
+  a cache keyed by the interpreter and the rule files' timestamps.
+- **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
+  or whose match needs a particular string in the output, cannot match your
+  `brew install` — and that is readable from the rule's syntax tree without
+  running it. A typical command now reaches around 30 of the 170 rules instead
+  of all of them. Rules that don't say what they are about are always loaded,
+  so this makes corrections faster, never fewer.
+- **Startup imports almost nothing.** `pyte`, `psutil`, `argparse`, `pprint`
+  and the five shells you are not using are imported only on the paths that
+  need them.
+- **The failed command's output is read while it runs.** It used to be read
+  after the command exited, which deadlocks as soon as the output fills the
+  pipe buffer: anything printing more than about 64KB waited out the full
+  timeout and then produced *nothing to correct from*. That is the 24x above,
+  and it is a correctness fix as much as a speed one.
+- **Nothing is scanned twice.** The list of everything on your `$PATH` is
+  remembered until a directory on it changes.
+
+If a cache ever gets in your way, `thebleep --clear-cache` removes them all,
+and `THEBLEEP_NO_RULE_PACK=true` turns the rule cache off entirely.
 
 ##### [Back to Contents](#contents)
 
