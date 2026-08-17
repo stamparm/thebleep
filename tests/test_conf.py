@@ -1,7 +1,7 @@
 import io
 import pytest
 import os
-from mock import Mock
+from unittest.mock import Mock
 from thefuck import const
 
 
