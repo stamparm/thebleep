@@ -18,6 +18,8 @@ def get_key():
 
     if ch in const.KEY_MAPPING:
         return const.KEY_MAPPING[ch]
+    if ch == '\x1b':
+        return const.KEY_ESCAPE
     if ch == 'H':
         return const.KEY_UP
     if ch == 'P':

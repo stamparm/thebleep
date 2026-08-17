@@ -1,3 +1,5 @@
+import os
+import select
 import sys
 import tty
 import termios
@@ -8,38 +10,57 @@ from .. import const
 
 init_output = colorama.init
 
+# How long to wait for the rest of an escape sequence before deciding that
+# the escape key itself was pressed.
+ESCAPE_TIMEOUT = 0.05
 
-def getch():
+
+def _is_incomplete(sequence):
+    """Tells whether the terminal still owes us the rest of a key."""
+    return sequence in (b'\x1b', b'\x1b[')
+
+
+def read_key_sequence():
+    """Reads a keypress as the characters the terminal sent for it."""
     fd = sys.stdin.fileno()
     try:
         old = termios.tcgetattr(fd)
     except termios.error:
-        # Not a TTY (e.g. piped input, subprocess capture, CI).
-        # Return newline to auto-select the first suggestion.
+        # Not a TTY (a pipe, a subprocess or CI), so there's nobody to press
+        # a key: behave as if enter was.
         return '\n'
+
     try:
         tty.setraw(fd)
-        return sys.stdin.read(1)
+        # Read straight from the descriptor, `sys.stdin` would buffer the
+        # rest of an escape sequence out of `select`'s reach.
+        sequence = os.read(fd, 6)
+        while (_is_incomplete(sequence)
+               and select.select([fd], [], [], ESCAPE_TIMEOUT)[0]):
+            sequence += os.read(fd, 6 - len(sequence))
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
 
+    return sequence.decode('utf-8', 'replace')
+
+
+def getch():
+    return read_key_sequence()[:1]
+
 
 def get_key():
-    ch = getch()
+    sequence = read_key_sequence()
 
-    if ch in const.KEY_MAPPING:
-        return const.KEY_MAPPING[ch]
-    elif ch == '\x1b':
-        next_ch = getch()
-        if next_ch == '[':
-            last_ch = getch()
+    if sequence in const.KEY_MAPPING:
+        return const.KEY_MAPPING[sequence]
+    elif sequence == '\x1b':
+        return const.KEY_ESCAPE
+    elif sequence == '\x1b[A':
+        return const.KEY_UP
+    elif sequence == '\x1b[B':
+        return const.KEY_DOWN
 
-            if last_ch == 'A':
-                return const.KEY_UP
-            elif last_ch == 'B':
-                return const.KEY_DOWN
-
-    return ch
+    return sequence
 
 
 def open_command(arg):
