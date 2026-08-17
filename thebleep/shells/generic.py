@@ -15,6 +15,10 @@ ShellConfiguration = namedtuple('ShellConfiguration', (
 class Generic(object):
     friendly_name = 'Generic Shell'
 
+    def _shell_name(self):
+        """The name the alias reports back in `TB_SHELL`."""
+        return self.friendly_name.split()[0].lower()
+
     def get_aliases(self):
         return {}
 
@@ -37,6 +41,19 @@ class Generic(object):
     def app_alias(self, alias_name):
         return """alias {0}='eval "$(TB_ALIAS={0} PYTHONIOENCODING=utf-8 """ \
                """thebleep "$(fc -ln -1)")"'""".format(alias_name)
+
+    def app_alias_loader(self, alias_name):
+        """Shell code defining `alias_name` as a stub that loads the real one.
+
+        The stub redefines itself with the real alias and then hands the
+        arguments over, so nothing but a function definition happens until the
+        first correction.
+
+        """
+        return ('{name}() {{\n'
+                '    eval "$(TB_SHELL={shell} thebleep --alias {name})";\n'
+                '    {name} "$@";\n'
+                '}}').format(name=alias_name, shell=self._shell_name())
 
     def instant_mode_alias(self, alias_name):
         warn("Instant mode not supported by your shell")

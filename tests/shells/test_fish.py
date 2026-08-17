@@ -87,6 +87,12 @@ class TestFish(object):
         assert 'PYTHONIOENCODING=utf-8 thebleep' in shell.app_alias('bleep')
         assert ARGUMENT_PLACEHOLDER in shell.app_alias('bleep')
 
+    def test_app_alias_loader(self, shell):
+        loader = shell.app_alias_loader('bleep')
+        assert 'function bleep' in loader
+        assert 'functions -e bleep' in loader
+        assert 'thebleep --alias bleep | source' in loader
+
     def test_app_alias_alter_history(self, settings, shell):
         settings.alter_history = True
         assert (

@@ -19,6 +19,13 @@ class Powershell(Generic):
                '    [Console]::ResetColor() \n' \
                '}\n'
 
+    def app_alias_loader(self, alias_name):
+        return ('function {name} {{\n'
+                '    $env:TB_SHELL = "powershell";\n'
+                '    iex "$(thebleep --alias {name})";\n'
+                '    {name} @args;\n'
+                '}}\n').format(name=alias_name)
+
     def and_(self, *commands):
         return u' -and '.join('({0})'.format(c) for c in commands)
 

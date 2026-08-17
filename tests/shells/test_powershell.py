@@ -23,6 +23,11 @@ class TestPowershell(object):
         assert 'function BLEEP' in shell.app_alias('BLEEP')
         assert 'thebleep' in shell.app_alias('bleep')
 
+    def test_app_alias_loader(self, shell):
+        loader = shell.app_alias_loader('bleep')
+        assert 'function bleep {' in loader
+        assert 'thebleep --alias bleep' in loader
+
     def test_how_to_configure(self, shell):
         assert not shell.how_to_configure().can_configure_automatically
 

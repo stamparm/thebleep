@@ -145,6 +145,29 @@ eval $(thebleep --alias BLEEP)
 eval $(thebleep --alias fuck)
 ```
 
+### Startup that costs nothing
+
+The line above starts a Python interpreter every time you open a shell. To
+avoid that, append the *loader* to your startup file once instead:
+
+```bash
+thebleep --alias-loader >> ~/.bashrc        # or ~/.zshrc, etc.
+```
+
+That writes a few lines of shell that define the alias the first time you use
+it, and nothing before. It is static — it does not need regenerating when The
+Bleep is upgraded, because all it does is call `thebleep --alias` on first use:
+
+```bash
+bleep() {
+    eval "$(TB_SHELL=bash thebleep --alias bleep)";
+    bleep "$@";
+}
+```
+
+Use `eval $(thebleep --alias)` instead if you would rather pay at startup, and
+for the experimental instant mode, which has to set your prompt up front.
+
 [Shell-specific alias instructions (Bash, Zsh, Fish, Powershell, tcsh) are in *The Fuck*'s wiki](https://github.com/nvbn/thefuck/wiki/Shell-aliases)
 and still apply, with `thefuck` replaced by `thebleep`.
 

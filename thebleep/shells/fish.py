@@ -64,6 +64,13 @@ class Fish(Generic):
                 '  end\n'
                 'end').format(alias_name, alter_history, ARGUMENT_PLACEHOLDER)
 
+    def app_alias_loader(self, alias_name):
+        return ('function {name} -d "Correct your previous console command"\n'
+                '  functions -e {name}\n'
+                '  env TB_SHELL=fish thebleep --alias {name} | source\n'
+                '  {name} $argv\n'
+                'end').format(name=alias_name)
+
     def get_aliases(self):
         overridden = self._get_overridden_aliases()
         functions = _get_functions(overridden)

@@ -26,6 +26,12 @@ class Parser(object):
             const=get_alias(),
             help='[custom-alias-name] prints alias for current shell')
         self._parser.add_argument(
+            '--alias-loader',
+            nargs='?',
+            const=get_alias(),
+            help='[custom-alias-name] prints shell code that defines the alias'
+                 ' on first use, so shell startup costs nothing')
+        self._parser.add_argument(
             '-l', '--shell-logger',
             action='store',
             help='log shell output to the file')

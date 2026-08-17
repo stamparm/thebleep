@@ -31,6 +31,11 @@ class TestGeneric(object):
         assert 'TB_ALIAS=bleep PYTHONIOENCODING' in shell.app_alias('bleep')
         assert 'PYTHONIOENCODING=utf-8 thebleep' in shell.app_alias('bleep')
 
+    def test_app_alias_loader(self, shell):
+        loader = shell.app_alias_loader('BLEEP')
+        assert 'BLEEP() {' in loader
+        assert 'thebleep --alias BLEEP' in loader
+
     def test_get_history(self, history_lines, shell):
         history_lines(['ls', 'rm'])
         # We don't know what to do in generic shell with history lines,

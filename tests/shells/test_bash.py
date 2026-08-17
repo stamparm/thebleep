@@ -60,6 +60,12 @@ class TestBash(object):
         assert 'thebleep' in shell.app_alias('bleep')
         assert 'PYTHONIOENCODING' in shell.app_alias('bleep')
 
+    def test_app_alias_loader(self, shell):
+        loader = shell.app_alias_loader('bleep')
+        assert 'bleep() {' in loader
+        assert 'thebleep --alias bleep' in loader
+        assert 'bleep "$@"' in loader
+
     def test_app_alias_variables_correctly_set(self, shell):
         alias = shell.app_alias('bleep')
         assert "bleep () {" in alias

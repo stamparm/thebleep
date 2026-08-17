@@ -13,6 +13,11 @@ class Tcsh(Generic):
                 "set bleeped_cmd=`history -h 2 | head -n 1` && "
                 "eval `thebleep ${{bleeped_cmd}}`'").format(alias_name)
 
+    def app_alias_loader(self, alias_name):
+        return ("alias {name} 'setenv TB_SHELL tcsh && "
+                "eval `thebleep --alias {name}` && {name} \\!*'").format(
+                    name=alias_name)
+
     def _parse_alias(self, alias):
         name, value = alias.split("\t", 1)
         return name, value

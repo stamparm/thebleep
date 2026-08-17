@@ -3,12 +3,19 @@ import select
 import sys
 import tty
 import termios
-import colorama
 from pathlib import Path  # noqa: F401
 from shutil import which
 from .. import const
 
-init_output = colorama.init
+
+def init_output():
+    """Nothing to set up: ANSI is native here.
+
+    Windows needs a console handler installed before anything is written, which
+    is why this exists at all; see `system.win32`.
+
+    """
+
 
 # How long to wait for the rest of an escape sequence before deciding that
 # the escape key itself was pressed.

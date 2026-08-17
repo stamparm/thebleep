@@ -4,7 +4,7 @@ from thebleep.const import ARGUMENT_PLACEHOLDER
 
 
 def _args(**override):
-    args = {'alias': None, 'command': [], 'yes': False,
+    args = {'alias': None, 'alias_loader': None, 'command': [], 'yes': False,
             'help': False, 'version': False, 'debug': False,
             'force_command': None, 'repeat': False,
             'enable_experimental_instant_mode': False,
@@ -29,6 +29,8 @@ def _args(**override):
      _args(command=['git', 'branch', '-a'], yes=True, debug=True)),
     (['thebleep', 'git', 'branch', '-a', ARGUMENT_PLACEHOLDER, '-r', '-d'],
      _args(command=['git', 'branch', '-a'], repeat=True, debug=True)),
+    (['thebleep', '--alias-loader'], _args(alias_loader='bleep')),
+    (['thebleep', '--alias-loader', 'fix'], _args(alias_loader='fix')),
     (['thebleep', '-l', '/tmp/log'], _args(shell_logger='/tmp/log')),
     (['thebleep', '--shell-logger', '/tmp/log'],
      _args(shell_logger='/tmp/log'))])

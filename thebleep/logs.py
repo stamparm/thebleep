@@ -4,14 +4,55 @@ from contextlib import contextmanager
 from datetime import datetime
 import sys
 from traceback import format_exception
-import colorama
 from .conf import settings
 from . import const
 
 
+class colorama(object):
+    """The escape codes we use, spelled the way colorama spells them.
+
+    Importing colorama was the single most expensive thing this app did at
+    startup, and on anything but Windows it was being asked for constants that
+    never change. Windows still initialises the real colorama, in
+    `system.win32`, because there the codes are not native.
+
+    """
+
+    class Fore(object):
+        RED = '\033[31m'
+        GREEN = '\033[32m'
+        BLUE = '\033[34m'
+        WHITE = '\033[37m'
+
+    class Back(object):
+        RED = '\033[41m'
+
+    class Style(object):
+        BRIGHT = '\033[1m'
+        RESET_ALL = '\033[0m'
+
+
+def _ansi_supported():
+    """Whether the stream we colour is something that renders colour.
+
+    Colorama used to answer this by wrapping the stream and stripping codes
+    from it; asking the stream directly is the same answer for less work.
+
+    """
+    if _ansi_supported.cached is None:
+        try:
+            _ansi_supported.cached = bool(sys.stderr.isatty())
+        except (AttributeError, ValueError):
+            _ansi_supported.cached = False
+    return _ansi_supported.cached
+
+
+_ansi_supported.cached = None
+
+
 def color(color_):
     """Utility for ability to disabling colored output."""
-    if settings.no_colors:
+    if settings.no_colors or not _ansi_supported():
         return ''
     else:
         return color_

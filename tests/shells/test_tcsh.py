@@ -49,6 +49,11 @@ class TestTcsh(object):
         assert 'alias BLEEP' in shell.app_alias('BLEEP')
         assert 'thebleep' in shell.app_alias('bleep')
 
+    def test_app_alias_loader(self, shell):
+        loader = shell.app_alias_loader('bleep')
+        assert loader.startswith('alias bleep ')
+        assert 'thebleep --alias bleep' in loader
+
     def test_get_history(self, history_lines, shell):
         history_lines(['ls', 'rm'])
         assert list(shell.get_history()) == ['ls', 'rm']
