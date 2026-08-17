@@ -47,6 +47,13 @@ class TestBash(object):
                                        'la': 'ls -A',
                                        'll': 'ls -alF'}
 
+    @pytest.mark.parametrize('alias, parsed', [
+        ('alias ll=\'ls -alF\'', ('ll', 'ls -alF')),
+        ('alias empty=', ('empty', '')),
+        ('alias quote=\'', ('quote', "'"))])
+    def test_parse_alias(self, shell, alias, parsed):
+        assert shell._parse_alias(alias) == parsed
+
     def test_app_alias(self, shell):
         assert 'fuck () {' in shell.app_alias('fuck')
         assert 'FUCK () {' in shell.app_alias('FUCK')
