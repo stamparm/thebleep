@@ -1,0 +1,156 @@
+{
+  "runs": 30,
+  "subjects": {
+    "bleep": {
+      "bin": "/home/stamparm/Private/Work/thebleep/bench/.venvs/bleep-3.11/bin/thebleep",
+      "scenarios": {
+        "alias": {
+          "max": 39.8,
+          "mean": 37.75,
+          "median": 37.66,
+          "min": 36.23,
+          "p95": 39.35,
+          "runs": 30,
+          "stddev": 0.92,
+          "tool": "hyperfine"
+        },
+        "correct-big-output": {
+          "max": 138.53,
+          "mean": 133.22,
+          "median": 132.61,
+          "min": 130.69,
+          "p95": 138.26,
+          "runs": 30,
+          "stddev": 2.28,
+          "tool": "hyperfine"
+        },
+        "correct-fast": {
+          "max": 59.45,
+          "mean": 55.91,
+          "median": 55.64,
+          "min": 53.81,
+          "p95": 58.02,
+          "runs": 30,
+          "stddev": 1.29,
+          "tool": "hyperfine"
+        },
+        "correct-in-repo": {
+          "max": 57.53,
+          "mean": 55.47,
+          "median": 55.33,
+          "min": 53.98,
+          "p95": 57.48,
+          "runs": 30,
+          "stddev": 1.06,
+          "tool": "hyperfine"
+        },
+        "correct-nomatch": {
+          "max": 75.01,
+          "mean": 70.22,
+          "median": 70.03,
+          "min": 67.79,
+          "p95": 73.27,
+          "runs": 30,
+          "stddev": 1.45,
+          "tool": "hyperfine"
+        },
+        "correct-slow": {
+          "max": 570.68,
+          "mean": 564.02,
+          "median": 563.5,
+          "min": 561.28,
+          "p95": 570.48,
+          "runs": 30,
+          "stddev": 2.31,
+          "tool": "hyperfine"
+        },
+        "version": {
+          "max": 61.55,
+          "mean": 58.36,
+          "median": 58.27,
+          "min": 56.07,
+          "p95": 60.34,
+          "runs": 30,
+          "stddev": 1.25,
+          "tool": "hyperfine"
+        }
+      }
+    },
+    "fuck": {
+      "bin": "/home/stamparm/Private/Work/thebleep/bench/.venvs/fuck-3.11/bin/thefuck",
+      "scenarios": {
+        "alias": {
+          "max": 243.34,
+          "mean": 220.38,
+          "median": 220.89,
+          "min": 205.62,
+          "p95": 242.71,
+          "runs": 30,
+          "stddev": 10.64,
+          "tool": "hyperfine"
+        },
+        "correct-big-output": {
+          "max": 3305.04,
+          "mean": 3251.4,
+          "median": 3248.2,
+          "min": 3243.38,
+          "p95": 3297.4,
+          "runs": 30,
+          "stddev": 13.56,
+          "tool": "hyperfine"
+        },
+        "correct-fast": {
+          "max": 321.91,
+          "mean": 256.49,
+          "median": 248.14,
+          "min": 238.64,
+          "p95": 284.77,
+          "runs": 30,
+          "stddev": 19.31,
+          "tool": "hyperfine"
+        },
+        "correct-in-repo": {
+          "max": 251.21,
+          "mean": 240.03,
+          "median": 239.29,
+          "min": 236.33,
+          "p95": 247.65,
+          "runs": 30,
+          "stddev": 3.24,
+          "tool": "hyperfine"
+        },
+        "correct-nomatch": {
+          "max": 385.79,
+          "mean": 350.05,
+          "median": 344.25,
+          "min": 338.53,
+          "p95": 381.03,
+          "runs": 30,
+          "stddev": 13.95,
+          "tool": "hyperfine"
+        },
+        "correct-slow": {
+          "max": 898.25,
+          "mean": 839.57,
+          "median": 832.16,
+          "min": 822.48,
+          "p95": 884.7,
+          "runs": 30,
+          "stddev": 18.43,
+          "tool": "hyperfine"
+        },
+        "version": {
+          "max": 267.89,
+          "mean": 219.13,
+          "median": 213.06,
+          "min": 205.58,
+          "p95": 259.14,
+          "runs": 30,
+          "stddev": 15.54,
+          "tool": "hyperfine"
+        }
+      }
+    }
+  },
+  "tool": "hyperfine"
+}

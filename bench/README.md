@@ -89,6 +89,17 @@ command re-run           14.0 ms         1
 That table is the whole reason the optimisation work is ordered the way it is:
 matching 169 rules is nearly free, loading them is not.
 
+## The published numbers
+
+`bench/results/final.json` is the run behind the table in the project README:
+Python 3.11 on Linux, 30 runs per scenario, CPUs pinned. Re-running the harness
+with `--json bench/results/final.json` replaces it, and `--baseline` compares
+against it:
+
+```bash
+./bench/bench.py --subject bleep=... --baseline bench/results/final.json
+```
+
 ## Reproducible environment
 
 For numbers that can be compared across machines and across months, run inside
