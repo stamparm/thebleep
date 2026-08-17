@@ -1,10 +1,7 @@
 import json
 import os
 import socket
-try:
-    from shutil import get_terminal_size
-except ImportError:
-    from backports.shutil_get_terminal_size import get_terminal_size
+from shutil import get_terminal_size
 import pyte
 from .. import const, logs
 

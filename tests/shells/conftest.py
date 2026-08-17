@@ -3,7 +3,7 @@ import pytest
 
 @pytest.fixture
 def builtins_open(mocker):
-    return mocker.patch('six.moves.builtins.open')
+    return mocker.patch('builtins.open')
 
 
 @pytest.fixture

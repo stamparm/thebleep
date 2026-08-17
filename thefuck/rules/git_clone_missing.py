@@ -10,7 +10,7 @@ git clone https://github.com/nvbn/thefuck.git
 
 Author: Miguel Guthridge
 '''
-from six.moves.urllib import parse
+from urllib import parse
 from thefuck.utils import which
 
 

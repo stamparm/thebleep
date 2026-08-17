@@ -1,8 +1,8 @@
-import os
 import sys
 import tty
 import termios
 import colorama
+from pathlib import Path  # noqa: F401
 from shutil import which
 from .. import const
 
@@ -41,17 +41,3 @@ def open_command(arg):
     """Get a shell command calling the system's generic opener."""
     opener = 'xdg-open' if which('xdg-open') else 'open'
     return opener + ' ' + arg
-
-
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
-
-
-def _expanduser(self):
-    return self.__class__(os.path.expanduser(str(self)))
-
-
-if not hasattr(Path, 'expanduser'):
-    Path.expanduser = _expanduser

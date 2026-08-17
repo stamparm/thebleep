@@ -5,7 +5,6 @@ from tests.functional.plots import with_confirmation, without_confirmation, \
 
 
 python_3 = (u'thefuck/python3', u'', u'sh')
-python_2 = (u'thefuck/python2', u'', u'sh')
 
 
 init_zshrc = u'''echo '
@@ -21,8 +20,7 @@ echo "instant mode ready: $THEFUCK_INSTANT_MODE"
 
 
 @pytest.fixture(params=[(python_3, False),
-                        (python_3, True),
-                        (python_2, False)])
+                        (python_3, True)])
 def proc(request, spawnu, TIMEOUT):
     container, instant_mode = request.param
     proc = spawnu(*container)

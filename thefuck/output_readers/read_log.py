@@ -2,11 +2,7 @@ import os
 import shlex
 import mmap
 import re
-try:
-    from shutil import get_terminal_size
-except ImportError:
-    from backports.shutil_get_terminal_size import get_terminal_size
-import six
+from shutil import get_terminal_size
 import pyte
 from ..exceptions import ScriptNotInLog
 from .. import const, logs
@@ -40,9 +36,6 @@ def _group_by_calls(log):
 
 
 def _get_script_group_lines(grouped, script):
-    if six.PY2:
-        script = script.encode('utf-8')
-
     parts = shlex.split(script)
 
     for script_line, lines in reversed(grouped):
@@ -77,10 +70,6 @@ def get_output(script):
     :rtype: str | None
 
     """
-    if six.PY2:
-        logs.warn('Experimental instant mode is Python 3+ only')
-        return None
-
     if 'THEFUCK_OUTPUT_LOG' not in os.environ:
         logs.warn("Output log isn't specified")
         return None

@@ -1,5 +1,6 @@
 import os
 import msvcrt
+from pathlib import Path
 import win_unicode_console
 from .. import const
 
@@ -27,12 +28,6 @@ def get_key():
 
 def open_command(arg):
     return 'cmd /c start ' + arg
-
-
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
 
 
 def _expanduser(self):

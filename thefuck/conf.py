@@ -2,7 +2,6 @@ import importlib.util
 import os
 import sys
 from warnings import warn
-from six import text_type
 from . import const
 from .system import Path
 
@@ -74,7 +73,7 @@ class Settings(dict):
     def _settings_from_file(self):
         """Loads settings from file."""
         settings = load_source(
-            'settings', text_type(self.user_dir.joinpath('settings.py')))
+            'settings', str(self.user_dir.joinpath('settings.py')))
         return {key: getattr(settings, key)
                 for key in const.DEFAULT_SETTINGS.keys()
                 if hasattr(settings, key)}

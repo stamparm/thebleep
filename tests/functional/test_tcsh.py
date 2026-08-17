@@ -2,8 +2,7 @@ import pytest
 from tests.functional.plots import with_confirmation, without_confirmation, \
     refuse_with_confirmation, select_command_with_arrows
 
-containers = ((u'thefuck/python3', u'', u'tcsh'),
-              (u'thefuck/python2', u'', u'tcsh'))
+containers = ((u'thefuck/python3', u'', u'tcsh'),)
 
 
 @pytest.fixture(params=containers)
