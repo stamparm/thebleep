@@ -2,6 +2,7 @@
 
 import os
 import pytest
+from pathlib import Path
 from thebleep.const import ARGUMENT_PLACEHOLDER
 from thebleep.shells import Fish
 
@@ -104,8 +105,9 @@ class TestFish(object):
     def test_get_history_file_name(self, shell, os_environ, env,
                                    history_file_name):
         os_environ.update(env)
-        assert (shell._get_history_file_name()
-                == os.path.expanduser(history_file_name))
+        # Compare as paths, the shell joins them with the native separator.
+        assert (Path(shell._get_history_file_name())
+                == Path(os.path.expanduser(history_file_name)))
 
     def test_get_history_file_name_legacy(self, shell, isfile):
         legacy = os.path.expanduser('~/.config/fish/fish_history')
