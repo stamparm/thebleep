@@ -43,9 +43,9 @@ INK = {
     'cyan': '#6cb6ff',
 }
 
-TYPE_MS = 62      # per character
+TYPE_MS = 52      # per character
 KEY_MS = 190      # after a line is submitted
-READ_MS = 900     # to let something printed be read
+READ_MS = 620     # to let something printed be read
 END_MS = 2100     # holding the last frame before the loop restarts
 
 
@@ -102,6 +102,18 @@ class Scene(object):
 
     def blank(self):
         self.row += 1
+
+    def case(self, wrong, error, correction, separate=True):
+        """One mistake: what was typed, what came back, what to run instead."""
+        self.type('$ ', wrong, then=260)
+        for run in error:
+            self.line(run)
+        self.wait(READ_MS)
+        self.type('$ ', 'bleep', then=380)
+        self.line(*(list(correction) + [('dim', KEYS)]))
+        if separate:
+            self.wait(1000)
+            self.blank()
 
     # -- geometry ---------------------------------------------------------
 
@@ -234,28 +246,50 @@ def render(scene, total, at=None):
         ''])
 
 
+KEYS = '[enter/↑/↓/ctrl+c/esc]'
+
+
 def demo():
-    """The scene: the mistake everybody has made, and what happens next."""
+    """Four mistakes, four kinds of correction.
+
+    Every suggestion here is the one the rules really produce: each was run
+    through `match` and `get_new_command` before being drawn, and the errors
+    above them are what the tools themselves print.
+
+    """
     scene = Scene()
-    scene.wait(600)
-    scene.type('$ ', 'apt-get install vim', then=320)
-    scene.line(('error', 'E: Could not open lock file /var/lib/dpkg/lock-'
-                         'frontend - open (13:'))
-    scene.line(('error', '   Permission denied)'))
-    scene.wait(READ_MS)
-    scene.blank()
-    scene.type('$ ', 'bleep', then=420)
-    scene.line(('accent', 'sudo '), ('text', 'apt-get install vim '),
-               ('dim', '[enter/↑/↓/ctrl+c/esc]'))
-    scene.wait(1200)
-    scene.line(('cyan', 'Reading package lists... Done'))
-    scene.wait(160)
-    scene.line(('cyan', 'Building dependency tree... Done'))
-    scene.wait(160)
-    scene.line(('text', 'The following NEW packages will be installed:'))
-    scene.line(('prompt', '  vim'))
-    scene.wait(240)
+    scene.wait(500)
+
+    # A mistyped program name, by the `no_command` rule.
+    scene.case('gti status',
+               [('error', 'gti: command not found')],
+               [('accent', 'git'), ('text', ' status ')])
+
+    # A mistyped subcommand, by `pip_unknown_command`.
+    scene.case('pip instatl requests',
+               [('error', 'ERROR: unknown command "instatl" - maybe you meant '
+                          '"install"')],
+               [('text', 'pip '), ('accent', 'install'),
+                ('text', ' requests ')])
+
+    # Something that needed to be root, by the `sudo` rule.
+    scene.case('apt-get install vim',
+               [('error', 'E: Could not open lock file /var/lib/dpkg/lock-'
+                          'frontend (13: Permission denied)')],
+               [('accent', 'sudo '), ('text', 'apt-get install vim ')])
+
+    # And the one that writes out the flags you would have had to look up.
+    scene.case('git push',
+               [('error', 'fatal: The current branch bleep has no upstream '
+                          'branch')],
+               [('text', 'git push '),
+                ('accent', '--set-upstream origin bleep'), ('text', ' ')],
+               separate=False)
+    scene.wait(700)
+    scene.line(('cyan', "Branch 'bleep' set up to track 'origin/bleep'."))
+    scene.wait(200)
     scene.waiting('$ ')
+
     return scene, scene.now + END_MS
 
 

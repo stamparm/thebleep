@@ -9,9 +9,14 @@ it after a new run and the chart and the table have to agree.
 
 Bars are scaled against *The Fuck*'s time for the same scenario, so a row
 compares the two rather than comparing a shell startup against a megabyte of
-build output. Absolute milliseconds are printed on every bar.
+build output. Absolute milliseconds are printed beside every bar.
 
-Usage: python assets/make_benchmark.py [output.svg]
+Two files come out: the light one is what most people see, and the dark one is
+picked up by the `<picture>` element in the README for a reader on a dark
+theme. Both carry their own background, so whichever one a client falls back to
+is still legible on the other theme's page.
+
+Usage: python assets/make_benchmark.py
 
 """
 
@@ -21,31 +26,44 @@ import json
 import os
 import sys
 
-FONT = ("ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, "
-        "'DejaVu Sans Mono', 'Liberation Mono', monospace")
-SANS = ("-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, "
-        "sans-serif")
+# GitHub's own type stack, so the chart looks like the page it sits on.
+SANS = ("-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', "
+        "Helvetica, Arial, sans-serif")
+MONO = ("ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, "
+        "'Liberation Mono', monospace")
 
 WIDTH = 760.0
-PADDING = 26.0
-LABEL = 208.0            # width of the scenario column
-SPEEDUP = 64.0           # width of the speedup column
-GUTTER = 74.0            # room after the longest bar for its own figure
-BAR = 11.0               # bar thickness
-BAR_GAP = 5.0
-ROW = 58.0
-HEAD = 52.0
-FOOT = 34.0
+PADDING = 28.0
+LABEL = 206.0            # width of the scenario column
+SPEEDUP = 62.0           # width of the speedup column
+GUTTER = 72.0            # room after the longest bar for its own figure
+BAR = 9.0                # bar thickness
+BAR_GAP = 6.0
+ROW = 54.0
+HEAD = 50.0
+FOOT = 32.0
 
-INK = {
-    'card': '#15181f',
-    'edge': '#2b313c',
-    'label': '#c3cad4',
-    'dim': '#7d8794',
-    'fuck': '#565f70',
-    'bleep': '#5fd38d',
-    'accent': '#ffb454',
-    'on_bar': '#0f1218',
+# Light first, and GitHub's palette for both: the greens and greys are the ones
+# the page around the chart is already using.
+THEMES = {
+    'light': {
+        'card': '#ffffff',
+        'edge': '#d1d9e0',
+        'label': '#1f2328',
+        'dim': '#59636e',
+        'fuck': '#d1d9e0',
+        'bleep': '#1f883d',
+        'accent': '#953800',
+    },
+    'dark': {
+        'card': '#0d1117',
+        'edge': '#30363d',
+        'label': '#e6edf3',
+        'dim': '#9198a1',
+        'fuck': '#30363d',
+        'bleep': '#3fb950',
+        'accent': '#d29922',
+    },
 }
 
 # The scenarios worth showing, in the order they are worth reading, with the
@@ -83,7 +101,8 @@ def rows(results):
             yield label, before['median'], after['median']
 
 
-def render(results):
+def render(results, theme):
+    ink = THEMES[theme]
     measured = list(rows(results))
     height = HEAD + len(measured) * ROW + FOOT
     plot = WIDTH - PADDING * 2 - LABEL - SPEEDUP - GUTTER
@@ -94,64 +113,67 @@ def render(results):
         ' width="%g" height="%g" role="img" aria-label="The Bleep against The'
         ' Fuck, median of %d runs"><title>The Bleep against The Fuck</title>'
         % (WIDTH, height, WIDTH, height, results['runs']),
-        '<style>.m{font-family:%s;font-size:12.5px}.s{font-family:%s;'
-        'font-size:13px}.k{font-family:%s;font-size:11.5px}</style>'
-        % (FONT, SANS, SANS),
-        '<rect width="%g" height="%g" rx="10" fill="%s"/>'
-        % (WIDTH, height, INK['card']),
-        '<rect x="0.5" y="0.5" width="%g" height="%g" rx="9.5" fill="none"'
-        ' stroke="%s"/>' % (WIDTH - 1, height - 1, INK['edge']),
+        '<style>.n{font-family:%s;font-size:12px;font-variant-numeric:'
+        'tabular-nums}.x{font-weight:600}.s{font-family:%s;font-size:13.5px}'
+        '.k{font-family:%s;font-size:11.5px}</style>' % (MONO, SANS, SANS),
+        '<rect width="%g" height="%g" rx="6" fill="%s"/>'
+        % (WIDTH, height, ink['card']),
+        '<rect x="0.5" y="0.5" width="%g" height="%g" rx="5.5" fill="none"'
+        ' stroke="%s"/>' % (WIDTH - 1, height - 1, ink['edge']),
     ]
 
     # Legend.
-    out.append('<rect x="%g" y="21" width="10" height="10" rx="3" fill="%s"/>'
-               % (PADDING, INK['fuck']))
-    out.append('<text class="k" x="%g" y="30" fill="%s">The Fuck 3.32</text>'
-               % (PADDING + 16, INK['dim']))
-    out.append('<rect x="%g" y="21" width="10" height="10" rx="3" fill="%s"/>'
-               % (PADDING + 116, INK['bleep']))
-    out.append('<text class="k" x="%g" y="30" fill="%s">The Bleep</text>'
-               % (PADDING + 132, INK['label']))
-    out.append('<text class="k" x="%g" y="30" text-anchor="end" fill="%s">'
+    out.append('<rect x="%g" y="20" width="9" height="9" rx="2" fill="%s"'
+               ' stroke="%s"/>'
+               % (PADDING, ink['fuck'], ink['edge']))
+    out.append('<text class="k" x="%g" y="28.5" fill="%s">The Fuck 3.32</text>'
+               % (PADDING + 15, ink['dim']))
+    out.append('<rect x="%g" y="20" width="9" height="9" rx="2" fill="%s"/>'
+               % (PADDING + 112, ink['bleep']))
+    out.append('<text class="k" x="%g" y="28.5" fill="%s">The Bleep</text>'
+               % (PADDING + 127, ink['label']))
+    out.append('<text class="k" x="%g" y="28.5" text-anchor="end" fill="%s">'
                'median of %d runs &#183; each row scaled to The Fuck\'s time'
                ' &#183; lower is better</text>'
-               % (WIDTH - PADDING, INK['dim'], results['runs']))
+               % (WIDTH - PADDING, ink['dim'], results['runs']))
+    out.append('<line x1="%g" y1="38.5" x2="%g" y2="38.5" stroke="%s"/>'
+               % (PADDING, WIDTH - PADDING, ink['edge']))
 
     for index, (label, before, after) in enumerate(measured):
         top = HEAD + index * ROW
-        middle = top + 14
+        middle = top + 13
         share = max(after / before, 0.006)
 
         out.append('<text class="s" x="%g" y="%g" fill="%s">%s</text>'
-                   % (PADDING, middle + BAR + BAR_GAP / 2, INK['label'],
+                   % (PADDING, middle + BAR + BAR_GAP / 2 - 1, ink['label'],
                       escape(label)))
 
         # The Fuck: the whole plot, whatever it took.
         out.append('<rect x="%g" y="%g" width="%g" height="%g" rx="%g"'
                    ' fill="%s"/>' % (left, middle - BAR, plot, BAR, BAR / 2,
-                                     INK['fuck']))
-        out.append('<text class="m" x="%g" y="%g" fill="%s">%s</text>'
-                   % (left + plot + 9, middle - 1.5, INK['dim'],
+                                     ink['fuck']))
+        out.append('<text class="n" x="%g" y="%g" fill="%s">%s</text>'
+                   % (left + plot + 10, middle - 0.5, ink['dim'],
                       milliseconds(before)))
 
         # The Bleep: the same scale.
-        width = max(plot * share, 5.0)
+        width = max(plot * share, 4.0)
         out.append('<rect x="%g" y="%g" width="%g" height="%g" rx="%g"'
                    ' fill="%s"/>' % (left, middle + BAR_GAP, width, BAR,
-                                     BAR / 2, INK['bleep']))
-        out.append('<text class="m" x="%g" y="%g" fill="%s">%s</text>'
-                   % (left + width + 9, middle + BAR_GAP + BAR - 1.5,
-                      INK['bleep'], milliseconds(after)))
+                                     BAR / 2, ink['bleep']))
+        out.append('<text class="n" x="%g" y="%g" fill="%s">%s</text>'
+                   % (left + width + 10, middle + BAR_GAP + BAR - 0.5,
+                      ink['bleep'], milliseconds(after)))
 
-        out.append('<text class="m" x="%g" y="%g" text-anchor="end"'
-                   ' fill="%s">%.1f×</text>'
-                   % (WIDTH - PADDING, middle + BAR - 1, INK['accent'],
+        out.append('<text class="n x" x="%g" y="%g" text-anchor="end"'
+                   ' fill="%s">%.1f&#215;</text>'
+                   % (WIDTH - PADDING, middle + BAR - 0.5, ink['accent'],
                       before / after))
 
     out.append('<text class="k" x="%g" y="%g" fill="%s">* dominated by the '
                'half second the command being corrected takes on its own; the'
                ' rest is what the tool costs you.</text>'
-               % (PADDING, height - 15, INK['dim']))
+               % (PADDING, height - 14, ink['dim']))
     out.append('</svg>\n')
     return '\n'.join(out)
 
@@ -162,11 +184,13 @@ def main(argv):
     with open(source) as handle:
         results = json.load(handle)
 
-    svg = render(results)
-    path = argv[1] if len(argv) > 1 else 'assets/benchmark.svg'
-    with open(path, 'w') as handle:
-        handle.write(svg)
-    print('%s: %d bytes from %s' % (path, len(svg), source))
+    for theme in sorted(THEMES):
+        name = 'benchmark.svg' if theme == 'light' else 'benchmark-dark.svg'
+        path = os.path.join(here, name)
+        svg = render(results, theme)
+        with open(path, 'w') as handle:
+            handle.write(svg)
+        print('%s: %d bytes' % (path, len(svg)))
 
 
 if __name__ == '__main__':
