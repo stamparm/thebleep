@@ -51,15 +51,28 @@ def _get_shell_from_env():
 def _get_shell_from_proc():
     # Only reached when the alias didn't tell us the shell, so psutil is
     # imported here rather than at startup.
-    from psutil import Process
+    import psutil
 
-    proc = Process(os.getpid())
+    # Walking up the tree can fail at any step: a parent may exit while we are
+    # looking at it, and after leaving a `sudo su` session the processes above
+    # us belong to root and are no longer ours to read. Neither is a reason to
+    # give up on the whole run, so the walk stops and the generic shell
+    # answers instead.
+    unreadable = (psutil.AccessDenied, psutil.NoSuchProcess,
+                  psutil.ZombieProcess, psutil.TimeoutExpired, OSError)
+
+    try:
+        proc = psutil.Process(os.getpid())
+    except unreadable:
+        proc = None
 
     while proc is not None and proc.pid > 0:
         try:
             name = proc.name()
         except TypeError:
             name = proc.name
+        except unreadable:
+            break
 
         name = os.path.splitext(name)[0]
 
@@ -70,6 +83,8 @@ def _get_shell_from_proc():
             proc = proc.parent()
         except TypeError:
             proc = proc.parent
+        except unreadable:
+            break
 
     return __getattr__('Generic')()
 
