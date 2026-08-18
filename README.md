@@ -40,7 +40,7 @@ Same machine, same Python 3.11, 30 runs each, medians:
 
 <!-- benchmark: written by bench/chart.py -->
 ```text
-                                 of The Fuck's time  The Fuck  The Bleep  faster
+                               % of The Fuck's time  The Fuck  The Bleep  faster
 Open a shell                     ███▎░░░░░░░░░░░░░░    205 ms      38 ms    5.4×
 Correct a mistyped command       ████▎░░░░░░░░░░░░░    240 ms      57 ms    4.2×
 Correct inside a git repository  ████▍░░░░░░░░░░░░░    239 ms      58 ms    4.1×

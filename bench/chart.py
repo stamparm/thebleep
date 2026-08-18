@@ -82,7 +82,7 @@ def rows(results):
             yield label, before['median'], after['median']
 
 
-HEADINGS = (u'of The Fuck\'s time', u'The Fuck', u'The Bleep', u'faster')
+HEADINGS = (u'% of The Fuck\'s time', u'The Fuck', u'The Bleep', u'faster')
 
 
 def chart(results):
@@ -98,11 +98,14 @@ def chart(results):
     faster_width = column(faster, [u'%.1f×' % (b / a)
                                    for _, b, a in measured])
 
-    lines = [u'%s  %s  %s  %s  %s' % (u' ' * label_width,
-                                      bars.rjust(CELLS),
-                                      before.rjust(before_width),
-                                      after.rjust(after_width),
-                                      faster.rjust(faster_width))]
+    # The bar's heading is right-aligned to the end of the bars, so a heading
+    # wider than the bars themselves reaches back over the blank space above
+    # the scenario names rather than pushing the columns to its right out of
+    # line with the figures underneath them.
+    lines = [u'%s  %s  %s  %s' % (bars.rjust(label_width + 2 + CELLS),
+                                  before.rjust(before_width),
+                                  after.rjust(after_width),
+                                  faster.rjust(faster_width))]
     for label, time_before, time_after in measured:
         lines.append(u'%s  %s  %s  %s  %s' % (
             label.ljust(label_width),
