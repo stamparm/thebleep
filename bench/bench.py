@@ -123,6 +123,13 @@ def scenario_env(scenario, style):
         if keep in os.environ:
             env[keep] = os.environ[keep]
     env.update(scenario['env'](style))
+
+    # The correcting scenarios are only meaningful if the previous command
+    # actually gets run to read its output. A harness has no terminal to be
+    # asked on, so The Bleep would otherwise decline and time a shorter path
+    # than the one being compared against. See `thebleep/replay.py`; upstream
+    # ignores the variable.
+    env.update(_env(style, CONFIRM_REPLAY='false'))
     return env
 
 
