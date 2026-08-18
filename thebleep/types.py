@@ -145,11 +145,15 @@ class Rule(object):
             return
         with logs.debug_time(u'Importing rule: {};'.format(name)):
             try:
-                rule_module = load_source(name, str(path))
+                # `from_module` is inside the try as well. A file in the rules
+                # directory that imports fine but is not a rule -- somebody's
+                # shared helper, half of a rule they are still writing -- used
+                # to take the whole correction down with an AttributeError,
+                # because only the import was guarded.
+                return cls.from_module(name, load_source(name, str(path)))
             except Exception:
                 logs.exception(u"Rule {} failed to load".format(name), sys.exc_info())
                 return
-        return cls.from_module(name, rule_module)
 
     @classmethod
     def from_module(cls, name, rule_module):

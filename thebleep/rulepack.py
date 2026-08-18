@@ -31,12 +31,22 @@ from .system import Path
 
 # Bumped whenever the layout or the metadata extraction changes, so an older
 # pack is rebuilt instead of misread.
-FORMAT = 2
+FORMAT = 3
 
 # Decorators that tell us which app a rule is about. `sudo_support` is
 # deliberately absent: it is transparent, and a `sudo`-prefixed command is
 # resolved to the real app before dispatch.
 APP_DECORATORS = {'git_support': ('git',)}
+
+# Every decorator we understand well enough to draw a conclusion past.
+#
+# A decorator we do not know could be doing anything -- somebody's own could
+# ignore the wrapped function and answer for itself -- and then neither the
+# `for_app` underneath it nor the body of `match` says what the rule will
+# actually match. So a rule with one is left to run for every command, which
+# costs a millisecond and cannot be wrong. Every bundled rule uses only these
+# three, so nothing bundled pays for it.
+KNOWN_DECORATORS = frozenset({'for_app', 'git_support', 'sudo_support'})
 
 
 def _is_disabled():
@@ -202,6 +212,9 @@ def _extract_metadata(source, path):
                     meta['requires_output'] = value \
                         if ok and isinstance(value, bool) else None
         elif isinstance(node, ast.FunctionDef) and node.name == 'match':
+            if any(_decorator_name(decorator) not in KNOWN_DECORATORS
+                   for decorator in node.decorator_list):
+                continue
             meta['apps'] = _apps_from_decorators(node.decorator_list)
             expression = _match_body_expression(node)
             if expression is not None:
@@ -265,6 +278,55 @@ def _write_pack(entries):
             pass
 
 
+def _is_well_formed(entry, key):
+    """Whether an entry from the pack has the shape dispatch expects.
+
+    Dispatch believes what the pack tells it, so a value of the wrong type there
+    is not a slow correction but a wrong one: `apps` holding a string rather
+    than a tuple of them makes `apps.intersection` compare characters, and a
+    `name` that does not belong to the file decides enablement by somebody
+    else's settings. Anything that does not look right is treated as missing and
+    built again from the source.
+
+    A value that is well formed but untrue -- `apps` naming a command no rule is
+    about -- reads exactly like a valid entry for a rule that does not apply,
+    and nothing here can tell the difference. What stands behind that is the
+    file's size and modification time, recorded and checked below.
+
+    """
+    if not isinstance(entry, dict):
+        return False
+    if entry.get('name') != os.path.basename(key)[:-3]:
+        return False
+    if not isinstance(entry.get('code'), bytes):
+        return False
+    if not isinstance(entry.get('mtime'), int) \
+            or not isinstance(entry.get('size'), int):
+        return False
+    apps = entry.get('apps')
+    if apps is not None and not (isinstance(apps, tuple)
+                                 and all(isinstance(app, str)
+                                         for app in apps)):
+        return False
+    for field, kind in (('enabled', bool), ('priority', int),
+                        ('requires_output', bool)):
+        value = entry.get(field)
+        if value is not None and not isinstance(value, kind):
+            return False
+    clauses = entry.get('output', ())
+    if not isinstance(clauses, tuple):
+        return False
+    for clause in clauses:
+        if not isinstance(clause, tuple) or not clause:
+            return False
+        for term in clause:
+            if not (isinstance(term, tuple) and len(term) == 2
+                    and isinstance(term[0], str)
+                    and isinstance(term[1], bool)):
+                return False
+    return True
+
+
 def entries_for(paths):
     """Pack entries for `paths`, rebuilding whatever is missing or stale."""
     cached = _read_pack()
@@ -273,6 +335,8 @@ def entries_for(paths):
     for path in paths:
         key = str(path)
         entry = cached.get(key)
+        if entry is not None and not _is_well_formed(entry, key):
+            entry = None
         try:
             stat = os.stat(key)
         except OSError:
@@ -404,25 +468,38 @@ def get_rules_for(command, paths):
         len(candidates), len(entries), sorted(command_apps(command))))
 
     rules = []
+    damaged = False
     for path, entry in candidates:
         name = entry['name']
         with logs.debug_time(u'Importing rule: {};'.format(name)):
             try:
-                module = load_module(name, path, entry['code'])
+                rule = Rule.from_module(
+                    name, load_module(name, path, entry['code']))
             except Exception:
-                logs.exception(u'Rule {} failed to load'.format(name),
-                               sys.exc_info())
-                continue
-        try:
-            rule = Rule.from_module(name, module)
-        except Exception:
-            logs.exception(u'Rule {} is not a rule'.format(name),
-                           sys.exc_info())
-            continue
-        if rule.is_enabled:
+                # The cached code is an optimisation and nothing more. A rule
+                # that will not load out of it is loaded from its source
+                # instead: a damaged pack may cost time, and must never make a
+                # correction disappear or change which one is offered first.
+                logs.debug(u'Rule {} not usable from the pack'.format(name))
+                rule = Rule.from_path(path)
+                damaged = rule is not None
+        if rule is not None and rule.is_enabled:
             rules.append(rule)
 
+    if damaged:
+        # The source loaded, so it is the pack that is wrong rather than the
+        # rule. Thrown away so the next run builds a good one.
+        _forget()
+
     return sorted(rules, key=lambda rule: rule.priority)
+
+
+def _forget():
+    """Removes this interpreter's pack, quietly."""
+    try:
+        os.unlink(str(_cache_path()))
+    except OSError:
+        pass
 
 
 def clear():
