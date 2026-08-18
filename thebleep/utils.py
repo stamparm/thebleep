@@ -90,6 +90,11 @@ def memoize(fn):
 memoize.disabled = False
 
 
+# What Windows runs when `PATHEXT` says nothing, and what `shutil.which` falls
+# back to. Kept here so `which` agrees with the function it replaced.
+DEFAULT_PATHEXT = '.COM;.EXE;.BAT;.CMD;.VBS;.JS;.WS;.MSC'
+
+
 def _is_runnable(path):
     """Whether `path` names something this user could execute."""
     return (os.path.exists(path)
@@ -119,13 +124,26 @@ def which(program):
         return program if _is_runnable(program) else None
 
     search = os.environ.get('PATH', os.defpath).split(os.pathsep)
-    extensions = _executable_extensions()
-    if extensions:
+    if os.name == 'nt':
         # The current directory really is searched first on Windows, and a
         # rule that asks about a program in it would otherwise be told no.
         if os.curdir not in search:
             search.insert(0, os.curdir)
-        if os.path.splitext(program)[1].lower() in extensions:
+        # `PATHEXT` as written, not as `_executable_extensions` lowercases it
+        # for comparing: the extension ends up in the path handed back, and
+        # `shutil.which` hands back `python.EXE` because that is how `PATHEXT`
+        # spells it. Two functions that disagree about the case of a path they
+        # both found are two answers, not one.
+        #
+        # And a default when there is no `PATHEXT`, which is the same list
+        # `shutil.which` falls back to. Without it, an environment that has
+        # lost the variable -- a service, a stripped-down test harness -- gets
+        # told that `python` is not installed, on a machine where typing it
+        # runs `python.exe`.
+        source = os.environ.get('PATHEXT') or DEFAULT_PATHEXT
+        extensions = [extension for extension in source.split(';') if extension]
+        lowered = [extension.lower() for extension in extensions]
+        if os.path.splitext(program)[1].lower() in lowered:
             names = [program]
         else:
             names = [program + extension for extension in extensions]

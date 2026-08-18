@@ -854,6 +854,9 @@ Where the time went:
 - **Nothing is scanned twice.** The list of everything on your `$PATH` is
   remembered until a directory on it changes.
 
+If a cache ever gets in your way, `thebleep --clear-cache` removes them all,
+and `THEBLEEP_NO_RULE_PACK=true` turns the rule cache off entirely.
+
 ### On Windows
 
 *The Fuck* has been called slow on Windows for years, and it is. So was *The
@@ -897,14 +900,14 @@ Defender live, repeated            855 ms           292 ms        2.9x
 modules imported for one              424               109
 ```
 
-Switching Defender off is the single largest lever a Windows user has, and it
-is not one this project can pull for them: excluding your Python installation
-directory is worth about a fifth of a correction here. The rest of the gap
-between the Windows and Linux numbers is the interpreter starting and the
-failed command being run a second time, which both tools pay.
+What is left of the Windows figure is not ours to remove: an interpreter takes
+106 ms to start there against 24 ms on Linux, and the failed command has to be
+run a second time to see what it printed. Both tools pay both.
 
-If a cache ever gets in your way, `thebleep --clear-cache` removes them all,
-and `THEBLEEP_NO_RULE_PACK=true` turns the rule cache off entirely.
+The one lever left is yours. Adding your Python installation directory to
+Defender's exclusions takes about a fifth off a correction, and it is worth
+more than that to everything else you run Python for.
+
 
 ##### [Back to Contents](#contents)
 

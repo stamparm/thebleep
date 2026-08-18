@@ -83,7 +83,7 @@ def test_correcting_is_what_pulls_the_rest_in(imported):
 # on Windows a `.pyd` is read by the virus scanner before it can be mapped,
 # which makes it the most expensive kind of module there is.
 NOT_NEEDED_TO_CORRECT = [
-    'ast',            # only to read a rule that is not in the compiled pack
+    'ast',            # only to read a rule the compiled pack does not have
     'pickle',         # only for a memoized call whose arguments cannot be hashed
     'socket',         # only when a shell logger is listening
     'mmap',           # only instant mode, reading the recorded session
@@ -94,7 +94,8 @@ NOT_NEEDED_TO_CORRECT = [
     'bz2',            # dragged in by shutil
     'lzma',           # dragged in by shutil
     'zlib',           # dragged in by shutil
-    'ctypes',         # dragged in by colorama, and only when colour is written
+    'colorama',       # only when colour is actually written, and it brings
+                      # `ctypes` -- a DLL the scanner reads before it maps it
 ]
 
 # How many modules a whole correction costs beyond what the interpreter has
@@ -130,8 +131,15 @@ def _correction_modules(tmp_path):
     environment = dict(REAL_ENVIRONMENT, TB_SHELL='bash')
     listing = str(tmp_path) + '.modules'
     source = source.replace("sys.argv[0] + '.modules'", repr(listing))
-    subprocess.run([sys.executable, '-c', source], env=environment,
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # Twice, and the second one is the measurement. The first correction on a
+    # machine finds no compiled rule pack and has to build one, which means
+    # reading every rule from source and so importing `ast`; every correction
+    # after it unmarshals the pack instead. Measuring the first would be
+    # measuring an installation, which happens once and is not what anybody
+    # waits for.
+    for _ in range(2):
+        subprocess.run([sys.executable, '-c', source], env=environment,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     with open(listing) as handle:
         return set(handle.read().split())
 

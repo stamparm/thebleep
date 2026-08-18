@@ -85,7 +85,15 @@ class TestWhich(object):
         assert which(str(directory)) is None
 
     def test_a_file_on_the_path_is_found(self, tmpdir, monkeypatch):
-        binary = tmpdir.join('made-up-tool')
+        """And on Windows, found by the name you would actually type.
+
+        `PATHEXT` is the list of extensions the shell lets you leave off, so a
+        `.bat` there is what a file with the executable bit is on POSIX: the
+        thing that runs when you type its stem.
+
+        """
+        name = 'made-up-tool.bat' if os.name == 'nt' else 'made-up-tool'
+        binary = tmpdir.join(name)
         binary.write('#!/bin/sh\n')
         os.chmod(str(binary), 0o755)
         monkeypatch.setenv('PATH', str(tmpdir))
