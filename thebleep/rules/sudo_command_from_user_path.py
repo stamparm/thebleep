@@ -11,8 +11,10 @@ def _get_command_name(command):
 @for_app('sudo')
 def match(command):
     if 'command not found' in command.output:
+        # sudo says this about things other than a missing program, and then
+        # there is no name to look up: `which(None)` raises TypeError.
         command_name = _get_command_name(command)
-        return which(command_name)
+        return bool(command_name) and bool(which(command_name))
 
 
 def get_new_command(command):

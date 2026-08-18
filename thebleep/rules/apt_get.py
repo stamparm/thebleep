@@ -16,17 +16,26 @@ try:
         _get_packages = CommandNotFound().getPackages
 except ImportError:
     enabled_by_default = False
+    # Named so that `get_package` below raises nothing worse than "no package
+    # found" when somebody enables this rule on a machine that has no
+    # python3-commandnotfound. It used to be a NameError on every correction.
+    _get_packages = None
 
 
 def _get_executable(command):
-    if command.script_parts[0] == 'sudo':
-        return command.script_parts[1]
-    else:
-        return command.script_parts[0]
+    parts = command.script_parts
+    if parts and parts[0] == 'sudo':
+        # `sudo` on its own is a thing people type, and then there is no
+        # executable to go looking for a package for.
+        return parts[1] if len(parts) > 1 else None
+    return parts[0] if parts else None
 
 
 @memoize
 def get_package(executable):
+    if _get_packages is None:
+        return None
+
     try:
         packages = _get_packages(executable)
         return packages[0][0]
@@ -38,7 +47,8 @@ def get_package(executable):
 def match(command):
     if 'not found' in command.output or 'not installed' in command.output:
         executable = _get_executable(command)
-        return not which(executable) and get_package(executable)
+        return bool(executable) and not which(executable) \
+            and bool(get_package(executable))
     else:
         return False
 

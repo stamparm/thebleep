@@ -29,6 +29,9 @@ def get_pkgfile(command):
             return []
         else:
             raise err
+    except OSError:
+        # pkgfile is not installed, or went away since the rule was enabled.
+        return []
 
 
 def archlinux_env():

@@ -17,7 +17,7 @@ if which('go'):
     get_golang_commands = cache(which('go'))(get_golang_commands)
 
 
-@for_app('go')
+@for_app('go', at_least=1)
 def match(command):
     return 'unknown command' in command.output
 
