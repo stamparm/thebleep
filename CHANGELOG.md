@@ -90,10 +90,10 @@ rather than restarting it, because this is the same codebase carried forward.
 Measured against *The Fuck* 3.32 on the same machine and the same Python 3.11,
 median of 30 runs; the harness and the recorded run are in `bench/`.
 
-- Opening a shell: 202 ms → 27 ms, or to 0.07 ms with `--alias-loader`, which
+- Opening a shell: 218 ms → 28 ms, or to 0.07 ms with `--alias-loader`, which
   defines the alias on first use so shell startup runs no Python at all.
-- Correcting a mistyped command: 241 ms → 52 ms.
-- Correcting after a command printed a megabyte: 3248 ms → 114 ms. This one is
+- Correcting a mistyped command: 247 ms → 53 ms.
+- Correcting after a command printed a megabyte: 3257 ms → 115 ms. This one is
   a correctness fix as much as a speed one: output used to be read only after
   the command exited, which deadlocks once the output fills the pipe buffer, so
   anything printing more than about 64 KB produced nothing to correct from.
@@ -107,8 +107,8 @@ median of 30 runs; the harness and the recorded run are in `bench/`.
   and `ShellConfiguration` no longer pull in `shutil` and `collections` for
   what they do. This is worth most on Windows, where a virus scanner reads
   every module the interpreter opens: profiled on a real Windows 10 machine
-  with Defender live, a correction went from 297 ms to 265 ms while *The Fuck*
-  took 782 ms for the same one.
+  with Defender live, a correction takes 308 ms where *The Fuck* takes 876 ms,
+  and imports 109 modules where *The Fuck* imports 424.
 - `python -m thebleep` runs the same entry point as the `thebleep` command, for
   environments whose scripts directory is not on `PATH`.
 

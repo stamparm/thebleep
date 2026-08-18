@@ -41,12 +41,12 @@ Same machine, same Python 3.11, 30 runs each, medians:
 <!-- benchmark: written by bench/chart.py -->
 ```text
                                % of The Fuck's time  The Fuck  The Bleep  faster
-Open a shell                     ██▍░░░░░░░░░░░░░░░    202 ms      27 ms    7.6×
-Correct a mistyped command       ███▉░░░░░░░░░░░░░░    241 ms      52 ms    4.6×
-Correct inside a git repository  ████░░░░░░░░░░░░░░    240 ms      53 ms    4.5×
-Correct when nothing matches     ███▍░░░░░░░░░░░░░░    335 ms      64 ms    5.2×
-Correct a slow command *         ████████████▎░░░░░    820 ms     559 ms    1.5×
-Correct after 1 MB of output     ▋░░░░░░░░░░░░░░░░░    3.25 s     114 ms   28.6×
+Open a shell                     ██▍░░░░░░░░░░░░░░░    218 ms      28 ms    7.7×
+Correct a mistyped command       ███▉░░░░░░░░░░░░░░    247 ms      53 ms    4.7×
+Correct inside a git repository  ███▉░░░░░░░░░░░░░░    243 ms      53 ms    4.6×
+Correct when nothing matches     ███▍░░░░░░░░░░░░░░    349 ms      66 ms    5.3×
+Correct a slow command *         ████████████▎░░░░░    825 ms     562 ms    1.5×
+Correct after 1 MB of output     ▋░░░░░░░░░░░░░░░░░    3.26 s     115 ms   28.3×
 ```
 <!-- end benchmark -->
 
@@ -849,10 +849,59 @@ Where the time went:
 - **The failed command's output is read while it runs.** It used to be read
   after the command exited, which deadlocks as soon as the output fills the
   pipe buffer: anything printing more than about 64KB waited out the full
-  timeout and then produced *nothing to correct from*. That is the 24x above,
+  timeout and then produced *nothing to correct from*. That is the 28x above,
   and it is a correctness fix as much as a speed one.
 - **Nothing is scanned twice.** The list of everything on your `$PATH` is
   remembered until a directory on it changes.
+
+### On Windows
+
+*The Fuck* has been called slow on Windows for years, and it is. So was *The
+Bleep*, for a reason that is nothing to do with either tool's own logic.
+
+Profiled on a real Windows 10 machine — a KVM guest with Defender live, no
+exclusions and the services at their stock settings, on the same physical CPU
+as the Linux figures above:
+
+```text
+                                     Linux    Windows   Windows pays
+os.stat, a thousand times          1.71 ms   23.70 ms          13.9x
+read all 171 rule files            1.06 ms    8.98 ms           8.5x
+create, write and delete 20 files  1.28 ms  124.71 ms          97.5x
+start a bare interpreter          24.17 ms  105.76 ms           4.4x
+```
+
+None of that is our code, and our code is not the problem: on the same guest,
+matching every candidate rule takes 1.4 ms against Linux's 9.1 ms, reading the
+rule pack 2.5 ms against 2.3 ms, and a warm `PATH` lookup 0.3 ms against 0.4 ms.
+What Windows charges for is *opening files* — and a module is a file the
+interpreter has to find and then open, with a virus scanner reading it first.
+A `.pyd` is worse still: the scanner reads the whole DLL before it may be
+mapped.
+
+So the fix was to open fewer of them. Correcting a command imports 42 modules
+beyond a bare interpreter, where it used to import 81, and
+[`tests/test_performance.py`](tests/test_performance.py) fails if any of the
+ones that went comes back.
+
+On that guest, correcting a command, three passes of fifteen interleaved rounds
+each — both tools installed side by side and asked in turn, so whatever the
+machine was doing happened to both:
+
+```text
+                            The Fuck 3.32        The Bleep      faster
+Defender live                      876 ms           308 ms        2.8x
+Defender told to look away         667 ms           250 ms        2.7x
+Defender live, repeated            855 ms           292 ms        2.9x
+
+modules imported for one              424               109
+```
+
+Switching Defender off is the single largest lever a Windows user has, and it
+is not one this project can pull for them: excluding your Python installation
+directory is worth about a fifth of a correction here. The rest of the gap
+between the Windows and Linux numbers is the interpreter starting and the
+failed command being run a second time, which both tools pay.
 
 If a cache ever gets in your way, `thebleep --clear-cache` removes them all,
 and `THEBLEEP_NO_RULE_PACK=true` turns the rule cache off entirely.
