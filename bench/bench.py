@@ -272,7 +272,12 @@ def describe(subject):
 
     """
     binary = subject['bin']
-    relative = os.path.relpath(binary, ROOT)
+    try:
+        relative = os.path.relpath(binary, ROOT)
+    except ValueError:
+        # Windows: there is no path from D: to C:, and an installed subject is
+        # routinely on another drive from the checkout.
+        relative = os.path.basename(binary)
     if relative.startswith(os.pardir):
         relative = os.path.basename(binary)
 
