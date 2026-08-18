@@ -34,30 +34,30 @@ Because the idea deserves better than its last release. *The Fuck* 3.32 is from
 January 2022: it cannot start on Python 3.12 or newer, over three hundred
 issues are open on it, and a good number of its rules quietly stopped matching
 when the tools they correct changed what they print. *The Bleep* is the same
-tool, maintained -- and several times quicker about it.
+tool, maintained — and several times quicker about it.
 
 ![The Bleep against The Fuck, by scenario](assets/benchmark.svg)
 
 | What you do | The Fuck 3.32 | The Bleep | |
 | --- | ---: | ---: | ---: |
-| Open a shell (`--alias` in your rc) | 205 ms | 38 ms | **5.4x** |
+| Open a shell (`--alias` in your rc) | 205 ms | 38 ms | **5.4×** |
 | Open a shell (`--alias-loader`) | 205 ms | 0.3 ms | **no Python at startup** |
-| Correct a mistyped command | 240 ms | 57 ms | **4.2x** |
-| Correct when nothing matches | 336 ms | 72 ms | **4.7x** |
-| Correct after 1 MB of output | 3246 ms | 134 ms | **24.2x** |
+| Correct a mistyped command | 240 ms | 57 ms | **4.2×** |
+| Correct when nothing matches | 336 ms | 72 ms | **4.7×** |
+| Correct after 1 MB of output | 3246 ms | 134 ms | **24.2×** |
 
-Median of 30 runs, same machine, same Python 3.11. The harness is
-[`bench/`](bench/README.md), the run these numbers come from is
-[`bench/results/final.json`](bench/results/final.json), and the chart is drawn
-from that file rather than typed in beside it. [Reproduce it, and read where
-the time went](#performance).
+The same run, to the millisecond. Median of 30 runs, same machine, same Python
+3.11. The harness is [`bench/`](bench/README.md), the run these numbers come
+from is [`bench/results/final.json`](bench/results/final.json), and the chart is
+drawn from that file rather than typed in beside it. [Reproduce it, and read
+where the time went](#performance).
 
 The rest of the reasons:
 
 - **Python 3.9 through 3.14**, tested on Linux, macOS and Windows on every one
-  of them &ndash; and Bash, Zsh, Fish, tcsh and PowerShell as before.
-- **29 issues from *The Fuck*'s backlog are fixed here** &ndash; three of them
-  command injections &ndash; plus the rules that had rotted against current
+  of them — and Bash, Zsh, Fish, tcsh and PowerShell as before.
+- **29 issues from *The Fuck*'s backlog are fixed here** — three of them
+  command injections — plus the rules that had rotted against current
   `git`, `npm`, `docker`, `cargo`, `brew`, `gem`, `az`, `gradle` and
   `terraform`. [What's fixed](#whats-fixed).
 - **It asks before running your previous command a second time.** Reading what
@@ -178,7 +178,7 @@ suite runs on 3.9 through 3.14 on Linux, macOS and Windows.
 [#873](https://github.com/nvbn/thefuck/issues/873)</sub>
 
 **Three ways a command could be turned into a different command.** Text that
-came out of the failed command's own output -- a filename, a branch, a URL --
+came out of the failed command's own output — a filename, a branch, a URL —
 was pasted into the correction unquoted, and the `sudo` rule handed a
 re-quoted script to `sh -c` as root. All three are quoted now, with tests that
 run the result through a real shell and check what the program actually
@@ -188,7 +188,7 @@ received.
 
 **It asks before running your command again.** To correct a command you have to
 know what it printed, and a shell keeps no record, so the command is run a
-second time -- `deploy`, `git push`, `rm`, whatever it was, before you have
+second time — `deploy`, `git push`, `rm`, whatever it was, before you have
 agreed to anything. It asks first now, except where running it again provably
 cannot do anything.
 &nbsp;<sub>[#1126](https://github.com/nvbn/thefuck/issues/1126)</sub>
@@ -234,7 +234,7 @@ environment being printed into debug output.
 | | |
 | --- | --- |
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
-| **Systems** | Linux, macOS, Windows &ndash; every Python on every one of them, on every push |
+| **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, tcsh, PowerShell, and Windows `cmd` |
 | **Rules** | 170 of them, for git, docker, npm, yarn, pip, apt, dnf, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
@@ -253,7 +253,7 @@ never asks for `sudo`, and never edits a file of yours:
 curl -fsSL https://raw.githubusercontent.com/stamparm/thebleep/master/install.sh | sh
 ```
 
-Read it first if you like &ndash; that is the same file as
+Read it first if you like — that is the same file as
 [`install.sh`](install.sh) in this repository, and `sh install.sh --dry-run`
 prints what it would run without running it.
 
@@ -268,7 +268,7 @@ pip install --user thebleep   # if your distribution lets pip write there
 The first two put *The Bleep* in an environment of its own, which is what you
 want for a tool rather than a library: nothing you `pip install` later can break
 it. On Debian, Ubuntu and Fedora, `pip install --user` is refused outright
-([PEP 668](https://peps.python.org/pep-0668/)) &ndash; use `uv` or `pipx` there.
+([PEP 668](https://peps.python.org/pep-0668/)) — use `uv` or `pipx` there.
 
 <a href='#manual-installation' name='manual-installation'>#</a>
 ### The alias, and why it costs nothing
@@ -350,7 +350,7 @@ pip install --user --upgrade thebleep
 ```
 
 Or run the one-liner again, which upgrades in place. The alias line in your
-startup file never needs regenerating &ndash; all it does is call
+startup file never needs regenerating — all it does is call
 `thebleep --alias` the first time you use it.
 
 ## Uninstall
@@ -365,185 +365,185 @@ file, then remove the package with `uv tool uninstall thebleep`,
 found, a new command is created using the matched rule and executed. The
 following rules are enabled by default:
 
-* `adb_unknown_command` &ndash; fixes misspelled commands like `adb logcta`;
-* `ag_literal` &ndash; adds `-Q` to `ag` when suggested;
-* `aws_cli` &ndash; fixes misspelled commands like `aws dynamdb scan`;
-* `az_cli` &ndash; fixes misspelled commands like `az providers`;
-* `cargo` &ndash; runs `cargo build` instead of `cargo`;
-* `cargo_no_command` &ndash; fixes wrong commands like `cargo buid`;
-* `cat_dir` &ndash; replaces `cat` with `ls` when you try to `cat` a directory;
-* `cd_correction` &ndash; spellchecks and corrects failed cd commands;
-* `cd_cs` &ndash; changes `cs` to `cd`;
-* `cd_mkdir` &ndash; creates directories before cd'ing into them;
-* `cd_parent` &ndash; changes `cd..` to `cd ..`;
-* `chmod_x` &ndash; adds execution bit;
-* `choco_install` &ndash; appends common suffixes for chocolatey packages;
-* `composer_not_command` &ndash; fixes composer command name;
-* `conda_mistype` &ndash; fixes conda commands;
-* `cp_create_destination` &ndash; creates a new directory when you attempt to `cp` or `mv` to a non-existent one
-* `cp_omitting_directory` &ndash; adds `-a` when you `cp` directory;
-* `cpp11` &ndash; adds missing `-std=c++11` to `g++` or `clang++`;
-* `dirty_untar` &ndash; fixes `tar x` command that untarred in the current directory;
-* `dirty_unzip` &ndash; fixes `unzip` command that unzipped in the current directory;
-* `django_south_ghost` &ndash; adds `--delete-ghost-migrations` to failed because ghosts django south migration;
-* `django_south_merge` &ndash; adds `--merge` to inconsistent django south migration;
-* `docker_login` &ndash; executes a `docker login` and repeats the previous command;
-* `docker_not_command` &ndash; fixes wrong docker commands like `docker tags`;
+* `adb_unknown_command` — fixes misspelled commands like `adb logcta`;
+* `ag_literal` — adds `-Q` to `ag` when suggested;
+* `aws_cli` — fixes misspelled commands like `aws dynamdb scan`;
+* `az_cli` — fixes misspelled commands like `az providers`;
+* `cargo` — runs `cargo build` instead of `cargo`;
+* `cargo_no_command` — fixes wrong commands like `cargo buid`;
+* `cat_dir` — replaces `cat` with `ls` when you try to `cat` a directory;
+* `cd_correction` — spellchecks and corrects failed cd commands;
+* `cd_cs` — changes `cs` to `cd`;
+* `cd_mkdir` — creates directories before cd'ing into them;
+* `cd_parent` — changes `cd..` to `cd ..`;
+* `chmod_x` — adds execution bit;
+* `choco_install` — appends common suffixes for chocolatey packages;
+* `composer_not_command` — fixes composer command name;
+* `conda_mistype` — fixes conda commands;
+* `cp_create_destination` — creates a new directory when you attempt to `cp` or `mv` to a non-existent one
+* `cp_omitting_directory` — adds `-a` when you `cp` directory;
+* `cpp11` — adds missing `-std=c++11` to `g++` or `clang++`;
+* `dirty_untar` — fixes `tar x` command that untarred in the current directory;
+* `dirty_unzip` — fixes `unzip` command that unzipped in the current directory;
+* `django_south_ghost` — adds `--delete-ghost-migrations` to failed because ghosts django south migration;
+* `django_south_merge` — adds `--merge` to inconsistent django south migration;
+* `docker_login` — executes a `docker login` and repeats the previous command;
+* `docker_not_command` — fixes wrong docker commands like `docker tags`;
 * `docker_image_being_used_by_container` &dash; removes the container that is using the image before removing the image;
-* `dry` &ndash; fixes repetitions like `git git push`;
-* `fab_command_not_found` &ndash; fixes misspelled fabric commands;
-* `fix_alt_space` &ndash; replaces Alt+Space with Space character;
-* `fix_file` &ndash; opens a file with an error in your `$EDITOR`;
-* `gem_unknown_command` &ndash; fixes wrong `gem` commands;
-* `git_add` &ndash; fixes *"pathspec 'foo' did not match any file(s) known to git."*;
-* `git_add_force` &ndash; adds `--force` to `git add <pathspec>...` when paths are .gitignore'd;
-* `git_bisect_usage` &ndash; fixes `git bisect strt`, `git bisect goood`, `git bisect rset`, etc. when bisecting;
-* `git_branch_delete` &ndash; changes `git branch -d` to `git branch -D`;
-* `git_branch_delete_checked_out` &ndash; changes `git branch -d` to `git checkout master && git branch -D` when trying to delete a checked out branch;
-* `git_branch_exists` &ndash; offers `git branch -d foo`, `git branch -D foo` or `git checkout foo` when creating a branch that already exists;
-* `git_branch_list` &ndash; catches `git branch list` in place of `git branch` and removes created branch;
-* `git_branch_0flag` &ndash; fixes commands such as `git branch 0v` and `git branch 0r` removing the created branch;
-* `git_checkout` &ndash; fixes branch name or creates new branch;
-* `git_clone_git_clone` &ndash; replaces `git clone git clone ...` with `git clone ...`
-* `git_clone_missing` &ndash; adds `git clone` to URLs that appear to link to a git repository.
-* `git_commit_add` &ndash; offers `git commit -a ...` or `git commit -p ...` after previous commit if it failed because nothing was staged;
-* `git_commit_amend` &ndash; offers `git commit --amend` after previous commit;
-* `git_commit_reset` &ndash; offers `git reset HEAD~` after previous commit;
-* `git_diff_no_index` &ndash; adds `--no-index` to previous `git diff` on untracked files;
-* `git_diff_staged` &ndash; adds `--staged` to previous `git diff` with unexpected output;
-* `git_dubious_ownership` &ndash; adds the repository to `safe.directory` when git refuses to touch it because somebody else owns it;
-* `git_fix_stash` &ndash; fixes `git stash` commands (misspelled subcommand and missing `save`);
-* `git_flag_after_filename` &ndash; fixes `fatal: bad flag '...' after filename`
-* `git_help_aliased` &ndash; fixes `git help <alias>` commands replacing <alias> with the aliased command;
-* `git_hook_bypass` &ndash; adds `--no-verify` flag previous to `git am`, `git commit`, or `git push` command;
-* `git_lfs_mistype` &ndash; fixes mistyped `git lfs <command>` commands;
-* `git_main_master` &ndash; fixes incorrect branch name between `main` and `master`
-* `git_merge` &ndash; adds remote to branch names;
-* `git_merge_unrelated` &ndash; adds `--allow-unrelated-histories` when required
-* `git_not_command` &ndash; fixes wrong git commands like `git brnch`;
-* `git_pull` &ndash; sets upstream before executing previous `git pull`;
-* `git_pull_clone` &ndash; clones instead of pulling when the repo does not exist;
-* `git_pull_uncommitted_changes` &ndash; stashes changes before pulling and pops them afterwards;
-* `git_push` &ndash; adds `--set-upstream origin $branch` to previous failed `git push`;
-* `git_push_different_branch_names` &ndash; fixes pushes when local branch name does not match remote branch name;
-* `git_push_pull` &ndash; runs `git pull` when `push` was rejected;
-* `git_push_without_commits` &ndash; creates an initial commit if you forget and only `git add .`, when setting up a new project;
-* `git_rebase_no_changes` &ndash; runs `git rebase --skip` instead of `git rebase --continue` when there are no changes;
-* `git_remote_delete` &ndash; replaces `git remote delete remote_name` with `git remote remove remote_name`;
-* `git_rm_local_modifications` &ndash; adds `-f` or `--cached` when you try to `rm` a locally modified file;
-* `git_rm_recursive` &ndash; adds `-r` when you try to `rm` a directory;
-* `git_rm_staged` &ndash;  adds `-f` or `--cached` when you try to `rm` a file with staged changes
-* `git_rebase_merge_dir` &ndash; offers `git rebase (--continue | --abort | --skip)` or removing the `.git/rebase-merge` dir when a rebase is in progress;
-* `git_remote_seturl_add` &ndash; runs `git remote add` when `git remote set_url` on nonexistent remote;
-* `git_stash` &ndash; stashes your local modifications before rebasing or switching branch;
-* `git_stash_pop` &ndash; adds your local modifications before popping stash, then resets;
-* `git_tag_force` &ndash; adds `--force` to `git tag <tagname>` when the tag already exists;
-* `git_two_dashes` &ndash; adds a missing dash to commands like `git commit -amend` or `git rebase -continue`;
-* `go_run` &ndash; appends `.go` extension when compiling/running Go programs;
-* `go_unknown_command` &ndash; fixes wrong `go` commands, for example `go bulid`;
-* `gradle_no_task` &ndash; fixes not found or ambiguous `gradle` task;
-* `gradle_wrapper` &ndash; replaces `gradle` with `./gradlew`;
-* `grep_arguments_order` &ndash; fixes `grep` arguments order for situations like `grep -lir . test`;
-* `grep_recursive` &ndash; adds `-r` when you try to `grep` directory;
-* `grunt_task_not_found` &ndash; fixes misspelled `grunt` commands;
-* `gulp_not_task` &ndash; fixes misspelled `gulp` tasks;
-* `has_exists_script` &ndash; prepends `./` when script/binary exists;
-* `heroku_multiple_apps` &ndash; adds `--app <app>` to `heroku` commands like `heroku pg`;
-* `heroku_not_command` &ndash; fixes wrong `heroku` commands like `heroku log`;
-* `history` &ndash; tries to replace command with the most similar command from history;
-* `hostscli` &ndash; tries to fix `hostscli` usage;
-* `ifconfig_device_not_found` &ndash; fixes wrong device names like `wlan0` to `wlp2s0`;
-* `java` &ndash; removes `.java` extension when running Java programs;
-* `javac` &ndash; appends missing `.java` when compiling Java files;
-* `lein_not_task` &ndash; fixes wrong `lein` tasks like `lein rpl`;
-* `long_form_help` &ndash; changes `-h` to `--help` when the short form version is not supported
-* `ln_no_hard_link` &ndash; catches hard link creation on directories, suggest symbolic link;
-* `ln_s_order` &ndash; fixes `ln -s` arguments order;
-* `ls_all` &ndash; adds `-A` to `ls` when output is empty;
-* `ls_lah` &ndash; adds `-lah` to `ls`;
-* `man` &ndash; changes manual section;
-* `man_no_space` &ndash; fixes man commands without spaces, for example `mandiff`;
-* `mercurial` &ndash; fixes wrong `hg` commands;
-* `missing_space_before_subcommand` &ndash; fixes command with missing space like `npminstall`;
-* `mkdir_p` &ndash; adds `-p` when you try to create a directory without a parent;
-* `mvn_no_command` &ndash; adds `clean package` to `mvn`;
-* `mvn_unknown_lifecycle_phase` &ndash; fixes misspelled life cycle phases with `mvn`;
-* `npm_missing_script` &ndash; fixes `npm` custom script name in `npm run-script <script>`;
-* `npm_run_script` &ndash; adds missing `run-script` for custom `npm` scripts;
-* `npm_wrong_command` &ndash; fixes wrong npm commands like `npm urgrade`;
-* `no_command` &ndash; fixes wrong console commands, for example `vom/vim`;
-* `no_such_file` &ndash; creates missing directories with `mv` and `cp` commands;
-* `omnienv_no_such_command` &ndash; fixes wrong commands for `goenv`, `nodenv`, `pyenv` and `rbenv` (eg.: `pyenv isntall` or `goenv list`);
-* `open` &ndash; either prepends `http://` to address passed to `open` or creates a new file or directory and passes it to `open`;
-* `pip_install` &ndash; fixes permission issues with `pip install` commands by adding `--user` or prepending `sudo` if necessary;
-* `pip_unknown_command` &ndash; fixes wrong `pip` commands, for example `pip instatl/pip install`;
-* `php_s` &ndash; replaces `-s` by `-S` when trying to run a local php server;
-* `port_already_in_use` &ndash; kills process that bound port;
-* `prove_recursively` &ndash; adds `-r` when called with directory;
-* `python_command` &ndash; prepends `python` when you try to run non-executable/without `./` python script;
-* `python_execute` &ndash; appends missing `.py` when executing Python files;
-* `python_module_error` &ndash; fixes ModuleNotFoundError by trying to `pip install` that module;
-* `quotation_marks` &ndash; fixes uneven usage of `'` and `"` when containing args';
-* `path_from_history` &ndash; replaces not found path with a similar absolute path from history;
-* `rails_migrations_pending` &ndash; runs pending migrations;
-* `react_native_command_unrecognized` &ndash; fixes unrecognized `react-native` commands;
-* `remove_shell_prompt_literal` &ndash; removes leading shell prompt symbol `$`, common when copying commands from documentations;
-* `remove_trailing_cedilla` &ndash; removes trailing cedillas `ç`, a common typo for European keyboard layouts;
-* `rm_dir` &ndash; adds `-rf` when you try to remove a directory;
-* `scm_correction` &ndash; corrects wrong scm like `hg log` to `git log`;
-* `sed_unterminated_s` &ndash; adds missing '/' to `sed`'s `s` commands;
-* `sl_ls` &ndash; changes `sl` to `ls`;
-* `ssh_known_hosts` &ndash; removes host from `known_hosts` on warning;
-* `sudo` &ndash; prepends `sudo` to the previous command if it failed because of permissions;
-* `sudo_command_from_user_path` &ndash; runs commands from users `$PATH` with `sudo`;
-* `switch_lang` &ndash; switches command from your local layout to en;
-* `systemctl` &ndash; correctly orders parameters of confusing `systemctl`;
-* `terraform_init.py` &ndash; runs `terraform init` before plan or apply;
-* `terraform_no_command.py` &ndash; fixes unrecognized `terraform` commands;
-* `test.py` &ndash; runs `pytest` instead of `test.py`;
-* `touch` &ndash; creates missing directories before "touching";
-* `tsuru_login` &ndash; runs `tsuru login` if not authenticated or session expired;
-* `tsuru_not_command` &ndash; fixes wrong `tsuru` commands like `tsuru shell`;
-* `tmux` &ndash; fixes `tmux` commands;
-* `unknown_command` &ndash; fixes hadoop hdfs-style "unknown command", for example adds missing '-' to the command on `hdfs dfs ls`;
-* `unsudo` &ndash; removes `sudo` from previous command if a process refuses to run on superuser privilege.
-* `vagrant_up` &ndash; starts up the vagrant instance;
-* `whois` &ndash; fixes `whois` command;
-* `workon_doesnt_exists` &ndash; fixes `virtualenvwrapper` env name os suggests to create new.
-* `wrong_hyphen_before_subcommand` &ndash; removes an improperly placed hyphen (`apt-install` -> `apt install`, `git-log` -> `git log`, etc.)
-* `yarn_alias` &ndash; fixes aliased `yarn` commands like `yarn ls`;
-* `yarn_command_not_found` &ndash; fixes misspelled `yarn` commands;
-* `yarn_command_replaced` &ndash; fixes replaced `yarn` commands;
-* `yarn_help` &ndash; makes it easier to open `yarn` documentation;
+* `dry` — fixes repetitions like `git git push`;
+* `fab_command_not_found` — fixes misspelled fabric commands;
+* `fix_alt_space` — replaces Alt+Space with Space character;
+* `fix_file` — opens a file with an error in your `$EDITOR`;
+* `gem_unknown_command` — fixes wrong `gem` commands;
+* `git_add` — fixes *"pathspec 'foo' did not match any file(s) known to git."*;
+* `git_add_force` — adds `--force` to `git add <pathspec>...` when paths are .gitignore'd;
+* `git_bisect_usage` — fixes `git bisect strt`, `git bisect goood`, `git bisect rset`, etc. when bisecting;
+* `git_branch_delete` — changes `git branch -d` to `git branch -D`;
+* `git_branch_delete_checked_out` — changes `git branch -d` to `git checkout master && git branch -D` when trying to delete a checked out branch;
+* `git_branch_exists` — offers `git branch -d foo`, `git branch -D foo` or `git checkout foo` when creating a branch that already exists;
+* `git_branch_list` — catches `git branch list` in place of `git branch` and removes created branch;
+* `git_branch_0flag` — fixes commands such as `git branch 0v` and `git branch 0r` removing the created branch;
+* `git_checkout` — fixes branch name or creates new branch;
+* `git_clone_git_clone` — replaces `git clone git clone ...` with `git clone ...`
+* `git_clone_missing` — adds `git clone` to URLs that appear to link to a git repository.
+* `git_commit_add` — offers `git commit -a ...` or `git commit -p ...` after previous commit if it failed because nothing was staged;
+* `git_commit_amend` — offers `git commit --amend` after previous commit;
+* `git_commit_reset` — offers `git reset HEAD~` after previous commit;
+* `git_diff_no_index` — adds `--no-index` to previous `git diff` on untracked files;
+* `git_diff_staged` — adds `--staged` to previous `git diff` with unexpected output;
+* `git_dubious_ownership` — adds the repository to `safe.directory` when git refuses to touch it because somebody else owns it;
+* `git_fix_stash` — fixes `git stash` commands (misspelled subcommand and missing `save`);
+* `git_flag_after_filename` — fixes `fatal: bad flag '...' after filename`
+* `git_help_aliased` — fixes `git help <alias>` commands replacing <alias> with the aliased command;
+* `git_hook_bypass` — adds `--no-verify` flag previous to `git am`, `git commit`, or `git push` command;
+* `git_lfs_mistype` — fixes mistyped `git lfs <command>` commands;
+* `git_main_master` — fixes incorrect branch name between `main` and `master`
+* `git_merge` — adds remote to branch names;
+* `git_merge_unrelated` — adds `--allow-unrelated-histories` when required
+* `git_not_command` — fixes wrong git commands like `git brnch`;
+* `git_pull` — sets upstream before executing previous `git pull`;
+* `git_pull_clone` — clones instead of pulling when the repo does not exist;
+* `git_pull_uncommitted_changes` — stashes changes before pulling and pops them afterwards;
+* `git_push` — adds `--set-upstream origin $branch` to previous failed `git push`;
+* `git_push_different_branch_names` — fixes pushes when local branch name does not match remote branch name;
+* `git_push_pull` — runs `git pull` when `push` was rejected;
+* `git_push_without_commits` — creates an initial commit if you forget and only `git add .`, when setting up a new project;
+* `git_rebase_no_changes` — runs `git rebase --skip` instead of `git rebase --continue` when there are no changes;
+* `git_remote_delete` — replaces `git remote delete remote_name` with `git remote remove remote_name`;
+* `git_rm_local_modifications` — adds `-f` or `--cached` when you try to `rm` a locally modified file;
+* `git_rm_recursive` — adds `-r` when you try to `rm` a directory;
+* `git_rm_staged` —  adds `-f` or `--cached` when you try to `rm` a file with staged changes
+* `git_rebase_merge_dir` — offers `git rebase (--continue | --abort | --skip)` or removing the `.git/rebase-merge` dir when a rebase is in progress;
+* `git_remote_seturl_add` — runs `git remote add` when `git remote set_url` on nonexistent remote;
+* `git_stash` — stashes your local modifications before rebasing or switching branch;
+* `git_stash_pop` — adds your local modifications before popping stash, then resets;
+* `git_tag_force` — adds `--force` to `git tag <tagname>` when the tag already exists;
+* `git_two_dashes` — adds a missing dash to commands like `git commit -amend` or `git rebase -continue`;
+* `go_run` — appends `.go` extension when compiling/running Go programs;
+* `go_unknown_command` — fixes wrong `go` commands, for example `go bulid`;
+* `gradle_no_task` — fixes not found or ambiguous `gradle` task;
+* `gradle_wrapper` — replaces `gradle` with `./gradlew`;
+* `grep_arguments_order` — fixes `grep` arguments order for situations like `grep -lir . test`;
+* `grep_recursive` — adds `-r` when you try to `grep` directory;
+* `grunt_task_not_found` — fixes misspelled `grunt` commands;
+* `gulp_not_task` — fixes misspelled `gulp` tasks;
+* `has_exists_script` — prepends `./` when script/binary exists;
+* `heroku_multiple_apps` — adds `--app <app>` to `heroku` commands like `heroku pg`;
+* `heroku_not_command` — fixes wrong `heroku` commands like `heroku log`;
+* `history` — tries to replace command with the most similar command from history;
+* `hostscli` — tries to fix `hostscli` usage;
+* `ifconfig_device_not_found` — fixes wrong device names like `wlan0` to `wlp2s0`;
+* `java` — removes `.java` extension when running Java programs;
+* `javac` — appends missing `.java` when compiling Java files;
+* `lein_not_task` — fixes wrong `lein` tasks like `lein rpl`;
+* `long_form_help` — changes `-h` to `--help` when the short form version is not supported
+* `ln_no_hard_link` — catches hard link creation on directories, suggest symbolic link;
+* `ln_s_order` — fixes `ln -s` arguments order;
+* `ls_all` — adds `-A` to `ls` when output is empty;
+* `ls_lah` — adds `-lah` to `ls`;
+* `man` — changes manual section;
+* `man_no_space` — fixes man commands without spaces, for example `mandiff`;
+* `mercurial` — fixes wrong `hg` commands;
+* `missing_space_before_subcommand` — fixes command with missing space like `npminstall`;
+* `mkdir_p` — adds `-p` when you try to create a directory without a parent;
+* `mvn_no_command` — adds `clean package` to `mvn`;
+* `mvn_unknown_lifecycle_phase` — fixes misspelled life cycle phases with `mvn`;
+* `npm_missing_script` — fixes `npm` custom script name in `npm run-script <script>`;
+* `npm_run_script` — adds missing `run-script` for custom `npm` scripts;
+* `npm_wrong_command` — fixes wrong npm commands like `npm urgrade`;
+* `no_command` — fixes wrong console commands, for example `vom/vim`;
+* `no_such_file` — creates missing directories with `mv` and `cp` commands;
+* `omnienv_no_such_command` — fixes wrong commands for `goenv`, `nodenv`, `pyenv` and `rbenv` (eg.: `pyenv isntall` or `goenv list`);
+* `open` — either prepends `http://` to address passed to `open` or creates a new file or directory and passes it to `open`;
+* `pip_install` — fixes permission issues with `pip install` commands by adding `--user` or prepending `sudo` if necessary;
+* `pip_unknown_command` — fixes wrong `pip` commands, for example `pip instatl/pip install`;
+* `php_s` — replaces `-s` by `-S` when trying to run a local php server;
+* `port_already_in_use` — kills process that bound port;
+* `prove_recursively` — adds `-r` when called with directory;
+* `python_command` — prepends `python` when you try to run non-executable/without `./` python script;
+* `python_execute` — appends missing `.py` when executing Python files;
+* `python_module_error` — fixes ModuleNotFoundError by trying to `pip install` that module;
+* `quotation_marks` — fixes uneven usage of `'` and `"` when containing args';
+* `path_from_history` — replaces not found path with a similar absolute path from history;
+* `rails_migrations_pending` — runs pending migrations;
+* `react_native_command_unrecognized` — fixes unrecognized `react-native` commands;
+* `remove_shell_prompt_literal` — removes leading shell prompt symbol `$`, common when copying commands from documentations;
+* `remove_trailing_cedilla` — removes trailing cedillas `ç`, a common typo for European keyboard layouts;
+* `rm_dir` — adds `-rf` when you try to remove a directory;
+* `scm_correction` — corrects wrong scm like `hg log` to `git log`;
+* `sed_unterminated_s` — adds missing '/' to `sed`'s `s` commands;
+* `sl_ls` — changes `sl` to `ls`;
+* `ssh_known_hosts` — removes host from `known_hosts` on warning;
+* `sudo` — prepends `sudo` to the previous command if it failed because of permissions;
+* `sudo_command_from_user_path` — runs commands from users `$PATH` with `sudo`;
+* `switch_lang` — switches command from your local layout to en;
+* `systemctl` — correctly orders parameters of confusing `systemctl`;
+* `terraform_init.py` — runs `terraform init` before plan or apply;
+* `terraform_no_command.py` — fixes unrecognized `terraform` commands;
+* `test.py` — runs `pytest` instead of `test.py`;
+* `touch` — creates missing directories before "touching";
+* `tsuru_login` — runs `tsuru login` if not authenticated or session expired;
+* `tsuru_not_command` — fixes wrong `tsuru` commands like `tsuru shell`;
+* `tmux` — fixes `tmux` commands;
+* `unknown_command` — fixes hadoop hdfs-style "unknown command", for example adds missing '-' to the command on `hdfs dfs ls`;
+* `unsudo` — removes `sudo` from previous command if a process refuses to run on superuser privilege.
+* `vagrant_up` — starts up the vagrant instance;
+* `whois` — fixes `whois` command;
+* `workon_doesnt_exists` — fixes `virtualenvwrapper` env name os suggests to create new.
+* `wrong_hyphen_before_subcommand` — removes an improperly placed hyphen (`apt-install` -> `apt install`, `git-log` -> `git log`, etc.)
+* `yarn_alias` — fixes aliased `yarn` commands like `yarn ls`;
+* `yarn_command_not_found` — fixes misspelled `yarn` commands;
+* `yarn_command_replaced` — fixes replaced `yarn` commands;
+* `yarn_help` — makes it easier to open `yarn` documentation;
 
 ##### [Back to Contents](#contents)
 
 The following rules are enabled by default on specific platforms only:
 
-* `apt_get` &ndash; installs app from apt if it not installed (requires `python-commandnotfound` / `python3-commandnotfound`);
-* `apt_get_search` &ndash; changes trying to search using `apt-get` with searching using `apt-cache`;
-* `apt_invalid_operation` &ndash; fixes invalid `apt` and `apt-get` calls, like `apt-get isntall vim`;
-* `apt_list_upgradable` &ndash; helps you run `apt list --upgradable` after `apt update`;
-* `apt_upgrade` &ndash; helps you run `apt upgrade` after `apt list --upgradable`;
-* `brew_cask_dependency` &ndash; installs cask dependencies;
-* `brew_install` &ndash; fixes formula name for `brew install`;
-* `brew_reinstall` &ndash; turns `brew install <formula>` into `brew reinstall <formula>`;
-* `brew_link` &ndash; adds `--overwrite --dry-run` if linking fails;
-* `brew_uninstall` &ndash; adds `--force` to `brew uninstall` if multiple versions were installed;
-* `brew_unknown_command` &ndash; fixes wrong brew commands, for example `brew docto/brew doctor`;
-* `brew_update_formula` &ndash; turns `brew update <formula>` into `brew upgrade <formula>`;
-* `dnf_no_such_command` &ndash; fixes mistyped DNF commands;
-* `nixos_cmd_not_found` &ndash; installs apps on NixOS;
-* `pacman` &ndash; installs app with `pacman` if it is not installed (uses `yay`, `pikaur` or `yaourt` if available);
-* `pacman_invalid_option` &ndash; replaces lowercase `pacman` options with uppercase.
-* `pacman_not_found` &ndash; fixes package name with `pacman`, `yay`, `pikaur` or `yaourt`.
-* `yum_invalid_operation` &ndash; fixes invalid `yum` calls, like `yum isntall vim`;
+* `apt_get` — installs app from apt if it not installed (requires `python-commandnotfound` / `python3-commandnotfound`);
+* `apt_get_search` — changes trying to search using `apt-get` with searching using `apt-cache`;
+* `apt_invalid_operation` — fixes invalid `apt` and `apt-get` calls, like `apt-get isntall vim`;
+* `apt_list_upgradable` — helps you run `apt list --upgradable` after `apt update`;
+* `apt_upgrade` — helps you run `apt upgrade` after `apt list --upgradable`;
+* `brew_cask_dependency` — installs cask dependencies;
+* `brew_install` — fixes formula name for `brew install`;
+* `brew_reinstall` — turns `brew install <formula>` into `brew reinstall <formula>`;
+* `brew_link` — adds `--overwrite --dry-run` if linking fails;
+* `brew_uninstall` — adds `--force` to `brew uninstall` if multiple versions were installed;
+* `brew_unknown_command` — fixes wrong brew commands, for example `brew docto/brew doctor`;
+* `brew_update_formula` — turns `brew update <formula>` into `brew upgrade <formula>`;
+* `dnf_no_such_command` — fixes mistyped DNF commands;
+* `nixos_cmd_not_found` — installs apps on NixOS;
+* `pacman` — installs app with `pacman` if it is not installed (uses `yay`, `pikaur` or `yaourt` if available);
+* `pacman_invalid_option` — replaces lowercase `pacman` options with uppercase.
+* `pacman_not_found` — fixes package name with `pacman`, `yay`, `pikaur` or `yaourt`.
+* `yum_invalid_operation` — fixes invalid `yum` calls, like `yum isntall vim`;
 
 The following commands are bundled with *The Bleep*, but are not enabled by
 default:
 
-* `git_push_force` &ndash; adds `--force-with-lease` to a `git push` (may conflict with `git_push_pull`);
-* `rm_root` &ndash; adds `--no-preserve-root` to `rm -rf /` command.
+* `git_push_force` — adds `--force-with-lease` to a `git push` (may conflict with `git_push_pull`);
+* `rm_root` — adds `--no-preserve-root` to `rm -rf /` command.
 
 ##### [Back to Contents](#contents)
 
@@ -607,23 +607,23 @@ requires_output = True
 Several *The Bleep* parameters can be changed in the file `$XDG_CONFIG_HOME/thebleep/settings.py`
 (`$XDG_CONFIG_HOME` defaults to `~/.config`):
 
-* `rules` &ndash; list of enabled rules, by default `thebleep.const.DEFAULT_RULES`;
-* `exclude_rules` &ndash; list of disabled rules, by default `[]`;
-* `require_confirmation` &ndash; requires confirmation before running new command, by default `True`;
+* `rules` — list of enabled rules, by default `thebleep.const.DEFAULT_RULES`;
+* `exclude_rules` — list of disabled rules, by default `[]`;
+* `require_confirmation` — requires confirmation before running new command, by default `True`;
   when there's no terminal attached (a pipe, a subprocess or CI) confirmation is impossible,
-  so the suggestion is only printed and nothing is run &ndash; pass `--yes` to apply it;
-* `confirm_replay` &ndash; asks before running your previous command a second time to read
+  so the suggestion is only printed and nothing is run — pass `--yes` to apply it;
+* `confirm_replay` — asks before running your previous command a second time to read
   what it printed, by default `True`; see [Reading the previous command](#reading-the-previous-command);
-* `wait_command` &ndash; the max amount of time in seconds for getting previous command output;
-* `no_colors` &ndash; disable colored output;
-* `priority` &ndash; dict with rules priorities, rule with lower `priority` will be matched first;
-* `debug` &ndash; enables debug output, by default `False`;
-* `history_limit` &ndash; the numeric value of how many history commands will be scanned, like `2000`;
-* `alter_history` &ndash; push fixed command to history, by default `True`;
-* `wait_slow_command` &ndash; max amount of time in seconds for getting previous command output if it in `slow_commands` list;
-* `slow_commands` &ndash; list of slow commands;
-* `num_close_matches` &ndash; the maximum number of close matches to suggest, by default `3`.
-* `excluded_search_path_prefixes` &ndash; path prefixes to ignore when searching for commands, by default `[]`.
+* `wait_command` — the max amount of time in seconds for getting previous command output;
+* `no_colors` — disable colored output;
+* `priority` — dict with rules priorities, rule with lower `priority` will be matched first;
+* `debug` — enables debug output, by default `False`;
+* `history_limit` — the numeric value of how many history commands will be scanned, like `2000`;
+* `alter_history` — push fixed command to history, by default `True`;
+* `wait_slow_command` — max amount of time in seconds for getting previous command output if it in `slow_commands` list;
+* `slow_commands` — list of slow commands;
+* `num_close_matches` — the maximum number of close matches to suggest, by default `3`.
+* `excluded_search_path_prefixes` — path prefixes to ignore when searching for commands, by default `[]`.
 
 An example of `settings.py`:
 
@@ -644,21 +644,21 @@ num_close_matches = 5
 
 Or via environment variables:
 
-* `THEBLEEP_RULES` &ndash; list of enabled rules, like `DEFAULT_RULES:rm_root` or `sudo:no_command`;
-* `THEBLEEP_EXCLUDE_RULES` &ndash; list of disabled rules, like `git_pull:git_push`;
-* `THEBLEEP_REQUIRE_CONFIRMATION` &ndash; require confirmation before running new command, `true/false`;
-* `THEBLEEP_CONFIRM_REPLAY` &ndash; ask before running your previous command again to read its output, `true/false`;
-* `THEBLEEP_WAIT_COMMAND` &ndash; the max amount of time in seconds for getting previous command output;
-* `THEBLEEP_NO_COLORS` &ndash; disable colored output, `true/false`;
-* `THEBLEEP_PRIORITY` &ndash; priority of the rules, like `no_command=9999:apt_get=100`,
+* `THEBLEEP_RULES` — list of enabled rules, like `DEFAULT_RULES:rm_root` or `sudo:no_command`;
+* `THEBLEEP_EXCLUDE_RULES` — list of disabled rules, like `git_pull:git_push`;
+* `THEBLEEP_REQUIRE_CONFIRMATION` — require confirmation before running new command, `true/false`;
+* `THEBLEEP_CONFIRM_REPLAY` — ask before running your previous command again to read its output, `true/false`;
+* `THEBLEEP_WAIT_COMMAND` — the max amount of time in seconds for getting previous command output;
+* `THEBLEEP_NO_COLORS` — disable colored output, `true/false`;
+* `THEBLEEP_PRIORITY` — priority of the rules, like `no_command=9999:apt_get=100`,
 rule with lower `priority` will be matched first;
-* `THEBLEEP_DEBUG` &ndash; enables debug output, `true/false`;
-* `THEBLEEP_HISTORY_LIMIT` &ndash; how many history commands will be scanned, like `2000`;
-* `THEBLEEP_ALTER_HISTORY` &ndash; push fixed command to history `true/false`;
-* `THEBLEEP_WAIT_SLOW_COMMAND` &ndash; the max amount of time in seconds for getting previous command output if it in `slow_commands` list;
-* `THEBLEEP_SLOW_COMMANDS` &ndash; list of slow commands, like `lein:gradle`;
-* `THEBLEEP_NUM_CLOSE_MATCHES` &ndash; the maximum number of close matches to suggest, like `5`.
-* `THEBLEEP_EXCLUDED_SEARCH_PATH_PREFIXES` &ndash; path prefixes to ignore when searching for commands, by default `[]`.
+* `THEBLEEP_DEBUG` — enables debug output, `true/false`;
+* `THEBLEEP_HISTORY_LIMIT` — how many history commands will be scanned, like `2000`;
+* `THEBLEEP_ALTER_HISTORY` — push fixed command to history `true/false`;
+* `THEBLEEP_WAIT_SLOW_COMMAND` — the max amount of time in seconds for getting previous command output if it in `slow_commands` list;
+* `THEBLEEP_SLOW_COMMANDS` — list of slow commands, like `lein:gradle`;
+* `THEBLEEP_NUM_CLOSE_MATCHES` — the maximum number of close matches to suggest, like `5`.
+* `THEBLEEP_EXCLUDED_SEARCH_PATH_PREFIXES` — path prefixes to ignore when searching for commands, by default `[]`.
 
 For example:
 
@@ -699,7 +699,7 @@ thebleep_contrib_foo
 ## Experimental instant mode
 
 Correcting a command means knowing what it printed, which normally means running
-it again &ndash; the reason *The Bleep*
+it again — the reason *The Bleep*
 [asks first](#reading-the-previous-command). Instant mode takes the other way
 out: it records your session with [script](https://en.wikipedia.org/wiki/Script_(Unix))
 as it happens and reads the log, so the previous command never runs twice and
