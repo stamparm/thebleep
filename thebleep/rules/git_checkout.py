@@ -54,7 +54,8 @@ def get_new_command(command):
         new_commands.append(replace_argument(command.script, 'checkout', 'checkout -b'))
 
     if not new_commands:
-        new_commands.append(shell.and_('git branch {}', '{}').format(
-            shell.quote(missing_file), command.script))
+        new_commands.append(shell.and_(
+            u'git branch {}'.format(shell.quote(missing_file)),
+            command.script))
 
     return new_commands

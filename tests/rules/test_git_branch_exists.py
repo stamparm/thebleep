@@ -36,6 +36,13 @@ def test_not_match(script):
 @pytest.mark.parametrize('script, src_branch_name, branch_name', [
     ('git branch foo', 'foo', 'foo'),
     ('git checkout bar', 'bar', 'bar'),
-    ('git checkout -b "let\'s-push-this"', "let's-push-this", "let\\'s-push-this")])
+    # A quote in the name used to be escaped by hand as `\\'`, which escapes
+    # nothing inside single quotes -- and the name was not in quotes anyway.
+    ('git checkout -b "let\'s-push-this"', "let's-push-this",
+     """'let'"'"'s-push-this'"""),
+    # git accepts these; the shell must see them as one word.
+    ('git branch f', 'feature;>PWNED', "'feature;>PWNED'"),
+    ('git branch f', 'feature$(id)', "'feature$(id)'"),
+    ('git branch f', 'feature&&id', "'feature&&id'")])
 def test_get_new_command(output, new_command, script, src_branch_name, branch_name):
     assert get_new_command(Command(script, output)) == new_command

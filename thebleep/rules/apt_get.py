@@ -56,5 +56,5 @@ def match(command):
 def get_new_command(command):
     executable = _get_executable(command)
     name = get_package(executable)
-    formatme = shell.and_('sudo apt-get install {}', '{}')
-    return formatme.format(name, command.script)
+    return shell.and_(u'sudo apt-get install {}'.format(shell.quote(name)),
+                      command.script)

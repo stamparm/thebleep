@@ -9,8 +9,8 @@ def match(command):
 def get_new_command(command):
     packages = get_pkgfile(command.script)
 
-    formatme = shell.and_('{} -S {}', '{}')
-    return [formatme.format(pacman, package, command.script)
+    return [shell.and_(u'{} -S {}'.format(pacman, shell.quote(package)),
+                       command.script)
             for package in packages]
 
 
