@@ -202,6 +202,8 @@ jobs:
       # alias spawns a fresh interpreter per correction, so starting up and
       # importing is paid every time. Only the scenarios that need no POSIX
       # shell, so the two platforms are running the same thing.
+      - name: Which phase the time is in
+        run: python bench/where_time_goes.py
       - name: What one correction costs
         run: >
           python bench/bench.py --runs 10 --warmup 2
