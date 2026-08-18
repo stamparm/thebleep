@@ -18,6 +18,24 @@ npm ERR! Please include the following file with any support request:
 npm ERR!     /home/nvbn/exp/code_view/client_web/npm-debug.log
 '''.format
 
+# npm 7 through 9 quote the script name; npm 10 also renamed the prefix.
+output_npm7 = '''
+npm ERR! Missing script: "{}"
+npm ERR!
+npm ERR! Did you mean this?
+npm ERR!     npm run watch-test # run the "watch-test" package script
+npm ERR!
+npm ERR! To see a list of scripts, run:
+npm ERR!   npm run
+'''.format
+
+output_npm10 = '''
+npm error Missing script: "{}"
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run
+'''.format
+
 run_script_stdout = b'''
 Lifecycle scripts included in code-view-web:
   test
@@ -44,7 +62,11 @@ def run_script(mocker):
 @pytest.mark.parametrize('command', [
     Command('npm ru wach', output('wach')),
     Command('npm run live-tes', output('live-tes')),
-    Command('npm run-script sahare', output('sahare'))])
+    Command('npm run-script sahare', output('sahare')),
+    Command('npm ru wach', output_npm7('wach')),
+    Command('npm run live-tes', output_npm7('live-tes')),
+    Command('npm ru wach', output_npm10('wach')),
+    Command('npm run live-tes', output_npm10('live-tes'))])
 def test_match(command):
     assert match(command)
 
@@ -62,7 +84,11 @@ def test_not_match(command):
     ('npm -i run-script dvelop', output('dvelop'),
      'npm -i run-script develop'),
     ('npm -i run-script buld -X POST', output('buld'),
-     'npm -i run-script build -X POST')])
+     'npm -i run-script build -X POST'),
+    ('npm ru wach-tests', output_npm7('wach-tests'), 'npm ru watch-test'),
+    ('npm run dvelop', output_npm7('dvelop'), 'npm run develop'),
+    ('npm ru wach-tests', output_npm10('wach-tests'), 'npm ru watch-test'),
+    ('npm run dvelop', output_npm10('dvelop'), 'npm run develop')])
 def test_get_new_command(script, output, result):
     command = Command(script, output)
 
