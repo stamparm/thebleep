@@ -101,14 +101,15 @@ median of 30 runs; the harness and the recorded run are in `bench/`.
   rules that could match it — 28 of 170 rather than all of them.
 - A rule that looked for twenty-eight different messages lowercased the whole
   output once per message. On a megabyte that was 66 ms; it is 4.6 ms.
-- Correcting a command imports 42 modules beyond a bare interpreter rather than
-  81. `ast`, `pickle`, `socket`, `uuid`, `tempfile`, `shutil`, `subprocess`,
-  `difflib` and `ctypes` are now loaded only where they are used, and `which`
-  and `ShellConfiguration` no longer pull in `shutil` and `collections` for
-  what they do. This is worth most on Windows, where a virus scanner reads
-  every module the interpreter opens: profiled on a real Windows 10 machine
-  with Defender live, a correction takes 308 ms where *The Fuck* takes 876 ms,
-  and imports 109 modules where *The Fuck* imports 424.
+- On Windows, where *The Fuck* has long been called slow, a correction takes
+  308 ms where *The Fuck* takes 876 ms — measured on a real Windows 10 machine
+  with Defender live and nothing excluded. Windows charges for opening files,
+  so what decides it is how many modules each tool opens: 109 against 424.
+  A correction now imports 42 modules beyond a bare interpreter rather than 81;
+  `ast`, `pickle`, `socket`, `uuid`, `tempfile`, `shutil`, `subprocess`,
+  `difflib` and `colorama` are loaded only where they are used, and `which` and
+  `ShellConfiguration` no longer pull in `shutil` and `collections` to do what
+  they do.
 - `python -m thebleep` runs the same entry point as the `thebleep` command, for
   environments whose scripts directory is not on `PATH`.
 
