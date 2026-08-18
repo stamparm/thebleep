@@ -9,8 +9,8 @@ permissions:
   contents: read
 
 # A second push to the same branch makes the first run pointless, so it is
-# stopped rather than left to finish. This is the single biggest thing keeping
-# the bill down while somebody is iterating.
+# stopped rather than left to finish -- which is what frees the runners for the
+# push that replaced it.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -19,17 +19,18 @@ env:
   PYTHON_LATEST: "3.14"
 
 jobs:
-  # Linux is billed at 1x, macOS at 10x and Windows at 2x, so the shape of this
-  # follows the bill: every Python version on Linux, and the two ends of the
-  # range on the others, only for master and for pull requests. A branch push
-  # gets the Linux column, which is where nearly every failure shows up anyway.
+  # Every Python on every system. This is a public repository, so the runners are
+  # free and they run in parallel -- what matters is the longest single job, not
+  # how many there are, and skipping a platform to save a job that costs nothing
+  # only buys a coverage hole.
   test:
-    name: ${{ matrix.python-version }}
+    name: ${{ matrix.os }} ${{ matrix.python-version }}
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
       fail-fast: false
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -45,49 +46,31 @@ jobs:
           pip install -Ur requirements.txt
           pip install -e .
       - name: Lint
-        if: matrix.python-version == env.PYTHON_LATEST
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == env.PYTHON_LATEST
         run: flake8
 
-      # The slow suites are about logic rather than about this machine -- the
-      # rule pack's equivalence corpus, the large-output sweep, the structural
-      # rule checks. They run here, once, and nowhere else: 52 seconds against
-      # 10 for everything else.
+      # The whole suite, on every one of them. The slow parts of it are the
+      # parts most worth running everywhere: the rule pack marshals code
+      # objects, which is a per-interpreter format, and the structural checks
+      # walk the syntax tree, whose node types change between versions.
       - name: Run tests
-        if: matrix.python-version != env.PYTHON_LATEST
-        run: pytest -q -m "not slow" tests
-      - name: Run every test, including the slow and functional ones
-        if: matrix.python-version == env.PYTHON_LATEST
-        run: |
-          docker build -t thebleep/python3 -f tests/Dockerfile --build-arg PYTHON_VERSION=3 .
-          pytest -q tests --enable-functional
+        run: pytest -q tests
       - name: The README's numbers match the recorded benchmark run
-        if: matrix.python-version == env.PYTHON_LATEST
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == env.PYTHON_LATEST
         run: python bench/chart.py --check
 
-  other-systems:
-    # Only where it is worth the multiplier: master and pull requests.
-    name: ${{ matrix.os }} ${{ matrix.python-version }}
-    if: github.ref == 'refs/heads/master' || github.event_name == 'pull_request'
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # The oldest and the newest, which is where a version problem lives.
-          - os: windows-latest
-            python-version: "3.9"
-          - os: windows-latest
-            python-version: "3.14"
-          # One macOS job. At 10x, a second one costs more than the whole Linux
-          # column; what is macOS-specific here is the operating system rather
-          # than the interpreter.
-          - os: macos-latest
-            python-version: "3.14"
-    runs-on: ${{ matrix.os }}
+  functional:
+    # Its own job rather than tacked onto the end of one of the matrix jobs.
+    # Building the container and driving four real shells through a terminal is
+    # about a hundred seconds; run in parallel it is off the critical path,
+    # run in series it *was* the critical path.
+    name: Real shells, in a container
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.12"
           cache: pip
           cache-dependency-path: |
             requirements.txt
@@ -95,7 +78,14 @@ jobs:
       - run: |
           pip install -Ur requirements.txt
           pip install -e .
-      - run: pytest -q -m "not slow" tests
+      - name: Bash, Zsh, Fish and tcsh, typing into a real terminal
+        run: |
+          docker build -t thebleep/python3 -f tests/Dockerfile --build-arg PYTHON_VERSION=3 .
+          # Not tests/functional/test_powershell.py: it pulls a 300 MB image to
+          # reach PowerShell 7 on Linux, and the `powershell` job below already
+          # exercises the same things in real Windows PowerShell 5.1 and 7.
+          pytest -q --enable-functional tests/functional \
+              --ignore=tests/functional/test_powershell.py
 
   minimum-dependencies:
     # The floors in setup.py are a claim about what works. This is the claim
@@ -115,7 +105,7 @@ jobs:
           pip install --no-deps -e .
           pip install "psutil==5.9.0" "pyte==0.8.0"
           pip list
-      - run: pytest -q -m "not slow" tests
+      - run: pytest -q tests
 
   package:
     name: Build, check and install the artifacts
@@ -168,7 +158,6 @@ jobs:
     # one -- in Windows PowerShell 5.1 as well as 7, because they do not agree
     # about command chaining and 5.1 has no `&&`. Half a minute each.
     name: PowerShell ${{ matrix.shell }}
-    if: github.ref == 'refs/heads/master' || github.event_name == 'pull_request'
     runs-on: windows-latest
     strategy:
       fail-fast: false

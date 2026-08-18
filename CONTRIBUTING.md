@@ -82,10 +82,12 @@ a real PowerShell in docker. `pytest tests/test_rulepack_equivalence.py` is the
 slow one and the one worth keeping: it proves the rule cache cannot change which
 corrections exist.
 
-`pytest -q -m "not slow"` skips the three suites that take tens of seconds and
-are about logic rather than about this machine — the rule pack's equivalence
-corpus, the large-output sweep and the structural rule checks. That is what CI
-runs everywhere except on one job, which runs the lot.
+`pytest -q -m "not slow"` skips the three suites that take tens of seconds — the
+rule pack's equivalence corpus, the large-output sweep and the structural rule
+checks — which takes the suite from about 46 seconds to about 10. That is for a
+quick local loop only: CI runs everything on every Python version and every
+operating system, because the pack marshals code objects and the structural
+checks walk the syntax tree, and both of those differ between interpreters.
 
 ## Releasing
 

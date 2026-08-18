@@ -110,9 +110,20 @@ json.dump(out, sys.stdout, sort_keys=True)
 '''
 
 
+def py_path(path):
+    """`pathlib.Path` as the `py.path.local` the rest of this file uses."""
+    import py
+
+    return py.path.local(str(path))
+
+
 @pytest.fixture
 def tree(tmpdir, source_root):
     """A checkout, a user rules directory and a third-party rule package."""
+    return _build_tree(tmpdir, source_root)
+
+
+def _build_tree(tmpdir, source_root):
     config = tmpdir.mkdir('config')
     rules = config.mkdir('thebleep').mkdir('rules')
     rules.join('user_plain.py').write_text(PLAIN, 'utf-8')
@@ -152,6 +163,26 @@ def _corrections(tree, pack=True, seed='0'):
     return json.loads(finished.stdout.decode('utf-8'))
 
 
+@pytest.fixture(scope='module')
+def expected(tmp_path_factory, request):
+    """What a full load of every rule answers, worked out once.
+
+    It is the same answer every time -- it depends on the rules, and on nothing
+    about the cache -- and every test in this module compares against it. Asking
+    for it once instead of once per test is sixteen fewer interpreter starts and
+    about ten seconds off the file, with no test comparing against anything
+    weaker.
+
+    The corrections it returns are command strings and priorities, so nothing in
+    them depends on which temporary directory the tree happened to be built in.
+
+    """
+    directory = tmp_path_factory.mktemp('expected')
+    built = _build_tree(py_path(directory),
+                        request.config.rootpath)
+    return _corrections(built, pack=False)
+
+
 def _packs(tree):
     directory = os.path.join(tree['cache'], 'thebleep')
     if not os.path.isdir(directory):
@@ -161,27 +192,26 @@ def _packs(tree):
 
 
 class TestEquivalence(object):
-    def test_a_cold_pack_agrees_with_a_full_load(self, tree):
-        assert _corrections(tree, pack=True) == _corrections(tree, pack=False)
+    def test_a_cold_pack_agrees_with_a_full_load(self, tree, expected):
+        assert _corrections(tree, pack=True) == expected
 
-    def test_a_warm_pack_agrees_with_a_full_load(self, tree):
+    def test_a_warm_pack_agrees_with_a_full_load(self, tree, expected):
         _corrections(tree, pack=True)
         assert _packs(tree), 'no pack was written, so this proves nothing'
-        assert _corrections(tree, pack=True) == _corrections(tree, pack=False)
+        assert _corrections(tree, pack=True) == expected
 
     @pytest.mark.parametrize('seed', ['0', '1', '987654321'])
     def test_the_hash_seed_changes_nothing(self, tree, seed):
         assert _corrections(tree, pack=True, seed=seed) == \
             _corrections(tree, pack=False, seed='0')
 
-    def test_an_unknown_decorator_does_not_lose_a_rule(self, tree):
+    def test_an_unknown_decorator_does_not_lose_a_rule(self, tree, expected):
         """The decorator ignores the `for_app` under it and matches on output.
 
         Reading that `for_app` and skipping the rule for anything but git would
         lose the correction for `brew instal x` entirely.
 
         """
-        expected = _corrections(tree, pack=False)
         assert _corrections(tree, pack=True) == expected
         flat = json.dumps(expected)
         assert 'from-the-unknown-decorator' in flat
@@ -194,8 +224,7 @@ class TestEquivalence(object):
 class TestADamagedPack(object):
     """A cache that has gone wrong may cost time. It may not lose a rule."""
 
-    def test_one_corrupt_code_blob(self, tree):
-        expected = _corrections(tree, pack=False)
+    def test_one_corrupt_code_blob(self, tree, expected):
         _corrections(tree, pack=True)
 
         path = _packs(tree)[0]
@@ -223,7 +252,7 @@ class TestADamagedPack(object):
         ('mtime', 'not a number'),
         ('size', 'not a number'),
     ])
-    def test_metadata_of_the_wrong_type(self, tree, metadata, value):
+    def test_metadata_of_the_wrong_type(self, tree, expected, metadata, value):
         """Dispatch believes the pack, so a wrong type there is a wrong answer.
 
         `apps` holding a string makes the intersection compare characters, and a
@@ -231,7 +260,6 @@ class TestADamagedPack(object):
         settings. Each of these is treated as a missing entry and built again.
 
         """
-        expected = _corrections(tree, pack=False)
         _corrections(tree, pack=True)
 
         path = _packs(tree)[0]
@@ -249,8 +277,7 @@ class TestADamagedPack(object):
         # it must not do is produce a different one.
         assert _corrections(tree, pack=True) == expected
 
-    def test_a_truncated_pack(self, tree):
-        expected = _corrections(tree, pack=False)
+    def test_a_truncated_pack(self, tree, expected):
         _corrections(tree, pack=True)
 
         path = _packs(tree)[0]
@@ -275,14 +302,16 @@ class TestADamagedPack(object):
         with open(os.path.join(rules, 'user_plain.py'), 'a') as handle:
             handle.write(u'\n\npriority = 42\n')
 
+        # Compared against its own full load rather than the shared one: this
+        # test changes a rule, so the answer is not the one every other test
+        # here expects.
         got = _corrections(tree, pack=True)
         assert got == _corrections(tree, pack=False)
         assert 42 in [priority
                       for _, _, corrections in got
                       for _, priority, _ in corrections]
 
-    def test_an_unwritable_cache(self, tree, tmpdir):
-        expected = _corrections(tree, pack=False)
+    def test_an_unwritable_cache(self, tree, expected, tmpdir):
         blocked = tmpdir.join('no-cache-here')
         blocked.write('not a directory')
         tree['environment']['XDG_CACHE_HOME'] = str(blocked)
