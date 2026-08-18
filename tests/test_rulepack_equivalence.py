@@ -20,6 +20,8 @@ import subprocess
 import sys
 import pytest
 
+pytestmark = pytest.mark.slow
+
 # A rule of somebody's own, decorated with something we know nothing about. The
 # decorator ignores the `for_app` underneath it, so anything the pack concluded
 # from that would be wrong -- which is why an unrecognised decorator has to stop

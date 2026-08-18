@@ -7,11 +7,18 @@ backtracking regex or copies it once per pattern turns a correction into a hang.
 One such regex was found by accident, from the benchmark; this is that discovery
 made permanent.
 
-The guard is deliberately relative. An absolute millisecond threshold across
-whatever machine CI hands us is a flake, but "sixteen times the input took
-roughly sixteen times as long" holds on a fast laptop and a loaded runner alike.
-Only rules slow enough for the comparison to mean anything are judged, so noise
-on the small size cannot fail the build.
+The guard was a ratio -- "sixteen times the input took roughly sixteen times as
+long" -- and that turned out to be the flaky one. On a CI runner the 64 KB
+measurement for a fast rule comes back as 0.0 ms, and a ratio against zero fails
+whatever the large measurement is. It failed on macOS and on Linux for two
+different rules, neither of which is superlinear.
+
+So the guard is an absolute ceiling with a very large margin, which the shape of
+this particular bug allows: the regex that started all this took *minutes* on a
+megabyte, and the slowest rule in the corpus takes about 25 ms. A second and a
+half is fifty times the honest worst case and a fraction of the dishonest one,
+which is not a threshold anybody has to tune. The ratio is still checked, but
+only when both measurements are big enough for one to mean anything.
 
 """
 
@@ -23,16 +30,26 @@ import pytest
 from thebleep import rules as rules_package
 from thebleep.types import Command, Rule
 
+pytestmark = pytest.mark.slow
+
 RULES_DIRECTORY = os.path.dirname(os.path.abspath(rules_package.__file__))
 
 SMALL = 64 * 1024
 LARGE = 16 * SMALL          # a megabyte
 
-# Only look at rules that take long enough for a ratio to mean something.
-WORTH_JUDGING_MS = 15
+# No rule may take longer than this to read a megabyte. The slowest in the
+# corpus takes about 25 ms on this machine; the quadratic regex this test exists
+# for took minutes.
+CEILING_MS = 1500
 
-# How much worse than linear counts as a problem. Generous: the point is to
-# catch quadratic, not to police a factor of two.
+# Below this, a measurement is timer noise and a ratio built on it means
+# nothing -- which is how the ratio guard managed to fail for rules that are
+# perfectly linear.
+MEASURABLE_MS = 5.0
+
+# How much worse than linear counts as a problem, when the ratio is meaningful
+# at all. Generous: the point is to catch quadratic, not to police a factor of
+# two.
 SLACK = 4.0
 
 
@@ -72,20 +89,29 @@ def loaded():
             for name in rule_names()}
 
 
+def _once(rule, command):
+    started = time.perf_counter()
+    try:
+        if rule.match(command):
+            rule.get_new_command(command)
+    except Exception:
+        # Whether a rule raises is `test_rule_quality`'s subject. Here it only
+        # matters how long it took to get there.
+        pass
+    return (time.perf_counter() - started) * 1000
+
+
 def _slowest(rule, output):
-    """The worst time this rule takes over any of the scripts, in ms."""
+    """The worst time this rule takes over any of the scripts, in ms.
+
+    Each script is timed twice and the quicker of the two kept: a runner that
+    descheduled us once should not be reported as a slow rule.
+
+    """
     worst = 0.0
     for script in SCRIPTS:
         command = Command(script, output)
-        started = time.perf_counter()
-        try:
-            if rule.match(command):
-                rule.get_new_command(command)
-        except Exception:
-            # Whether a rule raises is `test_rule_quality`'s subject. Here it
-            # only matters how long it took to get there.
-            pass
-        worst = max(worst, (time.perf_counter() - started) * 1000)
+        worst = max(worst, min(_once(rule, command), _once(rule, command)))
     return worst
 
 
@@ -95,12 +121,23 @@ def test_a_rule_reads_a_megabyte_in_proportion(name, loaded):
     if rule is None:
         pytest.skip('{} did not load'.format(name))
 
-    for shape, _ in shapes(SMALL):
-        small = _slowest(rule, dict(shapes(SMALL))[shape])
-        large = _slowest(rule, dict(shapes(LARGE))[shape])
-        if large < WORTH_JUDGING_MS:
+    small_shapes = dict(shapes(SMALL))
+    large_shapes = dict(shapes(LARGE))
+
+    for shape in small_shapes:
+        large = _slowest(rule, large_shapes[shape])
+
+        assert large <= CEILING_MS, (
+            '{} took {:.0f} ms to read {} KB of {}, and the ceiling is {} ms. '
+            'Something in it is not reading the output once.'.format(
+                name, large, LARGE // 1024, shape, CEILING_MS))
+
+        small = _slowest(rule, small_shapes[shape])
+        if small < MEASURABLE_MS:
+            # Too quick at 64 KB for a ratio to say anything.
             continue
-        linear = max(small, 0.05) * (LARGE / float(SMALL))
+
+        linear = small * (LARGE / float(SMALL))
         assert large <= linear * SLACK, (
             '{} took {:.1f} ms on {} KB of {} and {:.1f} ms on {} KB, which is '
             '{:.1f}x worse than reading it in proportion'.format(

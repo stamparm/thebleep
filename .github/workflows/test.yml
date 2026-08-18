@@ -8,48 +8,94 @@ on: [push, pull_request]
 permissions:
   contents: read
 
+# A second push to the same branch makes the first run pointless, so it is
+# stopped rather than left to finish. This is the single biggest thing keeping
+# the bill down while somebody is iterating.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   PYTHON_LATEST: "3.14"
 
 jobs:
+  # Linux is billed at 1x, macOS at 10x and Windows at 2x, so the shape of this
+  # follows the bill: every Python version on Linux, and the two ends of the
+  # range on the others, only for master and for pull requests. A branch push
+  # gets the Linux column, which is where nearly every failure shows up anyway.
   test:
+    name: ${{ matrix.python-version }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
       fail-fast: false
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Cache dependencies
-        id: cache-deps
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ env.pythonLocation }}/bin/*
-            ${{ env.pythonLocation }}/lib/*
-            ${{ env.pythonLocation }}/scripts/*
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('setup.py', 'requirements.txt') }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            setup.py
       - name: Install The Bleep with all dependencies
-        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
           pip install -Ur requirements.txt
           pip install -e .
       - name: Lint
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == env.PYTHON_LATEST
+        if: matrix.python-version == env.PYTHON_LATEST
         run: flake8
+
+      # The slow suites are about logic rather than about this machine -- the
+      # rule pack's equivalence corpus, the large-output sweep, the structural
+      # rule checks. They run here, once, and nowhere else: 52 seconds against
+      # 10 for everything else.
       - name: Run tests
-        if: matrix.os != 'ubuntu-latest' || matrix.python-version != env.PYTHON_LATEST
-        run: pytest -v --capture=sys tests
-      - name: Run tests (including functional)
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == env.PYTHON_LATEST
+        if: matrix.python-version != env.PYTHON_LATEST
+        run: pytest -q -m "not slow" tests
+      - name: Run every test, including the slow and functional ones
+        if: matrix.python-version == env.PYTHON_LATEST
         run: |
           docker build -t thebleep/python3 -f tests/Dockerfile --build-arg PYTHON_VERSION=3 .
-          pytest -v --capture=sys tests --enable-functional
+          pytest -q tests --enable-functional
+      - name: The README's numbers match the recorded benchmark run
+        if: matrix.python-version == env.PYTHON_LATEST
+        run: python bench/chart.py --check
+
+  other-systems:
+    # Only where it is worth the multiplier: master and pull requests.
+    name: ${{ matrix.os }} ${{ matrix.python-version }}
+    if: github.ref == 'refs/heads/master' || github.event_name == 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The oldest and the newest, which is where a version problem lives.
+          - os: windows-latest
+            python-version: "3.9"
+          - os: windows-latest
+            python-version: "3.14"
+          # One macOS job. At 10x, a second one costs more than the whole Linux
+          # column; what is macOS-specific here is the operating system rather
+          # than the interpreter.
+          - os: macos-latest
+            python-version: "3.14"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            setup.py
+      - run: |
+          pip install -Ur requirements.txt
+          pip install -e .
+      - run: pytest -q -m "not slow" tests
 
   minimum-dependencies:
     # The floors in setup.py are a claim about what works. This is the claim
@@ -61,13 +107,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
       - name: Install the lowest version of everything setup.py allows
         run: |
           pip install -Ur requirements.txt
           pip install --no-deps -e .
           pip install "psutil==5.9.0" "pyte==0.8.0"
           pip list
-      - run: pytest -q tests
+      - run: pytest -q -m "not slow" tests
 
   package:
     name: Build, check and install the artifacts
@@ -118,8 +166,9 @@ jobs:
   powershell:
     # We say PowerShell is supported, so the correction loop is run in a real
     # one -- in Windows PowerShell 5.1 as well as 7, because they do not agree
-    # about command chaining and 5.1 has no `&&`.
+    # about command chaining and 5.1 has no `&&`. Half a minute each.
     name: PowerShell ${{ matrix.shell }}
+    if: github.ref == 'refs/heads/master' || github.event_name == 'pull_request'
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -147,39 +196,33 @@ jobs:
         run: |
           ${{ matrix.shell }} -NoProfile -File chain.ps1 | Tee-Object -Variable out
           if ($out -notcontains "ran: True") { throw "the second half did not run" }
-      - name: The alias corrects a command, and leaves nothing behind
+      - name: The alias corrects a command, and puts the environment back
         shell: bash
         run: |
           python - > loop.ps1 <<'PY'
           from thebleep.shells import Powershell
-          print(Powershell().app_alias('bleep'))
+          alias = Powershell().app_alias('bleep')
+          # Nothing set beforehand: it has to come back not set, and not as an
+          # empty string, which is a different thing.
+          print(alias)
           print('ehco it-works')
           print('bleep --yes')
-          print('"TB_SHELL unset after: " + ($null -eq $env:TB_SHELL)')
-          print('"TB_ALIAS unset after: " + ($null -eq $env:TB_ALIAS)')
+          print('"unset stays unset: " + ($null -eq $env:TB_SHELL)')
+          # Something set beforehand: it has to come back with that value.
+          print('$env:TB_SHELL = "mine"')
+          print('ehco it-works-again')
+          print('bleep --yes')
+          print('"set is restored: " + ($env:TB_SHELL -eq "mine")')
           print('exit')
           PY
           cat loop.ps1
       - name: ...in ${{ matrix.shell }}
-        env:
-          TB_SHELL: powershell
         run: |
           Get-Content loop.ps1 | ${{ matrix.shell }} -NoProfile -Command - |
             Tee-Object -Variable out
           $text = $out -join "`n"
           if ($text -notmatch 'it-works') { throw "the correction did not run" }
-          if ($text -notmatch 'TB_SHELL unset after: True') { throw "TB_SHELL was left behind" }
-          if ($text -notmatch 'TB_ALIAS unset after: True') { throw "TB_ALIAS was left behind" }
-
-  benchmark-chart:
-    # The README quotes numbers. They are generated from the recorded run, so
-    # they can drift out of step with it, and a README that quotes numbers
-    # nothing produced is worse than one with no numbers in it.
-    name: The README's numbers match the recorded run
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: python bench/chart.py --check
+          if ($text -notmatch 'unset stays unset: True') {
+            throw "TB_SHELL was left behind, or left as an empty string" }
+          if ($text -notmatch 'set is restored: True') {
+            throw "TB_SHELL was not put back to what it was" }

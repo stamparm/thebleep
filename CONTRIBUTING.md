@@ -82,6 +82,11 @@ a real PowerShell in docker. `pytest tests/test_rulepack_equivalence.py` is the
 slow one and the one worth keeping: it proves the rule cache cannot change which
 corrections exist.
 
+`pytest -q -m "not slow"` skips the three suites that take tens of seconds and
+are about logic rather than about this machine — the rule pack's equivalence
+corpus, the large-output sweep and the structural rule checks. That is what CI
+runs everywhere except on one job, which runs the lot.
+
 ## Releasing
 
 `release.py` prepares and checks a release. It does not publish one.

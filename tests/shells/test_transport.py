@@ -43,6 +43,24 @@ SHELLS = {
 ONE_VARIABLE_LIMIT = 128 * 1024
 
 
+def _history_reaches_us(name, tmpdir):
+    """Whether this shell hands us any history in this harness at all.
+
+    A non-interactive shell records history only if it feels like it, and the
+    ones here disagree: bash 3.2, which is what macOS ships, gives back nothing
+    for `history -s` followed by `fc -ln`, and a non-interactive zsh does not
+    number events so `fc -ln -N` cannot pick a window. That is the harness, not
+    the alias -- what the shell hands over in a real terminal is covered by the
+    functional tests, which drive one.
+
+    So the assertions that need history present are skipped where it is not,
+    rather than passing for the wrong reason.
+
+    """
+    _, reported = _run(name, [u'"a probe command"'], tmpdir.mkdir('probe'))
+    return int(reported.get('history-chars', 0)) > 0
+
+
 def _run(name, history, tmpdir):
     """Defines the alias in a real `name`, runs it, and reports what happened."""
     binary = shutil.which(name)
@@ -92,6 +110,9 @@ class TestAliasTransport(object):
         assert 'TB_SHELL' in output
         assert 'TB_ALIAS' in output
         assert 'TB_SHELL_ALIASES' in output
+        if not _history_reaches_us(name, tmpdir):
+            pytest.skip('{} keeps no history in a non-interactive shell'
+                        .format(name))
         assert 'gti status' in reported['history-last']
 
     def test_nothing_is_left_exported(self, name, tmpdir):
@@ -134,6 +155,11 @@ class TestAliasTransport(object):
         output, reported = _run(name, [huge, u'"gti status"'], tmpdir)
 
         assert 'too long' not in output.lower(), wide
+        if not _history_reaches_us(name, tmpdir):
+            # Otherwise there was nothing oversized to trim and this would pass
+            # for the wrong reason.
+            pytest.skip('{} keeps no history in a non-interactive shell'
+                        .format(name))
         # The huge entry is still the one before last, so this also says that it
         # does not stay broken while that command is recent.
         assert 'corrected' in output

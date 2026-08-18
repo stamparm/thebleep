@@ -16,6 +16,8 @@ from thebleep import rulepack
 from thebleep import rules as rules_package
 from thebleep.types import Command, Rule
 
+pytestmark = pytest.mark.slow
+
 
 RULES_DIRECTORY = os.path.dirname(os.path.abspath(rules_package.__file__))
 

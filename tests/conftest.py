@@ -9,6 +9,13 @@ shells.shell = shells.Generic()
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "functional: mark test as functional")
+    # Suites that take tens of seconds and are about logic rather than about
+    # this machine: the rule pack's equivalence corpus, the large-output sweep,
+    # the structural rule checks. Worth running on every commit, not worth
+    # running once per operating system per Python version -- CI runs them on
+    # one job with `-m 'not slow'` everywhere else.
+    config.addinivalue_line(
+        "markers", "slow: platform-independent and slow; run once in CI")
 
 
 def pytest_addoption(parser):
