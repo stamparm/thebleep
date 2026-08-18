@@ -5,13 +5,14 @@ from thebleep.utils import for_app, eager, replace_command, cache, which
 
 @for_app('gem')
 def match(command):
-    return ('ERROR:  While executing gem ... (Gem::CommandLineError)'
-            in command.output
+    # RubyGems raised Gem::CommandLineError for this until 3.2 and
+    # Gem::UnknownCommandError since, so the class name is no help.
+    return ('ERROR:  While executing gem ...' in command.output
             and 'Unknown command' in command.output)
 
 
 def _get_unknown_command(command):
-    return re.findall(r'Unknown command (.*)$', command.output)[0]
+    return re.findall(r'Unknown command (\S+)', command.output)[0]
 
 
 @eager

@@ -5,9 +5,21 @@ import pytest
 from thebleep.rules.gem_unknown_command import match, get_new_command
 from thebleep.types import Command
 
+# RubyGems 3.4.20. The error class changed in 3.2, the suggestion and the
+# backtrace are new, and the backtrace is what matters: it means the line
+# naming the command is no longer the last one in the output.
 output = '''
+ERROR:  While executing gem ... (Gem::UnknownCommandError)
+    Unknown command {0}
+Did you mean?  "install"
+\t/usr/lib/ruby/vendor_ruby/rubygems/command_manager.rb:206:in `find_command'
+\t/usr/lib/ruby/vendor_ruby/rubygems/command_manager.rb:251:in `invoke_command'
+\t/usr/bin/gem:12:in `<main>'
+'''
+
+legacy_output = '''
 ERROR:  While executing gem ... (Gem::CommandLineError)
-    Unknown command {}
+    Unknown command {0}
 '''
 
 gem_help_commands_stdout = b'''
@@ -67,6 +79,13 @@ def gem_help_commands(mocker):
     ('gem last --local', 'last')])
 def test_match(script, command):
     assert match(Command(script, output.format(command)))
+
+
+@pytest.mark.parametrize('script, command', [
+    ('gem isntall jekyll', 'isntall'),
+    ('gem last --local', 'last')])
+def test_match_on_an_old_rubygems(script, command):
+    assert match(Command(script, legacy_output.format(command)))
 
 
 @pytest.mark.parametrize('script, output', [
