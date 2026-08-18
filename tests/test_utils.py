@@ -4,6 +4,7 @@ from pathlib import Path
 from importlib.metadata import PackageNotFoundError, version
 import pickle
 import pytest
+import os
 import warnings
 from unittest.mock import Mock, call, patch
 from thebleep.utils import default_settings, \
@@ -350,13 +351,18 @@ class TestGetValidHistoryWithoutCurrent(object):
                             return_value='bleep')
 
     @pytest.fixture(autouse=True)
-    def bins(self, mocker):
-        entries = list()
-        for name in ['diff', 'ls', 'café']:
-            entry_mock = mocker.Mock(name=name)
-            entry_mock.configure_mock(name=name, is_dir=lambda: False)
-            entries.append(entry_mock)
-        return mocker.patch('os.scandir', return_value=entries)
+    def bins(self, tmpdir, os_environ):
+        # Real files with the executable bit on, rather than mocked directory
+        # entries: what counts as a command is now a question about the file,
+        # and a mock cannot answer it.
+        directory = tmpdir.mkdir('bin')
+        for name in ['diff', 'ls', u'café']:
+            entry = directory.join(name)
+            entry.write('#!/bin/sh\nexit 0\n')
+            os.chmod(str(entry), 0o755)
+        os_environ['PATH'] = str(directory)
+        os_environ['XDG_CACHE_HOME'] = str(tmpdir.mkdir('cache'))
+        return directory
 
     @pytest.mark.parametrize('script, result', [
         ('le cat', ['ls cat', 'diff x', u'café ô']),

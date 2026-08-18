@@ -182,8 +182,30 @@ def _invocable_name(name, extensions):
     return name
 
 
+def _is_invocable(entry, extensions):
+    """Whether typing this entry's name would run something.
+
+    Every non-directory entry used to count, so a README in a directory on PATH
+    was offered as a command -- and `get_close_matches` would offer a
+    non-executable `realthinh` ahead of the `realthing` next to it, because it
+    only compares spelling.
+
+    On Windows the question is whether the extension is one the shell will run,
+    which is what PATHEXT is. On POSIX it is the executable bit, asked as "could
+    I run this", so that a file belonging to somebody else is not offered either.
+
+    """
+    if extensions:
+        return os.path.splitext(entry.name)[1].lower() in extensions
+
+    try:
+        return os.access(entry.path, os.X_OK)
+    except OSError:
+        return False
+
+
 def _scan_executables(paths, skip):
-    """Every non-directory entry in `paths`, cached until a directory changes.
+    """Every invocable entry in `paths`, cached until a directory changes.
 
     Scanning is a five-figure number of directory entries on a normal machine,
     which is far and away the slowest thing a correction used to do.
@@ -211,10 +233,13 @@ def _scan_executables(paths, skip):
             continue
         for entry in entries:
             name = _invocable_name(entry.name, extensions)
+            # Deduplicated before anything is asked of the filesystem: about
+            # half the entries on a normal PATH are names seen in an earlier
+            # directory, and each check is a syscall.
             if name in skip or name in seen:
                 continue
             try:
-                if entry.is_dir():
+                if entry.is_dir() or not _is_invocable(entry, extensions):
                     continue
             except OSError:
                 continue

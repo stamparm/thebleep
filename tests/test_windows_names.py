@@ -87,5 +87,7 @@ def test_scanning_reports_names_as_they_would_be_typed(tmpdir, os_environ,
         bin_dir.join(name).write('')
     os_environ['PATH'] = str(bin_dir)
 
+    # `notes.txt` is not in PATHEXT, so typing `notes` runs nothing and typing
+    # `notes.txt` opens an editor. It used to be listed as a command.
     found = utils._scan_executables([str(bin_dir)], ())
-    assert sorted(found) == ['PING', 'notes.txt', 'pnpm']
+    assert sorted(found) == ['PING', 'pnpm']

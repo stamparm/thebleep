@@ -154,6 +154,14 @@ class TestPack(object):
         assert not stale.is_file()
 
 
+def install(directory, name, executable=True):
+    """A program in a directory on PATH, or a file that is not one."""
+    entry = directory.join(name)
+    entry.write('#!/bin/sh\nexit 0\n')
+    os.chmod(str(entry), 0o755 if executable else 0o644)
+    return entry
+
+
 class TestExecutablesCache(object):
     """The listing of everything on $PATH is remembered between runs, and has
     to stop being remembered the moment a directory changes."""
@@ -161,7 +169,7 @@ class TestExecutablesCache(object):
     @pytest.fixture
     def bin_dir(self, tmpdir, os_environ, cache_home):
         directory = tmpdir.mkdir('bin')
-        directory.join('already-here').write('')
+        install(directory, 'already-here')
         os_environ['PATH'] = str(directory)
         return directory
 
@@ -192,7 +200,7 @@ class TestExecutablesCache(object):
             # A new name each time: rewriting a file that is already there
             # changes the file's timestamp, not the directory's.
             installed = 'just-installed-{}'.format(attempt)
-            bin_dir.join(installed).write('')
+            install(bin_dir, installed)
             if os.stat(str(bin_dir)).st_mtime_ns != before:
                 break
             assert time.time() < deadline, 'the directory mtime never moved'
@@ -214,7 +222,7 @@ class TestExecutablesCache(object):
 
     def test_entry_points_are_left_out(self, bin_dir):
         from thebleep import utils
-        bin_dir.join('bleep').write('')
+        install(bin_dir, 'bleep')
         found = utils._scan_executables([str(bin_dir)], ('bleep',))
         assert 'bleep' not in found
         assert 'already-here' in found
@@ -229,6 +237,84 @@ class TestExecutablesCache(object):
         found = utils._scan_executables(
             [str(bin_dir), str(bin_dir.join('nope'))], ())
         assert 'already-here' in found
+
+    def test_a_file_you_cannot_run_is_not_a_command(self, bin_dir):
+        """`get_close_matches` only compares spelling, so a README next to a
+        program was offered as one -- and a non-executable `realthinh` came back
+        ahead of the `realthing` beside it."""
+        from thebleep import utils
+
+        install(bin_dir, 'realthing')
+        install(bin_dir, 'realthinh', executable=False)
+        install(bin_dir, 'README.md', executable=False)
+
+        found = utils._scan_executables([str(bin_dir)], ())
+        assert 'realthing' in found
+        assert 'realthinh' not in found
+        assert 'README.md' not in found
+        assert utils.get_close_matches('realthinj', found) == ['realthing']
+
+    def test_a_broken_symlink_is_not_a_command(self, bin_dir):
+        from thebleep import utils
+
+        os.symlink(str(bin_dir.join('nothing-here')),
+                   str(bin_dir.join('dangling')))
+        assert 'dangling' not in utils._scan_executables([str(bin_dir)], ())
+
+    def test_chmod_is_noticed_within_the_staleness_bound(
+            self, bin_dir, mocker):
+        """A mode change touches the file, not the directory it is in.
+
+        So the fingerprint cannot see it, and what stands behind that is the
+        bound on how long a listing may be trusted.
+
+        """
+        from thebleep import utils
+
+        install(bin_dir, 'not-yet', executable=False)
+        assert 'not-yet' not in utils._scan_executables([str(bin_dir)], ())
+
+        os.chmod(str(bin_dir.join('not-yet')), 0o755)
+        assert 'not-yet' not in utils._scan_executables([str(bin_dir)], ())
+
+        mocker.patch('time.time',
+                     return_value=time.time()
+                     + utils.EXECUTABLES_CACHE_MAX_AGE + 1)
+        assert 'not-yet' in utils._scan_executables([str(bin_dir)], ())
+
+    def test_on_windows_it_is_the_extension_that_decides(
+            self, bin_dir, mocker):
+        """PATHEXT is the shell's own answer to what it will run.
+
+        Checking an executable bit there would keep every file in the
+        directory, README included.
+
+        """
+        from thebleep import utils
+
+        mocker.patch('thebleep.utils._executable_extensions',
+                     return_value=('.com', '.exe', '.bat', '.cmd'))
+        install(bin_dir, 'runme.exe', executable=False)
+        install(bin_dir, 'script.bat', executable=False)
+        install(bin_dir, 'notes.txt', executable=False)
+        install(bin_dir, 'no-extension', executable=False)
+
+        found = utils._scan_executables([str(bin_dir)], ())
+        assert 'runme' in found
+        assert 'script' in found
+        assert 'notes.txt' not in found
+        assert 'no-extension' not in found
+
+    def test_names_differing_only_in_case_are_one_command_on_windows(
+            self, bin_dir, mocker):
+        from thebleep import utils
+
+        mocker.patch('thebleep.utils._executable_extensions',
+                     return_value=('.exe',))
+        install(bin_dir, 'Ping.exe', executable=False)
+        found = utils._scan_executables([str(bin_dir)], ())
+        assert 'Ping' in found
+        assert utils.get_close_matches('ping', found) == ['Ping']
 
 
 class TestMetadata(object):
