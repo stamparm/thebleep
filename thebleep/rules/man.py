@@ -1,4 +1,13 @@
+import re
+from thebleep.shells import shell
 from thebleep.utils import for_app
+
+# The manual sections a page is most often in the other one of: system calls and
+# library functions.
+SECTIONS = {'2': '3', '3': '2'}
+
+# A section as an argument of its own, or glued to `-s` as `man -s3 read`.
+SECTION = re.compile(r'^(-s)?([23])$')
 
 
 @for_app('man', at_least=1)
@@ -7,27 +16,27 @@ def match(command):
 
 
 def get_new_command(command):
-    if '3' in command.script:
-        return command.script.replace("3", "2")
-    if '2' in command.script:
-        return command.script.replace("2", "3")
+    # A section is an argument of its own. Looking for the characters `2` and `3`
+    # anywhere in the script, which is what this used to do, turned
+    # `man python3` into `man python2` and `man ls3` into `man ls2`.
+    parts = list(command.script_parts)
 
-    last_arg = command.script_parts[-1]
-    help_command = last_arg + ' --help'
+    for index, part in enumerate(parts[1:], 1):
+        found = SECTION.match(part)
+        if found:
+            parts[index] = (found.group(1) or '') + SECTIONS[found.group(2)]
+            return u' '.join(parts)
 
-    # If there are no man pages for last_arg, suggest `last_arg --help` instead.
-    # Otherwise, suggest `--help` after suggesting other man page sections.
-    if command.output.strip() == 'No manual entry for ' + last_arg:
+    # A copy: `parts` used to be `command.script_parts` itself, and inserting
+    # into it left every rule consulted afterwards looking at a command whose
+    # parts had had ' 2 ' spliced into them.
+    last_arg = parts[-1]
+    help_command = u'{} --help'.format(shell.quote(last_arg))
+
+    # No manual page at all, so there is no other section to try.
+    if command.output.strip() == u'No manual entry for ' + last_arg:
         return [help_command]
 
-    split_cmd2 = command.script_parts
-    split_cmd3 = split_cmd2[:]
-
-    split_cmd2.insert(1, ' 2 ')
-    split_cmd3.insert(1, ' 3 ')
-
-    return [
-        "".join(split_cmd3),
-        "".join(split_cmd2),
-        help_command,
-    ]
+    return [u' '.join([parts[0], '3'] + parts[1:]),
+            u' '.join([parts[0], '2'] + parts[1:]),
+            help_command]
