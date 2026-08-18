@@ -7,7 +7,11 @@ effect, or the user said it could.
 
 """
 
+import os
+import sys
+import pexpect
 import pytest
+import thebleep
 from thebleep import replay
 
 
@@ -232,3 +236,52 @@ class TestTheSideEffectItself(object):
 
         assert side_effect.read().count('ran') == 2
         assert 'it went wrong' in command.output
+
+
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='needs a pty to be asked anything')
+class TestTheQuestionOnARealTerminal(object):
+    """The question is written without a trailing newline and is followed by a
+    blocking read, so only a real terminal shows whether it arrives at all: an
+    unflushed prompt leaves the user staring at nothing while it waits."""
+
+    @pytest.fixture
+    def ask_about(self, tmpdir):
+        marks = tmpdir.join('marks')
+        script = tmpdir.join('leaves-a-mark')
+        script.write('#!/bin/sh\n'
+                     'echo ran >> "{}"\n'
+                     'echo "leaves-a-mark: it went wrong" >&2\n'
+                     'exit 1\n'.format(marks))
+        script.chmod(0o755)
+
+        def run(answer):
+            marks.write('')
+            environment = dict(os.environ,
+                               PATH=str(tmpdir) + os.pathsep + os.environ['PATH'],
+                               PYTHONPATH=os.path.dirname(os.path.dirname(
+                                   os.path.abspath(thebleep.__file__))),
+                               XDG_CONFIG_HOME=str(tmpdir.mkdir('config')),
+                               XDG_CACHE_HOME=str(tmpdir.mkdir('cache')),
+                               TB_SHELL='bash')
+            child = pexpect.spawn(
+                sys.executable,
+                ['-c', 'import sys; sys.argv = ["thebleep", "leaves-a-mark"];'
+                       'from thebleep.entrypoints.main import main; main()'],
+                env=environment, encoding='utf-8', timeout=30)
+            try:
+                child.expect('Run it')
+                child.send(answer)
+                child.expect(pexpect.EOF)
+            finally:
+                child.close(force=True)
+            return len(marks.read().split())
+
+        return run
+
+    def test_the_question_reaches_the_terminal_and_no_means_no(self,
+                                                               ask_about):
+        assert ask_about('n') == 0
+
+    def test_yes_means_yes(self, ask_about):
+        assert ask_about('y') == 1
