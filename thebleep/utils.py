@@ -101,11 +101,27 @@ def get_closest(word, possibilities, cutoff=0.6, fallback_to_first=True):
             return possibilities[0]
 
 
+# Windows resolves `ping` to `PING.EXE`, so a name that differs only in case
+# is the same command to whoever typed it.
+CASE_INSENSITIVE_NAMES = os.path.normcase('A') == os.path.normcase('a')
+
+
 def get_close_matches(word, possibilities, n=None, cutoff=0.6):
     """Overrides `difflib.get_close_match` to control argument `n`."""
     if n is None:
         n = settings.num_close_matches
-    return difflib_get_close_matches(word, possibilities, n, cutoff)
+
+    if not CASE_INSENSITIVE_NAMES:
+        return difflib_get_close_matches(word, possibilities, n, cutoff)
+
+    # Compare without case, but suggest each name the way it really is spelled.
+    as_typed = {}
+    for possibility in possibilities:
+        as_typed.setdefault(possibility.lower(), possibility)
+
+    return [as_typed[match]
+            for match in difflib_get_close_matches(
+                word.lower(), list(as_typed), n, cutoff)]
 
 
 def include_path_in_search(path):
@@ -137,6 +153,32 @@ def _path_fingerprint(paths):
 EXECUTABLES_CACHE_MAX_AGE = 600
 
 
+def _executable_extensions():
+    """The extensions Windows lets you leave off when typing a command.
+
+    Nobody types `pnpm.cmd`, so comparing a typo against the name with the
+    extension still on it measures the wrong distance and finds nothing.
+
+    """
+    if os.name != 'nt':
+        return ()
+
+    # PATHEXT is semicolon-separated whatever `os.pathsep` says.
+    return tuple(extension.lower()
+                 for extension in os.environ.get('PATHEXT', '').split(';')
+                 if extension.startswith('.'))
+
+
+def _invocable_name(name, extensions):
+    """`name` as it would be typed, with any implied extension dropped."""
+    if extensions:
+        stem, extension = os.path.splitext(name)
+        if stem and extension.lower() in extensions:
+            return stem
+
+    return name
+
+
 def _scan_executables(paths, skip):
     """Every non-directory entry in `paths`, cached until a directory changes.
 
@@ -158,13 +200,14 @@ def _scan_executables(paths, skip):
     # than once is work for nothing: nearly half the entries are repeats.
     found = []
     seen = set()
+    extensions = _executable_extensions()
     for path in paths:
         try:
             entries = list(os.scandir(path))
         except OSError:
             continue
         for entry in entries:
-            name = entry.name
+            name = _invocable_name(entry.name, extensions)
             if name in skip or name in seen:
                 continue
             try:
