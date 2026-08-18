@@ -1,110 +1,93 @@
 # The Bleep [![Version][version-badge]][version-link] [![Build Status][workflow-badge]][workflow-link] [![MIT License][license-badge]](LICENSE.md)
 
-*The Bleep* is a maintained successor to [*The Fuck*](https://github.com/nvbn/thefuck)
-by Vladimir Iakovlev, and is based on its original codebase. All credit for the
-original app goes to its author and contributors; this repository continues that
-work under a rebranded, workplace-friendly name (see [License](#license-mit)).
+**A fast, maintained successor to [The Fuck](https://github.com/nvbn/thefuck).**
 
-*The Bleep* is a magnificent app, inspired by a [@liamosaur](https://twitter.com/liamosaur/)
-[tweet](https://twitter.com/liamosaur/status/506975850596536320),
-that corrects errors in previous console commands.
-
-
-Is *The Bleep* too slow? [Try the experimental instant mode!](#experimental-instant-mode)
+*The Bleep* fixes mistakes in your previous console command, just like *The Fuck*,
+but with current Python support, active maintenance, and a much faster hot path.
+It is based on the original codebase by Vladimir Iakovlev and its contributors;
+their work and history remain fully credited.
 
 [![gif with examples][examples-link]][examples-link]
 
-More examples:
+## Why The Bleep?
+
+The original idea is still great. The implementation just needed to catch up.
+
+Same machine, same Python 3.11, 30 runs each, median timings:
+
+| What you do | The Fuck 3.32 | The Bleep | Improvement |
+| --- | ---: | ---: | ---: |
+| Open a shell (`--alias` in your rc) | 205 ms | 38 ms | **5.4x** |
+| Open a shell (`--alias-loader`) | 205 ms | 0.3 ms | **no Python at startup** |
+| Correct a mistyped command | 240 ms | 57 ms | **4.2x** |
+| Correct when nothing matches | 336 ms | 72 ms | **4.7x** |
+| Correct after 1 MB of output | 3246 ms | 134 ms | **24.2x** |
+
+The benchmark harness and raw result used for these numbers are included in
+[`bench/`](bench/README.md) and `bench/results/final.json`. See
+[Performance](#performance) for methodology and implementation details.
+
+Other reasons to switch:
+
+- Python **3.9-3.14** support;
+- active maintenance of the original rule ecosystem;
+- much lower shell-startup overhead;
+- faster rule dispatch and executable lookup;
+- large command output no longer deadlocks the correction path;
+- Bash, Zsh, Fish, tcsh and Windows shell support inherited and maintained;
+- you can still use `fuck` as your alias if you prefer it.
+
+## Quick start
+
+Install:
 
 ```bash
-➜ apt-get install vim
-E: Could not open lock file /var/lib/dpkg/lock - open (13: Permission denied)
-E: Unable to lock the administration directory (/var/lib/dpkg/), are you root?
-
-➜ bleep
-sudo apt-get install vim [enter/↑/↓/ctrl+c/esc]
-[sudo] password for nvbn:
-Reading package lists... Done
-...
+pip install thebleep
 ```
 
+Add the normal alias to your shell configuration:
+
 ```bash
-➜ git push
-fatal: The current branch master has no upstream branch.
-To push the current branch and set the remote as upstream, use
-
-    git push --set-upstream origin master
-
-
-➜ bleep
-git push --set-upstream origin master [enter/↑/↓/ctrl+c/esc]
-Counting objects: 9, done.
-...
+eval "$(thebleep --alias)"
 ```
 
-```bash
-➜ puthon
-No command 'puthon' found, did you mean:
- Command 'python' from package 'python-minimal' (main)
- Command 'python' from package 'python3' (main)
-zsh: command not found: puthon
+Or avoid starting Python when your shell starts:
 
-➜ bleep
-python [enter/↑/↓/ctrl+c/esc]
-Python 3.4.2 (default, Oct  8 2014, 13:08:17)
-...
+```bash
+thebleep --alias-loader >> ~/.bashrc
 ```
 
+Then make a mistake:
+
 ```bash
-➜ git brnch
+$ git brnch
 git: 'brnch' is not a git command. See 'git --help'.
 
-Did you mean this?
-    branch
-
-➜ bleep
+$ bleep
 git branch [enter/↑/↓/ctrl+c/esc]
-* master
 ```
+
+Want the old muscle memory?
 
 ```bash
-➜ lein rpl
-'rpl' is not a task. See 'lein help'.
-
-Did you mean this?
-         repl
-
-➜ bleep
-lein repl [enter/↑/↓/ctrl+c/esc]
-nREPL server started on port 54848 on host 127.0.0.1 - nrepl://127.0.0.1:54848
-REPL-y 0.3.1
-...
+eval "$(thebleep --alias fuck)"
 ```
 
-If you're not afraid of blindly running corrected commands, the
-`require_confirmation` [settings](#settings) option can be disabled:
+## Safe by default
 
-```bash
-➜ apt-get install vim
-E: Could not open lock file /var/lib/dpkg/lock - open (13: Permission denied)
-E: Unable to lock the administration directory (/var/lib/dpkg/), are you root?
-
-➜ bleep
-sudo apt-get install vim
-[sudo] password for nvbn:
-Reading package lists... Done
-...
-```
+*The Bleep* asks before running a correction. In a non-interactive environment
+(pipe, subprocess or CI), it does **not** silently apply the first suggestion;
+use `--yes` when you explicitly want automatic application.
 
 ## Contents
 
 1. [Requirements](#requirements)
-2. [Installations](#installation)
+2. [Installation](#installation)
 3. [Updating](#updating)
 4. [How it works](#how-it-works)
 5. [Creating your own rules](#creating-your-own-rules)
 6. [Settings](#settings)
-7. [Third party packages with rules](#third-party-packages-with-rules)
+7. [Third-party packages with rules](#third-party-packages-with-rules)
 8. [Experimental instant mode](#experimental-instant-mode)
 9. [Performance](#performance)
 10. [Developing](#developing)
