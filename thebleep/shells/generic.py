@@ -2,6 +2,7 @@ import io
 import os
 import shlex
 from collections import namedtuple
+from .. import const
 from ..logs import warn
 from ..utils import memoize
 from ..conf import settings
@@ -10,6 +11,38 @@ from ..system import Path
 
 ShellConfiguration = namedtuple('ShellConfiguration', (
     'content', 'path', 'reload', 'can_configure_automatically'))
+
+# History windows to fall back through when the last ten entries are too big to
+# hand to a program. Asking the shell for fewer entries keeps whole lines, which
+# matters: half of a command must never be offered as something to run, and
+# trimming a string down to a line boundary is not an option because both bash
+# and zsh take seconds to do it -- `${h#*$'\n'}` over a 64K first line costs
+# about 1.7s in bash 5.2 and about 12s in zsh 5.9.
+TRANSPORT_WINDOWS = (2, 1)
+
+
+def fit_transport():
+    """Shell that cuts the transported shell state down to what will fit.
+
+    The common case costs nothing: two builtin length tests that fail. Only a
+    shell whose recent history really is enormous pays for another `fc`, and it
+    is the case where a few milliseconds have stopped mattering.
+
+    A window that still does not fit leaves the history empty, and an alias list
+    that does not fit is dropped rather than trimmed -- half of an alias
+    definition would expand a command into something the user never wrote.
+
+    """
+    steps = ['if [ ${{#TB_HISTORY}} -gt {limit} ]; then'
+             ' TB_HISTORY=$(fc -ln -{window}); fi;'.format(
+                 limit=const.TRANSPORT_LIMIT, window=window)
+             for window in TRANSPORT_WINDOWS]
+    steps.append('if [ ${{#TB_HISTORY}} -gt {limit} ]; then'
+                 ' TB_HISTORY=; fi;'.format(limit=const.TRANSPORT_LIMIT))
+    steps.append('if [ ${{#TB_SHELL_ALIASES}} -gt {limit} ]; then'
+                 ' TB_SHELL_ALIASES=; fi;'.format(
+                     limit=const.TRANSPORT_LIMIT))
+    return ' '.join(steps)
 
 
 class Generic(object):

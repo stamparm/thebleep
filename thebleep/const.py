@@ -99,3 +99,13 @@ DIFF_WITH_ALIAS = 0.5
 SHELL_LOGGER_SOCKET_ENV = 'SHELL_LOGGER_SOCKET'
 
 SHELL_LOGGER_LIMIT = 5
+
+# The kernel will not hand a program any single environment variable larger
+# than 128K, and one pasted command that size among the last ten history
+# entries used to make the alias fail outright with "Argument list too long" --
+# for that correction and for every one after it, until the entry fell out of
+# the window. The alias cuts what it transports down to this, on a line
+# boundary; see `shells.generic.fit_transport`.
+#
+# Refs: nvbn/thefuck#798
+TRANSPORT_LIMIT = 65536

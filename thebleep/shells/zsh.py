@@ -7,32 +7,35 @@ from ..conf import settings
 from ..const import (ARGUMENT_PLACEHOLDER, USER_COMMAND_MARK,
                      get_alias)
 from ..utils import DEVNULL, memoize
-from .generic import Generic
+from .generic import Generic, fit_transport
 
 
 class Zsh(Generic):
     friendly_name = 'ZSH'
 
     def app_alias(self, alias_name):
-        # It is VERY important to have the variables declared WITHIN the function
+        # It is VERY important to have the variables declared WITHIN the
+        # function, and they are handed to `thebleep` in front of the command
+        # rather than exported: they are how the shell describes itself to us,
+        # and every other program the user runs afterwards has no business
+        # seeing their alias list. A correction should leave nothing behind in
+        # the shell it ran in.
         return '''
             {name} () {{
-                export TB_SHELL=zsh;
-                export TB_ALIAS={name};
                 TB_SHELL_ALIASES=$(alias);
-                export TB_SHELL_ALIASES;
                 TB_HISTORY="$(fc -ln -10)";
-                export TB_HISTORY;
+                {fit_transport}
                 TB_CMD=$(
-                    thebleep {argument_placeholder} $@
-                ) && eval $TB_CMD;
-                unset TB_HISTORY;
+                    TB_SHELL=zsh TB_ALIAS={name} TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" thebleep {argument_placeholder} "$@"
+                ) && eval "$TB_CMD";
                 {alter_history}
+                unset TB_SHELL_ALIASES TB_HISTORY TB_CMD;
             }}
         '''.format(
             name=alias_name,
             argument_placeholder=ARGUMENT_PLACEHOLDER,
-            alter_history=('test -n "$TB_CMD" && print -s $TB_CMD'
+            fit_transport=fit_transport(),
+            alter_history=('test -n "$TB_CMD" && print -s "$TB_CMD";'
                            if settings.alter_history else ''))
 
     def instant_mode_alias(self, alias_name):

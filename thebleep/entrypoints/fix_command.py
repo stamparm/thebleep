@@ -19,6 +19,12 @@ def _get_raw_command(known_args):
         alias = get_alias()
         executables = get_all_executables()
         for command in history:
+            if len(command) >= const.TRANSPORT_LIMIT:
+                # The alias hands us whole history lines or none, but this
+                # arrives in an environment variable and a shell that is still
+                # running an older alias definition can put anything in it.
+                # Half of a command is not something to offer to run.
+                continue
             diff = SequenceMatcher(a=alias, b=command).ratio()
             if diff < const.DIFF_WITH_ALIAS or command in executables:
                 return [command]
