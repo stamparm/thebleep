@@ -5,6 +5,7 @@ from thebleep.rules.brew_link import get_new_command, match
 
 @pytest.fixture
 def output():
+    """Homebrew 4.7, which names the formula before `--dry-run`."""
     return ("Error: Could not symlink bin/gcp\n"
             "Target /usr/local/bin/gcp\n"
             "already exists. You may want to remove it:\n"
@@ -14,7 +15,7 @@ def output():
             "  brew link --overwrite coreutils\n"
             "\n"
             "To list all files that would be deleted:\n"
-            "  brew link --overwrite --dry-run coreutils\n")
+            "  brew link --overwrite coreutils --dry-run\n")
 
 
 @pytest.fixture

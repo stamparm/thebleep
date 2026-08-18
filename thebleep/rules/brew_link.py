@@ -3,8 +3,10 @@ from thebleep.utils import for_app
 
 @for_app('brew', at_least=2)
 def match(command):
+    # brew puts the formula between the flags now -- `brew link --overwrite
+    # coreutils --dry-run` -- so only the part up to the formula is dependable.
     return (command.script_parts[1] in ['ln', 'link']
-            and "brew link --overwrite --dry-run" in command.output)
+            and "brew link --overwrite" in command.output)
 
 
 def get_new_command(command):
