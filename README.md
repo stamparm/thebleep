@@ -4,7 +4,7 @@
 
 Type the command wrong. Type `bleep`. Run the right one.
 
-![The Bleep correcting a mistyped command](assets/demo.svg)
+![The Bleep correcting a mistyped command](https://raw.githubusercontent.com/stamparm/thebleep/master/assets/demo.svg)
 
 ## Get it
 
@@ -36,7 +36,7 @@ issues are open on it, and a good number of its rules quietly stopped matching
 when the tools they correct changed what they print. *The Bleep* is the same
 tool, maintained — and several times quicker about it.
 
-![The Bleep against The Fuck, by scenario](assets/benchmark.svg)
+![The Bleep against The Fuck, by scenario](https://raw.githubusercontent.com/stamparm/thebleep/master/assets/benchmark.svg)
 
 | What you do | The Fuck 3.32 | The Bleep | |
 | --- | ---: | ---: | ---: |
@@ -389,7 +389,7 @@ following rules are enabled by default:
 * `django_south_merge` — adds `--merge` to inconsistent django south migration;
 * `docker_login` — executes a `docker login` and repeats the previous command;
 * `docker_not_command` — fixes wrong docker commands like `docker tags`;
-* `docker_image_being_used_by_container` &dash; removes the container that is using the image before removing the image;
+* `docker_image_being_used_by_container` — removes the container that is using the image before removing the image;
 * `dry` — fixes repetitions like `git git push`;
 * `fab_command_not_found` — fixes misspelled fabric commands;
 * `fix_alt_space` — replaces Alt+Space with Space character;
@@ -498,8 +498,8 @@ following rules are enabled by default:
 * `sudo_command_from_user_path` — runs commands from users `$PATH` with `sudo`;
 * `switch_lang` — switches command from your local layout to en;
 * `systemctl` — correctly orders parameters of confusing `systemctl`;
-* `terraform_init.py` — runs `terraform init` before plan or apply;
-* `terraform_no_command.py` — fixes unrecognized `terraform` commands;
+* `terraform_init` — runs `terraform init` before plan or apply;
+* `terraform_no_command` — fixes unrecognized `terraform` commands;
 * `test.py` — runs `pytest` instead of `test.py`;
 * `touch` — creates missing directories before "touching";
 * `tsuru_login` — runs `tsuru login` if not authenticated or session expired;
