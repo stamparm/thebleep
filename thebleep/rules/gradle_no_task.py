@@ -4,6 +4,11 @@ from thebleep.utils import for_app, eager, replace_command
 
 regex = re.compile(r"Task '(.*)' (is ambiguous|not found)")
 
+# The title gradle prints between two rules above the list, which is not a
+# task: "Tasks runnable from root project 'x'", "All tasks runnable from ..."
+# with `--all`, or "... from project ':sub'" in a subproject.
+TITLE = re.compile(r"(All t|T)asks runnable from ")
+
 
 @for_app('gradle', 'gradlew')
 def match(command):
@@ -24,7 +29,7 @@ def _get_all_tasks(gradle):
             should_yield = False
             continue
 
-        if should_yield and not line.startswith('All tasks runnable from root project'):
+        if should_yield and not TITLE.match(line):
             yield line.split(' ')[0]
 
 

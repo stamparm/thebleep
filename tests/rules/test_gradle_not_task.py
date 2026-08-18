@@ -1,6 +1,6 @@
 import pytest
 from io import BytesIO
-from thebleep.rules.gradle_no_task import match, get_new_command
+from thebleep.rules.gradle_no_task import match, get_new_command, _get_all_tasks
 from thebleep.types import Command
 
 gradle_tasks = b'''
@@ -97,6 +97,35 @@ BUILD SUCCESSFUL
 Total time: 1.936 secs
 '''
 
+# Gradle 8.14.4. Without `--all` the title above the list has lost its "All",
+# so a guard against "All tasks runnable from root project" no longer covers it.
+gradle_8_tasks = b'''
+> Task :tasks
+
+------------------------------------------------------------
+Tasks runnable from root project 'gdir'
+------------------------------------------------------------
+
+Build Setup tasks
+-----------------
+init - Initializes a new Gradle build.
+updateDaemonJvm - Generates or updates the Gradle Daemon JVM criteria.
+wrapper - Generates Gradle wrapper files.
+
+Help tasks
+----------
+help - Displays a help message.
+projects - Displays the sub-projects of root project 'gdir'.
+tasks - Displays the tasks runnable from root project 'gdir'.
+
+To see all tasks and more detail, run gradle tasks --all
+
+To see more detail about a task, run gradle help --task <task>
+
+BUILD SUCCESSFUL in 1s
+1 actionable task: 1 executed
+'''
+
 output_not_found = '''
 
 FAILURE: Build failed with an exception.
@@ -143,6 +172,29 @@ def test_match(command):
     Command('npm instar', output_not_found('instar'))])
 def test_not_match(command):
     assert not match(command)
+
+
+class TestTheTaskListItself(object):
+    """What gets read out of `gradle tasks`."""
+
+    @pytest.fixture
+    def tasks(self, mocker):
+        patch = mocker.patch('thebleep.rules.gradle_no_task.Popen')
+        patch.return_value.stdout = BytesIO(gradle_8_tasks)
+        return patch
+
+    def test_the_title_is_not_offered_as_a_task(self, tasks):
+        assert 'Tasks' not in _get_all_tasks('gradle')
+
+    def test_the_real_tasks_are_still_found(self, tasks):
+        found = _get_all_tasks('gradle')
+        assert 'wrapper' in found
+        assert 'projects' in found
+        assert 'tasks' in found
+
+    def test_a_typo_is_corrected_to_a_task_that_exists(self, tasks):
+        command = Command('gradle tsks', output_not_found('tsks'))
+        assert get_new_command(command)[0] == 'gradle tasks'
 
 
 @pytest.mark.parametrize('command, result', [
