@@ -154,6 +154,17 @@ class TestPack(object):
         assert not stale.is_file()
 
 
+# Whether a file can be run is asked as "is the executable bit set", which is a
+# POSIX question: on Windows `os.access(path, X_OK)` is true of every file that
+# exists, so `chmod`, a non-executable README and a broken symlink all mean
+# nothing there. What decides on Windows is PATHEXT, and
+# `test_on_windows_it_is_the_extension_that_decides` covers that by faking
+# exactly that one thing, so it runs on every platform.
+posix_permissions = pytest.mark.skipif(
+    os.name == 'nt',
+    reason='on Windows PATHEXT decides this, not the executable bit')
+
+
 def install(directory, name, executable=True):
     """A program in a directory on PATH, or a file that is not one."""
     entry = directory.join(name)
@@ -238,6 +249,7 @@ class TestExecutablesCache(object):
             [str(bin_dir), str(bin_dir.join('nope'))], ())
         assert 'already-here' in found
 
+    @posix_permissions
     def test_a_file_you_cannot_run_is_not_a_command(self, bin_dir):
         """`get_close_matches` only compares spelling, so a README next to a
         program was offered as one -- and a non-executable `realthinh` came back
@@ -254,6 +266,7 @@ class TestExecutablesCache(object):
         assert 'README.md' not in found
         assert utils.get_close_matches('realthinj', found) == ['realthing']
 
+    @posix_permissions
     def test_a_broken_symlink_is_not_a_command(self, bin_dir):
         from thebleep import utils
 
@@ -261,6 +274,7 @@ class TestExecutablesCache(object):
                    str(bin_dir.join('dangling')))
         assert 'dangling' not in utils._scan_executables([str(bin_dir)], ())
 
+    @posix_permissions
     def test_chmod_is_noticed_within_the_staleness_bound(
             self, bin_dir, mocker):
         """A mode change touches the file, not the directory it is in.

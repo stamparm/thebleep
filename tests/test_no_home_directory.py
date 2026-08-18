@@ -90,7 +90,11 @@ def test_nothing_is_written_to_a_directory_called_tilde(nowhere_to_call_home,
     cachefile.save('probe', (), 'value')
 
     where = conf.settings.user_dir if what == 'config' else cachefile.directory()
-    assert '~' not in str(where), where
+    # By component, not by substring: a Windows short path is full of tildes,
+    # `C:\Users\RUNNER~1\AppData\Local\Temp` among them, and none of them is the
+    # unexpanded `~` this is looking for.
+    assert '~' not in where.parts, where
+    assert where.is_absolute(), where
     assert str(where).startswith(tempfile.gettempdir()), where
     assert not nowhere_to_call_home.join('~').check(), \
         'a directory named "~" was created in the working directory'

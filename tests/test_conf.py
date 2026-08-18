@@ -4,6 +4,7 @@ import os
 from unittest.mock import Mock
 from thebleep import const
 from thebleep.conf import Settings
+from thebleep.system import Path
 
 
 @pytest.fixture
@@ -107,13 +108,29 @@ class TestInitializeSettingsFile(object):
         settings_file.close()
 
 
+@pytest.fixture
+def home(tmpdir, os_environ):
+    """Somewhere for `~` to mean, on either platform.
+
+    A test starts with a `$PATH` and nothing else, so on Windows there is no
+    `USERPROFILE` for `os.path.expanduser` to find and `~` stays a `~` -- which
+    sends this at the no-home-directory fallback instead of at what it is about.
+    POSIX hides that by answering from the password database.
+
+    """
+    directory = tmpdir.mkdir('home')
+    os_environ['HOME'] = str(directory)
+    os_environ['USERPROFILE'] = str(directory)
+    return directory
+
+
 @pytest.mark.parametrize('legacy_dir_exists, xdg_config_home, result', [
     (False, '~/.config', '~/.config/thebleep'),
     (False, '/user/test/config/', '/user/test/config/thebleep'),
     (True, '~/.config', '~/.thebleep'),
     (True, '/user/test/config/', '~/.thebleep')])
-def test_get_user_dir_path(mocker, os_environ, settings, legacy_dir_exists,
-                           xdg_config_home, result):
+def test_get_user_dir_path(mocker, os_environ, settings, home,
+                           legacy_dir_exists, xdg_config_home, result):
     mocker.patch('thebleep.conf.Path.is_dir',
                  return_value=legacy_dir_exists)
 
@@ -123,7 +140,9 @@ def test_get_user_dir_path(mocker, os_environ, settings, legacy_dir_exists,
         os_environ.pop('XDG_CONFIG_HOME', None)
 
     path = settings._get_user_dir_path().as_posix()
-    assert path == os.path.expanduser(result)
+    # Through `Path` on both sides: `os.path.expanduser` puts a Windows home in
+    # front of the separators it was handed, so the string is half backslashes.
+    assert path == Path(os.path.expanduser(result)).as_posix()
 
 
 class TestSettingsFromEnvironment(object):
