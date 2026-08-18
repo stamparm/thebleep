@@ -2,7 +2,8 @@ from io import BytesIO
 
 import pytest
 
-from thebleep.rules.gem_unknown_command import match, get_new_command
+from thebleep.rules.gem_unknown_command import match, get_new_command, \
+    _get_all_commands
 from thebleep.types import Command
 
 # RubyGems 3.4.20. The error class changed in 3.2, the suggestion and the
@@ -101,3 +102,13 @@ def test_not_match(script, output):
 def test_get_new_command(script, output, result):
     new_command = get_new_command(Command(script, output))
     assert new_command[0] == result
+
+
+def test_a_wrapped_description_is_not_a_command():
+    """`gem help commands` wraps some descriptions onto a second line."""
+    commands = _get_all_commands()
+
+    assert 'pristine' in commands
+    assert 'sources' in commands
+    assert 'located' not in commands
+    assert 'for' not in commands

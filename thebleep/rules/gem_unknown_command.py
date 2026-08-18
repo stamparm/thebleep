@@ -23,7 +23,11 @@ def _get_all_commands():
     for line in proc.stdout.readlines():
         line = line.decode()
 
-        if line.startswith('    '):
+        # A command is indented by four spaces. A description that wrapped is
+        # indented much further, and was being taken for a command of its own:
+        # `gem help commands` on RubyGems 3.4 wraps four of them, which is
+        # where `located`, `for` and a bare URL came into the suggestions.
+        if line.startswith('    ') and not line.startswith('     '):
             yield line.strip().split(' ')[0]
 
 
