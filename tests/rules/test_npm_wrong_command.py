@@ -56,3 +56,49 @@ def test_not_match(script, output):
     ('npm isntall -g gulp', 'npm install -g gulp')])
 def test_get_new_command(script, result):
     assert get_new_command(Command(script, output)) == result
+
+
+# What npm has said since version 7: no listing, just the answer.
+output_modern = '''Unknown command: "{}"
+
+
+Did you mean this?
+  npm install # Install a package
+To see a list of supported npm commands, run:
+  npm help
+'''.format
+
+output_several = '''Unknown command: "{}"
+
+
+Did you mean one of these?
+  npm uninstall # Remove a package
+  npm install # Install a package
+To see a list of supported npm commands, run:
+  npm help
+'''.format
+
+
+@pytest.mark.parametrize('script, output', [
+    ('npm nstall', output_modern('nstall')),
+    ('npm -g nstall gulp', output_modern('nstall')),
+    ('npm uninstal express', output_several('uninstal'))])
+def test_match_modern_npm(script, output):
+    assert match(Command(script, output))
+
+
+@pytest.mark.parametrize('script, output, result', [
+    ('npm nstall', output_modern('nstall'), ['npm install']),
+    ('npm -g nstall gulp', output_modern('nstall'),
+     ['npm -g install gulp']),
+    # npm's own order is kept: it knows better than a string distance does.
+    ('npm uninstal express', output_several('uninstal'),
+     ['npm uninstall express', 'npm install express'])])
+def test_get_new_command_modern_npm(script, output, result):
+    assert get_new_command(Command(script, output)) == result
+
+
+def test_how_to_list_them_all_is_not_a_suggestion(script='npm nstall'):
+    """The line after the suggestions tells you to run `npm help`."""
+    assert 'npm help' not in get_new_command(
+        Command(script, output_modern('nstall')))
