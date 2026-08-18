@@ -79,6 +79,39 @@ eval "$(thebleep --alias fuck)"
 (pipe, subprocess or CI), it does **not** silently apply the first suggestion;
 use `--yes` when you explicitly want automatic application.
 
+### Reading the previous command
+
+To suggest a fix, *The Bleep* needs to know what your command printed — and a
+shell keeps no record of that. The only way to find out is to run the command
+again, which means anything it changed changes twice:
+
+```bash
+$ deploy production
+deploy: missing --confirm
+$ bleep
+deploy production has to run again to be read, and anything it changes will
+change twice. Run it? [y/N]
+```
+
+So it asks first, and only skips asking when running the command again cannot
+have an effect — because the program is not there to be found (`gti status`),
+or because it only ever reads (`ls`, `cat`, `grep`). It is deliberately *not* a
+list of dangerous commands: such a list only declares the ones nobody thought
+of to be safe.
+
+Where nobody can be asked — a pipe, a subprocess, CI — the answer is no, and
+the correction is attempted from the command alone.
+
+Two ways to stop being asked:
+
+- **Record the output as it happens.** [Experimental instant
+  mode](#experimental-instant-mode) reads what scrolled past instead of running
+  anything again, so the question never comes up. This is the better answer if
+  your shell supports it.
+- **`confirm_replay = False`** in your settings, or `--yes` for a single run,
+  which restores the pre-1.0 behaviour of running the previous command again
+  without asking.
+
 ## Contents
 
 1. [Requirements](#requirements)
@@ -439,6 +472,8 @@ Several *The Bleep* parameters can be changed in the file `$XDG_CONFIG_HOME/theb
 * `require_confirmation` &ndash; requires confirmation before running new command, by default `True`;
   when there's no terminal attached (a pipe, a subprocess or CI) confirmation is impossible,
   so the suggestion is only printed and nothing is run &ndash; pass `--yes` to apply it;
+* `confirm_replay` &ndash; asks before running your previous command a second time to read
+  what it printed, by default `True`; see [Reading the previous command](#reading-the-previous-command);
 * `wait_command` &ndash; the max amount of time in seconds for getting previous command output;
 * `no_colors` &ndash; disable colored output;
 * `priority` &ndash; dict with rules priorities, rule with lower `priority` will be matched first;
@@ -456,6 +491,7 @@ An example of `settings.py`:
 rules = ['sudo', 'no_command']
 exclude_rules = ['git_push']
 require_confirmation = True
+confirm_replay = True
 wait_command = 10
 no_colors = False
 priority = {'sudo': 100, 'no_command': 9999}
@@ -471,6 +507,7 @@ Or via environment variables:
 * `THEBLEEP_RULES` &ndash; list of enabled rules, like `DEFAULT_RULES:rm_root` or `sudo:no_command`;
 * `THEBLEEP_EXCLUDE_RULES` &ndash; list of disabled rules, like `git_pull:git_push`;
 * `THEBLEEP_REQUIRE_CONFIRMATION` &ndash; require confirmation before running new command, `true/false`;
+* `THEBLEEP_CONFIRM_REPLAY` &ndash; ask before running your previous command again to read its output, `true/false`;
 * `THEBLEEP_WAIT_COMMAND` &ndash; the max amount of time in seconds for getting previous command output;
 * `THEBLEEP_NO_COLORS` &ndash; disable colored output, `true/false`;
 * `THEBLEEP_PRIORITY` &ndash; priority of the rules, like `no_command=9999:apt_get=100`,
