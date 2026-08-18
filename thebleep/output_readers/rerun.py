@@ -67,6 +67,36 @@ def _wait_output(popen, is_slow):
         return None
 
 
+# What the shell alias sets on its way in to hand us the shell's own state.
+# None of it was in the environment when the command originally ran, and
+# `TB_SHELL_ALIASES` and `TB_HISTORY` hold the user's aliases and their last ten
+# commands -- so a command being run a second time to read its output must not
+# inherit any of it. Matched by prefix rather than by name: a variable added to
+# the transport later is scrubbed without anyone having to remember to add it
+# here too.
+TRANSPORT_PREFIX = 'TB_'
+
+# `GIT_TRACE=1` makes git report the alias it expanded, which is the only way
+# to learn that `git st` meant `git status`; `specific.git.git_support` reads it
+# out of the output. It is a debugging switch that other programs also read, so
+# it goes to git and to nothing else.
+GIT_ENV = {'GIT_TRACE': '1'}
+
+GIT_APPS = ('git', 'hub')
+
+
+def _child_environment(program):
+    """The environment to run `program` in, as close to the original as we can.
+
+    """
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith(TRANSPORT_PREFIX)}
+    env.update(settings.env)
+    if program and os.path.basename(program) in GIT_APPS:
+        env.update(GIT_ENV)
+    return env
+
+
 def get_output(script, expanded):
     """Runs the script and obtains stdin/stderr.
 
@@ -75,14 +105,6 @@ def get_output(script, expanded):
     :rtype: str | None
 
     """
-    env = dict(os.environ)
-    env.update(settings.env)
-
-    # The rest of the environment is none of the log's business, it tends to
-    # carry tokens and keys that end up pasted into bug reports.
-    logged_env = {key: value for key, value in env.items()
-                  if key in settings.env or key.startswith('TB_')}
-
     try:
         split_expand = shlex.split(expanded)
     except ValueError:
@@ -90,6 +112,17 @@ def get_output(script, expanded):
         # it cannot be a crash. It only decides whether this counts as one of
         # the slow commands, and an unparseable one does not.
         split_expand = []
+
+    from ..utils import command_word_index
+
+    words = split_expand[command_word_index(split_expand):]
+    env = _child_environment(words[0] if words else None)
+
+    # The rest of the environment is none of the log's business, it tends to
+    # carry tokens and keys that end up pasted into bug reports.
+    logged_env = {key: value for key, value in env.items()
+                  if key in settings.env or key in GIT_ENV}
+
     is_slow = split_expand[0] in settings.slow_commands if split_expand else False
     with logs.debug_time(u'Call: {}; with env: {}; is slow: {}'.format(
             script, logged_env, is_slow)):

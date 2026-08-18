@@ -52,7 +52,7 @@ DEFAULT_SETTINGS = {'rules': DEFAULT_RULES,
                     'instant_mode': False,
                     'num_close_matches': 3,
                     'confirm_replay': True,
-                    'env': {'LC_ALL': 'C', 'LANG': 'C', 'GIT_TRACE': '1'},
+                    'env': {'LC_ALL': 'C', 'LANG': 'C'},
                     'excluded_search_path_prefixes': []}
 
 ENV_TO_ATTR = {'THEBLEEP_RULES': 'rules',

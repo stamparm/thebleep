@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
 
+import os
 import pytest
 import sys
 from subprocess import TimeoutExpired
@@ -118,3 +119,76 @@ class TestRerun(object):
         rerun._kill_process(proc)
         proc.kill.assert_called_once_with()
         logs_mock.debug.assert_called_once()
+
+
+# What the shell alias puts in the environment on its way in. `TB_HISTORY` and
+# `TB_SHELL_ALIASES` are the interesting ones: they are the user's last ten
+# commands and their alias list, and nothing outside The Bleep should see them.
+TRANSPORT = {
+    'TB_SHELL': 'bash',
+    'TB_ALIAS': 'bleep',
+    'TB_HISTORY': 'ssh prod.internal\ngit commit -m wip\nAWS_KEY=AKIAsecret x',
+    'TB_SHELL_ALIASES': "alias deploy='ssh prod && ./deploy.sh'",
+    'TB_CMD': 'bleep',
+}
+
+
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='needs a POSIX shell to read the environment back')
+class TestReplayedEnvironment(object):
+    """What a command being run a second time is allowed to see.
+
+    These run a real shell rather than inspecting the environment we would have
+    passed it: the point is what the child process ends up with.
+
+    """
+
+    def _child_env(self, script='env', **environ):
+        os.environ.update(TRANSPORT)
+        os.environ.update(environ)
+        output = rerun.get_output(script, script)
+        return dict(line.split('=', 1)
+                    for line in output.split('\n') if '=' in line)
+
+    def test_transport_is_not_inherited(self, os_environ):
+        """The user's history and aliases are not the child's business."""
+        child = self._child_env()
+        leaked = [name for name in child if name.startswith('TB_')]
+        assert leaked == []
+        assert 'AKIAsecret' not in '\n'.join(child.values())
+        assert './deploy.sh' not in '\n'.join(child.values())
+
+    def test_the_rest_of_the_environment_survives(self, os_environ):
+        """Only the transport goes; what the command originally had stays."""
+        child = self._child_env(MY_TOKEN='keep-me')
+        assert child['MY_TOKEN'] == 'keep-me'
+
+    def test_git_tracing_reaches_git(self, os_environ, tmpdir):
+        """Through a `git` on PATH that reports what it was given."""
+        shim = tmpdir.join('git')
+        shim.write('#!/bin/sh\nenv\n')
+        os.chmod(str(shim), 0o755)
+        os.environ['PATH'] = '{}{}{}'.format(
+            str(tmpdir), os.pathsep, os.environ['PATH'])
+        assert self._child_env('git status')['GIT_TRACE'] == '1'
+
+    def test_git_tracing_does_not_go_to_anything_else(self, os_environ):
+        """`GIT_TRACE` is a debugging switch, and git is not the only reader."""
+        assert 'GIT_TRACE' not in self._child_env('env')
+        assert 'GIT_TRACE' not in self._child_env('LC_ALL=C env')
+
+    def test_git_tracing_survives_an_unparseable_script(self, os_environ):
+        assert 'GIT_TRACE' not in self._child_env('env "')
+
+
+@pytest.mark.parametrize('program, traced', [
+    ('git', True),
+    ('/usr/bin/git', True),
+    ('hub', True),
+    ('env', False),
+    ('gitk', False),
+    ('legit', False),
+    (None, False),
+])
+def test_child_environment_traces_git_only(os_environ, program, traced):
+    assert ('GIT_TRACE' in rerun._child_environment(program)) is traced
