@@ -58,6 +58,10 @@ in your rc. Use the loader instead and it costs **0.07 ms** — measured against
 empty `bash -c true` on the same machine — because then opening a shell defines a
 shell function and runs no Python at all.
 
+Those are Linux numbers. On Windows, where *The Fuck* has been called slow for
+years, a correction on a real Windows 10 machine with Defender live takes
+**308 ms against 876 ms** — see [On Windows](#on-windows).
+
 The harness is [`bench/`](bench/README.md), the run these numbers come from is
 [`bench/results/final.json`](bench/results/final.json), and the block above is
 written from that file by [`bench/chart.py`](bench/chart.py). [Reproduce it, and
@@ -859,37 +863,8 @@ and `THEBLEEP_NO_RULE_PACK=true` turns the rule cache off entirely.
 
 ### On Windows
 
-*The Fuck* has been called slow on Windows for years, and it is. So was *The
-Bleep*, for a reason that is nothing to do with either tool's own logic.
-
-Profiled on a real Windows 10 machine — a KVM guest with Defender live, no
-exclusions and the services at their stock settings, on the same physical CPU
-as the Linux figures above:
-
-```text
-                                     Linux    Windows   Windows pays
-os.stat, a thousand times          1.71 ms   23.70 ms          13.9x
-read all 171 rule files            1.06 ms    8.98 ms           8.5x
-create, write and delete 20 files  1.28 ms  124.71 ms          97.5x
-start a bare interpreter          24.17 ms  105.76 ms           4.4x
-```
-
-None of that is our code, and our code is not the problem: on the same guest,
-matching every candidate rule takes 1.4 ms against Linux's 9.1 ms, reading the
-rule pack 2.5 ms against 2.3 ms, and a warm `PATH` lookup 0.3 ms against 0.4 ms.
-What Windows charges for is *opening files* — and a module is a file the
-interpreter has to find and then open, with a virus scanner reading it first.
-A `.pyd` is worse still: the scanner reads the whole DLL before it may be
-mapped.
-
-So the fix was to open fewer of them. Correcting a command imports 42 modules
-beyond a bare interpreter, where it used to import 81, and
-[`tests/test_performance.py`](tests/test_performance.py) fails if any of the
-ones that went comes back.
-
-On that guest, correcting a command, three passes of fifteen interleaved rounds
-each — both tools installed side by side and asked in turn, so whatever the
-machine was doing happened to both:
+*The Fuck* has been called slow on Windows for years. On a real Windows 10
+machine with Defender live and nothing excluded, correcting a command:
 
 ```text
                             The Fuck 3.32        The Bleep      faster
@@ -900,14 +875,36 @@ Defender live, repeated            855 ms           292 ms        2.9x
 modules imported for one              424               109
 ```
 
-What is left of the Windows figure is not ours to remove: an interpreter takes
-106 ms to start there against 24 ms on Linux, and the failed command has to be
-run a second time to see what it printed. Both tools pay both.
+Three passes of fifteen rounds each, both tools installed side by side and
+asked in turn, so whatever the machine was doing happened to both. The middle
+row is the same machine with the scanner told to look away; the third repeats
+the first, to show the first was not a warm-up. **The scanner is not the
+difference — the module count is.**
 
-The one lever left is yours. Adding your Python installation directory to
-Defender's exclusions takes about a fifth off a correction, and it is worth
-more than that to everything else you run Python for.
+Which is the whole of it. Windows charges for *opening files*, and a module is
+a file the interpreter has to find and then open with a virus scanner reading
+it first:
 
+```text
+                                     Linux    Windows   Windows pays
+os.stat, a thousand times          1.71 ms   23.70 ms          13.9x
+read all 171 rule files            1.06 ms    8.98 ms           8.5x
+create, write and delete 20 files  1.28 ms  124.71 ms          97.5x
+start a bare interpreter          24.17 ms  105.76 ms           4.4x
+```
+
+None of that is either tool's own logic, and *The Bleep*'s own logic was never
+the problem: on that same guest, matching every candidate rule takes 1.4 ms
+against Linux's 9.1 ms, reading the rule pack 2.5 ms against 2.3 ms, a warm
+`PATH` lookup 0.3 ms against 0.4 ms. So the work was to open fewer files.
+Correcting a command imports 42 modules beyond a bare interpreter where it used
+to import 81, and [`tests/test_performance.py`](tests/test_performance.py)
+fails if any of the ones that went comes back.
+
+What is left is not ours to remove: an interpreter takes 106 ms to start on
+Windows against 24 ms on Linux, and the failed command has to be run a second
+time to see what it printed. Both tools pay both, which is why 308 ms is the
+floor here and not 52 ms.
 
 ##### [Back to Contents](#contents)
 
