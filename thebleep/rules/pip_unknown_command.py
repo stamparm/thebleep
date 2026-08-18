@@ -6,8 +6,8 @@ from thebleep.specific.sudo import sudo_support
 @sudo_support
 @for_app('pip', 'pip2', 'pip3')
 def match(command):
-    return ('pip' in command.script and
-            'unknown command' in command.output and
+    # `for_app` has already established that this is pip.
+    return ('unknown command' in command.output and
             'maybe you meant' in command.output)
 
 

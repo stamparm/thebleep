@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
 from urllib.parse import urlparse
+from thebleep.shells import shell
 from thebleep.utils import for_app
 
 
@@ -20,15 +21,23 @@ def match(command):
     the subdomains and which is the domain, consider:
         - www.google.fr → subdomain: www, domain: 'google.fr';
         - google.co.uk → subdomain: None, domain; 'google.co.uk'.
+
+    There has to be something to shorten, though. `whois localhost` has neither
+    a slash nor a dot in it, and this used to match it and then hand back `None`
+    as the correction, which is what the user was then shown.
     """
-    return True
+    target = command.script_parts[1]
+    return '/' in target or '.' in target
 
 
 def get_new_command(command):
+    # Quoted: a host name is the user's own text, but it reaches the shell as a
+    # command either way.
     url = command.script_parts[1]
 
-    if '/' in command.script:
-        return 'whois ' + urlparse(url).netloc
-    elif '.' in command.script:
-        path = urlparse(url).path.split('.')
-        return ['whois ' + '.'.join(path[n:]) for n in range(1, len(path))]
+    if '/' in url:
+        return u'whois ' + shell.quote(urlparse(url).netloc)
+
+    path = urlparse(url).path.split('.')
+    return [u'whois ' + shell.quote('.'.join(path[n:]))
+            for n in range(1, len(path))]

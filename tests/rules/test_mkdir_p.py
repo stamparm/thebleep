@@ -18,6 +18,12 @@ def test_match(command):
     Command('hdfs dfs -mkdir foo/bar/baz', ''),
     Command('./bin/hdfs dfs -mkdir foo/bar/baz', ''),
     Command('', ''),
+    # `'mkdir' in command.script` matched all of these and offered each of them
+    # back unchanged.
+    Command('echo mkdir', 'No such file or directory'),
+    Command('git mkdir-x', 'No such file or directory'),
+    Command('python mkdirs.py', 'No such file or directory'),
+    Command('mkdir', 'No such file or directory'),
 ])
 def test_not_match(command):
     assert not match(command)

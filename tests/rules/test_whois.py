@@ -27,3 +27,22 @@ def test_not_match():
       'whois com'])])
 def test_get_new_command(command, new_command):
     assert get_new_command(command) == new_command
+
+
+@pytest.mark.parametrize('script', [
+    'whois localhost',
+    'whois myserver',
+    'whois -h',
+])
+def test_not_match_without_anything_to_shorten(script):
+    """It used to match anything at all and then hand back `None`, which is
+    what the user was shown."""
+    assert not match(Command(script, ''))
+
+
+def test_a_host_with_a_space_in_it_is_quoted(set_shell):
+    from thebleep.shells import Bash
+
+    set_shell(Bash)
+    assert get_new_command(Command("whois 'a.b c.example.com'", '')) == [
+        "whois 'b c.example.com'", 'whois example.com', 'whois com']

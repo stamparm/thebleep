@@ -10,6 +10,8 @@ def match(command):
 
 
 def get_new_command(command):
+    # Quoted: `./my script` is a file somebody can have, and this goes back to
+    # the shell to be run.
     return shell.and_(
-        'chmod +x {}'.format(command.script_parts[0][2:]),
+        u'chmod +x {}'.format(shell.quote(command.script_parts[0][2:])),
         command.script)
