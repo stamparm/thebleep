@@ -18,6 +18,10 @@ import pytest
 from thebleep import rulepack
 from thebleep.types import Command
 
+# Captured before the fixtures replace `os.environ` with a bare one: starting a
+# shell needs more of it than PATH, particularly on Windows.
+REAL_ENVIRONMENT = dict(os.environ)
+
 # Imported before a correction begins, this lot cost more than everything else
 # the app does. Each is loaded only on the path that actually needs it.
 SHOULD_NOT_BE_IMPORTED = [
@@ -32,6 +36,11 @@ SHOULD_NOT_BE_IMPORTED = [
     'traceback',   # only when something has gone wrong
 ]
 
+# Windows has to have its console set up before anything is written, and
+# `win_unicode_console` imports these on the way in. That is a dependency doing
+# it rather than us, so the guard steps aside when it is the one responsible.
+IMPORTED_BY_THE_WINDOWS_CONSOLE = {'traceback'}
+
 
 def _imported_modules(env=None):
     """Everything imported by loading the entry point, in a fresh process."""
@@ -40,7 +49,7 @@ def _imported_modules(env=None):
         import thebleep.entrypoints.main   # noqa: F401
         print('\\n'.join(sorted(sys.modules)))
     ''')
-    environment = dict(os.environ)
+    environment = dict(REAL_ENVIRONMENT)
     environment.update(env or {})
     environment['TB_SHELL'] = 'bash'
     output = subprocess.check_output([sys.executable, '-c', source],
@@ -55,6 +64,10 @@ def imported():
 
 @pytest.mark.parametrize('module', SHOULD_NOT_BE_IMPORTED)
 def test_not_imported_at_startup(imported, module):
+    if module in IMPORTED_BY_THE_WINDOWS_CONSOLE \
+            and 'win_unicode_console' in imported:
+        pytest.skip('{} comes from win_unicode_console here'.format(module))
+
     assert module not in imported, (
         '{} is imported before a correction even starts; it used to be, and '
         'putting it back costs every invocation'.format(module))
@@ -104,24 +117,37 @@ class TestLargeOutput(object):
     def big_output(self):
         return 'some line of build output\n' * 40000
 
-    def test_reading_the_output_does_not_deadlock(self):
-        """Reading only after the command exits hangs on a full pipe buffer.
+    @pytest.fixture
+    def noisy_process(self, tmpdir):
+        """A real command printing far more than a pipe buffer holds.
 
-        The command below writes far more than a pipe holds, so if the output
-        is not read while it runs, this waits out `wait_command` and returns
-        nothing.
+        Started without a shell and with this interpreter, so the test says the
+        same thing on every platform and owes nothing to quoting rules.
 
         """
-        from thebleep.conf import settings
+        script_file = tmpdir.join('noisy.py')
+        script_file.write("print('x' * 200000)")
+        return subprocess.Popen(
+            [sys.executable, str(script_file)],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+
+    def test_reading_the_output_does_not_deadlock(self, noisy_process,
+                                                  settings):
+        """Reading only after the command exits hangs on a full pipe buffer.
+
+        The process writes far more than a pipe holds, so if its output is not
+        read while it runs, it never exits, and this waits out `wait_command`
+        and comes back with nothing.
+
+        """
         from thebleep.output_readers import rerun
 
-        settings.init()
-        script = 'yes abcdefghijklmnopqrstuvwxyz | head -n 40000'
         started = time.time()
-        output = rerun.get_output(script, script)
+        output = rerun._wait_output(noisy_process, False)
         took = time.time() - started
 
-        assert output is not None, 'the output was lost'
+        assert output is not None, 'the output was lost to the timeout'
         assert len(output) > 100000, 'the output was truncated'
         assert took < settings.wait_command, (
             'took {:.1f}s of a {}s timeout, which means it waited for one'

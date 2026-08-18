@@ -179,13 +179,28 @@ class TestExecutablesCache(object):
     def test_a_new_executable_is_picked_up(self, bin_dir):
         from thebleep import utils
         utils._scan_executables([str(bin_dir)], ())
-        # Directory timestamps come from a coarse clock, so an install has to
-        # land in a later tick than the read for the mtime to differ. Anything
-        # a person can actually do takes longer than this.
-        time.sleep(0.02)
-        bin_dir.join('just-installed').write('')
+
+        # Directory timestamps come from a coarse clock — coarser still on
+        # Windows — so an install only looks like a change once it lands in a
+        # later tick. Waiting for that is what a person doing this by hand
+        # does anyway; sleeping a fixed amount would be a flake waiting to
+        # happen.
+        before = os.stat(str(bin_dir)).st_mtime_ns
+        deadline = time.time() + 5
+        attempt = 0
+        while True:
+            # A new name each time: rewriting a file that is already there
+            # changes the file's timestamp, not the directory's.
+            installed = 'just-installed-{}'.format(attempt)
+            bin_dir.join(installed).write('')
+            if os.stat(str(bin_dir)).st_mtime_ns != before:
+                break
+            assert time.time() < deadline, 'the directory mtime never moved'
+            attempt += 1
+            time.sleep(0.01)
+
         found = utils._scan_executables([str(bin_dir)], ())
-        assert 'just-installed' in found
+        assert installed in found
 
     def test_a_stale_listing_expires(self, bin_dir, mocker):
         from thebleep import utils
