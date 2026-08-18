@@ -41,12 +41,12 @@ Same machine, same Python 3.11, 30 runs each, medians:
 <!-- benchmark: written by bench/chart.py -->
 ```text
                                % of The Fuck's time  The Fuck  The Bleep  faster
-Open a shell                     ███▎░░░░░░░░░░░░░░    205 ms      38 ms    5.4×
-Correct a mistyped command       ████▎░░░░░░░░░░░░░    240 ms      57 ms    4.2×
-Correct inside a git repository  ████▍░░░░░░░░░░░░░    239 ms      58 ms    4.1×
-Correct when nothing matches     ███▉░░░░░░░░░░░░░░    336 ms      72 ms    4.7×
-Correct a slow command *         ████████████▍░░░░░    822 ms     565 ms    1.5×
-Correct after 1 MB of output     ▊░░░░░░░░░░░░░░░░░    3.25 s     134 ms   24.2×
+Open a shell                     ███▋░░░░░░░░░░░░░░    213 ms      43 ms    4.9×
+Correct a mistyped command       ████▊░░░░░░░░░░░░░    255 ms      67 ms    3.8×
+Correct inside a git repository  ████▎░░░░░░░░░░░░░    249 ms      59 ms    4.2×
+Correct when nothing matches     ████▎░░░░░░░░░░░░░    332 ms      77 ms    4.3×
+Correct a slow command *         ████████████▍░░░░░    823 ms     564 ms    1.5×
+Correct after 1 MB of output     ▊░░░░░░░░░░░░░░░░░    3.25 s     131 ms   24.8×
 ```
 <!-- end benchmark -->
 
@@ -54,8 +54,9 @@ Correct after 1 MB of output     ▊░░░░░░░░░░░░░░�
 read what it printed, so this row is mostly the sleep.
 
 Opening a shell is worth a second look: that row is `eval "$(thebleep --alias)"`
-in your rc. Use the loader instead and it is **0.3 ms**, because then opening a
-shell runs no Python at all.
+in your rc. Use the loader instead and it costs **0.07 ms** — measured against an
+empty `bash -c true` on the same machine — because then opening a shell defines a
+shell function and runs no Python at all.
 
 The harness is [`bench/`](bench/README.md), the run these numbers come from is
 [`bench/results/final.json`](bench/results/final.json), and the block above is

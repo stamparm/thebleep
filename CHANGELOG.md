@@ -43,10 +43,10 @@ rather than restarting it, because this is the same codebase carried forward.
 Measured against *The Fuck* 3.32 on the same machine and the same Python 3.11,
 median of 30 runs; the harness and the recorded run are in `bench/`.
 
-- Opening a shell: 205 ms → 38 ms, or to 0.3 ms with `--alias-loader`, which
+- Opening a shell: 213 ms → 43 ms, or to 0.07 ms with `--alias-loader`, which
   defines the alias on first use so shell startup runs no Python at all.
-- Correcting a mistyped command: 240 ms → 57 ms.
-- Correcting after a command printed a megabyte: 3246 ms → 134 ms. This one is
+- Correcting a mistyped command: 255 ms → 67 ms.
+- Correcting after a command printed a megabyte: 3252 ms → 131 ms. This one is
   a correctness fix as much as a speed one: output used to be read only after
   the command exited, which deadlocks once the output fills the pipe buffer, so
   anything printing more than about 64 KB produced nothing to correct from.
