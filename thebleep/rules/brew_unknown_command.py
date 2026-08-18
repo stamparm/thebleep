@@ -7,6 +7,11 @@ BREW_CMD_PATH = '/Homebrew/Library/Homebrew/cmd'
 TAP_PATH = '/Homebrew/Library/Taps'
 TAP_CMD_PATH = '/%s/%s/cmd'
 
+# `Error: Unknown command: brew instaa` today, and `Error: Invalid usage:` in
+# front of it when brew has a suggestion of its own to add. Older versions left
+# the `brew ` out and named the command on its own.
+UNKNOWN_COMMAND = re.compile(r'Unknown command: (?:brew )?([\w.-]+)')
+
 enabled_by_default = brew_available
 
 
@@ -65,18 +70,19 @@ def _brew_commands():
             'doctor', 'create', 'edit', 'cask']
 
 
-def match(command):
-    is_proper_command = ('brew' in command.script and
-                         'Unknown command' in command.output)
+def _get_broken_command(command):
+    found = UNKNOWN_COMMAND.search(command.output)
+    return found and found.group(1)
 
-    if is_proper_command:
-        broken_cmd = re.findall(r'Error: Unknown command: ([a-z]+)',
-                                command.output)[0]
-        return bool(get_closest(broken_cmd, _brew_commands()))
-    return False
+
+def match(command):
+    if 'brew' not in command.script:
+        return False
+
+    broken_cmd = _get_broken_command(command)
+    return bool(broken_cmd and get_closest(broken_cmd, _brew_commands()))
 
 
 def get_new_command(command):
-    broken_cmd = re.findall(r'Error: Unknown command: ([a-z]+)',
-                            command.output)[0]
-    return replace_command(command, broken_cmd, _brew_commands())
+    return replace_command(command, _get_broken_command(command),
+                           _brew_commands())
