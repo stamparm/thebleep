@@ -1,8 +1,13 @@
 import os
+import sys
 import pytest
 from thebleep import shells
 from thebleep import conf, const
 from thebleep.system import Path
+
+# So that `windows_rules` is importable from here and from a test module,
+# whichever import mode pytest is running in.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 shells.shell = shells.Generic()
 
@@ -17,12 +22,20 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "slow: tens of seconds; skip for a quick local run")
 
+    if config.getoption('windows_rules'):
+        import windows_rules
+
+        print('\nwindows rules: {}'.format(windows_rules.install()))
+
 
 def pytest_addoption(parser):
     """Adds `--enable-functional` argument."""
     group = parser.getgroup("thebleep")
     group.addoption('--enable-functional', action="store_true", default=False,
                     help="Enable functional tests")
+    group.addoption('--windows-rules', action="store_true", default=False,
+                    help="Answer the questions Windows answers differently, "
+                         "on any platform (see tests/windows_rules.py)")
 
 
 @pytest.fixture

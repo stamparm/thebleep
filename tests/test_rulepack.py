@@ -14,6 +14,7 @@ import marshal
 import os
 import pytest
 import time
+import windows_rules
 from thebleep import rulepack
 from thebleep.system import Path
 from thebleep.types import Command, Rule
@@ -161,7 +162,7 @@ class TestPack(object):
 # `test_on_windows_it_is_the_extension_that_decides` covers that by faking
 # exactly that one thing, so it runs on every platform.
 posix_permissions = pytest.mark.skipif(
-    os.name == 'nt',
+    windows_rules.applied(),
     reason='on Windows PATHEXT decides this, not the executable bit')
 
 

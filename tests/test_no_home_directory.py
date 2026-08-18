@@ -148,8 +148,12 @@ def test_home_is_found_when_there_is_one(monkeypatch, tmpdir):
     from thebleep.system import expanduser
 
     home = tmpdir.mkdir('home')
-    monkeypatch.setattr('os.path.expanduser',
-                        lambda path: path.replace('~', str(home), 1))
+    # A leading `~` and nothing else, which is all the real one expands. A
+    # `replace('~', home, 1)` also rewrites the tilde in a Windows short name
+    # like `C:\Users\RUNNER~1`, and then this passes while measuring nonsense.
+    monkeypatch.setattr(
+        'os.path.expanduser',
+        lambda path: str(home) + path[1:] if path.startswith('~') else path)
     for variable in ('XDG_CONFIG_HOME', 'XDG_CACHE_HOME'):
         os.environ.pop(variable, None)
 
