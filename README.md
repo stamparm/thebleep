@@ -4,7 +4,7 @@
 
 Type the command wrong. Type `bleep`. Run the right one.
 
-![The Bleep correcting a mistyped command](https://raw.githubusercontent.com/stamparm/thebleep/master/assets/demo.svg)
+![The Bleep correcting a mistyped command](assets/demo.svg)
 
 ## Get it
 
@@ -36,12 +36,7 @@ issues are open on it, and a good number of its rules quietly stopped matching
 when the tools they correct changed what they print. *The Bleep* is the same
 tool, maintained — and several times quicker about it.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)"
-          srcset="https://raw.githubusercontent.com/stamparm/thebleep/master/assets/benchmark-dark.svg">
-  <img alt="The Bleep against The Fuck, by scenario"
-       src="https://raw.githubusercontent.com/stamparm/thebleep/master/assets/benchmark.svg">
-</picture>
+![The Bleep against The Fuck, by scenario](assets/benchmark.svg)
 
 | What you do | The Fuck 3.32 | The Bleep | |
 | --- | ---: | ---: | ---: |

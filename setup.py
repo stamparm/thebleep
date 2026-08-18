@@ -2,6 +2,7 @@
 from setuptools import setup, find_packages
 import io
 import os
+import re
 import sys
 
 
@@ -13,12 +14,38 @@ if version < (3, 9):
 
 VERSION = '4.0.0'
 
+REPOSITORY = 'https://github.com/stamparm/thebleep'
+IMAGES = ('.svg', '.png', '.gif', '.jpg', '.jpeg')
+
+
+def for_pypi(markdown):
+    """Points the README's relative links at the repository.
+
+    They are relative so that they work on GitHub from any branch, fork or
+    checkout -- including a private one, where raw.githubusercontent.com
+    serves nothing at all. PyPI has no repository to resolve them against, so
+    for the page there they are made absolute, and pinned to this release's
+    tag rather than to master, so that the 4.0.0 page keeps showing 4.0.0.
+
+    """
+    blob = '%s/blob/%s/' % (REPOSITORY, VERSION)
+    raw = 'https://raw.githubusercontent.com/stamparm/thebleep/%s/' % VERSION
+
+    def absolute(match):
+        target = match.group(1)
+        if target.startswith(('http:', 'https:', 'mailto:', '#')):
+            return match.group(0)
+        return '](%s%s)' % (raw if target.endswith(IMAGES) else blob, target)
+
+    return re.sub(r'\]\(([^)]+)\)', absolute, markdown)
+
+
 # The README is the PyPI page. Read with an explicit encoding: it has em dashes
 # and arrow keys in it, and a build on a machine whose default encoding is not
 # UTF-8 would fail on them.
 here = os.path.dirname(os.path.abspath(__file__))
 with io.open(os.path.join(here, 'README.md'), encoding='utf-8') as readme:
-    long_description = readme.read()
+    long_description = for_pypi(readme.read())
 
 install_requires = ['psutil', 'colorama', 'decorator', 'pyte']
 extras_require = {":sys_platform=='win32'": ['win_unicode_console']}

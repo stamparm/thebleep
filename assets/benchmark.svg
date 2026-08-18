@@ -1,48 +1,48 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 406" width="760" height="406" role="img" aria-label="The Bleep against The Fuck, median of 30 runs"><title>The Bleep against The Fuck</title>
-<style>.n{font-family:ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;font-size:12px;font-variant-numeric:tabular-nums}.x{font-weight:600}.s{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:13.5px}.k{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11.5px}</style>
-<rect width="760" height="406" rx="6" fill="#ffffff"/>
-<rect x="0.5" y="0.5" width="759" height="405" rx="5.5" fill="none" stroke="#d1d9e0"/>
-<rect x="28" y="20" width="9" height="9" rx="2" fill="#d1d9e0" stroke="#d1d9e0"/>
-<text class="k" x="43" y="28.5" fill="#59636e">The Fuck 3.32</text>
-<rect x="140" y="20" width="9" height="9" rx="2" fill="#1f883d"/>
-<text class="k" x="155" y="28.5" fill="#1f2328">The Bleep</text>
-<text class="k" x="732" y="28.5" text-anchor="end" fill="#59636e">median of 30 runs &#183; each row scaled to The Fuck's time &#183; lower is better</text>
-<line x1="28" y1="38.5" x2="732" y2="38.5" stroke="#d1d9e0"/>
-<text class="s" x="28" y="74" fill="#1f2328">Open a shell</text>
-<rect x="234" y="54" width="364" height="9" rx="4.5" fill="#d1d9e0"/>
-<text class="n" x="608" y="62.5" fill="#59636e">205 ms</text>
-<rect x="234" y="69" width="66.8884" height="9" rx="4.5" fill="#1f883d"/>
-<text class="n" x="310.888" y="77.5" fill="#1f883d">38 ms</text>
-<text class="n x" x="732" y="71.5" text-anchor="end" fill="#953800">5.4&#215;</text>
-<text class="s" x="28" y="128" fill="#1f2328">Correct a mistyped command</text>
-<rect x="234" y="108" width="364" height="9" rx="4.5" fill="#d1d9e0"/>
-<text class="n" x="608" y="116.5" fill="#59636e">240 ms</text>
-<rect x="234" y="123" width="86.5982" height="9" rx="4.5" fill="#1f883d"/>
-<text class="n" x="330.598" y="131.5" fill="#1f883d">57 ms</text>
-<text class="n x" x="732" y="125.5" text-anchor="end" fill="#953800">4.2&#215;</text>
-<text class="s" x="28" y="182" fill="#1f2328">Correct inside a git repository</text>
-<rect x="234" y="162" width="364" height="9" rx="4.5" fill="#d1d9e0"/>
-<text class="n" x="608" y="170.5" fill="#59636e">239 ms</text>
-<rect x="234" y="177" width="88.2046" height="9" rx="4.5" fill="#1f883d"/>
-<text class="n" x="332.205" y="185.5" fill="#1f883d">58 ms</text>
-<text class="n x" x="732" y="179.5" text-anchor="end" fill="#953800">4.1&#215;</text>
-<text class="s" x="28" y="236" fill="#1f2328">Correct when nothing matches</text>
-<rect x="234" y="216" width="364" height="9" rx="4.5" fill="#d1d9e0"/>
-<text class="n" x="608" y="224.5" fill="#59636e">336 ms</text>
-<rect x="234" y="231" width="77.6483" height="9" rx="4.5" fill="#1f883d"/>
-<text class="n" x="321.648" y="239.5" fill="#1f883d">72 ms</text>
-<text class="n x" x="732" y="233.5" text-anchor="end" fill="#953800">4.7&#215;</text>
-<text class="s" x="28" y="290" fill="#1f2328">Correct a slow command *</text>
-<rect x="234" y="270" width="364" height="9" rx="4.5" fill="#d1d9e0"/>
-<text class="n" x="608" y="278.5" fill="#59636e">822 ms</text>
-<rect x="234" y="285" width="250.293" height="9" rx="4.5" fill="#1f883d"/>
-<text class="n" x="494.293" y="293.5" fill="#1f883d">565 ms</text>
-<text class="n x" x="732" y="287.5" text-anchor="end" fill="#953800">1.5&#215;</text>
-<text class="s" x="28" y="344" fill="#1f2328">Correct after 1 MB of output</text>
-<rect x="234" y="324" width="364" height="9" rx="4.5" fill="#d1d9e0"/>
-<text class="n" x="608" y="332.5" fill="#59636e">3.25 s</text>
-<rect x="234" y="339" width="15.0552" height="9" rx="4.5" fill="#1f883d"/>
-<text class="n" x="259.055" y="347.5" fill="#1f883d">134 ms</text>
-<text class="n x" x="732" y="341.5" text-anchor="end" fill="#953800">24.2&#215;</text>
-<text class="k" x="28" y="392" fill="#59636e">* dominated by the half second the command being corrected takes on its own; the rest is what the tool costs you.</text>
+<style>:root{--accent:#953800;--bleep:#1f883d;--card:#ffffff;--dim:#59636e;--edge:#d1d9e0;--fuck:#d1d9e0;--label:#1f2328;}@media(prefers-color-scheme:dark){:root{--accent:#d29922;--bleep:#3fb950;--card:#0d1117;--dim:#9198a1;--edge:#30363d;--fuck:#30363d;--label:#e6edf3;}}.n{font-family:ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;font-size:12px;font-variant-numeric:tabular-nums}.x{font-weight:600}.s{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:13.5px}.k{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11.5px}.card{fill:var(--card)}.edge{fill:none;stroke:var(--edge)}.rule{stroke:var(--edge)}.label{fill:var(--label)}.dim{fill:var(--dim)}.fuck{fill:var(--fuck)}.swatch{fill:var(--fuck);stroke:var(--edge)}.bleep{fill:var(--bleep)}.accent{fill:var(--accent)}</style>
+<rect class="card" width="760" height="406" rx="6"/>
+<rect class="edge" x="0.5" y="0.5" width="759" height="405" rx="5.5"/>
+<rect class="swatch" x="28" y="20" width="9" height="9" rx="2"/>
+<text class="k dim" x="43" y="28.5">The Fuck 3.32</text>
+<rect class="bleep" x="140" y="20" width="9" height="9" rx="2"/>
+<text class="k label" x="155" y="28.5">The Bleep</text>
+<text class="k dim" x="732" y="28.5" text-anchor="end">median of 30 runs &#183; each row scaled to The Fuck's time &#183; lower is better</text>
+<line class="rule" x1="28" y1="38.5" x2="732" y2="38.5"/>
+<text class="s label" x="28" y="74">Open a shell</text>
+<rect class="fuck" x="234" y="54" width="364" height="9" rx="4.5"/>
+<text class="n dim" x="608" y="62.5">205 ms</text>
+<rect class="bleep" x="234" y="69" width="66.8884" height="9" rx="4.5"/>
+<text class="n bleep" x="310.888" y="77.5">38 ms</text>
+<text class="n x accent" x="732" y="71.5" text-anchor="end">5.4&#215;</text>
+<text class="s label" x="28" y="128">Correct a mistyped command</text>
+<rect class="fuck" x="234" y="108" width="364" height="9" rx="4.5"/>
+<text class="n dim" x="608" y="116.5">240 ms</text>
+<rect class="bleep" x="234" y="123" width="86.5982" height="9" rx="4.5"/>
+<text class="n bleep" x="330.598" y="131.5">57 ms</text>
+<text class="n x accent" x="732" y="125.5" text-anchor="end">4.2&#215;</text>
+<text class="s label" x="28" y="182">Correct inside a git repository</text>
+<rect class="fuck" x="234" y="162" width="364" height="9" rx="4.5"/>
+<text class="n dim" x="608" y="170.5">239 ms</text>
+<rect class="bleep" x="234" y="177" width="88.2046" height="9" rx="4.5"/>
+<text class="n bleep" x="332.205" y="185.5">58 ms</text>
+<text class="n x accent" x="732" y="179.5" text-anchor="end">4.1&#215;</text>
+<text class="s label" x="28" y="236">Correct when nothing matches</text>
+<rect class="fuck" x="234" y="216" width="364" height="9" rx="4.5"/>
+<text class="n dim" x="608" y="224.5">336 ms</text>
+<rect class="bleep" x="234" y="231" width="77.6483" height="9" rx="4.5"/>
+<text class="n bleep" x="321.648" y="239.5">72 ms</text>
+<text class="n x accent" x="732" y="233.5" text-anchor="end">4.7&#215;</text>
+<text class="s label" x="28" y="290">Correct a slow command *</text>
+<rect class="fuck" x="234" y="270" width="364" height="9" rx="4.5"/>
+<text class="n dim" x="608" y="278.5">822 ms</text>
+<rect class="bleep" x="234" y="285" width="250.293" height="9" rx="4.5"/>
+<text class="n bleep" x="494.293" y="293.5">565 ms</text>
+<text class="n x accent" x="732" y="287.5" text-anchor="end">1.5&#215;</text>
+<text class="s label" x="28" y="344">Correct after 1 MB of output</text>
+<rect class="fuck" x="234" y="324" width="364" height="9" rx="4.5"/>
+<text class="n dim" x="608" y="332.5">3.25 s</text>
+<rect class="bleep" x="234" y="339" width="15.0552" height="9" rx="4.5"/>
+<text class="n bleep" x="259.055" y="347.5">134 ms</text>
+<text class="n x accent" x="732" y="341.5" text-anchor="end">24.2&#215;</text>
+<text class="k dim" x="28" y="392">* dominated by the half second the command being corrected takes on its own; the rest is what the tool costs you.</text>
 </svg>
