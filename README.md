@@ -560,15 +560,16 @@ eval $(thebleep --alias --enable-experimental-instant-mode)
 
 *The Bleep* is substantially faster than *The Fuck*, and the numbers are meant
 to be checked rather than believed. Same machine, same Python, 30 runs each,
-medians, measured with the harness in [`bench/`](bench/README.md):
+medians, measured with the harness in [`bench/`](bench/README.md). The
+run behind this table is committed as `bench/results/final.json`:
 
 | What you do | The Fuck 3.32 | The Bleep | |
 | --- | ---: | ---: | ---: |
-| Open a shell (`--alias` in your rc) | 209 ms | 38 ms | **5.9x** |
-| Open a shell (pasted `--alias-loader`) | 209 ms | 0.3 ms | **no Python at all** |
-| Correct a mistyped command | 248 ms | 56 ms | **4.5x** |
-| Correct when nothing matches | 344 ms | 70 ms | **4.9x** |
-| Correct after a command printed a megabyte | 3248 ms | 133 ms | **24.5x** |
+| Open a shell (`--alias` in your rc) | 205 ms | 38 ms | **5.4x** |
+| Open a shell (pasted `--alias-loader`) | 205 ms | 0.3 ms | **no Python at all** |
+| Correct a mistyped command | 240 ms | 57 ms | **4.2x** |
+| Correct when nothing matches | 336 ms | 72 ms | **4.7x** |
+| Correct after a command printed a megabyte | 3246 ms | 134 ms | **24.2x** |
 
 The shell startup row is not a typo: with the loader pasted into your rc, a
 shell takes 2.5 ms to start against 2.2 ms with nothing configured at all, so
