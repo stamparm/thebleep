@@ -2,9 +2,9 @@ flake8
 pytest
 pytest-mock
 wheel
+build
 setuptools>=17.1
 pexpect
-pypandoc
 pytest-benchmark
 pytest-docker-pexpect
 twine

@@ -1,10 +1,11 @@
 name: thebleep
 version: stable
 version-script: git -C parts/thebleep/build describe --abbrev=0 --tags
-summary: Magnificent app which corrects your previous console command.
+summary: Corrects your previous console command.
 description: |
-  The Bleep tries to match a rule for the previous command,
-  creates a new command using the matched rule and runs it.
+  The Bleep matches your previous console command against a rule, offers the
+  corrected command, and runs it once you say so. The maintained successor to
+  The Fuck.
 
 grade: stable
 confinement: classic

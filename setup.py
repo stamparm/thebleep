@@ -1,16 +1,9 @@
 #!/usr/bin/env python
 from setuptools import setup, find_packages
-import sys
+import io
 import os
-import fastentrypoints
+import sys
 
-
-if os.environ.get('CONVERT_README'):
-    import pypandoc
-
-    long_description = pypandoc.convert('README.md', 'rst')
-else:
-    long_description = ''
 
 version = sys.version_info[:2]
 if version < (3, 9):
@@ -18,7 +11,14 @@ if version < (3, 9):
           ' ({}.{} detected).'.format(*version))
     sys.exit(-1)
 
-VERSION = '3.32'
+VERSION = '4.0.0'
+
+# The README is the PyPI page. Read with an explicit encoding: it has em dashes
+# and arrow keys in it, and a build on a machine whose default encoding is not
+# UTF-8 would fail on them.
+here = os.path.dirname(os.path.abspath(__file__))
+with io.open(os.path.join(here, 'README.md'), encoding='utf-8') as readme:
+    long_description = readme.read()
 
 install_requires = ['psutil', 'colorama', 'decorator', 'pyte']
 extras_require = {":sys_platform=='win32'": ['win_unicode_console']}
@@ -26,22 +26,51 @@ extras_require = {":sys_platform=='win32'": ['win_unicode_console']}
 if sys.platform == "win32":
     scripts = ['scripts\\bleep.bat', 'scripts\\bleep.ps1']
     entry_points = {'console_scripts': [
-                  'thebleep = thebleep.entrypoints.main:main',
-                  'thebleep_firstuse = thebleep.entrypoints.not_configured:main']}
+        'thebleep = thebleep.entrypoints.main:main',
+        'thebleep_firstuse = thebleep.entrypoints.not_configured:main']}
 else:
     scripts = []
     entry_points = {'console_scripts': [
-                  'thebleep = thebleep.entrypoints.main:main',
-                  'bleep = thebleep.entrypoints.not_configured:main']}
+        'thebleep = thebleep.entrypoints.main:main',
+        'bleep = thebleep.entrypoints.not_configured:main']}
 
 setup(name='thebleep',
       version=VERSION,
-      description="Magnificent app which corrects your previous console command",
+      description='Corrects your previous console command. The maintained'
+                  ' successor to The Fuck.',
       long_description=long_description,
+      long_description_content_type='text/markdown',
       author='Miroslav Stampar',
       author_email='miroslav.stampar@gmail.com',
       url='https://github.com/stamparm/thebleep',
+      project_urls={
+          'Source': 'https://github.com/stamparm/thebleep',
+          'Issues': 'https://github.com/stamparm/thebleep/issues',
+          'Changelog':
+              'https://github.com/stamparm/thebleep/blob/master/CHANGELOG.md',
+      },
       license='MIT',
+      keywords='shell console command correction typo cli productivity',
+      classifiers=[
+          'Development Status :: 5 - Production/Stable',
+          'Environment :: Console',
+          'Intended Audience :: Developers',
+          'Intended Audience :: System Administrators',
+          'Operating System :: MacOS',
+          'Operating System :: Microsoft :: Windows',
+          'Operating System :: POSIX :: Linux',
+          'Programming Language :: Python :: 3',
+          'Programming Language :: Python :: 3.9',
+          'Programming Language :: Python :: 3.10',
+          'Programming Language :: Python :: 3.11',
+          'Programming Language :: Python :: 3.12',
+          'Programming Language :: Python :: 3.13',
+          'Programming Language :: Python :: 3.14',
+          'Programming Language :: Python :: 3 :: Only',
+          'Topic :: Software Development',
+          'Topic :: Terminals',
+          'Topic :: Utilities',
+      ],
       packages=find_packages(exclude=['ez_setup', 'examples',
                                       'tests', 'tests.*', 'release']),
       include_package_data=True,
