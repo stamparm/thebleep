@@ -1,4 +1,3 @@
-import os
 import zipfile
 from thebleep.utils import for_app
 from thebleep.shells import shell
@@ -42,19 +41,21 @@ def get_new_command(command):
         command.script, shell.quote(_zip_file(command)[:-4]))
 
 
-def side_effect(old_cmd, command):
-    with zipfile.ZipFile(_zip_file(old_cmd), 'r') as archive:
-        for file in archive.namelist():
-            if not os.path.abspath(file).startswith(os.getcwd()):
-                # it's unsafe to overwrite files outside of the current directory
-                continue
-
-            try:
-                os.remove(file)
-            except OSError:
-                # does not try to remove directories as we cannot know if they
-                # already existed before
-                pass
-
-
+# There used to be a `side_effect` here that tried to undo the extraction by
+# deleting every file named in the archive, and it could not be made safe.
+#
+# It cannot tell an extracted file from one that was already there under the
+# same name, so accepting `unzip -d` deleted the user's own README.md if the
+# archive happened to contain one -- data that unzip had already overwritten and
+# that nothing could put back.
+#
+# Its containment check was `os.path.abspath(file).startswith(os.getcwd())`,
+# which is a string prefix test and not a path containment test: from
+# `/tmp/foo`, an archive member `../foobar/precious` passes it, because
+# `/tmp/foobar/precious` does start with `/tmp/foo`. Symlinked directories and
+# absolute member names get past it too, in each case deleting something outside
+# the directory the user was working in.
+#
+# So the extracted files are left where they are. What the correction does is
+# now exactly what it says: extract into a directory of its own.
 requires_output = False

@@ -1,7 +1,8 @@
 import os
 import pytest
 import tarfile
-from thebleep.rules.dirty_untar import match, get_new_command, side_effect, \
+from thebleep.rules import dirty_untar
+from thebleep.rules.dirty_untar import match, get_new_command, \
                                       tar_extensions  # noqa: E126
 from thebleep.types import Command
 
@@ -55,13 +56,18 @@ def test_match(ext, tar_error, filename, unquoted, quoted, script, fixed):
     assert match(Command(script.format(filename.format(ext)), ''))
 
 
-@parametrize_extensions
-@parametrize_filename
-@parametrize_script
-def test_side_effect(ext, tar_error, filename, unquoted, quoted, script, fixed):
-    tar_error(unquoted.format(ext))
-    side_effect(Command(script.format(filename.format(ext)), ''), None)
-    assert set(os.listdir('.')) == {unquoted.format(ext), 'd'}
+def test_nothing_is_deleted_behind_the_suggestion(tar_error):
+    """See `test_dirty_unzip` for why the rollback could not be made safe."""
+    assert not hasattr(dirty_untar, 'side_effect')
+
+    tar_error('foo.tar')
+    with open('a', 'w') as handle:
+        handle.write('MY OWN a')
+    get_new_command(Command('tar xvf foo.tar', ''))
+
+    assert set(os.listdir('.')) == {'foo.tar', 'a', 'b', 'c', 'd'}
+    with open('a') as handle:
+        assert handle.read() == 'MY OWN a'
 
 
 @parametrize_extensions

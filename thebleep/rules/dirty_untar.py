@@ -1,5 +1,3 @@
-import tarfile
-import os
 from thebleep.utils import for_app
 from thebleep.shells import shell
 
@@ -38,16 +36,8 @@ def get_new_command(command):
         .format(dir=dir, cmd=command.script)
 
 
-def side_effect(old_cmd, command):
-    with tarfile.TarFile(_tar_file(old_cmd.script_parts)[0]) as archive:
-        for file in archive.getnames():
-            if not os.path.abspath(file).startswith(os.getcwd()):
-                # it's unsafe to overwrite files outside of the current directory
-                continue
-
-            try:
-                os.remove(file)
-            except OSError:
-                # does not try to remove directories as we cannot know if they
-                # already existed before
-                pass
+# There used to be a `side_effect` here that tried to undo the extraction by
+# deleting every file named in the archive. See `dirty_unzip` for why it could
+# not be made safe: it deleted files the user already had under the same name,
+# and its containment check was a string prefix test that a `../` member walks
+# straight out of. The extracted files are left where they are.

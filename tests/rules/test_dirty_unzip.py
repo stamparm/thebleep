@@ -3,7 +3,8 @@
 import os
 import pytest
 import zipfile
-from thebleep.rules.dirty_unzip import match, get_new_command, side_effect
+from thebleep.rules import dirty_unzip
+from thebleep.rules.dirty_unzip import match, get_new_command
 from thebleep.types import Command
 from unicodedata import normalize
 
@@ -45,20 +46,24 @@ def test_match(zip_error, script, filename):
     assert match(Command(script, ''))
 
 
-@pytest.mark.parametrize('script,filename', [
-    (u'unzip café', u'café.zip'),
-    (u'unzip café.zip', u'café.zip'),
-    (u'unzip foo', u'foo.zip'),
-    (u'unzip foo.zip', u'foo.zip')])
-def test_side_effect(zip_error, script, filename):
-    zip_error(filename)
-    side_effect(Command(script, ''), None)
+def test_nothing_is_deleted_behind_the_suggestion(zip_error):
+    """Accepting `unzip -d` used to delete every file named in the archive.
 
-    dir_list = os.listdir(u'.')
-    if filename not in set(dir_list):
-        filename = normalize('NFD', filename)
+    It could not tell an extracted file from one the user already had under the
+    same name, and its containment test was a string prefix rather than a path
+    containment check, so from `/tmp/foo` a member named `../foobar/precious`
+    passed it. Both are unfixable from inside a rule: nothing in the archive
+    says what was there before.
 
-    assert set(dir_list) == {filename, 'd'}
+    """
+    assert not hasattr(dirty_unzip, 'side_effect')
+
+    zip_error(u'foo.zip')
+    open('a', 'w').write('MY OWN a')
+    get_new_command(Command(u'unzip foo.zip', ''))
+
+    assert set(os.listdir(u'.')) == {u'foo.zip', 'a', 'b', 'c', 'd'}
+    assert open('a').read() == 'MY OWN a'
 
 
 @pytest.mark.parametrize('script,fixed,filename', [

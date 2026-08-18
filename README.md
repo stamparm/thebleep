@@ -396,8 +396,8 @@ following rules are enabled by default:
 * `cp_create_destination` — creates a new directory when you attempt to `cp` or `mv` to a non-existent one
 * `cp_omitting_directory` — adds `-a` when you `cp` directory;
 * `cpp11` — adds missing `-std=c++11` to `g++` or `clang++`;
-* `dirty_untar` — fixes `tar x` command that untarred in the current directory;
-* `dirty_unzip` — fixes `unzip` command that unzipped in the current directory;
+* `dirty_untar` — suggests re-extracting a `tar x` that unpacked into the current directory into a directory of its own (it does not delete what was already unpacked — nothing in the archive says which of those files you already had);
+* `dirty_unzip` — the same for `unzip`;
 * `django_south_ghost` — adds `--delete-ghost-migrations` to failed because ghosts django south migration;
 * `django_south_merge` — adds `--merge` to inconsistent django south migration;
 * `docker_login` — executes a `docker login` and repeats the previous command;
