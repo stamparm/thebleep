@@ -114,6 +114,27 @@ def confirm_text(corrected_command):
             blue=color(colorama.Fore.BLUE)))
 
 
+def confirm_replay(script):
+    sys.stderr.write(
+        (u'{bold}{script}{reset} has to run again to be read, and anything '
+         u'it changes will change twice. Run it? '
+         u'[{green}y{reset}/{red}N{reset}]').format(
+            script=script,
+            bold=color(colorama.Style.BRIGHT),
+            green=color(colorama.Fore.GREEN),
+            red=color(colorama.Fore.RED),
+            reset=color(colorama.Style.RESET_ALL)))
+
+    # The question ends without a newline and is followed by a blocking read,
+    # and stderr is line buffered, so without this it sits in the buffer and
+    # the user is asked nothing while the terminal waits for their answer.
+    sys.stderr.flush()
+
+
+def replay_answer(allowed):
+    sys.stderr.write(u' {}\n'.format(u'yes' if allowed else u'no'))
+
+
 def debug(msg):
     if settings.debug:
         sys.stderr.write(u'{blue}{bold}DEBUG:{reset} {msg}\n'.format(

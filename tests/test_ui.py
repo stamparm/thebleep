@@ -57,7 +57,7 @@ def test_command_selector():
 class TestSelectCommand(object):
     @pytest.fixture(autouse=True)
     def is_interactive(self, mocker):
-        return mocker.patch('thebleep.ui._is_interactive', return_value=True)
+        return mocker.patch('thebleep.ui.is_interactive', return_value=True)
 
     @pytest.fixture
     def commands_with_side_effect(self):

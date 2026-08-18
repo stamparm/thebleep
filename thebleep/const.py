@@ -51,6 +51,7 @@ DEFAULT_SETTINGS = {'rules': DEFAULT_RULES,
                     'repeat': False,
                     'instant_mode': False,
                     'num_close_matches': 3,
+                    'confirm_replay': True,
                     'env': {'LC_ALL': 'C', 'LANG': 'C', 'GIT_TRACE': '1'},
                     'excluded_search_path_prefixes': []}
 
@@ -68,6 +69,7 @@ ENV_TO_ATTR = {'THEBLEEP_RULES': 'rules',
                'THEBLEEP_REPEAT': 'repeat',
                'THEBLEEP_INSTANT_MODE': 'instant_mode',
                'THEBLEEP_NUM_CLOSE_MATCHES': 'num_close_matches',
+               'THEBLEEP_CONFIRM_REPLAY': 'confirm_replay',
                'THEBLEEP_EXCLUDED_SEARCH_PATH_PREFIXES': 'excluded_search_path_prefixes'}
 
 SETTINGS_HEADER = u"""# The Bleep settings file

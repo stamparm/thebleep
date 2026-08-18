@@ -105,7 +105,7 @@ class Settings(dict):
                       'num_close_matches'):
             return int(val)
         elif attr in ('require_confirmation', 'no_colors', 'debug',
-                      'alter_history', 'instant_mode'):
+                      'alter_history', 'instant_mode', 'confirm_replay'):
             return val.lower() == 'true'
         elif attr in ('slow_commands', 'excluded_search_path_prefixes'):
             return val.split(':')
@@ -126,6 +126,9 @@ class Settings(dict):
         from_args = {}
         if args.yes:
             from_args['require_confirmation'] = not args.yes
+            # `--yes` is consent given for this run, so it covers running the
+            # previous command again as well as the correction.
+            from_args['confirm_replay'] = False
         if args.debug:
             from_args['debug'] = args.debug
         if args.repeat:

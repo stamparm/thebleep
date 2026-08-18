@@ -9,7 +9,7 @@ from .utils import get_alias
 from . import logs, const
 
 
-def _is_interactive():
+def is_interactive():
     """Check if stdin is a TTY (interactive terminal)."""
     try:
         return os.isatty(sys.stdin.fileno())
@@ -87,7 +87,7 @@ def select_command(corrected_commands):
         logs.show_corrected_command(selector.value)
         return selector.value
 
-    if not _is_interactive():
+    if not is_interactive():
         # Nobody is there to confirm, so show what we'd run and leave the
         # decision to whoever reads the output.
         logs.show_corrected_command(selector.value)

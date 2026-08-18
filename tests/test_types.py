@@ -126,6 +126,15 @@ class TestCommand(object):
         monkeypatch.setattr('thebleep.output_readers.rerun._wait_output',
                             lambda *_: b'output')
 
+    @pytest.fixture(autouse=True)
+    def allow_replay(self, monkeypatch):
+        """Most of these check what gets run, so let the rerun happen.
+
+        Whether it is allowed to in the first place is `test_replay`'s subject.
+
+        """
+        monkeypatch.setattr('thebleep.replay.is_allowed', lambda *_: True)
+
     def test_from_script_calls(self, Popen, settings, os_environ):
         settings.env = {}
         assert Command.from_raw_script(
