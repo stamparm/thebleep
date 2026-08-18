@@ -339,8 +339,7 @@ class Cache(object):
         import dbm
         import shelve
 
-        cache_dir = self._get_cache_dir()
-        cache_path = Path(cache_dir).joinpath('thebleep').as_posix()
+        cache_path = self._get_cache_path()
 
         try:
             self._db = shelve.open(cache_path)
@@ -352,19 +351,24 @@ class Cache(object):
 
         atexit.register(self._db.close)
 
-    def _get_cache_dir(self):
-        default_xdg_cache_dir = os.path.expanduser("~/.cache")
-        cache_dir = os.getenv("XDG_CACHE_HOME", default_xdg_cache_dir)
+    def _get_cache_path(self):
+        """Where the rule cache lives, inside the directory we already own.
 
-        # Ensure the cache_path exists, Python 2 does not have the exist_ok
-        # parameter
+        It used to be `<cache home>/thebleep`, which is the name of that
+        directory itself, so once anything else had been cached this could
+        only ever fail.
+
+        """
+        directory = cachefile.directory()
+
+        # Python 2 did not have `exist_ok`, hence the shape of this.
         try:
-            os.makedirs(cache_dir)
+            os.makedirs(str(directory))
         except OSError:
-            if not os.path.isdir(cache_dir):
+            if not directory.is_dir():
                 raise
 
-        return cache_dir
+        return directory.joinpath('rules.db').as_posix()
 
     def _get_mtime(self, path):
         try:

@@ -17,13 +17,14 @@ from .system import Path
 FORMAT = 3
 
 
-def _directory():
+def directory():
+    """Where The Bleep keeps everything it caches."""
     cache_home = os.environ.get('XDG_CACHE_HOME') or '~/.cache'
     return Path(cache_home).expanduser().joinpath('thebleep')
 
 
 def path_for(name):
-    return _directory().joinpath('{}.cache'.format(name))
+    return directory().joinpath('{}.cache'.format(name))
 
 
 def load(name, fingerprint, max_age=None):
@@ -77,7 +78,7 @@ def clear():
     """Removes every cache file. Returns how many were removed."""
     removed = 0
     try:
-        for entry in _directory().glob('*.cache'):
+        for entry in directory().glob('*.cache'):
             try:
                 os.unlink(str(entry))
                 removed += 1

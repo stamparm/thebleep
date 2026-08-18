@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from pathlib import Path
 import pickle
 import pytest
 import warnings
@@ -219,6 +220,46 @@ def test_for_app(script, names, result):
         return True
 
     assert match(Command(script, '')) == result
+
+
+class TestCacheLocation(object):
+    """The rule cache is a file, and everything else cached is in a directory.
+
+    They used to want the same name, so once a rule pack or an executables
+    listing had been written, opening the rule cache could only fail.
+
+    """
+
+    @pytest.fixture(autouse=True)
+    def cache_home(self, tmpdir, os_environ):
+        os_environ['XDG_CACHE_HOME'] = str(tmpdir)
+        return tmpdir
+
+    def test_it_is_not_the_directory_the_other_caches_live_in(self):
+        from thebleep import cachefile
+        from thebleep.utils import Cache
+
+        assert Path(Cache()._get_cache_path()) != cachefile.directory()
+
+    def test_opening_it_works_with_other_caches_already_written(self):
+        from thebleep import cachefile
+        from thebleep.utils import Cache
+
+        # What writing a rule pack or an executables listing leaves behind.
+        directory = cachefile.directory()
+        directory.mkdir(parents=True, exist_ok=True)
+        directory.joinpath('executables.cache').write_bytes(b'x')
+
+        cache = Cache()
+        cache._setup_db()
+        cache._db['key'] = 'value'
+        assert cache._db['key'] == 'value'
+
+    def test_the_directory_is_created_when_missing(self, cache_home):
+        from thebleep.utils import Cache
+
+        path = Path(Cache()._get_cache_path())
+        assert path.parent.is_dir()
 
 
 class TestCache(object):
