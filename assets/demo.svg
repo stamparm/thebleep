@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 710 324.2" width="710" height="324.2" role="img" aria-label="The Bleep correcting a command in a terminal">
+<title>The Bleep</title>
+<style>.w{opacity:0;animation-duration:7588ms;animation-iteration-count:infinite;animation-timing-function:steps(1,end)}.t{animation-duration:7588ms;animation-iteration-count:infinite}text{font-family:ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'DejaVu Sans Mono', 'Liberation Mono', monospace;font-size:15px;white-space:pre}.cursor{animation:blink 1.1s steps(1,end) infinite}@keyframes blink{0%,55%{opacity:1}56%,100%{opacity:0}}@keyframes a0{0%{opacity:0}7.907%{opacity:1}}@keyframes a1{0%{opacity:0}7.907%{opacity:1}}#c1{transform:scaleX(0);transform-origin:40px 0;animation-name:c1;animation-timing-function:steps(19,start)}@keyframes c1{0%,7.907%{transform:scaleX(0)}23.432%,100%{transform:scaleX(1)}}@keyframes a2{0%{opacity:0}7.907%{opacity:1}24.881%{opacity:0}}#k2{animation-name:k2;animation-timing-function:steps(19,start)}@keyframes k2{0%,7.907%{transform:translateX(0)}23.432%,100%{transform:translateX(171px)}}@keyframes a3{0%{opacity:0}27.649%{opacity:1}}@keyframes a4{0%{opacity:0}27.649%{opacity:1}}@keyframes a5{0%{opacity:0}39.51%{opacity:1}}@keyframes a6{0%{opacity:0}39.51%{opacity:1}}#c6{transform:scaleX(0);transform-origin:40px 0;animation-name:c6;animation-timing-function:steps(5,start)}@keyframes c6{0%,39.51%{transform:scaleX(0)}43.595%,100%{transform:scaleX(1)}}@keyframes a7{0%{opacity:0}39.51%{opacity:1}45.045%{opacity:0}}#k7{animation-name:k7;animation-timing-function:steps(5,start)}@keyframes k7{0%,39.51%{transform:translateX(0)}43.595%,100%{transform:translateX(45px)}}@keyframes a8{0%{opacity:0}49.13%{opacity:1}}@keyframes a9{0%{opacity:0}49.13%{opacity:1}}@keyframes a10{0%{opacity:0}49.13%{opacity:1}}@keyframes a11{0%{opacity:0}64.945%{opacity:1}}@keyframes a12{0%{opacity:0}67.053%{opacity:1}}@keyframes a13{0%{opacity:0}69.162%{opacity:1}}@keyframes a14{0%{opacity:0}69.162%{opacity:1}}@keyframes a15{0%{opacity:0}72.325%{opacity:1}}@keyframes a16{0%{opacity:0}72.325%{opacity:1}}</style>
+<rect width="710" height="324.2" rx="10" fill="#15181f"/>
+<rect x="0.5" y="0.5" width="709" height="323.2" rx="9.5" fill="none" stroke="#2b313c"/>
+<circle cx="24" cy="18" r="5" fill="#42474f"/>
+<circle cx="43" cy="18" r="5" fill="#42474f"/>
+<circle cx="62" cy="18" r="5" fill="#42474f"/>
+<text x="355" y="22.5" text-anchor="middle" fill="#6d7682" font-size="12.5">bleep</text>
+<g class="w" style="animation-name:a0"><text x="22" y="69.7" textLength="18" lengthAdjust="spacing" fill="#5fd38d">$ </text></g>
+<clipPath id="c1-p"><rect class="t" id="c1" x="40" y="54.7" width="171" height="23"/></clipPath>
+<g class="w" style="animation-name:a1"><g clip-path="url(#c1-p)"><text x="40" y="69.7" textLength="171" lengthAdjust="spacing" fill="#d5dae3">apt-get install vim</text></g></g>
+<g class="w" style="animation-name:a2"><g class="t" id="k2"><rect class="cursor" x="40" y="57.4" width="9" height="15.9" fill="#d5dae3" opacity="0.8"/></g></g>
+<g class="w" style="animation-name:a3"><text x="22" y="92.7" textLength="603" lengthAdjust="spacing" fill="#ff7b72">E: Could not open lock file /var/lib/dpkg/lock-frontend - open (13:</text></g>
+<g class="w" style="animation-name:a4"><text x="22" y="115.7" textLength="189" lengthAdjust="spacing" fill="#ff7b72">   Permission denied)</text></g>
+<g class="w" style="animation-name:a5"><text x="22" y="161.7" textLength="18" lengthAdjust="spacing" fill="#5fd38d">$ </text></g>
+<clipPath id="c6-p"><rect class="t" id="c6" x="40" y="146.7" width="45" height="23"/></clipPath>
+<g class="w" style="animation-name:a6"><g clip-path="url(#c6-p)"><text x="40" y="161.7" textLength="45" lengthAdjust="spacing" fill="#d5dae3">bleep</text></g></g>
+<g class="w" style="animation-name:a7"><g class="t" id="k7"><rect class="cursor" x="40" y="149.4" width="9" height="15.9" fill="#d5dae3" opacity="0.8"/></g></g>
+<g class="w" style="animation-name:a8"><text x="22" y="184.7" textLength="45" lengthAdjust="spacing" fill="#ffb454">sudo </text></g>
+<g class="w" style="animation-name:a9"><text x="67" y="184.7" textLength="180" lengthAdjust="spacing" fill="#d5dae3">apt-get install vim </text></g>
+<g class="w" style="animation-name:a10"><text x="247" y="184.7" textLength="198" lengthAdjust="spacing" fill="#7d8794">[enter/↑/↓/ctrl+c/esc]</text></g>
+<g class="w" style="animation-name:a11"><text x="22" y="207.7" textLength="261" lengthAdjust="spacing" fill="#6cb6ff">Reading package lists... Done</text></g>
+<g class="w" style="animation-name:a12"><text x="22" y="230.7" textLength="288" lengthAdjust="spacing" fill="#6cb6ff">Building dependency tree... Done</text></g>
+<g class="w" style="animation-name:a13"><text x="22" y="253.7" textLength="405" lengthAdjust="spacing" fill="#d5dae3">The following NEW packages will be installed:</text></g>
+<g class="w" style="animation-name:a14"><text x="22" y="276.7" textLength="45" lengthAdjust="spacing" fill="#5fd38d">  vim</text></g>
+<g class="w" style="animation-name:a15"><text x="22" y="299.7" textLength="18" lengthAdjust="spacing" fill="#5fd38d">$ </text></g>
+<g class="w" style="animation-name:a16"><g class="t" id="k16"><rect class="cursor" x="40" y="287.4" width="9" height="15.9" fill="#d5dae3" opacity="0.8"/></g></g>
+</svg>
