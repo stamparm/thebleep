@@ -90,10 +90,10 @@ rather than restarting it, because this is the same codebase carried forward.
 Measured against *The Fuck* 3.32 on the same machine and the same Python 3.11,
 median of 30 runs; the harness and the recorded run are in `bench/`.
 
-- Opening a shell: 213 ms → 43 ms, or to 0.07 ms with `--alias-loader`, which
+- Opening a shell: 202 ms → 27 ms, or to 0.07 ms with `--alias-loader`, which
   defines the alias on first use so shell startup runs no Python at all.
-- Correcting a mistyped command: 255 ms → 67 ms.
-- Correcting after a command printed a megabyte: 3252 ms → 131 ms. This one is
+- Correcting a mistyped command: 241 ms → 52 ms.
+- Correcting after a command printed a megabyte: 3248 ms → 114 ms. This one is
   a correctness fix as much as a speed one: output used to be read only after
   the command exited, which deadlocks once the output fills the pipe buffer, so
   anything printing more than about 64 KB produced nothing to correct from.
@@ -101,6 +101,16 @@ median of 30 runs; the harness and the recorded run are in `bench/`.
   rules that could match it — 28 of 170 rather than all of them.
 - A rule that looked for twenty-eight different messages lowercased the whole
   output once per message. On a megabyte that was 66 ms; it is 4.6 ms.
+- Correcting a command imports 42 modules beyond a bare interpreter rather than
+  81. `ast`, `pickle`, `socket`, `uuid`, `tempfile`, `shutil`, `subprocess`,
+  `difflib` and `ctypes` are now loaded only where they are used, and `which`
+  and `ShellConfiguration` no longer pull in `shutil` and `collections` for
+  what they do. This is worth most on Windows, where a virus scanner reads
+  every module the interpreter opens: profiled on a real Windows 10 machine
+  with Defender live, a correction went from 297 ms to 265 ms while *The Fuck*
+  took 782 ms for the same one.
+- `python -m thebleep` runs the same entry point as the `thebleep` command, for
+  environments whose scripts directory is not on `PATH`.
 
 ### Rules
 

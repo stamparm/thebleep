@@ -41,12 +41,12 @@ Same machine, same Python 3.11, 30 runs each, medians:
 <!-- benchmark: written by bench/chart.py -->
 ```text
                                % of The Fuck's time  The Fuck  The Bleep  faster
-Open a shell                     ███▋░░░░░░░░░░░░░░    213 ms      43 ms    4.9×
-Correct a mistyped command       ████▊░░░░░░░░░░░░░    255 ms      67 ms    3.8×
-Correct inside a git repository  ████▎░░░░░░░░░░░░░    249 ms      59 ms    4.2×
-Correct when nothing matches     ████▎░░░░░░░░░░░░░    332 ms      77 ms    4.3×
-Correct a slow command *         ████████████▍░░░░░    823 ms     564 ms    1.5×
-Correct after 1 MB of output     ▊░░░░░░░░░░░░░░░░░    3.25 s     131 ms   24.8×
+Open a shell                     ██▍░░░░░░░░░░░░░░░    202 ms      27 ms    7.6×
+Correct a mistyped command       ███▉░░░░░░░░░░░░░░    241 ms      52 ms    4.6×
+Correct inside a git repository  ████░░░░░░░░░░░░░░    240 ms      53 ms    4.5×
+Correct when nothing matches     ███▍░░░░░░░░░░░░░░    335 ms      64 ms    5.2×
+Correct a slow command *         ████████████▎░░░░░    820 ms     559 ms    1.5×
+Correct after 1 MB of output     ▋░░░░░░░░░░░░░░░░░    3.25 s     114 ms   28.6×
 ```
 <!-- end benchmark -->
 
@@ -356,7 +356,7 @@ thebleep --alias-loader fuck >> ~/.bashrc
 ### Paying at startup instead
 
 `eval $(thebleep --alias)` in your startup file does the same job by starting a
-Python interpreter every time you open a shell, which is the 43 ms in the table
+Python interpreter every time you open a shell, which is the 27 ms in the table
 above rather than 0.07 ms. Use it if you prefer it, and for the experimental
 instant mode, which has to set your prompt up front.
 
@@ -836,9 +836,16 @@ Where the time went:
   running it. A typical command now reaches 28 of the 170 rules, and one for a
   tool with many rules of its own around 38, instead of all of them. Rules that don't say what they are about are always loaded,
   so this makes corrections faster, never fewer.
-- **Startup imports almost nothing.** `pyte`, `psutil`, `argparse`, `pprint`
-  and the five shells you are not using are imported only on the paths that
-  need them.
+- **Startup imports almost nothing, and so does a correction.** `pyte`,
+  `psutil`, `argparse`, `pprint` and the five shells you are not using never
+  arrive at all; `ast`, `pickle`, `socket`, `uuid`, `tempfile`, `shutil`,
+  `subprocess`, `difflib` and `ctypes` arrive only on the paths that use them.
+  Correcting a command costs 42 modules beyond a bare interpreter, where it
+  used to cost 81, and `tests/test_performance.py` fails if that creeps back.
+  This matters most on Windows, where every module is a file a virus scanner
+  reads before the interpreter may map it: measured on a real Windows 10
+  machine with Defender live, `os.stat` costs 14 times what it does on Linux,
+  reading a file 8 times, and creating one 97 times.
 - **The failed command's output is read while it runs.** It used to be read
   after the command exited, which deadlocks as soon as the output fills the
   pipe buffer: anything printing more than about 64KB waited out the full
