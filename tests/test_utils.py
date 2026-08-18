@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from pathlib import Path
+from importlib.metadata import PackageNotFoundError, version
 import pickle
 import pytest
 import warnings
@@ -366,3 +367,18 @@ class TestGetValidHistoryWithoutCurrent(object):
     def test_get_valid_history_without_current(self, script, result):
         command = Command(script, '')
         assert get_valid_history_without_current(command) == result
+
+
+class TestInstallationVersion(object):
+    def test_the_installed_version_is_reported(self):
+        from thebleep.utils import get_installation_version
+
+        assert get_installation_version() == version('thebleep')
+
+    def test_a_checkout_that_was_never_installed(self, mocker):
+        """`--version` should say so rather than raising."""
+        from thebleep import utils
+
+        mocker.patch('importlib.metadata.version',
+                     side_effect=PackageNotFoundError('thebleep'))
+        assert utils.get_installation_version() == 'unknown'

@@ -428,14 +428,16 @@ cache.disabled = False
 
 
 def get_installation_version():
+    # `importlib.metadata` has been in the standard library since 3.8, so the
+    # `pkg_resources` fallback that used to be here could never run — and
+    # setuptools has since removed the thing it fell back to.
+    from importlib.metadata import PackageNotFoundError, version
+
     try:
-        from importlib.metadata import version
-
         return version('thebleep')
-    except ImportError:
-        import pkg_resources
-
-        return pkg_resources.require('thebleep')[0].version
+    except PackageNotFoundError:
+        # Running from a checkout that was never installed.
+        return 'unknown'
 
 
 # Re-exported: rules import it from here, and it lives in `const` so that
