@@ -495,7 +495,6 @@ following rules are enabled by default:
 * `prove_recursively` — adds `-r` when called with directory;
 * `python_command` — prepends `python` when you try to run non-executable/without `./` python script;
 * `python_execute` — appends missing `.py` when executing Python files;
-* `python_module_error` — fixes ModuleNotFoundError by trying to `pip install` that module;
 * `quotation_marks` — fixes uneven usage of `'` and `"` when containing args';
 * `path_from_history` — replaces not found path with a similar absolute path from history;
 * `rails_migrations_pending` — runs pending migrations;
@@ -556,6 +555,7 @@ The following commands are bundled with *The Bleep*, but are not enabled by
 default:
 
 * `git_push_force` — adds `--force-with-lease` to a `git push` (may conflict with `git_push_pull`);
+* `python_module_error` — installs the package a missing import needs. An import name is not a distribution name (`import yaml` wants PyYAML, `cv2` wants opencv-python), and a mistyped import makes the suggestion `pip install <typo>`, so this is not on by default;
 * `rm_root` — adds `--no-preserve-root` to `rm -rf /` command.
 
 ##### [Back to Contents](#contents)
