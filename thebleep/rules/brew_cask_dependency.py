@@ -3,17 +3,24 @@ from thebleep.shells import shell
 from thebleep.specific.brew import brew_available
 
 
+# brew removed the `cask` command in 2.6 and casks are installed with a flag
+# now, so the advice it prints for an unsatisfied cask requirement reads
+# `brew install --cask osxfuse`. The old wording is still accepted for a brew
+# old enough to have had the command.
+CASK_INSTALL = (u'brew install --cask', u'brew cask install')
+
+
 @for_app('brew')
 def match(command):
     return (u'install' in command.script_parts
-            and u'brew cask install' in command.output)
+            and any(line in command.output for line in CASK_INSTALL))
 
 
 @eager
 def _get_cask_install_lines(output):
     for line in output.split('\n'):
         line = line.strip()
-        if line.startswith('brew cask install'):
+        if line.startswith(CASK_INSTALL):
             yield line
 
 
