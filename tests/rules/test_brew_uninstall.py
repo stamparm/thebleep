@@ -3,11 +3,18 @@ from thebleep.types import Command
 from thebleep.rules.brew_uninstall import get_new_command, match
 
 
-@pytest.fixture
-def output():
-    return ("Uninstalling /usr/local/Cellar/tbb/4.4-20160916... (118 files, 1.9M)\n"
-            "tbb 4.4-20160526, 4.4-20160722 are still installed.\n"
-            "Remove all versions with `brew uninstall --force tbb`.\n")
+@pytest.fixture(params=[
+    # Homebrew 4.7, which puts the command on a line of its own.
+    "Uninstalling /usr/local/Cellar/tbb/4.4-20160916... (118 files, 1.9M)\n"
+    "tbb 4.4-20160526, 4.4-20160722 are still installed.\n"
+    "To remove all versions, run:\n"
+    "  brew uninstall --force tbb\n",
+    # And the wording it used to print inline.
+    "Uninstalling /usr/local/Cellar/tbb/4.4-20160916... (118 files, 1.9M)\n"
+    "tbb 4.4-20160526, 4.4-20160722 are still installed.\n"
+    "Remove all versions with `brew uninstall --force tbb`.\n"])
+def output(request):
+    return request.param
 
 
 @pytest.fixture
