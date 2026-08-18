@@ -60,6 +60,17 @@ Run unit and functional tests (requires docker):
 pytest --enable-functional
 ```
 
+Redraw the README's demo and benchmark chart (the chart reads the committed
+benchmark run, so run it after recording a new one):
+
+```bash
+python assets/make_demo.py
+python assets/make_benchmark.py
+```
+
+`python assets/make_demo.py /tmp/at.svg --at 3000` writes the demo frozen three
+seconds into its animation, which is how to look at a single frame of it.
+
 For sending package to pypi:
 
 ```bash
