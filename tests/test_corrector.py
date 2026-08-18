@@ -19,9 +19,9 @@ def glob(mocker):
     """
     results = {}
     mocker.patch('thebleep.corrector._rule_files',
-                 new_callable=lambda: lambda *_: results.pop('value', []))
+                 new_callable=lambda: lambda *_: results.pop('value', {}))
     return lambda paths: results.update(
-        {'value': [(path, 0, 0) for path in paths]})
+        {'value': {path: (0, 0) for path in paths}})
 
 
 class TestGetRules(object):

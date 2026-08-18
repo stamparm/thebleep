@@ -58,7 +58,7 @@ def _contrib_modules(path):
 
 
 def _rule_files(directory):
-    """The rule files in a directory with their size and mtime, path order.
+    """The rule files in a directory, in path order, each with size and mtime.
 
     `os.scandir` rather than `Path.glob`: listing the bundled rules is done on
     every single invocation, and globbing them took longer than loading them.
@@ -69,14 +69,17 @@ def _rule_files(directory):
     `os.stat` of all 171 rules was the most expensive thing between a mistyped
     command and a correction on the platform where a syscall is dearest.
 
+    A mapping rather than a list of pairs, so that iterating it still yields the
+    paths and nothing that only wanted those has to know about the rest.
+
     """
     try:
         entries = list(os.scandir(str(directory)))
     except OSError:
-        return []
+        return {}
 
-    found = []
-    for entry in entries:
+    found = {}
+    for entry in sorted(entries, key=lambda entry: entry.path):
         if not entry.name.endswith('.py'):
             continue
         try:
@@ -85,8 +88,8 @@ def _rule_files(directory):
             # Gone between the listing and the question. The pack asks again and
             # reaches the same conclusion.
             continue
-        found.append((entry.path, int(stat.st_mtime_ns), int(stat.st_size)))
-    return sorted(found)
+        found[entry.path] = (int(stat.st_mtime_ns), int(stat.st_size))
+    return found
 
 
 def get_rules(command=None):
@@ -101,16 +104,15 @@ def get_rules(command=None):
     :rtype: [Rule]
 
     """
-    listed = [row for path in get_rules_import_paths()
-              for row in _rule_files(path)]
-    paths = [path for path, _, _ in listed]
+    listed = {}
+    for path in get_rules_import_paths():
+        listed.update(_rule_files(path))
+    paths = list(listed)
 
     if command is not None:
-        # What the listing already knows, so the pack does not ask the
-        # filesystem all over again.
-        rules = rulepack.get_rules_for(
-            command, paths,
-            {path: (mtime, size) for path, mtime, size in listed})
+        # `listed` twice over: the paths to consider, and what the directory
+        # listing already knows about them so the pack need not ask again.
+        rules = rulepack.get_rules_for(command, paths, listed)
         if rules is not None:
             return rules
 
