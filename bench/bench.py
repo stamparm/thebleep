@@ -136,6 +136,18 @@ def scenario_env(scenario, style):
                  'PYTHONPATH', 'VIRTUAL_ENV'):
         if keep in os.environ:
             env[keep] = os.environ[keep]
+
+    # Windows keeps in the environment what POSIX keeps in the filesystem: where
+    # home is, where the system directory is, and which extensions name a
+    # program. Dropping those does not make the measurement cleaner, it measures
+    # an interpreter that cannot find its own DLLs.
+    if os.name == 'nt':
+        for keep in ('USERPROFILE', 'HOMEDRIVE', 'HOMEPATH', 'APPDATA',
+                     'LOCALAPPDATA', 'SYSTEMROOT', 'SYSTEMDRIVE', 'WINDIR',
+                     'COMSPEC', 'PATHEXT', 'TEMP', 'TMP', 'NUMBER_OF_PROCESSORS',
+                     'PROCESSOR_ARCHITECTURE'):
+            if keep in os.environ:
+                env[keep] = os.environ[keep]
     env.update(scenario['env'](style))
 
     # The correcting scenarios are only meaningful if the previous command

@@ -182,8 +182,32 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e .
+      - name: Where the executable landed
+        id: subject
+        shell: python
+        run: |
+          import os
+          import shutil
+          import sysconfig
+          found = shutil.which('thebleep') or shutil.which(
+              'thebleep', path=sysconfig.get_path('scripts'))
+          assert found, 'thebleep is not installed anywhere we can find it'
+          print(found)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write('path={}\n'.format(found))
       - name: What looking for a command costs
         run: python bench/scan_cost.py
+
+      # And what a whole invocation costs, which is what a user waits for: the
+      # alias spawns a fresh interpreter per correction, so starting up and
+      # importing is paid every time. Only the scenarios that need no POSIX
+      # shell, so the two platforms are running the same thing.
+      - name: What one correction costs
+        run: >
+          python bench/bench.py --runs 10 --warmup 2
+          --subject bleep=${{ steps.subject.outputs.path }}
+          --scenario version --scenario alias
+          --scenario correct-fast --scenario correct-nomatch
 
   powershell:
     # We say PowerShell is supported, so the correction loop is run in a real
