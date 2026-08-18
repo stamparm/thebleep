@@ -4,7 +4,8 @@ from subprocess import Popen, PIPE
 from tempfile import gettempdir
 from uuid import uuid4
 from ..conf import settings
-from ..const import ARGUMENT_PLACEHOLDER, USER_COMMAND_MARK
+from ..const import (ARGUMENT_PLACEHOLDER, USER_COMMAND_MARK,
+                     get_alias)
 from ..utils import DEVNULL, memoize
 from .generic import Generic
 
@@ -86,7 +87,7 @@ class Zsh(Generic):
 
     def how_to_configure(self):
         return self._create_shell_configuration(
-            content=u'eval $(thebleep --alias)',
+            content=self.app_alias_loader(get_alias()),
             path='~/.zshrc',
             reload='source ~/.zshrc')
 

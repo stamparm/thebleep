@@ -1,4 +1,5 @@
 from subprocess import Popen, PIPE
+from ..const import get_alias
 from ..utils import DEVNULL
 from .generic import Generic, ShellConfiguration
 
@@ -31,7 +32,7 @@ class Powershell(Generic):
 
     def how_to_configure(self):
         return ShellConfiguration(
-            content=u'iex "$(thebleep --alias)"',
+            content=self.app_alias_loader(get_alias()),
             path='$profile',
             reload='. $profile',
             can_configure_automatically=False)

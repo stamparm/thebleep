@@ -4,7 +4,7 @@ import os
 import sys
 from .. import logs
 from ..conf import settings
-from ..const import ARGUMENT_PLACEHOLDER
+from ..const import ARGUMENT_PLACEHOLDER, get_alias
 from ..utils import DEVNULL, cache
 from .generic import Generic
 
@@ -124,7 +124,7 @@ class Fish(Generic):
 
     def how_to_configure(self):
         return self._create_shell_configuration(
-            content=u"thebleep --alias | source",
+            content=self.app_alias_loader(get_alias()),
             path='~/.config/fish/config.fish',
             reload='fish')
 

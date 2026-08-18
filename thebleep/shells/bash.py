@@ -3,7 +3,8 @@ from subprocess import Popen, PIPE
 from tempfile import gettempdir
 from uuid import uuid4
 from ..conf import settings
-from ..const import ARGUMENT_PLACEHOLDER, USER_COMMAND_MARK
+from ..const import (ARGUMENT_PLACEHOLDER, USER_COMMAND_MARK,
+                     get_alias)
 from ..utils import DEVNULL, memoize
 from .generic import Generic
 
@@ -82,7 +83,7 @@ class Bash(Generic):
             config = 'bash config'
 
         return self._create_shell_configuration(
-            content=u'eval "$(thebleep --alias)"',
+            content=self.app_alias_loader(get_alias()),
             path=config,
             reload=u'source {}'.format(config))
 

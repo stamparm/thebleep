@@ -178,13 +178,21 @@ def how_to_configure_alias(configuration_details):
         reset=color(colorama.Style.RESET_ALL)))
 
     if configuration_details:
+        # On its own lines, indented: what goes in a startup file is a few
+        # lines of shell, and reading it out of the middle of a sentence is
+        # harder than it needs to be.
+        print(u"\nPut this in your {bold}{path}{reset}:\n".format(
+            bold=color(colorama.Style.BRIGHT),
+            reset=color(colorama.Style.RESET_ALL),
+            path=configuration_details.path))
+        for line in configuration_details.content.split(u'\n'):
+            print(u'    {}'.format(line))
         print(
-            u"Please put {bold}{content}{reset} in your "
-            u"{bold}{path}{reset} and apply "
-            u"changes with {bold}{reload}{reset} or restart your shell.".format(
+            u"\nThen apply it with {bold}{reload}{reset}, or restart your"
+            u" shell.".format(
                 bold=color(colorama.Style.BRIGHT),
                 reset=color(colorama.Style.RESET_ALL),
-                **configuration_details._asdict()))
+                reload=configuration_details.reload))
 
         if configuration_details.can_configure_automatically:
             print(

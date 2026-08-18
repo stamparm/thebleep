@@ -1,6 +1,7 @@
 from subprocess import Popen, PIPE
 from time import time
 import os
+from ..const import get_alias
 from ..utils import DEVNULL, memoize
 from .generic import Generic
 
@@ -39,7 +40,7 @@ class Tcsh(Generic):
 
     def how_to_configure(self):
         return self._create_shell_configuration(
-            content=u'eval `thebleep --alias`',
+            content=self.app_alias_loader(get_alias()),
             path='~/.tcshrc',
             reload='tcsh')
 
