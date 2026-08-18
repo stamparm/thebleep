@@ -27,8 +27,13 @@ def side_effect(old_cmd, command):
         re.MULTILINE)
     offending = offending_pattern.findall(old_cmd.output)
     for filepath, lineno in offending:
-        with open(filepath, 'r') as fh:
+        # Bytes, not text: this deletes one line from somebody's known_hosts
+        # and writes the rest of it back, and the rest of it has to come out
+        # exactly as it went in. Decoding it would mean guessing an encoding
+        # for a file that has none, and guessing wrong either mangles the
+        # lines being kept or refuses to read the file at all.
+        with open(filepath, 'rb') as fh:
             lines = fh.readlines()
             del lines[int(lineno) - 1]
-        with open(filepath, 'w') as fh:
+        with open(filepath, 'wb') as fh:
             fh.writelines(lines)

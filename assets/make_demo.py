@@ -17,6 +17,7 @@ Usage: python assets/make_demo.py [output.svg]
 
 from __future__ import print_function
 
+import io
 import sys
 
 # The terminal. A monospace advance width is 0.6em almost everywhere, but not
@@ -311,7 +312,10 @@ def main(argv):
 
     svg = render(scene, total, at)
     path = argv[1] if len(argv) > 1 else 'assets/demo.svg'
-    with open(path, 'w') as handle:
+    # Explicitly UTF-8: the demo is full of box-drawing and arrow characters,
+    # and writing them through a machine's default encoding fails outright on
+    # Windows.
+    with io.open(path, 'w', encoding='utf-8') as handle:
         handle.write(svg)
     print('%s: %g x %g, %.1fs loop, %d bytes'
           % (path, scene.width, scene.height, total / 1000.0, len(svg)))

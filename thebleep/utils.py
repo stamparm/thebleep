@@ -11,7 +11,10 @@ from .logs import warn, exception
 from .conf import settings
 from .system import Path
 
-DEVNULL = open(os.devnull, 'w')
+# Binary: nothing is ever written through this object -- it is only handed
+# to Popen as a descriptor to throw output at -- and text mode would make
+# it depend on the machine's default encoding for no reason.
+DEVNULL = open(os.devnull, 'wb')
 
 
 def decorator(caller):
