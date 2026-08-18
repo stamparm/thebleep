@@ -26,6 +26,19 @@ PACKAGE="thebleep"
 ALIAS="${THEBLEEP_ALIAS:-bleep}"
 DRY_RUN=""
 
+# The alias name ends up in a line we tell people to put in a startup file, so
+# it has to be a name and not shell code. A letter or underscore, then letters,
+# digits, underscores or hyphens.
+case "$ALIAS" in
+    *[!A-Za-z0-9_-]* | [0-9-]* | "")
+        echo "install.sh: '$ALIAS' cannot be the name of the alias." >&2
+        echo "A name is a letter or underscore followed by letters, digits," >&2
+        echo "underscores or hyphens. Anything else would be shell code in" >&2
+        echo "your startup file." >&2
+        exit 2
+        ;;
+esac
+
 for argument in "$@"; do
     case "$argument" in
         --dry-run) DRY_RUN="yes" ;;

