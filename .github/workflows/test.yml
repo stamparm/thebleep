@@ -184,6 +184,55 @@ jobs:
       - name: How long collection takes, and which files own it
         run: python bench/collection_cost.py
 
+  windows-defender:
+    # The experiment. The Windows suite takes anywhere from 70 to 300 seconds
+    # for identical work -- a four-fold spread that no fixed cost of ours can
+    # produce, and the file-lifecycle control says this platform is seven times
+    # slower at touching files. So: the same suite, the same runner image, the
+    # same commit, with the scanner told to leave the working directory alone.
+    # Everything else matches the `windows-latest 3.12` cell in this very run, so
+    # whatever the difference is, it is the scanner.
+    #
+    # It runs the suite twice as well, which separates paying once for files
+    # nobody has seen before from paying every time.
+    name: Windows with Defender excluded
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: |
+          pip install -Ur requirements.txt
+          pip install -e .
+
+      # First, because if real-time protection is already off then the theory is
+      # dead here and the rest of this job means nothing.
+      - name: Is the scanner even running
+        shell: pwsh
+        run: |
+          Get-MpComputerStatus | Select-Object AMRunningMode,
+              RealTimeProtectionEnabled, OnAccessProtectionEnabled |
+              Format-List
+      - name: Before, with the scanner in place
+        run: python bench/platform_cost.py
+      - name: Tell Defender to ignore everything this job touches
+        shell: pwsh
+        run: |
+          Add-MpPreference -ExclusionPath $env:GITHUB_WORKSPACE
+          Add-MpPreference -ExclusionPath $env:RUNNER_TEMP
+          Add-MpPreference -ExclusionPath $env:pythonLocation
+          Add-MpPreference -ExclusionProcess python.exe
+          # Printed, because an exclusion that did not apply would read as a
+          # disproof of the theory rather than as a broken experiment.
+          Get-MpPreference | Select-Object -ExpandProperty ExclusionPath
+      - name: After, with the scanner out of the way
+        run: python bench/platform_cost.py
+      - name: The suite, first time
+        run: pytest -q tests
+      - name: The suite, second time
+        run: pytest -q tests
+
   latency:
     # The Bleep has been called slow on Windows, and that is not a question a
     # Linux machine can answer: the cost is NTFS with a scanner in front of every
