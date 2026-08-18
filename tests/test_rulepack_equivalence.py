@@ -79,7 +79,18 @@ def get_new_command(command):
 # and text that is not ASCII.
 DRIVER = u'''# -*- coding: utf-8 -*-
 import json
+import os
 import sys
+
+# Only the executables the fixture put there. `no_command` compares a typo
+# against everything on $PATH, so with the real one the answer to `sl -l` is
+# whatever the machine happens to have installed -- and on a CI runner that is
+# not the same list twice, which made this file's comparisons fail for a reason
+# that had nothing to do with the pack. Set after the interpreter has started,
+# so nothing about launching it depends on this.
+os.environ['PATH'] = os.environ['TB_TEST_BIN']
+os.environ['PATHEXT'] = '.EXE'
+
 from thebleep import conf
 conf.settings.init()
 from thebleep.corrector import get_corrected_commands
@@ -108,6 +119,25 @@ for script, output in CASES:
     out.append([script, len(output), corrections])
 json.dump(out, sys.stdout, sort_keys=True)
 '''
+
+
+# What `sl -l` is allowed to be a typo of, and the only thing on the $PATH the
+# driver runs with. Names no rule ever tries to execute, so an empty file is
+# enough to be found.
+FAKE_EXECUTABLES = ('wsl', 'slp', 'sled')
+
+
+def _build_search_path(tmpdir):
+    """A directory holding `FAKE_EXECUTABLES` and nothing else."""
+    binaries = tmpdir.mkdir('bin')
+    for name in FAKE_EXECUTABLES:
+        # Windows asks whether the extension is one in PATHEXT; POSIX asks the
+        # executable bit.
+        binary = binaries.join('{}.exe'.format(name) if os.name == 'nt'
+                               else name)
+        binary.write('')
+        os.chmod(str(binary), 0o755)
+    return binaries
 
 
 def py_path(path):
@@ -148,7 +178,8 @@ def _build_tree(tmpdir, source_root):
             PYTHONPATH=os.pathsep.join([str(source_root),
                                         str(tmpdir.join('site'))]),
             XDG_CONFIG_HOME=str(config),
-            XDG_CACHE_HOME=str(cache)),
+            XDG_CACHE_HOME=str(cache),
+            TB_TEST_BIN=str(_build_search_path(tmpdir))),
     }
 
 
@@ -215,6 +246,19 @@ class TestEquivalence(object):
         assert _corrections(tree, pack=True) == expected
         flat = json.dumps(expected)
         assert 'from-the-unknown-decorator' in flat
+
+    def test_the_no_command_case_still_has_teeth(self, expected):
+        """`sl -l` is here to make a rule that reads $PATH take part.
+
+        Pinning the $PATH is what makes this file's comparisons mean anything,
+        and it would also be a fine way to make the case answer nothing at all
+        and compare nothing to nothing.
+
+        """
+        found = [corrections for script, _, corrections in expected
+                 if script == 'sl -l']
+        assert [correction[0] for correction in found[0]] == \
+            ['wsl -l', 'slp -l', 'sled -l'], found
 
     def test_a_contrib_package_is_found_either_way(self, tree):
         assert 'from-the-contrib-package' in json.dumps(
