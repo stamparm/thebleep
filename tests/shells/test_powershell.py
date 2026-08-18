@@ -16,7 +16,44 @@ class TestPowershell(object):
         return mock
 
     def test_and_(self, shell):
-        assert shell.and_('ls', 'cd') == '(ls) -and (cd)'
+        """`(a) -and (b)` was not `a && b`.
+
+        `-and` is a boolean operator over expressions and `$(...)` captures
+        output, so it tested whether the first command *printed* something: a
+        command that succeeded quietly, like `git add .`, stopped the chain.
+        `$?` is the exit status, and works in Windows PowerShell 5.1 as well as
+        in 7, which `&&` does not.
+
+        """
+        assert shell.and_('ls') == 'ls'
+        assert shell.and_('ls', 'cd') == 'ls; if ($?) { cd }'
+        assert shell.and_('a', 'b', 'c') == 'a; if ($?) { b; if ($?) { c } }'
+        assert shell.and_() == ''
+
+    def test_or_(self, shell):
+        assert shell.or_('ls', 'cd') == 'ls; if (-not $?) { cd }'
+        assert shell.or_('a', 'b', 'c') == \
+            'a; if (-not $?) { b; if (-not $?) { c } }'
+
+    @pytest.mark.parametrize('value, quoted', [
+        ('plain', "'plain'"),
+        ('two words', "'two words'"),
+        ("it's", "'it''s'"),
+        ('$(Get-Date)', "'$(Get-Date)'"),
+        ('a;b', "'a;b'"),
+        ('a`b', "'a`b'"),
+        ('a&b', "'a&b'"),
+        (u'\u00fcnic\u00f8de', u"'\u00fcnic\u00f8de'"),
+    ])
+    def test_quote(self, shell, value, quoted):
+        """PowerShell does not join adjacent string literals.
+
+        `shlex.quote` escapes an embedded quote by leaving the single-quoted
+        string and re-entering it, and a command then receives three arguments
+        rather than one. A doubled quote is PowerShell's own way of writing it.
+
+        """
+        assert shell.quote(value) == quoted
 
     def test_app_alias(self, shell):
         assert 'function bleep' in shell.app_alias('bleep')
