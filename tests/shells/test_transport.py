@@ -23,7 +23,8 @@ FAKE = u"""#!/bin/sh
 {
   echo "@@ environment:"
   env | sed 's/=.*//' | grep '^TB_' | sort
-  echo "@@ history-bytes: ${#TB_HISTORY}"
+  echo "@@ history-chars: ${#TB_HISTORY}"
+  echo "@@ history-bytes: $(printf '%s' "$TB_HISTORY" | wc -c | tr -d ' ')"
   echo "@@ history-last: $(printf '%s\\n' "$TB_HISTORY" | tail -n 1)"
 } >&2
 echo "echo corrected"
@@ -33,6 +34,13 @@ SHELLS = {
     'bash': (Bash, u'history -s'),
     'zsh': (Zsh, u'print -s'),
 }
+
+# What the kernel refuses to exceed for any one environment variable:
+# MAX_ARG_STRLEN, thirty-two pages. The test entry is sized against this and not
+# against `TRANSPORT_LIMIT`, because a test that scales with the thing it is
+# checking cannot fail: sized as a multiple of the cap, every entry is over the
+# cap by construction and gets trimmed whatever the cap is.
+ONE_VARIABLE_LIMIT = 128 * 1024
 
 
 def _run(name, history, tmpdir):
@@ -47,17 +55,20 @@ def _run(name, history, tmpdir):
 
     shell_class, remember = SHELLS[name]
     script = tmpdir.join('script')
-    script.write(u'\n'.join(
+    script.write_text(u'\n'.join(
         [u'eval "$(cat {})"'.format(tmpdir.join('alias')),
          u'alias ll="ls -alF"']
         + [u'{} {}'.format(remember, entry) for entry in history]
         + [u'bleep',
            u'echo "@@ exit: $?"',
            u'echo "@@ exported: $(env | grep -c \'^TB_\' || true)"',
-           u'echo "@@ left: $(set | grep -cE \'^TB_[A-Z]+=\' || true)"']))
-    tmpdir.join('alias').write(shell_class().app_alias('bleep'))
+           u'echo "@@ left: $(set | grep -cE \'^TB_[A-Z]+=\' || true)"']),
+        'utf-8')
+    tmpdir.join('alias').write_text(shell_class().app_alias('bleep'),
+                                    'utf-8')
 
     environment = dict(os.environ,
+                       LC_ALL='C.UTF-8', LANG='C.UTF-8',
                        PATH='{}{}{}'.format(str(tmpdir), os.pathsep,
                                             os.environ['PATH']))
     finished = subprocess.run(
@@ -92,19 +103,40 @@ class TestAliasTransport(object):
         _, reported = _run(name, [u'"gti status"'], tmpdir)
         assert reported['left'] == '0'
 
-    def test_an_enormous_history_entry_does_not_break_the_alias(self, name,
-                                                                tmpdir):
+    @pytest.mark.parametrize('character, wide', [
+        (u'A', 'one byte per character'),
+        (u'\u4e2d', 'three bytes per character'),
+        (u'\U0001f600', 'four bytes per character'),
+    ])
+    def test_an_enormous_history_entry_does_not_break_the_alias(
+            self, name, character, wide, tmpdir):
         """One pasted command used to break every correction after it.
 
         The environment a program can be handed is bounded, and going over the
         bound makes the alias fail with "Argument list too long" until the entry
         falls out of the history window.
 
+        The wide characters are the ones that caught this out. `${#var}` in bash
+        and zsh counts characters and the kernel counts bytes, so a cap of 65536
+        characters was satisfied by a single 64000-character command of
+        three-byte characters -- 192000 bytes -- which then failed to exec
+        anyway, in both shells.
+
         Refs: nvbn/thefuck#798
 
         """
-        huge = u'"echo {}"'.format(u'A' * (const.TRANSPORT_LIMIT * 2))
+        # Forty percent more bytes than one variable can hold, however many
+        # characters that takes. Deliberately not far more: the wide cases have
+        # to stay under a *character* count that a byte limit would reject, which
+        # is the gap the bug lived in.
+        count = (ONE_VARIABLE_LIMIT * 7 // 5) // len(character.encode('utf-8'))
+        huge = u'"echo {}"'.format(character * count)
         output, reported = _run(name, [huge, u'"gti status"'], tmpdir)
-        assert 'too long' not in output
+
+        assert 'too long' not in output.lower(), wide
+        # The huge entry is still the one before last, so this also says that it
+        # does not stay broken while that command is recent.
         assert 'corrected' in output
-        assert int(reported['history-bytes']) < const.TRANSPORT_LIMIT
+        assert int(reported['history-chars']) < const.TRANSPORT_LIMIT
+        # What exec is actually given, which is the limit that matters.
+        assert int(reported['history-bytes']) < 128 * 1024

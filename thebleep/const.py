@@ -101,11 +101,19 @@ SHELL_LOGGER_SOCKET_ENV = 'SHELL_LOGGER_SOCKET'
 SHELL_LOGGER_LIMIT = 5
 
 # The kernel will not hand a program any single environment variable larger
-# than 128K, and one pasted command that size among the last ten history
-# entries used to make the alias fail outright with "Argument list too long" --
-# for that correction and for every one after it, until the entry fell out of
-# the window. The alias cuts what it transports down to this, on a line
-# boundary; see `shells.generic.fit_transport`.
+# than 128K (MAX_ARG_STRLEN, 32 pages), and one pasted command that size among
+# the last ten history entries used to make the alias fail outright with
+# "Argument list too long" -- for that correction and for every one after it,
+# until the entry fell out of the window. The alias asks the shell for a smaller
+# window until what it has fits; see `shells.generic.fit_transport`.
+#
+# Counted in *characters*, because `${#var}` in bash and zsh counts characters,
+# and the kernel's limit is in bytes. In a UTF-8 locale one character is up to
+# four bytes, so the limit has to be a quarter of the budget for the two to
+# agree: 32000 characters is at most 128000 bytes, which leaves room for the
+# variable's name and the `=` inside 131072. A cap of 65536 characters looked
+# right and was not -- a single 64000-character command of three-byte characters
+# is 192000 bytes, passed the test, and still failed to exec.
 #
 # Refs: nvbn/thefuck#798
-TRANSPORT_LIMIT = 65536
+TRANSPORT_LIMIT = 32000
