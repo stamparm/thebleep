@@ -99,10 +99,17 @@ def organize_commands(corrected_commands):
     except StopIteration:
         return
 
-    without_duplicates = {
-        command for command in sorted(
-            corrected_commands, key=lambda command: command.priority)
-        if command != first_command}
+    # First-seen order within a priority, and not set-iteration order. A set of
+    # `CorrectedCommand` iterates by the hash of a string, which Python
+    # randomises per process, so every suggestion after the first came out in a
+    # different order on every run -- and which suggestion the down arrow gives
+    # you is not a detail. Rules arrive in priority order and a rule lists its
+    # own suggestions in the order it means them, so first-seen is the order to
+    # keep.
+    without_duplicates = []
+    for command in corrected_commands:
+        if command != first_command and command not in without_duplicates:
+            without_duplicates.append(command)
 
     sorted_commands = sorted(
         without_duplicates,
