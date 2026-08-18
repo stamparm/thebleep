@@ -31,7 +31,7 @@ SHOULD_NOT_BE_IMPORTED = [
     'argparse',    # only for command lines the fast path declines
     'pprint',      # only to pretty-print settings into a debug line
     'dataclasses',  # dragged in by pprint
-    'shelve',      # only for rules that keep a cache
+    'shelve',      # nothing keeps a cache this way any more
     'dbm',         # dragged in by shelve
     'traceback',   # only when something has gone wrong
 ]

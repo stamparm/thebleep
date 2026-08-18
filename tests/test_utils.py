@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 
-from pathlib import Path
 from importlib.metadata import PackageNotFoundError, version
 import pickle
 import pytest
 import os
 import warnings
 from unittest.mock import Mock, call, patch
+from thebleep import cachefile
 from thebleep.utils import default_settings, \
     memoize, get_closest, get_all_executables, replace_argument, \
     get_all_matched_commands, is_app, for_app, cache, \
-    get_valid_history_without_current, _cache, get_close_matches
+    get_valid_history_without_current, get_close_matches
 from thebleep.types import Command
 
 
@@ -85,6 +85,11 @@ def test_memoize_does_not_copy_the_output(mocker):
     assert counted(command) == 1
     assert counted(command) == 1
     assert not dumps.called
+
+
+# Kept before anything patches them, so that the tests which are *about* the
+# disk cache can put the real thing back.
+REAL_CACHEFILE = (cachefile.load, cachefile.save)
 
 
 @pytest.fixture(autouse=True)
@@ -224,108 +229,132 @@ def test_for_app(script, names, result):
     assert match(Command(script, '')) == result
 
 
-class TestCacheLocation(object):
-    """The rule cache is a file, and everything else cached is in a directory.
+class TestCache(object):
+    """`@cache` stores an answer until one of the files it named changes.
 
-    They used to want the same name, so once a rule pack or an executables
-    listing had been written, opening the rule cache could only fail.
+    It used to be `shelve`, which brought `dbm` and `pickle` with it, spread one
+    logical database over however many files the available dbm backend felt like,
+    needed an `atexit` handler to close it and a "removing possibly out-dated
+    cache" path for moving between Python versions. It is `cachefile` now, which
+    is what the rule pack and the PATH listing already used.
 
     """
 
     @pytest.fixture(autouse=True)
-    def cache_home(self, tmpdir, os_environ):
-        os_environ['XDG_CACHE_HOME'] = str(tmpdir)
+    def cache_home(self, tmpdir, os_environ, no_cache, no_disk_cache,
+                   monkeypatch):
+        # Both of those are requested so that they are set up first and this
+        # undoes them. The suite as a whole keeps every test off the disk cache;
+        # these tests are the ones about it.
+        monkeypatch.setattr('thebleep.utils.cache.disabled', False)
+        monkeypatch.setattr('thebleep.cachefile.load', REAL_CACHEFILE[0])
+        monkeypatch.setattr('thebleep.cachefile.save', REAL_CACHEFILE[1])
+        os_environ['XDG_CACHE_HOME'] = str(tmpdir.mkdir('cache'))
         return tmpdir
 
-    def test_it_is_not_the_directory_the_other_caches_live_in(self):
-        from thebleep import cachefile
-        from thebleep.utils import Cache
-
-        assert Path(Cache()._get_cache_path()) != cachefile.directory()
-
-    def test_opening_it_works_with_other_caches_already_written(self):
-        from thebleep import cachefile
-        from thebleep.utils import Cache
-
-        # What writing a rule pack or an executables listing leaves behind.
-        directory = cachefile.directory()
-        directory.mkdir(parents=True, exist_ok=True)
-        directory.joinpath('executables.cache').write_bytes(b'x')
-
-        cache = Cache()
-        cache._setup_db()
-        cache._db['key'] = 'value'
-        assert cache._db['key'] == 'value'
-
-    def test_the_directory_is_created_when_missing(self, cache_home):
-        from thebleep.utils import Cache
-
-        path = Path(Cache()._get_cache_path())
-        assert path.parent.is_dir()
-
-
-class TestCache(object):
     @pytest.fixture
-    def shelve(self, mocker):
-        value = {}
-
-        class _Shelve(object):
-            def __init__(self, path):
-                pass
-
-            def __setitem__(self, k, v):
-                value[k] = v
-
-            def __getitem__(self, k):
-                return value[k]
-
-            def get(self, k, v=None):
-                return value.get(k, v)
-
-            def close(self):
-                return
-
-        mocker.patch('shelve.open', new_callable=lambda: _Shelve)
-        return value
-
-    @pytest.fixture(autouse=True)
-    def enable_cache(self, monkeypatch, shelve):
-        monkeypatch.setattr('thebleep.utils.cache.disabled', False)
-        _cache._init_db()
-
-    @pytest.fixture(autouse=True)
-    def mtime(self, mocker):
-        mocker.patch('thebleep.utils.os.path.getmtime', return_value=0)
+    def dependency(self, cache_home):
+        watched = cache_home.join('watched')
+        watched.write('first')
+        return watched
 
     @pytest.fixture
-    def fn(self):
-        @cache('~/.bashrc')
+    def counted(self, dependency):
+        """A cached function that says how many times it really ran."""
+        calls = []
+
+        @cache(str(dependency))
         def fn():
-            return 'test'
+            calls.append(1)
+            return 'answer-{}'.format(len(calls))
 
+        fn.calls = calls
         return fn
 
-    @pytest.fixture
-    def key(self, monkeypatch):
-        monkeypatch.setattr('thebleep.utils.Cache._get_key',
-                            lambda *_: 'key')
-        return 'key'
+    def test_the_first_call_computes_and_the_second_does_not(self, counted):
+        assert counted() == 'answer-1'
+        assert counted() == 'answer-1'
+        assert len(counted.calls) == 1
 
-    def test_with_blank_cache(self, shelve, fn, key):
-        assert shelve == {}
-        assert fn() == 'test'
-        assert shelve == {key: {'etag': '0', 'value': 'test'}}
+    def test_a_changed_dependency_expires_it(self, counted, dependency,
+                                             no_memoize):
+        assert counted() == 'answer-1'
+        os.utime(str(dependency), (0, 0))
+        assert counted() == 'answer-2'
 
-    def test_with_filled_cache(self, shelve, fn, key):
-        cache_value = {key: {'etag': '0', 'value': 'new-value'}}
-        shelve.update(cache_value)
-        assert fn() == 'new-value'
-        assert shelve == cache_value
+    def test_a_dependency_that_is_not_there_is_not_an_error(self, cache_home,
+                                                            no_memoize):
+        @cache(str(cache_home.join('never-existed')))
+        def fn():
+            return 'answer'
 
-    def test_when_etag_changed(self, shelve, fn, key):
-        shelve.update({key: {'etag': '-1', 'value': 'old-value'}})
-        assert fn() == 'test'
-        assert shelve == {key: {'etag': '0', 'value': 'test'}}
+        assert fn() == 'answer'
+        assert fn() == 'answer'
+
+    def test_an_unwritable_cache_still_answers(self, cache_home, os_environ,
+                                               no_memoize, dependency):
+        blocked = cache_home.join('not-a-directory')
+        blocked.write('')
+        os_environ['XDG_CACHE_HOME'] = str(blocked)
+
+        @cache(str(dependency))
+        def fn():
+            return 'answer'
+
+        assert fn() == 'answer'
+
+    def test_two_functions_whose_names_share_a_prefix(self, dependency,
+                                                      no_memoize):
+        """The identity used to be `repr(fn).split('at')[0]`.
+
+        That is the repr up to the first literal "at", so `_get_operations`
+        became `<function _get_oper` -- and any two functions in a module whose
+        names agree up to their first "at" shared one entry and each got the
+        other's answer.
+
+        """
+        @cache(str(dependency))
+        def _get_operations():
+            return 'operations'
+
+        @cache(str(dependency))
+        def _get_operators():
+            return 'operators'
+
+        assert _get_operations() == 'operations'
+        assert _get_operators() == 'operators'
+        assert _get_operations() == 'operations'
+
+    def test_different_arguments_are_remembered_separately(self, dependency,
+                                                           no_memoize):
+        """`omnienv_no_such_command` caches per app name."""
+        @cache(str(dependency))
+        def commands_for(app):
+            return ['{}-commands'.format(app)]
+
+        assert commands_for('pyenv') == ['pyenv-commands']
+        assert commands_for('rbenv') == ['rbenv-commands']
+        assert commands_for('pyenv') == ['pyenv-commands']
+
+    def test_disabling_it_calls_through_every_time(self, counted, monkeypatch,
+                                                   no_memoize):
+        monkeypatch.setattr('thebleep.utils.cache.disabled', True)
+        assert counted() == 'answer-1'
+        assert counted() == 'answer-2'
+
+    def test_it_leaves_no_database_behind(self, counted, cache_home):
+        from thebleep import cachefile
+
+        counted()
+        assert not list(cachefile.directory().glob('rules.db*'))
+        assert list(cachefile.directory().glob('*.cache'))
+
+    def test_clearing_the_cache_removes_it(self, counted, no_memoize):
+        from thebleep import cachefile
+
+        assert counted() == 'answer-1'
+        assert cachefile.clear() >= 1
+        assert counted() == 'answer-2'
 
 
 @pytest.mark.usefixtures('no_memoize')

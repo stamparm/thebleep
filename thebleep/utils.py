@@ -1,13 +1,10 @@
-import atexit
 import os
 import pickle
 import re
 import shutil
-import sys
 from difflib import get_close_matches as difflib_get_close_matches
 from functools import wraps
 from . import cachefile, const
-from .logs import warn, exception
 from .conf import settings
 from .system import Path
 
@@ -361,94 +358,47 @@ def for_app(*app_names, **kwargs):
     return decorator(_for_app)
 
 
-class Cache(object):
-    """Lazy read cache and save changes at exit."""
-
-    def __init__(self):
-        self._db = None
-
-    def _init_db(self):
-        try:
-            self._setup_db()
-        except Exception:
-            exception("Unable to init cache", sys.exc_info())
-            self._db = {}
-
-    def _setup_db(self):
-        # shelve costs dbm and pickle at import time, so it arrives only for
-        # the rules that actually keep a cache.
-        import dbm
-        import shelve
-
-        cache_path = self._get_cache_path()
-
-        try:
-            self._db = shelve.open(cache_path)
-        except dbm.error + (ImportError,):
-            # Caused when switching between Python versions
-            warn("Removing possibly out-dated cache")
-            os.remove(cache_path)
-            self._db = shelve.open(cache_path)
-
-        atexit.register(self._db.close)
-
-    def _get_cache_path(self):
-        """Where the rule cache lives, inside the directory we already own.
-
-        It used to be `<cache home>/thebleep`, which is the name of that
-        directory itself, so once anything else had been cached this could
-        only ever fail.
-
-        """
-        directory = cachefile.directory()
-
-        # Python 2 did not have `exist_ok`, hence the shape of this.
-        try:
-            os.makedirs(str(directory))
-        except OSError:
-            if not directory.is_dir():
-                raise
-
-        return directory.joinpath('rules.db').as_posix()
-
-    def _get_mtime(self, path):
-        try:
-            return str(os.path.getmtime(path))
-        except OSError:
-            return '0'
-
-    def _get_key(self, fn, depends_on, args, kwargs):
-        parts = (fn.__module__, repr(fn).split('at')[0],
-                 depends_on, args, kwargs)
-        return str(pickle.dumps(parts))
-
-    def get_value(self, fn, depends_on, args, kwargs):
-        if self._db is None:
-            self._init_db()
-
-        depends_on = [Path(name).expanduser().absolute().as_posix()
-                      for name in depends_on]
-        key = self._get_key(fn, depends_on, args, kwargs)
-        etag = '.'.join(self._get_mtime(path) for path in depends_on)
-
-        if self._db.get(key, {}).get('etag') == etag:
-            return self._db[key]['value']
-        else:
-            value = fn(*args, **kwargs)
-            self._db[key] = {'etag': etag, 'value': value}
-            return value
+def _mtime(path):
+    try:
+        return os.stat(path).st_mtime_ns
+    except OSError:
+        return 0
 
 
-_cache = Cache()
+# Not `repr(fn).split('at')[0]`, which was the identity this used before: that
+# is the repr up to the first literal "at", so `_get_operations` came out as
+# `<function _get_oper` and any two functions in a module whose names agree up
+# to their first "at" shared one cache entry and each got the other's answer.
+UNSAFE_IN_A_FILE_NAME = re.compile(r'[^A-Za-z0-9_.-]')
+
+
+def _cache_name(fn, args, kwargs):
+    """What to file this function's answer under."""
+    subject = u'{}.{}'.format(fn.__module__, fn.__qualname__)
+    if args or kwargs:
+        # A digest rather than `hash`, which Python randomises per process, so
+        # that a call with the same arguments finds its answer next time. The
+        # arguments are in the name and not only in the fingerprint so that two
+        # different ones can be remembered at once.
+        import hashlib
+
+        detail = repr((args, tuple(sorted(kwargs.items())))).encode('utf-8')
+        subject += '-' + hashlib.sha1(detail).hexdigest()[:12]
+    return UNSAFE_IN_A_FILE_NAME.sub('_', subject)
 
 
 def cache(*depends_on):
-    """Caches function result in temporary file.
-
-    Cache will be expired when modification date of files from `depends_on`
-    will be changed.
+    """Caches a function's result on disk until one of `depends_on` changes.
 
     Only functions should be wrapped in `cache`, not methods.
+
+    This used to be `shelve`, which meant `dbm` and `pickle` at import time, a
+    database that dbm spreads over several files depending on which backend is
+    available, an `atexit` handler to close it, and a "removing possibly
+    out-dated cache" path for switching Python versions. `cachefile` already
+    does the same job for the rule pack and the PATH listing: one file per
+    subject, marshalled, written to a neighbour and moved into place, and a
+    fingerprint saying what the answer was valid for.
 
     """
     def cache_decorator(fn):
@@ -457,8 +407,16 @@ def cache(*depends_on):
         def wrapper(*args, **kwargs):
             if cache.disabled:
                 return fn(*args, **kwargs)
-            else:
-                return _cache.get_value(fn, depends_on, args, kwargs)
+
+            paths = [Path(name).expanduser().absolute().as_posix()
+                     for name in depends_on]
+            fingerprint = tuple((path, _mtime(path)) for path in paths)
+            name = _cache_name(fn, args, kwargs)
+
+            cached = cachefile.load(name, fingerprint)
+            if cached is not None:
+                return cached
+            return cachefile.save(name, fingerprint, fn(*args, **kwargs))
 
         return wrapper
 
