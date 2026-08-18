@@ -1,3 +1,4 @@
+import shlex
 import pytest
 from thebleep.rules.yarn_help import match, get_new_command
 from thebleep.types import Command
@@ -55,3 +56,22 @@ def test_match(command):
      'https://yarnpkg.com/en/docs/cli/clean')])
 def test_get_new_command(command, url):
     assert get_new_command(command) == open_command(url)
+
+
+@pytest.mark.parametrize('url', [
+    'https://example.com;touch${IFS}/tmp/poc',
+    'https://example.com&&id',
+    'https://example.com`id`',
+    'https://example.com$(id)',
+    'https://example.com|id',
+    "https://example.com';id;'",
+])
+def test_a_hostile_url_stays_one_argument(url):
+    """The URL comes out of yarn's output, and the command we return is
+    evaluated by the shell, so anything in it has to survive as data."""
+    output = 'Visit {} for documentation about this command.'.format(url)
+    new_command = get_new_command(Command('yarn help clean', output))
+
+    opener, argument = shlex.split(new_command)
+    assert opener in ('xdg-open', 'open')
+    assert argument == url

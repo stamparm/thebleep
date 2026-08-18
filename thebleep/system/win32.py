@@ -29,7 +29,15 @@ def get_key():
 
 
 def open_command(arg):
-    return 'cmd /c start ' + arg
+    """Get a shell command calling the system's generic opener.
+
+    The argument is quoted: it reaches us from the output of whatever command
+    just failed, and the result of this goes back to the shell to be evaluated.
+
+    """
+    from ..shells import shell
+
+    return 'cmd /c start ' + shell.quote(arg)
 
 
 def _expanduser(self):

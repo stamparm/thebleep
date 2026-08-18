@@ -70,8 +70,14 @@ def get_key():
 
 
 def open_command(arg):
-    """Get a shell command calling the system's generic opener."""
+    """Get a shell command calling the system's generic opener.
+
+    The argument is quoted: it reaches us from the output of whatever command
+    just failed, and the result of this goes back to the shell to be evaluated.
+
+    """
     from shutil import which
+    from ..shells import shell
 
     opener = 'xdg-open' if which('xdg-open') else 'open'
-    return opener + ' ' + arg
+    return opener + ' ' + shell.quote(arg)
