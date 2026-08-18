@@ -97,7 +97,11 @@ class TestWhich(object):
         binary.write('#!/bin/sh\n')
         os.chmod(str(binary), 0o755)
         monkeypatch.setenv('PATH', str(tmpdir))
-        assert which('made-up-tool') == str(binary)
+        # `normcase`, because the extension comes back spelled the way PATHEXT
+        # spells it -- `.BAT` -- and the file on disk is `.bat`. On Windows
+        # those are one file, and `shutil.which` answers the same way.
+        assert os.path.normcase(which('made-up-tool')) \
+            == os.path.normcase(str(binary))
 
     def test_a_file_that_cannot_be_run_is_not_found(self, tmpdir, monkeypatch):
         tmpdir.join('unrunnable').write('not executable\n')

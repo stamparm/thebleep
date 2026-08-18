@@ -94,8 +94,9 @@ NOT_NEEDED_TO_CORRECT = [
     'bz2',            # dragged in by shutil
     'lzma',           # dragged in by shutil
     'zlib',           # dragged in by shutil
-    'colorama',       # only when colour is actually written, and it brings
-                      # `ctypes` -- a DLL the scanner reads before it maps it
+    'colorama',       # only when colour is actually written -- so not here,
+                      # where nothing this writes to is a terminal -- and it
+                      # brings `ctypes`, a DLL the scanner reads before it maps
 ]
 
 # How many modules a whole correction costs beyond what the interpreter has
@@ -137,9 +138,13 @@ def _correction_modules(tmp_path):
     # after it unmarshals the pack instead. Measuring the first would be
     # measuring an installation, which happens once and is not what anybody
     # waits for.
+    # Pipes, not DEVNULL. On Windows `NUL` is a character device and `isatty()`
+    # says yes to it, so a child given DEVNULL believes it is talking to a
+    # terminal, writes colour, and imports colorama to make the console render
+    # it -- which is correct behaviour being measured under a false premise.
     for _ in range(2):
         subprocess.run([sys.executable, '-c', source], env=environment,
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     with open(listing) as handle:
         return set(handle.read().split())
 

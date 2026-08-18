@@ -14,6 +14,12 @@ import sys
 import thebleep.__main__
 from thebleep.entrypoints.main import main
 
+# Captured at import, before the fixtures replace `os.environ` with a bare one.
+# Windows will not start an interpreter without `ComSpec` and `SystemRoot`, and
+# a cut-down environment got `shell not found` out of the re-run and
+# `_Py_HashRandomization_Init` out of the interpreter itself.
+REAL_ENVIRONMENT = dict(os.environ)
+
 
 def test_it_is_the_same_entry_point():
     assert thebleep.__main__.main is main
@@ -22,17 +28,19 @@ def test_it_is_the_same_entry_point():
 def test_it_corrects_a_command():
     """One subprocess, because a module run as `-m` is only itself in one.
 
-    The whole environment goes with it, not a hand-picked few variables.
-    Windows needs more of it than looks reasonable to start an interpreter at
-    all -- a cut-down one got `_Py_HashRandomization_Init: failed to get random
-    numbers to initialize Python` before any of our code ran.
-
     """
-    environment = dict(os.environ, TB_SHELL='bash',
+    environment = dict(REAL_ENVIRONMENT, TB_SHELL='bash',
                        PYTHONPATH=os.pathsep.join(sys.path))
     result = subprocess.run(
         [sys.executable, '-m', 'thebleep', '--yes', '--', 'ehco', 'hello'],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=environment)
 
     assert result.returncode == 0, result.stderr.decode('utf-8', 'replace')
-    assert 'echo hello' in result.stdout.decode('utf-8', 'replace')
+    # It corrected the typo -- not necessarily to `echo hello`. `echo` is a
+    # shell builtin on Windows rather than a file on `PATH`, so the nearest
+    # thing to `ehco` there is whatever is actually installed. What this is
+    # testing is that the entry point runs and produces a suggestion.
+    suggestion = result.stdout.decode('utf-8', 'replace').strip()
+    assert suggestion, 'no suggestion came back'
+    assert suggestion.endswith('hello')
+    assert 'ehco' not in suggestion
