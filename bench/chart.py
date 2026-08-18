@@ -82,20 +82,34 @@ def rows(results):
             yield label, before['median'], after['median']
 
 
+HEADINGS = (u'of The Fuck\'s time', u'The Fuck', u'The Bleep', u'faster')
+
+
 def chart(results):
     measured = list(rows(results))
-    label_width = max(len(label) for label, _, _ in measured)
-    before_width = max(len(milliseconds(b)) for _, b, _ in measured)
-    after_width = max(len(milliseconds(a)) for _, _, a in measured)
 
-    lines = []
-    for label, before, after in measured:
-        lines.append(u'%s  %s  %s → %s  %s' % (
+    def column(heading, values):
+        return max([len(heading)] + [len(value) for value in values])
+
+    bars, before, after, faster = HEADINGS
+    label_width = max(len(label) for label, _, _ in measured)
+    before_width = column(before, [milliseconds(b) for _, b, _ in measured])
+    after_width = column(after, [milliseconds(a) for _, _, a in measured])
+    faster_width = column(faster, [u'%.1f×' % (b / a)
+                                   for _, b, a in measured])
+
+    lines = [u'%s  %s  %s  %s  %s' % (u' ' * label_width,
+                                      bars.rjust(CELLS),
+                                      before.rjust(before_width),
+                                      after.rjust(after_width),
+                                      faster.rjust(faster_width))]
+    for label, time_before, time_after in measured:
+        lines.append(u'%s  %s  %s  %s  %s' % (
             label.ljust(label_width),
-            bar(after / before),
-            milliseconds(before).rjust(before_width),
-            milliseconds(after).rjust(after_width),
-            (u'%.1f×' % (before / after)).rjust(5)))
+            bar(time_after / time_before),
+            milliseconds(time_before).rjust(before_width),
+            milliseconds(time_after).rjust(after_width),
+            (u'%.1f×' % (time_before / time_after)).rjust(faster_width)))
     return u'\n'.join(lines)
 
 

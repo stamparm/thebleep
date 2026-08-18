@@ -36,31 +36,31 @@ issues are open on it, and a good number of its rules quietly stopped matching
 when the tools they correct changed what they print. *The Bleep* is the same
 tool, maintained — and several times quicker about it.
 
-Each bar is what *The Bleep* spends of the time *The Fuck* spent on the same
-thing, and what is left of it is what you get back:
+Same machine, same Python 3.11, 30 runs each, medians:
 
 <!-- benchmark: written by bench/chart.py -->
 ```text
-Open a shell                     ███▎░░░░░░░░░░░░░░  205 ms →  38 ms   5.4×
-Correct a mistyped command       ████▎░░░░░░░░░░░░░  240 ms →  57 ms   4.2×
-Correct inside a git repository  ████▍░░░░░░░░░░░░░  239 ms →  58 ms   4.1×
-Correct when nothing matches     ███▉░░░░░░░░░░░░░░  336 ms →  72 ms   4.7×
-Correct a slow command *         ████████████▍░░░░░  822 ms → 565 ms   1.5×
-Correct after 1 MB of output     ▊░░░░░░░░░░░░░░░░░  3.25 s → 134 ms  24.2×
+                                 of The Fuck's time  The Fuck  The Bleep  faster
+Open a shell                     ███▎░░░░░░░░░░░░░░    205 ms      38 ms    5.4×
+Correct a mistyped command       ████▎░░░░░░░░░░░░░    240 ms      57 ms    4.2×
+Correct inside a git repository  ████▍░░░░░░░░░░░░░    239 ms      58 ms    4.1×
+Correct when nothing matches     ███▉░░░░░░░░░░░░░░    336 ms      72 ms    4.7×
+Correct a slow command *         ████████████▍░░░░░    822 ms     565 ms    1.5×
+Correct after 1 MB of output     ▊░░░░░░░░░░░░░░░░░    3.25 s     134 ms   24.2×
 ```
 <!-- end benchmark -->
 
-\* dominated by the half second the command being corrected takes on its own;
-the rest is what the tool costs you.
+\* that command sleeps for half a second. Both tools have to sit through it to
+read what it printed, so this row is mostly the sleep.
 
-Median of 30 runs, same machine, same Python 3.11. Opening a shell is the row
-to look at twice: that is with `eval "$(thebleep --alias)"` in your rc, and with
-the loader instead it is **0.3 ms**, because opening a shell then runs no Python
-at all. The harness is [`bench/`](bench/README.md), the run these numbers come
-from is [`bench/results/final.json`](bench/results/final.json), and the block
-above is written from that file by [`bench/chart.py`](bench/chart.py) rather
-than typed in beside it. [Reproduce it, and read where the time
-went](#performance).
+Opening a shell is worth a second look: that row is `eval "$(thebleep --alias)"`
+in your rc. Use the loader instead and it is **0.3 ms**, because then opening a
+shell runs no Python at all.
+
+The harness is [`bench/`](bench/README.md), the run these numbers come from is
+[`bench/results/final.json`](bench/results/final.json), and the block above is
+written from that file by [`bench/chart.py`](bench/chart.py). [Reproduce it, and
+read where the time went](#performance).
 
 The rest of the reasons:
 
