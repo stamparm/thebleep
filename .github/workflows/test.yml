@@ -2,6 +2,12 @@ name: Tests
 
 on: [push, pull_request]
 
+# Read-only. Nothing here needs to write to the repository, and a pull request
+# from a fork must never run with anything more. Publishing is a separate
+# workflow with its own permissions; see release.yml.
+permissions:
+  contents: read
+
 env:
   PYTHON_LATEST: "3.14"
 
@@ -44,3 +50,136 @@ jobs:
         run: |
           docker build -t thebleep/python3 -f tests/Dockerfile --build-arg PYTHON_VERSION=3 .
           pytest -v --capture=sys tests --enable-functional
+
+  minimum-dependencies:
+    # The floors in setup.py are a claim about what works. This is the claim
+    # being tested; without it they are decoration.
+    name: Oldest supported dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the lowest version of everything setup.py allows
+        run: |
+          pip install -Ur requirements.txt
+          pip install --no-deps -e .
+          pip install "psutil==5.9.0" "pyte==0.8.0"
+          pip list
+      - run: pytest -q tests
+
+  package:
+    name: Build, check and install the artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --upgrade build twine
+      - run: python -m build
+      - name: Check the metadata and the rendered long description
+        run: python -m twine check --strict dist/*
+      - name: Nothing that belongs to the repository rather than the package
+        run: |
+          python - <<'PY'
+          import glob, sys, tarfile, zipfile
+          problems = []
+          wheel = glob.glob('dist/*.whl')[0]
+          with zipfile.ZipFile(wheel) as archive:
+              names = archive.namelist()
+          for unwanted in ('tests/', 'thefuck', '.egg-info/', 'bench/',
+                           'assets/', '.github/', '.scratch'):
+              found = [n for n in names if unwanted in n]
+              if found:
+                  problems.append('wheel contains %s: %s' % (unwanted, found[:3]))
+          with tarfile.open(glob.glob('dist/*.tar.gz')[0]) as archive:
+              sdist = archive.getnames()
+          for unwanted in ('thefuck', '.scratch', 'bench/.venvs'):
+              found = [n for n in sdist if unwanted in n]
+              if found:
+                  problems.append('sdist contains %s: %s' % (unwanted, found[:3]))
+          if problems:
+              print('\n'.join(problems))
+              sys.exit(1)
+          print('%s: %d files, clean' % (wheel, len(names)))
+          PY
+      - name: Install from the wheel, in a clean environment, and correct
+        run: |
+          python -m venv /tmp/clean
+          /tmp/clean/bin/pip install --quiet dist/*.whl
+          export TB_SHELL=bash
+          /tmp/clean/bin/thebleep --version
+          /tmp/clean/bin/thebleep --alias | grep -q thebleep
+          /tmp/clean/bin/thebleep --yes ehco hello | grep -q 'echo hello'
+          /tmp/clean/bin/bleep 2>&1 | grep -qi "isn't configured"
+
+  powershell:
+    # We say PowerShell is supported, so the correction loop is run in a real
+    # one -- in Windows PowerShell 5.1 as well as 7, because they do not agree
+    # about command chaining and 5.1 has no `&&`.
+    name: PowerShell ${{ matrix.shell }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [powershell, pwsh]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - name: Which PowerShell is this
+        run: ${{ matrix.shell }} -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
+      - name: A chained correction runs its second half
+        shell: bash
+        run: |
+          python - > chain.ps1 <<'PY'
+          from thebleep.shells import Powershell
+          mark = 'New-Item -ItemType File ./MARK -Force | Out-Null'
+          print(Powershell().and_("cmd /c exit 0", mark))
+          print('"ran: " + (Test-Path ./MARK)')
+          PY
+          cat chain.ps1
+      - name: ...in ${{ matrix.shell }}
+        run: |
+          ${{ matrix.shell }} -NoProfile -File chain.ps1 | Tee-Object -Variable out
+          if ($out -notcontains "ran: True") { throw "the second half did not run" }
+      - name: The alias corrects a command, and leaves nothing behind
+        shell: bash
+        run: |
+          python - > loop.ps1 <<'PY'
+          from thebleep.shells import Powershell
+          print(Powershell().app_alias('bleep'))
+          print('ehco it-works')
+          print('bleep --yes')
+          print('"TB_SHELL unset after: " + ($null -eq $env:TB_SHELL)')
+          print('"TB_ALIAS unset after: " + ($null -eq $env:TB_ALIAS)')
+          print('exit')
+          PY
+          cat loop.ps1
+      - name: ...in ${{ matrix.shell }}
+        env:
+          TB_SHELL: powershell
+        run: |
+          Get-Content loop.ps1 | ${{ matrix.shell }} -NoProfile -Command - |
+            Tee-Object -Variable out
+          $text = $out -join "`n"
+          if ($text -notmatch 'it-works') { throw "the correction did not run" }
+          if ($text -notmatch 'TB_SHELL unset after: True') { throw "TB_SHELL was left behind" }
+          if ($text -notmatch 'TB_ALIAS unset after: True') { throw "TB_ALIAS was left behind" }
+
+  benchmark-chart:
+    # The README quotes numbers. They are generated from the recorded run, so
+    # they can drift out of step with it, and a README that quotes numbers
+    # nothing produced is worse than one with no numbers in it.
+    name: The README's numbers match the recorded run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python bench/chart.py --check

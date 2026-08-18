@@ -1,0 +1,182 @@
+name: Release
+
+# Publishing happens here and nowhere else.
+#
+# Pushing a version tag builds the two artifacts once, checks them, installs the
+# wheel on Linux, macOS and Windows and corrects a command with it, and then
+# publishes those exact files to PyPI through trusted publishing -- an OIDC token
+# minted for this workflow, in this repository, for the length of one job. There
+# is no API token to leak, and nothing on a maintainer's laptop can publish.
+#
+# To rehearse, run it by hand with `target: testpypi`.
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Where to publish
+        required: true
+        default: testpypi
+        type: choice
+        options: [testpypi, pypi]
+
+# Nothing here needs to write to the repository. The publishing job asks for the
+# one permission it does need, and asks for it there rather than here.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and check the artifacts
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: What version is this
+        id: version
+        run: |
+          version=$(sed -n "s/^VERSION = '\(.*\)'$/\1/p" setup.py)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "setup.py says $version"
+
+      - name: The tag, the version and the changelog agree
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          version="${{ steps.version.outputs.version }}"
+          test "$tag" = "$version" || {
+            echo "tag $tag does not match setup.py's $version" >&2; exit 1; }
+          head -3 CHANGELOG.md | grep -q "^## $version — " || {
+            echo "CHANGELOG.md does not lead with $version" >&2; exit 1; }
+          head -3 CHANGELOG.md | grep -q 'unreleased' && {
+            echo "CHANGELOG.md still says unreleased" >&2; exit 1; }
+          grep -q "badge/version-$version-" README.md || {
+            echo "the README badge does not say $version" >&2; exit 1; }
+          echo "tag, setup.py, CHANGELOG.md and the README badge all say $version"
+
+      - name: Install the build tools
+        run: pip install --upgrade build twine
+
+      - name: Build
+        run: python -m build
+
+      - name: Check the metadata and the rendered description
+        run: python -m twine check --strict dist/*
+
+      - name: Inspect what is in them
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          python - "$version" <<'PY'
+          import sys, tarfile, zipfile
+          version = sys.argv[1]
+          wheel = 'dist/thebleep-%s-py3-none-any.whl' % version
+          sdist = 'dist/thebleep-%s.tar.gz' % version
+          problems = []
+
+          with zipfile.ZipFile(wheel) as archive:
+              names = archive.namelist()
+              entry_points = archive.read(
+                  'thebleep-%s.dist-info/entry_points.txt' % version).decode()
+              wheel_tags = archive.read(
+                  'thebleep-%s.dist-info/WHEEL' % version).decode()
+
+          if 'Tag: py3-none-any' not in wheel_tags:
+              problems.append('the wheel is not platform independent:\n' + wheel_tags)
+          for wanted in ('thebleep = thebleep.entrypoints.main:main',
+                         'bleep = thebleep.entrypoints.not_configured:main'):
+              if wanted not in entry_points:
+                  problems.append('missing entry point: ' + wanted)
+          # Nothing that belongs to the repository rather than to the package.
+          for unwanted in ('tests/', 'thefuck', '.egg-info/', 'bench/',
+                           'assets/', '.github/', '.scratch'):
+              found = [n for n in names if unwanted in n]
+              if found:
+                  problems.append('wheel contains %s: %s' % (unwanted, found[:3]))
+          if not any(n.endswith('/rules/git_add.py') for n in names):
+              problems.append('the wheel has no rules in it')
+
+          with tarfile.open(sdist) as archive:
+              sdist_names = archive.getnames()
+          for unwanted in ('thefuck', '.scratch', 'bench/.venvs'):
+              found = [n for n in sdist_names if unwanted in n]
+              if found:
+                  problems.append('sdist contains %s: %s' % (unwanted, found[:3]))
+
+          if problems:
+              print('\n'.join(problems))
+              sys.exit(1)
+          print('wheel: %d files, platform independent, entry points present' % len(names))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artifacts
+          path: dist/
+          if-no-files-found: error
+
+  install:
+    name: Install the built wheel (${{ matrix.os }}, ${{ matrix.python-version }})
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.9", "3.14"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: artifacts
+          path: dist
+      - name: Install the wheel and nothing else
+        shell: bash
+        run: pip install dist/thebleep-${{ needs.build.outputs.version }}-py3-none-any.whl
+      - name: It runs, and it corrects something
+        shell: bash
+        env:
+          TB_SHELL: bash
+        run: |
+          thebleep --version
+          thebleep --alias | grep -q thebleep
+          thebleep --alias-loader | grep -q thebleep
+          thebleep --yes ehco hello | grep -q 'echo hello'
+          echo "corrected a command from the built wheel"
+
+  publish:
+    name: Publish
+    needs: [build, install]
+    runs-on: ubuntu-latest
+    # A named environment so that publishing can be gated on a review, and so
+    # that the trusted-publishing configuration on PyPI can name it.
+    environment:
+      name: ${{ github.event.inputs.target == 'testpypi' && 'testpypi' || 'pypi' }}
+      url: https://pypi.org/p/thebleep
+    permissions:
+      # The only permission this workflow asks for anywhere: minting the OIDC
+      # token PyPI checks. No API token exists to be stolen.
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: artifacts
+          path: dist
+      - name: Publish to TestPyPI
+        if: github.event.inputs.target == 'testpypi'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+      - name: Publish to PyPI
+        if: github.event.inputs.target != 'testpypi'
+        uses: pypa/gh-action-pypi-publish@release/v1

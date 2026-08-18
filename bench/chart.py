@@ -17,6 +17,12 @@ Run it after recording a new run and the README is rewritten in place:
 
     python bench/chart.py
 
+`--check` writes nothing and fails if the README does not already say what the
+recorded run says, which is what CI runs: a README quoting numbers that nothing
+produced is worse than a README with no numbers in it.
+
+    python bench/chart.py --check
+
 """
 
 from __future__ import print_function
@@ -121,13 +127,16 @@ def block(results):
 
 
 def main(argv):
+    check_only = '--check' in argv[1:]
+
     here = os.path.dirname(os.path.abspath(__file__))
     with io.open(os.path.join(here, 'results', 'final.json'),
                  encoding='utf-8') as handle:
         results = json.load(handle)
 
     replacement = block(results)
-    print(replacement)
+    if not check_only:
+        print(replacement)
 
     readme = os.path.join(here, os.pardir, 'README.md')
     with io.open(readme, encoding='utf-8') as handle:
@@ -141,8 +150,14 @@ def main(argv):
     updated = text[:start] + replacement + text[finish:]
 
     if updated == text:
-        print('\nREADME.md is already up to date.')
+        print('README.md says what {} says.'.format(
+            os.path.join('bench', 'results', 'final.json')))
         return
+
+    if check_only:
+        sys.exit("chart.py: README.md does not say what bench/results/final.json"
+                 " says. Run `python bench/chart.py` and commit the result.\n\n"
+                 + replacement)
 
     with io.open(readme, 'w', encoding='utf-8') as handle:
         handle.write(updated)
