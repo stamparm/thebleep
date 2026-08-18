@@ -35,10 +35,10 @@ def match(command):
     if command.script_parts and '&&' not in command.script_parts and command.script_parts[0] == 'sudo':
         return False
 
-    for pattern in patterns:
-        if pattern in command.output.lower():
-            return True
-    return False
+    # Lowered once. It was inside the loop, so a command that printed a megabyte
+    # had it copied twenty-eight times before this rule gave up on it.
+    output = command.output.lower()
+    return any(pattern in output for pattern in patterns)
 
 
 # `sudo` where a command starts, rather than anywhere at all: the word could

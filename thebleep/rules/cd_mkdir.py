@@ -7,12 +7,15 @@ from thebleep.shells import shell
 @sudo_support
 @for_app('cd')
 def match(command):
-    return (
-        command.script.startswith('cd ') and any((
-            'no such file or directory' in command.output.lower(),
-            'cd: can\'t cd to' in command.output.lower(),
-            'does not exist' in command.output.lower()
-        )))
+    # A generator rather than a tuple, and the output lowered once: a tuple's
+    # elements are all evaluated before `any` sees any of them, so this lowered
+    # the whole output three times and then looked at the first answer.
+    output = command.output.lower()
+    return command.script.startswith('cd ') and any(
+        message in output
+        for message in ('no such file or directory',
+                        "cd: can't cd to",
+                        'does not exist'))
 
 
 @sudo_support
