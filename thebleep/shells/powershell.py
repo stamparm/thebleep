@@ -1,7 +1,11 @@
-from subprocess import Popen, PIPE
 from ..const import get_alias
-from ..utils import DEVNULL
+from ..utils import DEVNULL, load_subprocess
 from .generic import Generic, ShellConfiguration
+
+
+# Bound the first time a process is started here; see `utils.load_subprocess`.
+Popen = None
+PIPE = None
 
 
 class Powershell(Generic):
@@ -109,6 +113,7 @@ class Powershell(Generic):
 
     def _get_version(self):
         """Returns the version of the current shell"""
+        Popen, PIPE = load_subprocess(globals())
         try:
             proc = Popen(
                 ['powershell.exe', '$PSVersionTable.PSVersion'],

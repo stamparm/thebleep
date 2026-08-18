@@ -6,16 +6,42 @@ from .streams import use_utf8
 
 
 def init_output():
+    """What has to be true of the streams before anything writes to them.
+
+    `win_unicode_console.enable()` used to be here too. CPython has spoken
+    Unicode to the Windows console natively since 3.6 (PEP 528 and PEP 529),
+    the package has been unmaintained since 2018, and this requires 3.9.
+
+    """
+    use_utf8()
+
+
+def init_colors():
+    """Makes the console render the escape codes, the first time one is used.
+
+    This was part of `init_output` and so ran on every invocation. colorama
+    reaches the console through `ctypes`, and a `.pyd` is the most expensive
+    kind of module there is to import on Windows -- the scanner reads a DLL
+    before it is mapped. Most invocations emit no colour at all: `--alias` runs
+    at every shell startup and writes a shell function, a correction with
+    `--yes` writes one line of shell, and colour is switched off outright when
+    the stream is not a console or the user asked for none. So it happens where
+    the first escape code is actually produced instead, in `logs.color`.
+
+    `use_utf8` still runs first, in `init_output`, because colorama replaces
+    the streams with proxies that have no encoding of their own to set.
+
+    """
+    if init_colors.done:
+        return
+    init_colors.done = True
+
     import colorama
 
-    # Before colorama, which replaces the streams with proxies that have no
-    # encoding of their own to set.
-    #
-    # `win_unicode_console.enable()` used to be here too. CPython has spoken
-    # Unicode to the Windows console natively since 3.6 (PEP 528 and PEP 529),
-    # the package has been unmaintained since 2018, and this requires 3.9.
-    use_utf8()
     colorama.init()
+
+
+init_colors.done = False
 
 
 def get_key():

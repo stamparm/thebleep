@@ -19,14 +19,32 @@ def test_settings_defaults(load_source, settings):
         assert getattr(settings, key) == val
 
 
+@pytest.fixture
+def written_settings(tmpdir, os_environ, settings):
+    """Puts a real settings file where `init` will look for it.
+
+    A real one, not a mock module: the file is compiled and run now rather than
+    imported, so a test that hands the loader an object it never asked for
+    would no longer be testing the loader.
+
+    """
+    def write(source):
+        os_environ['XDG_CONFIG_HOME'] = str(tmpdir)
+        tmpdir.mkdir('thebleep').join('settings.py').write(source)
+        return settings
+
+    return write
+
+
 class TestSettingsFromFile(object):
-    def test_from_file(self, load_source, settings):
-        load_source.return_value = Mock(rules=['test'],
-                                        wait_command=10,
-                                        require_confirmation=True,
-                                        no_colors=True,
-                                        priority={'vim': 100},
-                                        exclude_rules=['git'])
+    def test_from_file(self, written_settings):
+        settings = written_settings(
+            "rules = ['test']\n"
+            "wait_command = 10\n"
+            "require_confirmation = True\n"
+            "no_colors = True\n"
+            "priority = {'vim': 100}\n"
+            "exclude_rules = ['git']\n")
         settings.init()
         assert settings.rules == ['test']
         assert settings.wait_command == 10
@@ -35,14 +53,29 @@ class TestSettingsFromFile(object):
         assert settings.priority == {'vim': 100}
         assert settings.exclude_rules == ['git']
 
-    def test_from_file_with_DEFAULT(self, load_source, settings):
-        load_source.return_value = Mock(rules=const.DEFAULT_RULES + ['test'],
-                                        wait_command=10,
-                                        exclude_rules=[],
-                                        require_confirmation=True,
-                                        no_colors=True)
+    def test_from_file_with_DEFAULT(self, written_settings):
+        settings = written_settings(
+            'from thebleep import const\n'
+            "rules = const.DEFAULT_RULES + ['test']\n"
+            'wait_command = 10\n'
+            'exclude_rules = []\n'
+            'require_confirmation = True\n'
+            'no_colors = True\n')
         settings.init()
         assert settings.rules == const.DEFAULT_RULES + ['test']
+
+    def test_a_file_that_imports_something_still_works(self, written_settings):
+        """Running it is the same execution an import would have done."""
+        settings = written_settings(
+            'import os\n'
+            "wait_command = len(os.sep) + 9\n")
+        settings.init()
+        assert settings.wait_command == 10
+
+    def test_a_broken_file_leaves_the_defaults_alone(self, written_settings):
+        settings = written_settings('this is not python\n')
+        settings.init()
+        assert settings.wait_command == const.DEFAULT_SETTINGS['wait_command']
 
 
 @pytest.mark.usefixtures('load_source')

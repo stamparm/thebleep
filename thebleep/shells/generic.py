@@ -1,7 +1,6 @@
 import io
 import os
 import shlex
-from collections import namedtuple
 from .. import const
 from ..logs import warn
 from ..utils import memoize
@@ -9,8 +8,36 @@ from ..conf import settings
 from ..system import expanduser
 
 
-ShellConfiguration = namedtuple('ShellConfiguration', (
-    'content', 'path', 'reload', 'can_configure_automatically'))
+class ShellConfiguration(object):
+    """What to add to which file to make the alias survive a new shell.
+
+    A `namedtuple` before, and nothing ever treated it as a tuple -- every use
+    of it, here and in the tests, reads a field by name. `collections` is a
+    seven-module import for `namedtuple` alone, and on Windows the number of
+    modules a correction opens is most of what it costs, so the four fields are
+    written out instead.
+
+    """
+
+    __slots__ = ('content', 'path', 'reload', 'can_configure_automatically')
+
+    def __init__(self, content, path, reload, can_configure_automatically):
+        self.content = content
+        self.path = path
+        self.reload = reload
+        self.can_configure_automatically = can_configure_automatically
+
+    def __eq__(self, other):
+        if not isinstance(other, ShellConfiguration):
+            return NotImplemented
+        return all(getattr(self, name) == getattr(other, name)
+                   for name in self.__slots__)
+
+    def __repr__(self):
+        return 'ShellConfiguration({})'.format(', '.join(
+            '{}={!r}'.format(name, getattr(self, name))
+            for name in self.__slots__))
+
 
 # History windows to fall back through when the last ten entries are too big to
 # hand to a program. Asking the shell for fewer entries keeps whole lines, which

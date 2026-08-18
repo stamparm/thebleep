@@ -1,16 +1,21 @@
-from subprocess import Popen, PIPE
 from time import time
 import os
 import sys
 from .. import logs
 from ..conf import settings
 from ..const import ARGUMENT_PLACEHOLDER, get_alias
-from ..utils import DEVNULL, cache
+from ..utils import DEVNULL, cache, load_subprocess
 from .generic import Generic
+
+
+# Bound the first time a process is started here; see `utils.load_subprocess`.
+Popen = None
+PIPE = None
 
 
 @cache('~/.config/fish/config.fish', '~/.config/fish/functions')
 def _get_functions(overridden):
+    Popen, PIPE = load_subprocess(globals())
     proc = Popen(['fish', '-ic', 'functions'], stdout=PIPE, stderr=DEVNULL)
     functions = proc.stdout.read().decode('utf-8').strip().split('\n')
     return {func: func for func in functions if func not in overridden}
@@ -19,6 +24,7 @@ def _get_functions(overridden):
 @cache('~/.config/fish/config.fish')
 def _get_aliases(overridden):
     aliases = {}
+    Popen, PIPE = load_subprocess(globals())
     proc = Popen(['fish', '-ic', 'alias'], stdout=PIPE, stderr=DEVNULL)
     alias_out = proc.stdout.read().decode('utf-8').strip()
     if not alias_out:
@@ -130,6 +136,7 @@ class Fish(Generic):
 
     def _get_version(self):
         """Returns the version of the current shell"""
+        Popen, PIPE = load_subprocess(globals())
         proc = Popen(['fish', '--version'], stdout=PIPE, stderr=DEVNULL)
         return proc.stdout.read().decode('utf-8').split()[-1]
 

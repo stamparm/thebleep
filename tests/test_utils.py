@@ -10,7 +10,7 @@ from thebleep import cachefile
 from thebleep.utils import default_settings, \
     memoize, get_closest, get_all_executables, replace_argument, \
     get_all_matched_commands, is_app, for_app, cache, \
-    get_valid_history_without_current, get_close_matches
+    get_valid_history_without_current, get_close_matches, which
 from thebleep.types import Command
 
 
@@ -52,6 +52,49 @@ class TestGetClosest(object):
     def test_without_fallback(self):
         assert get_closest('st', ['status', 'reset'],
                            fallback_to_first=False) is None
+
+
+class TestWhich(object):
+    """`which` replaced `shutil.which`, so it has to answer the same thing.
+
+    Importing `shutil` cost three compression libraries before any rule could
+    ask whether a program was installed, and several ask while they are being
+    imported. The replacement is only worth having if it agrees, so this asks
+    both of them about the same names -- ones that are there, ones that are
+    not, ones given as a path, and the empty string.
+
+    """
+
+    @pytest.fixture(autouse=True)
+    def not_memoized(self, monkeypatch):
+        # `which` is memoized, and a memo built in another test would answer
+        # instead of the code under test.
+        monkeypatch.setattr(memoize, 'disabled', True)
+
+    @pytest.mark.parametrize('program', [
+        'python', 'python3', 'sh', 'ls', 'sort',
+        'definitely-not-a-real-program-9d3f', '',
+        'thebleep/utils.py', './setup.py', '/bin/sh', '/bin', '/'])
+    def test_it_agrees_with_shutil(self, program):
+        import shutil
+
+        assert which(program) == shutil.which(program)
+
+    def test_a_directory_is_not_a_program(self, tmpdir):
+        directory = tmpdir.mkdir('bin')
+        assert which(str(directory)) is None
+
+    def test_a_file_on_the_path_is_found(self, tmpdir, monkeypatch):
+        binary = tmpdir.join('made-up-tool')
+        binary.write('#!/bin/sh\n')
+        os.chmod(str(binary), 0o755)
+        monkeypatch.setenv('PATH', str(tmpdir))
+        assert which('made-up-tool') == str(binary)
+
+    def test_a_file_that_cannot_be_run_is_not_found(self, tmpdir, monkeypatch):
+        tmpdir.join('unrunnable').write('not executable\n')
+        monkeypatch.setenv('PATH', str(tmpdir))
+        assert which('unrunnable') is None
 
 
 class TestGetCloseMatches(object):

@@ -1,4 +1,3 @@
-import importlib.util
 import os
 import sys
 from warnings import warn
@@ -7,6 +6,11 @@ from .system import Path, expanduser, writable
 
 
 def load_source(name, pathname, _file=None):
+    # Only a rule that is not in the pack, or a user's own settings file, gets
+    # here. Importing the machinery to load one costs every correction that
+    # never needs it.
+    import importlib.util
+
     module_spec = importlib.util.spec_from_file_location(name, pathname)
     module = importlib.util.module_from_spec(module_spec)
     module_spec.loader.exec_module(module)
@@ -75,12 +79,26 @@ class Settings(dict):
         self.user_dir = user_dir
 
     def _settings_from_file(self):
-        """Loads settings from file."""
-        settings = load_source(
-            'settings', str(self.user_dir.joinpath('settings.py')))
-        return {key: getattr(settings, key)
+        """Loads settings from file.
+
+        Run rather than imported. `load_source` builds a real module through
+        `importlib.util`, and a settings file is a handful of assignments whose
+        names are all this reads back -- so the module was machinery nobody
+        used, and `importlib.util` (with `contextlib` behind it) was imported on
+        every correction to get it. A settings file that imports something of
+        its own still works: this is the same compile and the same execution,
+        into a namespace instead of a module.
+
+        """
+        path = str(self.user_dir.joinpath('settings.py'))
+        with open(path, 'rb') as handle:
+            source = handle.read()
+
+        namespace = {'__file__': path, '__name__': 'settings'}
+        exec(compile(source, path, 'exec'), namespace)
+        return {key: namespace[key]
                 for key in const.DEFAULT_SETTINGS.keys()
-                if hasattr(settings, key)}
+                if key in namespace}
 
     def _rules_from_env(self, val):
         """Transforms rules list from env-string to python."""

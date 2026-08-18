@@ -76,6 +76,97 @@ def test_correcting_is_what_pulls_the_rest_in(imported):
     assert 'thebleep.shells' not in imported
 
 
+# The same question asked of a whole correction rather than of startup. Each of
+# these used to be imported to correct `ehco hello`, and none of them was used
+# doing it. They are named individually rather than counted because a name is
+# what a future change will put back, and because several are C extensions --
+# on Windows a `.pyd` is read by the virus scanner before it can be mapped,
+# which makes it the most expensive kind of module there is.
+NOT_NEEDED_TO_CORRECT = [
+    'ast',            # only to read a rule that is not in the compiled pack
+    'pickle',         # only for a memoized call whose arguments cannot be hashed
+    'socket',         # only when a shell logger is listening
+    'mmap',           # only instant mode, reading the recorded session
+    'uuid',           # only instant mode's alias
+    'platform',       # dragged in by uuid
+    'tempfile',       # only instant mode's alias, and the no-home fallback
+    'shutil',         # `which` does the lookup itself now
+    'bz2',            # dragged in by shutil
+    'lzma',           # dragged in by shutil
+    'zlib',           # dragged in by shutil
+    'ctypes',         # dragged in by colorama, and only when colour is written
+]
+
+# How many modules a whole correction costs beyond what the interpreter has
+# open before it runs a line. A difference rather than a count, because the
+# baseline moves between Python versions and this has to mean the same thing on
+# every one of them. Measured on 3.11: 81 before the startup work, 42 after it
+# from an installed wheel and 47 from a checkout, which carries the editable
+# install's own finder. The ceiling leaves room for a module added on purpose,
+# and for the standard library rearranging itself between releases, and none to
+# drift back to where this started.
+IMPORT_BUDGET = 60
+
+
+def _correction_modules(tmp_path):
+    """Everything imported by correcting a command, in a fresh process.
+
+    The list goes to a file rather than to a stream, because a correction
+    writes the suggestion to one and its own logging to the other, and a module
+    list with `echo` and `hello` in it is not a module list.
+
+    """
+    source = textwrap.dedent('''
+        import sys
+        sys.argv = ['thebleep', '--yes', '--', 'ehco', 'hello']
+        from thebleep.entrypoints.main import main
+        try:
+            main()
+        except SystemExit:
+            pass
+        with open(sys.argv[0] + '.modules', 'w') as handle:
+            handle.write('\\n'.join(sorted(sys.modules)))
+    ''')
+    environment = dict(REAL_ENVIRONMENT, TB_SHELL='bash')
+    listing = str(tmp_path) + '.modules'
+    source = source.replace("sys.argv[0] + '.modules'", repr(listing))
+    subprocess.run([sys.executable, '-c', source], env=environment,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    with open(listing) as handle:
+        return set(handle.read().split())
+
+
+def _baseline_modules():
+    """What the interpreter has open before any of our code runs."""
+    result = subprocess.run(
+        [sys.executable, '-c', 'import sys; print(len(sys.modules))'],
+        stdout=subprocess.PIPE, env=dict(REAL_ENVIRONMENT))
+    return int(result.stdout)
+
+
+@pytest.fixture(scope='module')
+def corrected(tmp_path_factory):
+    return _correction_modules(tmp_path_factory.mktemp('imports') / 'run')
+
+
+@pytest.mark.parametrize('module', NOT_NEEDED_TO_CORRECT)
+def test_not_imported_by_a_correction(corrected, module):
+    assert module not in corrected, (
+        '{} is imported to correct a command and is not used doing it; each '
+        'one is a file the interpreter has to find and open, and on Windows '
+        'that is most of what a correction costs'.format(module))
+
+
+def test_a_correction_stays_within_its_import_budget(corrected):
+    """Guards the whole of it, not just the modules named above."""
+    assert 'thebleep.corrector' in corrected, 'the correction did not run'
+
+    marginal = len(corrected) - _baseline_modules()
+    assert marginal <= IMPORT_BUDGET, (
+        'correcting a command imports {} modules beyond a bare interpreter, '
+        'and the budget is {}'.format(marginal, IMPORT_BUDGET))
+
+
 class TestDispatch(object):
     """A command should only reach the rules that could possibly match it."""
 

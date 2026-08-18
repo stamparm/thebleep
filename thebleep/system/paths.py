@@ -23,7 +23,6 @@ named `~` in whatever the working directory happened to be.
 """
 
 import os
-import tempfile
 from pathlib import Path
 
 
@@ -54,6 +53,7 @@ def writable(path, purpose):
     # consults the very environment that is missing.
     try:
         import getpass
+        import tempfile
 
         who = getpass.getuser()
     except Exception:                                        # noqa: BLE001

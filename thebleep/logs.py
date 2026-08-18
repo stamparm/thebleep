@@ -2,6 +2,7 @@
 
 import sys
 from .conf import settings
+from .system import init_colors
 from . import const
 
 
@@ -48,11 +49,20 @@ _ansi_supported.cached = None
 
 
 def color(color_):
-    """Utility for ability to disabling colored output."""
+    """Utility for ability to disabling colored output.
+
+    The one place an escape code is produced, and therefore the one place that
+    has to make sure the console will render it. On Windows that means
+    colorama, which is why it is asked for here and not at startup: an
+    invocation that writes no colour -- and most write none -- should not pay
+    to import it.
+
+    """
     if settings.no_colors or not _ansi_supported():
         return ''
-    else:
-        return color_
+
+    init_colors()
+    return color_
 
 
 def warn(title):

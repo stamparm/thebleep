@@ -1,6 +1,5 @@
 import os
 import sys
-from difflib import SequenceMatcher
 from .. import logs, types, const
 from ..conf import settings
 from ..corrector import get_corrected_commands
@@ -25,6 +24,10 @@ def _get_raw_command(known_args):
                 # running an older alias definition can put anything in it.
                 # Half of a command is not something to offer to run.
                 continue
+            # Imported here: `difflib` is a hundred kilobytes that only a
+            # correction with history behind it ever reads.
+            from difflib import SequenceMatcher
+
             diff = SequenceMatcher(a=alias, b=command).ratio()
             if diff < const.DIFF_WITH_ALIAS or command in executables:
                 return [command]

@@ -1,12 +1,13 @@
 import os
-import select
 import sys
-import tty
-import termios
 from pathlib import Path  # noqa: F401
 from .. import const
 from .paths import expanduser, writable  # noqa: F401
 from .streams import use_utf8
+
+
+def init_colors():
+    """Nothing: a POSIX terminal renders the escape codes itself."""
 
 
 def init_output():
@@ -31,6 +32,14 @@ def _is_incomplete(sequence):
 
 def read_key_sequence():
     """Reads a keypress as the characters the terminal sent for it."""
+    # The three modules that make a terminal raw are imported here rather than
+    # at the top. Only somebody being shown a suggestion and answering it gets
+    # this far; `--yes`, `--alias` and every correction that finds nothing
+    # never do, and they were all paying to find and open them.
+    import select
+    import termios
+    import tty
+
     fd = sys.stdin.fileno()
     try:
         old = termios.tcgetattr(fd)

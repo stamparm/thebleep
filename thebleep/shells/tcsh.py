@@ -1,9 +1,13 @@
-from subprocess import Popen, PIPE
 from time import time
 import os
 from ..const import get_alias
-from ..utils import DEVNULL, memoize
+from ..utils import DEVNULL, load_subprocess, memoize
 from .generic import Generic
+
+
+# Bound the first time a process is started here; see `utils.load_subprocess`.
+Popen = None
+PIPE = None
 
 
 class Tcsh(Generic):
@@ -25,6 +29,7 @@ class Tcsh(Generic):
 
     @memoize
     def get_aliases(self):
+        Popen, PIPE = load_subprocess(globals())
         proc = Popen(['tcsh', '-ic', 'alias'], stdout=PIPE, stderr=DEVNULL)
         return dict(
             self._parse_alias(alias)
@@ -46,5 +51,6 @@ class Tcsh(Generic):
 
     def _get_version(self):
         """Returns the version of the current shell"""
+        Popen, PIPE = load_subprocess(globals())
         proc = Popen(['tcsh', '--version'], stdout=PIPE, stderr=DEVNULL)
         return proc.stdout.read().decode('utf-8').split()[1]

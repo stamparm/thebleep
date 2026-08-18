@@ -1,12 +1,33 @@
 import os
-import pickle
 import re
-import shutil
-from difflib import get_close_matches as difflib_get_close_matches
 from functools import wraps
 from . import cachefile, const
 from .conf import settings
 from .system import expanduser
+
+# `pickle`, `shutil` and `difflib` are imported where they are used rather than
+# here. Each one is a file the interpreter has to find and open before this
+# module has done anything, and on Windows -- where a virus scanner sits in
+# front of every open -- that is the most expensive part of a correction.
+# `pickle` is only reached by a memoized call whose arguments cannot be hashed,
+# `shutil.which` only by a rule that looks a program up, and `difflib` only by a
+# rule that offers a spelling correction. None of the three is on the path a
+# correction always takes.
+#
+# `difflib`'s function keeps its name here, bound on first use, because it is
+# what the two functions below call and what a test replaces to see what they
+# asked for.
+difflib_get_close_matches = None
+
+
+def _load_difflib():
+    """Binds `difflib_get_close_matches`, once."""
+    global difflib_get_close_matches
+    if difflib_get_close_matches is None:
+        from difflib import get_close_matches
+
+        difflib_get_close_matches = get_close_matches
+
 
 # Binary: nothing is ever written through this object -- it is only handed
 # to Popen as a descriptor to throw output at -- and text mode would make
@@ -52,6 +73,7 @@ def memoize(fn):
                 key = (args, tuple(sorted(kwargs.items())))
                 hash(key)
             except TypeError:
+                import pickle
                 key = pickle.dumps((args, kwargs))
             if key not in memo:
                 memo[key] = fn(*args, **kwargs)
@@ -68,10 +90,86 @@ def memoize(fn):
 memoize.disabled = False
 
 
+def _is_runnable(path):
+    """Whether `path` names something this user could execute."""
+    return (os.path.exists(path)
+            and os.access(path, os.F_OK | os.X_OK)
+            and not os.path.isdir(path))
+
+
 @memoize
 def which(program):
-    """Returns `program` path or `None`."""
-    return shutil.which(program)
+    """Returns `program` path or `None`.
+
+    This was `shutil.which`, and importing `shutil` to ask it costs `bz2`,
+    `lzma` and `zlib` -- the archive formats `make_archive` knows how to write
+    -- before anything has been looked up. Several rules ask whether a program
+    is installed while they are being imported, so a correction was paying for
+    three compression libraries to find out whether Docker is on the machine.
+
+    The lookup is the same one: the directories on `PATH`, plus the extensions
+    `PATHEXT` lets a Windows user leave off, and of each candidate the question
+    `shutil.which` asks -- is it there, is it not a directory, and may I run
+    it. `tests/test_utils.py` holds it to agreeing with `shutil.which`.
+
+    """
+    # A name with a directory in it is not looked up on `PATH` at all; it is
+    # either runnable where it points or it is nothing.
+    if os.path.dirname(program):
+        return program if _is_runnable(program) else None
+
+    search = os.environ.get('PATH', os.defpath).split(os.pathsep)
+    extensions = _executable_extensions()
+    if extensions:
+        # The current directory really is searched first on Windows, and a
+        # rule that asks about a program in it would otherwise be told no.
+        if os.curdir not in search:
+            search.insert(0, os.curdir)
+        if os.path.splitext(program)[1].lower() in extensions:
+            names = [program]
+        else:
+            names = [program + extension for extension in extensions]
+    else:
+        names = [program]
+
+    seen = set()
+    for directory in search:
+        normalised = os.path.normcase(directory)
+        if not directory or normalised in seen:
+            continue
+        seen.add(normalised)
+        for name in names:
+            candidate = os.path.join(directory, name)
+            if _is_runnable(candidate):
+                return candidate
+
+
+def load_subprocess(namespace):
+    """Binds `Popen` and `PIPE` in a shell module's globals, and returns them.
+
+    `subprocess` is not on the path a correction takes. Aliases arrive in the
+    environment and a shell's version is only asked for when something prints
+    diagnostics -- but importing it at the top of each shell module dragged
+    `threading`, `signal`, `selectors`, `contextlib` and `locale` into every
+    correction. On Windows, where finding and opening a module is the dearest
+    thing an interpreter does, that was five modules for nothing.
+
+    The two names stay module attributes rather than becoming local imports,
+    because starting a process is what the shell tests replace and a name
+    hidden inside a function body cannot be replaced. Each is bound separately
+    and only when still unbound, so a test that has replaced `Popen` keeps its
+    replacement and still gets a real `PIPE` to go with it.
+
+    """
+    if namespace.get('PIPE') is None:
+        from subprocess import PIPE
+
+        namespace['PIPE'] = PIPE
+    if namespace.get('Popen') is None:
+        from subprocess import Popen
+
+        namespace['Popen'] = Popen
+    return namespace['Popen'], namespace['PIPE']
 
 
 def default_settings(params):
@@ -93,6 +191,7 @@ def default_settings(params):
 
 def get_closest(word, possibilities, cutoff=0.6, fallback_to_first=True):
     """Returns closest match or just first from possibilities."""
+    _load_difflib()
     possibilities = list(possibilities)
     try:
         return difflib_get_close_matches(word, possibilities, 1, cutoff)[0]
@@ -108,6 +207,7 @@ CASE_INSENSITIVE_NAMES = os.path.normcase('A') == os.path.normcase('a')
 
 def get_close_matches(word, possibilities, n=None, cutoff=0.6):
     """Overrides `difflib.get_close_match` to control argument `n`."""
+    _load_difflib()
     if n is None:
         n = settings.num_close_matches
 

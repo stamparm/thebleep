@@ -19,14 +19,25 @@ stale, corrupt or unwritable pack only costs time, never correctness, and the
 caller falls back to loading rules the slow way.
 """
 
-import ast
 import marshal
 import os
 import sys
 import types as pytypes
-from importlib.util import MAGIC_NUMBER
 from . import cachefile, logs
 from .conf import settings
+
+
+# What tells one interpreter's marshalled code from another's. It comes from
+# `importlib.util`, which costs `contextlib`, `collections` and `functools` to
+# import for this one constant -- and the constant is already in memory before
+# any of our code runs, in the frozen module that implements importing. Read it
+# from there when it is there, and fall back to the public name when it is not,
+# because "the pack is invalidated correctly" is not something to gamble on an
+# implementation detail.
+try:
+    MAGIC_NUMBER = sys.modules['_frozen_importlib_external'].MAGIC_NUMBER
+except (KeyError, AttributeError):                           # pragma: no cover
+    from importlib.util import MAGIC_NUMBER
 
 # Bumped whenever the layout or the metadata extraction changes, so an older
 # pack is rebuilt instead of misread.
@@ -66,6 +77,24 @@ def _cache_path():
 
 
 # Metadata extraction ------------------------------------------------------
+
+
+# `ast` is a hundred kilobytes of Python with a C module underneath it, and it
+# is reached only when a rule has to be read from source -- when the pack is
+# being built, or when one rule in it has changed. A warm run unmarshals the
+# pack and never parses anything. So the name is bound here and the module
+# arrives when `_extract_metadata` first needs it; every helper below reads it
+# as a global, by which time it is there.
+ast = None
+
+
+def _load_ast():
+    """Binds `ast`, once, for the helpers below."""
+    global ast
+    if ast is None:
+        import ast as module
+
+        ast = module
 
 
 def _literal(node):
@@ -189,6 +218,8 @@ def _match_body_expression(node):
 
 
 def _extract_metadata(source, path):
+    _load_ast()
+
     """Reads what dispatch needs from a rule's syntax tree.
 
     Anything that isn't a plain literal is reported as unknown, which makes the

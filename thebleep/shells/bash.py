@@ -1,12 +1,14 @@
 import os
-from subprocess import Popen, PIPE
-from tempfile import gettempdir
-from uuid import uuid4
 from ..conf import settings
 from ..const import (ARGUMENT_PLACEHOLDER, USER_COMMAND_MARK,
                      get_alias)
-from ..utils import DEVNULL, memoize
+from ..utils import DEVNULL, load_subprocess, memoize
 from .generic import Generic, fit_transport
+
+
+# Bound the first time a process is started here; see `utils.load_subprocess`.
+Popen = None
+PIPE = None
 
 
 class Bash(Generic):
@@ -46,6 +48,14 @@ class Bash(Generic):
             '''.format(user_command_mark=mark,
                        app_alias=self.app_alias(alias_name))
         else:
+            # `tempfile` (which drags in `shutil`, `random` and `bisect`)
+            # and `uuid` (which drags in `platform`) are imported here rather
+            # than at the top of the module. Only instant mode's alias reaches
+            # this line; a correction never does, and it was paying to find and
+            # open seven modules for it.
+            from tempfile import gettempdir
+            from uuid import uuid4
+
             log_path = os.path.join(
                 gettempdir(), 'thebleep-script-log-{}'.format(uuid4().hex))
             return '''
@@ -97,6 +107,7 @@ class Bash(Generic):
 
     def _get_version(self):
         """Returns the version of the current shell"""
+        Popen, PIPE = load_subprocess(globals())
         proc = Popen(['bash', '-c', 'echo $BASH_VERSION'],
                      stdout=PIPE, stderr=DEVNULL)
         return proc.stdout.read().decode('utf-8').strip()
