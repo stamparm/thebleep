@@ -506,7 +506,7 @@ following rules are enabled by default:
 * `scm_correction` — corrects wrong scm like `hg log` to `git log`;
 * `sed_unterminated_s` — adds missing '/' to `sed`'s `s` commands;
 * `sl_ls` — changes `sl` to `ls`;
-* `ssh_known_hosts` — removes host from `known_hosts` on warning;
+* `ssh_known_hosts` — on a host key warning, suggests the `ssh-keygen -R` that ssh itself recommends, in front of your command, so you can see which key it drops before agreeing;
 * `sudo` — prepends `sudo` to the previous command if it failed because of permissions;
 * `sudo_command_from_user_path` — runs commands from users `$PATH` with `sudo`;
 * `switch_lang` — switches command from your local layout to en;
