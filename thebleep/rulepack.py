@@ -313,10 +313,15 @@ def command_apps(command):
     """The app names a command could plausibly be about.
 
     The first word, and the second as well when the first is `sudo`, because
-    `sudo_support` hands the unprefixed command to the rule.
+    `sudo_support` hands the unprefixed command to the rule. Environment
+    assignments in front of the command are skipped, exactly as `is_app` skips
+    them, so that dispatch and the rules agree on what the command is.
 
     """
+    from .utils import command_word_index
+
     parts = command.script_parts or command.script.split()
+    parts = parts[command_word_index(parts):]
     if not parts:
         return frozenset()
     apps = {os.path.basename(parts[0])}

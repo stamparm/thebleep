@@ -231,6 +231,20 @@ def replace_command(command, broken, matched):
             for new_cmd in new_cmds]
 
 
+# `FOO=bar command ...` runs `command` with `FOO` set for it; the assignments
+# in front of it are not the command being run.
+ENVIRONMENT_ASSIGNMENT = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
+
+
+def command_word_index(script_parts):
+    """Where the command starts, past any environment assignments."""
+    for index, part in enumerate(script_parts):
+        if not ENVIRONMENT_ASSIGNMENT.match(part):
+            return index
+
+    return len(script_parts)
+
+
 def is_app(command, *app_names, **kwargs):
     """Returns `True` if command is call to one of passed app names.
 
@@ -243,8 +257,11 @@ def is_app(command, *app_names, **kwargs):
     if kwargs:
         raise TypeError("got an unexpected keyword argument '{}'".format(kwargs.keys()))
 
-    if len(command.script_parts) > at_least:
-        return os.path.basename(command.script_parts[0]) in app_names
+    parts = command.script_parts
+    start = command_word_index(parts)
+
+    if len(parts) - start > at_least:
+        return os.path.basename(parts[start]) in app_names
 
     return False
 

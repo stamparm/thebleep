@@ -288,6 +288,12 @@ class TestDispatch(object):
         ('/usr/bin/git branch', {'git'}),
         ('sudo apt-get install vim', {'sudo', 'apt-get'}),
         ('sudo', {'sudo'}),
+        # Dispatch has to see past environment assignments, or the rules that
+        # do see past them never get consulted.
+        ('TERM=xterm-256color ssh example.com', {'ssh'}),
+        ('GIT_TRACE=1 LANG=C git branch', {'git'}),
+        ('TERM=1 sudo apt-get install vim', {'sudo', 'apt-get'}),
+        ('TERM=xterm-256color', set()),
     ])
     def test_command_apps(self, script, apps):
         assert rulepack.command_apps(Command(script, '')) == apps

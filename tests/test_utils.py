@@ -182,9 +182,28 @@ def test_get_all_matched_commands(stderr, result):
     ('/bin/hdfs dfs -rm foo', ['hdfs'], True),
     ('git diff', ['git', 'hub'], True),
     ('hub diff', ['git', 'hub'], True),
-    ('hg diff', ['git', 'hub'], False)])
+    ('hg diff', ['git', 'hub'], False),
+    # A command can be preceded by variables set just for it.
+    ('TERM=xterm-256color ssh example.com', ['ssh'], True),
+    ('GIT_TRACE=1 LANG=C git diff', ['git', 'hub'], True),
+    ('GIT_TRACE=1 /usr/bin/git diff', ['git'], True),
+    ('TERM=xterm-256color ssh example.com', ['term'], False),
+    # ...but a plain assignment is not a call to anything.
+    ('TERM=xterm-256color', ['ssh'], False),
+    ('not-an=assignment diff', ['diff'], False)])
 def test_is_app(script, names, result):
     assert is_app(Command(script, ''), *names) == result
+
+
+@pytest.mark.usefixtures('no_memoize')
+@pytest.mark.parametrize('script, at_least, result', [
+    ('TERM=1 git', 1, False),
+    ('TERM=1 git diff', 1, True),
+    ('TERM=1 A=2 git', 1, False),
+    ('TERM=1 A=2 git diff', 1, True)])
+def test_is_app_at_least_counts_from_the_command(script, at_least, result):
+    """`at_least` is about the command's own arguments, not the assignments."""
+    assert is_app(Command(script, ''), 'git', at_least=at_least) == result
 
 
 @pytest.mark.usefixtures('no_memoize')

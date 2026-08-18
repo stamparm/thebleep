@@ -6,11 +6,8 @@ commands = ('ssh', 'scp')
 
 @for_app(*commands)
 def match(command):
-    if not command.script:
-        return False
-    if not command.script.startswith(commands):
-        return False
-
+    # No `startswith` check: `for_app` has already established which command
+    # this is, and does it without being fooled by `TERM=xterm-256color ssh`.
     patterns = (
         r'WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!',
         r'WARNING: POSSIBLE DNS SPOOFING DETECTED!',
