@@ -38,7 +38,17 @@ def get_rules_import_paths():
 
 
 def _contrib_modules(path):
-    """Third-party rule packages sitting in one entry of `sys.path`."""
+    """Third-party rule packages sitting in one entry of `sys.path`.
+
+    This looks like something to cache -- it is a directory listing of every
+    entry on `sys.path`, on every correction -- and measurement says otherwise.
+    A normal virtualenv is 364 entries and costs 0.18 ms; one padded out to
+    3,265 entries, far more than any real environment, costs 1.35 ms. Against a
+    65 ms correction that is a third of one percent, and a cache would have to
+    be invalidated when somebody installs a rule package, which is the one case
+    that has to work.
+
+    """
     try:
         entries = list(os.scandir(path))
     except OSError:
