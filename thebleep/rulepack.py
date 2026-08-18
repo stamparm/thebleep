@@ -331,9 +331,17 @@ def _is_well_formed(entry, key):
     return True
 
 
-def entries_for(paths):
-    """Pack entries for `paths`, rebuilding whatever is missing or stale."""
+def entries_for(paths, stats=None):
+    """Pack entries for `paths`, rebuilding whatever is missing or stale.
+
+    `stats` maps a path to the `(mtime_ns, size)` a caller has already been told
+    -- by the directory listing it used to find these files in the first place.
+    Anything missing from it is asked for here, so a caller that has nothing to
+    offer loses nothing.
+
+    """
     cached = _read_pack()
+    stats = stats or {}
     entries = {}
     dirty = False
     for path in paths:
@@ -341,12 +349,16 @@ def entries_for(paths):
         entry = cached.get(key)
         if entry is not None and not _is_well_formed(entry, key):
             entry = None
-        try:
-            stat = os.stat(key)
-        except OSError:
-            continue
-        if not (entry and entry.get('mtime') == int(stat.st_mtime_ns)
-                and entry.get('size') == int(stat.st_size)):
+        known = stats.get(key)
+        if known is None:
+            try:
+                stat = os.stat(key)
+            except OSError:
+                continue
+            known = (int(stat.st_mtime_ns), int(stat.st_size))
+        mtime, size = known
+        if not (entry and entry.get('mtime') == mtime
+                and entry.get('size') == size):
             try:
                 entry = _build_entry(path)
             except Exception:
@@ -446,7 +458,7 @@ def candidate_entries(entries, command):
     return out
 
 
-def get_rules_for(command, paths):
+def get_rules_for(command, paths, stats=None):
     """Rules that could match `command`, or None to fall back to a full load.
 
     Returns rules sorted by priority, exactly as a full load would, having
@@ -459,7 +471,7 @@ def get_rules_for(command, paths):
     from .types import Rule
 
     try:
-        entries = entries_for(paths)
+        entries = entries_for(paths, stats)
     except Exception:
         logs.exception(u'Rule pack unusable, loading rules directly',
                        sys.exc_info())

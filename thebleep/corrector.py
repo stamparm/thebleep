@@ -58,18 +58,35 @@ def _contrib_modules(path):
 
 
 def _rule_files(directory):
-    """The rule files in a directory, in a stable order.
+    """The rule files in a directory with their size and mtime, path order.
 
     `os.scandir` rather than `Path.glob`: listing the bundled rules is done on
     every single invocation, and globbing them took longer than loading them.
+
+    The size and the timestamp come along because the listing has already been
+    told them and the rule pack is about to ask. Windows carries both in the
+    directory entry, so `DirEntry.stat()` there costs nothing, and the pack's own
+    `os.stat` of all 171 rules was the most expensive thing between a mistyped
+    command and a correction on the platform where a syscall is dearest.
 
     """
     try:
         entries = list(os.scandir(str(directory)))
     except OSError:
         return []
-    return sorted(entry.path for entry in entries
-                  if entry.name.endswith('.py'))
+
+    found = []
+    for entry in entries:
+        if not entry.name.endswith('.py'):
+            continue
+        try:
+            stat = entry.stat()
+        except OSError:
+            # Gone between the listing and the question. The pack asks again and
+            # reaches the same conclusion.
+            continue
+        found.append((entry.path, int(stat.st_mtime_ns), int(stat.st_size)))
+    return sorted(found)
 
 
 def get_rules(command=None):
@@ -84,11 +101,16 @@ def get_rules(command=None):
     :rtype: [Rule]
 
     """
-    paths = [rule_path for path in get_rules_import_paths()
-             for rule_path in _rule_files(path)]
+    listed = [row for path in get_rules_import_paths()
+              for row in _rule_files(path)]
+    paths = [path for path, _, _ in listed]
 
     if command is not None:
-        rules = rulepack.get_rules_for(command, paths)
+        # What the listing already knows, so the pack does not ask the
+        # filesystem all over again.
+        rules = rulepack.get_rules_for(
+            command, paths,
+            {path: (mtime, size) for path, mtime, size in listed})
         if rules is not None:
             return rules
 

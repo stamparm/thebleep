@@ -9,11 +9,19 @@ from thebleep.corrector import get_corrected_commands, organize_commands
 
 @pytest.fixture
 def glob(mocker):
-    """Stands in for the rule files found on disk."""
+    """Stands in for the rule files found on disk.
+
+    `_rule_files` hands back each path with the size and mtime the directory
+    listing already told it, so the rule pack does not ask the filesystem for all
+    of them a second time. Tests here care only about the paths, so the fixture
+    still takes those and fills the rest in.
+
+    """
     results = {}
     mocker.patch('thebleep.corrector._rule_files',
                  new_callable=lambda: lambda *_: results.pop('value', []))
-    return lambda value: results.update({'value': value})
+    return lambda paths: results.update(
+        {'value': [(path, 0, 0) for path in paths]})
 
 
 class TestGetRules(object):
