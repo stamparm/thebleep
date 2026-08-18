@@ -1,10 +1,10 @@
 import os
 import re
 from thebleep.utils import get_closest, replace_command
-from thebleep.specific.brew import get_brew_path_prefix, brew_available
+from thebleep.specific.brew import get_brew_repository, brew_available
 
-BREW_CMD_PATH = '/Homebrew/Library/Homebrew/cmd'
-TAP_PATH = '/Homebrew/Library/Taps'
+BREW_CMD_PATH = '/Library/Homebrew/cmd'
+TAP_PATH = '/Library/Taps'
 TAP_CMD_PATH = '/%s/%s/cmd'
 
 # `Error: Unknown command: brew instaa` today, and `Error: Invalid usage:` in
@@ -15,19 +15,19 @@ UNKNOWN_COMMAND = re.compile(r'Unknown command: (?:brew )?([\w.-]+)')
 enabled_by_default = brew_available
 
 
-def _get_brew_commands(brew_path_prefix):
+def _get_brew_commands(brew_repository):
     """To get brew default commands on local environment"""
-    brew_cmd_path = brew_path_prefix + BREW_CMD_PATH
+    brew_cmd_path = brew_repository + BREW_CMD_PATH
 
     return [name[:-3] for name in os.listdir(brew_cmd_path)
             if name.endswith(('.rb', '.sh'))]
 
 
-def _get_brew_tap_specific_commands(brew_path_prefix):
+def _get_brew_tap_specific_commands(brew_repository):
     """To get tap's specific commands
     https://github.com/Homebrew/homebrew/blob/master/Library/brew.rb#L115"""
     commands = []
-    brew_taps_path = brew_path_prefix + TAP_PATH
+    brew_taps_path = brew_repository + TAP_PATH
 
     for user in _get_directory_names_only(brew_taps_path):
         taps = _get_directory_names_only(brew_taps_path + '/%s' % user)
@@ -56,11 +56,11 @@ def _get_directory_names_only(path):
 
 
 def _brew_commands():
-    brew_path_prefix = get_brew_path_prefix()
-    if brew_path_prefix:
+    brew_repository = get_brew_repository()
+    if brew_repository:
         try:
-            return (_get_brew_commands(brew_path_prefix)
-                    + _get_brew_tap_specific_commands(brew_path_prefix))
+            return (_get_brew_commands(brew_repository)
+                    + _get_brew_tap_specific_commands(brew_repository))
         except OSError:
             pass
 

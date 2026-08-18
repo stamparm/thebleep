@@ -1,6 +1,7 @@
 import pytest
 from thebleep.rules.brew_unknown_command import match, get_new_command
 from thebleep.rules.brew_unknown_command import _brew_commands
+from thebleep.specific import brew
 from thebleep.types import Command
 
 
@@ -40,6 +41,49 @@ def test_match(brew_unknown_cmd, brew_unknown_cmd_legacy):
 def test_not_match_without_a_command_name():
     """The word is there but the message is not one this rule can read."""
     assert not match(Command('brew inst', 'Unknown command\n'))
+
+
+class TestWhereTheCommandsAreLookedFor(object):
+    """brew's own code lives under `brew --repository`, not `brew --prefix`.
+
+    The two are the same directory on an Apple Silicon Mac and on a git-cloned
+    install, and the prefix is one level above on an Intel Mac -- so a path
+    built out of the prefix finds nothing on most Macs sold since 2020.
+
+    """
+
+    @pytest.fixture
+    def repository(self, tmpdir, mocker):
+        cmd = tmpdir.mkdir('Library').mkdir('Homebrew').mkdir('cmd')
+        cmd.join('noodle.rb').write('')
+        cmd.join('spoon.sh').write('')
+        cmd.join('README.md').write('')
+
+        tap = tmpdir.join('Library').mkdir('Taps') \
+                    .mkdir('someone').mkdir('homebrew-fork').mkdir('cmd')
+        tap.join('brew-fondue.rb').write('')
+
+        mocker.patch(
+            'thebleep.rules.brew_unknown_command.get_brew_repository',
+            return_value=str(tmpdir))
+        return tmpdir
+
+    def test_the_commands_come_from_the_repository(self, repository):
+        commands = _brew_commands()
+        assert 'noodle' in commands
+        assert 'spoon' in commands
+        assert 'README.md' not in commands
+
+    def test_a_tap_brings_its_own_commands(self, repository):
+        assert 'fondue' in _brew_commands()
+
+
+def test_the_repository_is_what_brew_is_asked_for(mocker, no_memoize):
+    check_output = mocker.patch('subprocess.check_output',
+                                return_value='/opt/homebrew\n')
+
+    assert brew.get_brew_repository() == '/opt/homebrew'
+    assert check_output.call_args[0][0] == ['brew', '--repository']
 
 
 def test_get_new_command(brew_unknown_cmd, brew_unknown_cmd2):
