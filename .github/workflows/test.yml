@@ -54,7 +54,7 @@ jobs:
       # objects, which is a per-interpreter format, and the structural checks
       # walk the syntax tree, whose node types change between versions.
       - name: Run tests
-        run: pytest -q tests
+        run: pytest -q --durations=25 tests
 
       # Windows differs from POSIX in a handful of enumerable ways, and every
       # Windows-only failure so far has been one of them: `~` that cannot be
@@ -202,6 +202,8 @@ jobs:
       # alias spawns a fresh interpreter per correction, so starting up and
       # importing is paid every time. Only the scenarios that need no POSIX
       # shell, so the two platforms are running the same thing.
+      - name: What this platform is slow at
+        run: python bench/platform_cost.py
       - name: Which phase the time is in
         run: python bench/where_time_goes.py
       - name: What one correction costs
