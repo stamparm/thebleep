@@ -90,6 +90,8 @@ class TestIsInert(object):
         'eval deploy',
         'exec deploy',
         'command deploy',
+        # A builtin in every shell, even where /usr/bin/kill is missing.
+        'kill -9 1234',
         # Nothing to decide about.
         '',
         '   ',
@@ -164,6 +166,13 @@ class TestIsAllowed(object):
         settings.confirm_replay = True
         assert not replay.is_allowed('ll', 'deploy production')
         assert replay.is_allowed('ll', 'ls -lah')
+
+    def test_the_question_names_what_would_run(self, ask, settings,
+                                               interactive):
+        """Asking about `ll` would not tell the user what they are agreeing
+        to."""
+        replay.is_allowed('ll', 'deploy production')
+        ask.assert_called_once_with('deploy production')
 
 
 class TestAsk(object):

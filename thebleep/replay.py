@@ -36,10 +36,12 @@ LITERAL_PROGRAM = re.compile(r'^[\w./+:@,-]+$')
 # removes, `$(deploy)` and `` `deploy` `` run something else entirely.
 EFFECTIVE_SYNTAX = ('>', '<', '|', '&', ';', '(', ')', '`', '\n', '\r')
 
-# `sh` finds these without consulting PATH and they run whatever they are
-# handed, so "no such program" does not mean "does nothing" for them.
-EXECUTING_BUILTINS = frozenset({
-    '.', 'source', 'eval', 'exec', 'command', 'builtin', 'trap',
+# `sh` finds these without consulting PATH, so "no such program" says nothing
+# about them: the first six run whatever they are handed, and `kill` is a
+# builtin in every shell even where `/usr/bin/kill` is missing. The rest of the
+# builtins only affect the subshell, which is thrown away.
+EFFECTIVE_BUILTINS = frozenset({
+    '.', 'source', 'eval', 'exec', 'command', 'builtin', 'trap', 'kill',
 })
 
 # Commands that only read, whatever arguments they are given.
@@ -118,7 +120,7 @@ def is_inert(script):
         return True
 
     name = os.path.basename(program)
-    if name in EXECUTING_BUILTINS or program in EXECUTING_BUILTINS:
+    if name in EFFECTIVE_BUILTINS or program in EFFECTIVE_BUILTINS:
         return False
     if name in READ_ONLY:
         return True
@@ -165,4 +167,6 @@ def is_allowed(script, expanded):
             u"to ask on. Use --yes to allow it.".format(script))
         return False
 
-    return _ask(script)
+    # Asked about what would actually run, which an alias may have turned into
+    # something the user would not recognise from what they typed.
+    return _ask(expanded)
