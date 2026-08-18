@@ -204,7 +204,17 @@ class Rule(object):
         :rtype: Iterable[CorrectedCommand]
 
         """
-        new_commands = self.get_new_command(command)
+        # One rule's parsing going wrong is that rule's problem, the same way it
+        # already is in `is_match`. Without this it was everybody's: a rule that
+        # matched and then raised while working out its suggestion took the whole
+        # correction down with a traceback, including the suggestions every other
+        # rule had produced.
+        try:
+            new_commands = self.get_new_command(command)
+        except Exception:
+            logs.rule_failed(self, sys.exc_info())
+            return
+
         if not isinstance(new_commands, list):
             new_commands = (new_commands,)
         for n, new_command in enumerate(new_commands):

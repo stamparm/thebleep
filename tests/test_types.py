@@ -112,6 +112,22 @@ class TestRule(object):
         assert (list(rule.get_corrected_commands(Command('test', '')))
                 == [CorrectedCommand(script='test!', priority=100)])
 
+    def test_a_rule_that_raises_is_that_rule_s_problem(self, mocker):
+        """It used to be everybody's.
+
+        A rule that matched and then raised while working out its suggestion
+        took the correction down with a traceback, losing the suggestions the
+        other rules had already produced.
+
+        """
+        def explode(command):
+            raise IndexError('list index out of range')
+
+        failed = mocker.patch('thebleep.logs.rule_failed')
+        rule = Rule('exploder', get_new_command=explode, priority=100)
+        assert list(rule.get_corrected_commands(Command('test', ''))) == []
+        failed.assert_called_once()
+
 
 class TestCommand(object):
     @pytest.fixture(autouse=True)
