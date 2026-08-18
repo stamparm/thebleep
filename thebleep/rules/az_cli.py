@@ -1,5 +1,6 @@
 import re
 
+from thebleep.shells import shell
 from thebleep.utils import for_app, replace_argument
 
 # What `az` says when a word of the command itself is not one it knows, and the
@@ -36,5 +37,8 @@ def match(command):
 
 
 def get_new_command(command):
+    # Quoted: the suggestion is a word out of another program's output, and the
+    # result of this goes back to the shell to be evaluated.
     mistake, options = _mistake_and_options(command.output)
-    return [replace_argument(command.script, mistake, o) for o in options]
+    return [replace_argument(command.script, mistake, shell.quote(o))
+            for o in options]

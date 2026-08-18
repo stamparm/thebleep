@@ -1,4 +1,5 @@
 import re
+from thebleep.shells import shell
 from thebleep.utils import replace_argument, for_app
 
 
@@ -32,5 +33,8 @@ def get_new_command(command):
     if _install_meant_require(command):
         broken_cmd, new_cmd = 'install', 'require'
     else:
+        # Quoted: composer's suggestion is text from its output, and the result
+        # of this goes back to the shell to be evaluated.
         broken_cmd, new_cmd = _misspelled(command)
+        new_cmd = shell.quote(new_cmd)
     return replace_argument(command.script, broken_cmd, new_cmd)

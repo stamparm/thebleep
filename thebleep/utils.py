@@ -271,9 +271,22 @@ def get_all_matched_commands(stderr, separator='Did you mean'):
 
 
 def replace_command(command, broken, matched):
-    """Helper for *_no_command rules."""
+    """Helper for *_no_command rules.
+
+    The replacement is quoted. Every caller's `matched` comes from somewhere
+    outside: a tool's own output, `package.json`'s scripts, a Gruntfile's tasks,
+    a repository's branches. Those are names, and a name is allowed to contain
+    `;` or `$(...)` -- git accepts a branch called `feature;rm -rf ~`, npm
+    accepts a script called the same -- while the result of this goes back to
+    the shell to be evaluated. Quoting a plain word leaves it exactly as it was,
+    so this costs the ordinary case nothing.
+
+    """
+    from thebleep.shells import shell
+
     new_cmds = get_close_matches(broken, matched, cutoff=0.1)
-    return [replace_argument(command.script, broken, new_cmd.strip())
+    return [replace_argument(command.script, broken,
+                             shell.quote(new_cmd.strip()))
             for new_cmd in new_cmds]
 
 

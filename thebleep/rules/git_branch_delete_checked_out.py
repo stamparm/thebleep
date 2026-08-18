@@ -44,6 +44,10 @@ def match(command):
 
 @git_support
 def get_new_command(command):
-    return shell.and_("git checkout {}".format(_default_branch()), "{}").format(
+    # The branch name is quoted: it comes from the repository, by way of
+    # `origin/HEAD`, and git is happy for a branch to be called
+    # `main;rm -rf ~`.
+    return shell.and_("git checkout {}".format(shell.quote(_default_branch())),
+                      "{}").format(
         replace_argument(command.script, "-d", "-D")
     )

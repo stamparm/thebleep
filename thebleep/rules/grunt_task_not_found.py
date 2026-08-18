@@ -1,5 +1,6 @@
 import re
 from subprocess import Popen, PIPE
+from thebleep.shells import shell
 from thebleep.utils import for_app, eager, get_closest, cache
 
 regex = re.compile(r'Warning: Task "(.*)" not found.')
@@ -32,6 +33,8 @@ def _get_all_tasks():
 def get_new_command(command):
     misspelled_task = regex.findall(command.output)[0].split(':')[0]
     tasks = _get_all_tasks()
+    # The task name is quoted: it is a key in the repository's Gruntfile, so
+    # it can be any string at all, and the result goes back to the shell.
     fixed = get_closest(misspelled_task, tasks)
     return command.script.replace(' {}'.format(misspelled_task),
-                                  ' {}'.format(fixed))
+                                  ' {}'.format(shell.quote(fixed)))

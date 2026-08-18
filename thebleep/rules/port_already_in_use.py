@@ -16,9 +16,13 @@ def _get_pid_by_port(port):
     proc = Popen(['lsof', '-i', ':{}'.format(port)], stdout=PIPE)
     lines = proc.stdout.read().decode().split('\n')
     if len(lines) > 1:
-        return lines[1].split()[1]
-    else:
-        return None
+        columns = lines[1].split()
+        # A pid, or nothing. `kill {}` is built from this and handed to the
+        # shell, so a warning line where the header was expected must not
+        # become part of a command.
+        if len(columns) > 1 and columns[1].isdigit():
+            return columns[1]
+    return None
 
 
 @memoize
