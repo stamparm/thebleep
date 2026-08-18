@@ -1,7 +1,5 @@
-import os
 import msvcrt
-from pathlib import Path
-import win_unicode_console
+from pathlib import Path  # noqa: F401
 from .. import const
 from .streams import use_utf8
 
@@ -11,8 +9,11 @@ def init_output():
 
     # Before colorama, which replaces the streams with proxies that have no
     # encoding of their own to set.
+    #
+    # `win_unicode_console.enable()` used to be here too. CPython has spoken
+    # Unicode to the Windows console natively since 3.6 (PEP 528 and PEP 529),
+    # the package has been unmaintained since 2018, and this requires 3.9.
     use_utf8()
-    win_unicode_console.enable()
     colorama.init()
 
 
@@ -45,9 +46,12 @@ def open_command(arg):
     return 'cmd /c start ' + shell.quote(arg)
 
 
-def _expanduser(self):
-    return self.__class__(os.path.expanduser(str(self)))
-
-
-# pathlib's expanduser fails on windows, see http://bugs.python.org/issue19776
-Path.expanduser = _expanduser
+# `Path.expanduser = ...` used to be here, replacing pathlib's own with one
+# built on `os.path.expanduser`, for http://bugs.python.org/issue19776 -- which
+# was fixed in Python 3.5, four releases before the oldest one this supports.
+#
+# It was also a monkeypatch of the standard library for the whole process,
+# imposed on every other package in the interpreter, and it changed the
+# behaviour: pathlib raises RuntimeError when it cannot work out where home is,
+# and `os.path.expanduser` quietly hands back the `~` unexpanded, which is a
+# path that does not exist and is much harder to explain.

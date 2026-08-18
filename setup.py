@@ -47,19 +47,42 @@ here = os.path.dirname(os.path.abspath(__file__))
 with io.open(os.path.join(here, 'README.md'), encoding='utf-8') as readme:
     long_description = for_pypi(readme.read())
 
-install_requires = ['psutil', 'colorama', 'decorator', 'pyte']
-extras_require = {":sys_platform=='win32'": ['win_unicode_console']}
+# What the package needs at run time.
+#
+# `decorator` is gone: `utils.decorator` is four lines of our own and nothing
+# imports the package any more. `colorama` is Windows-only: `logs` spells out the
+# handful of escape codes it uses, and only `system.win32` needs the real thing,
+# to install a console handler. `win_unicode_console` is gone as well -- CPython
+# has spoken Unicode to the Windows console natively since 3.6 (PEP 528 and 529)
+# and this package requires 3.9.
+#
+# The floors are versions the test suite has actually been run against, not
+# guesses; see the minimum-dependencies job in .github/workflows/test.yml.
+install_requires = ['psutil>=5.9.0', 'pyte>=0.8.0']
+extras_require = {":sys_platform=='win32'": ['colorama>=0.4.6']}
 
-if sys.platform == "win32":
-    scripts = ['scripts\\bleep.bat', 'scripts\\bleep.ps1']
-    entry_points = {'console_scripts': [
-        'thebleep = thebleep.entrypoints.main:main',
-        'thebleep_firstuse = thebleep.entrypoints.not_configured:main']}
-else:
-    scripts = []
-    entry_points = {'console_scripts': [
-        'thebleep = thebleep.entrypoints.main:main',
-        'bleep = thebleep.entrypoints.not_configured:main']}
+# One wheel, the same everywhere.
+#
+# These used to be chosen by `sys.platform` while the package was being *built*,
+# which decides nothing useful: a pure-Python wheel is `py3-none-any` and is
+# installed on Windows without setup.py running again. So the wheel PyPI serves
+# to a Windows user had the POSIX entry points in it and none of the Windows
+# ones, whichever machine happened to build it.
+#
+# What went with the branch was `scripts/bleep.bat` and `scripts/bleep.ps1`.
+# `bleep.bat` drove a correction loop for cmd.exe, which is not one of the shells
+# this supports and which nothing tested; and under PATHEXT a `bleep.exe` from
+# the entry point below is found before a `bleep.bat` anyway, so it could not
+# have run. `bleep.ps1` printed first-use instructions, which is what
+# `not_configured` does, while writing an obsolete PYTHONIOENCODING line into
+# the user's $PROFILE.
+#
+# On Windows `bleep` becomes `bleep.exe`, and PowerShell resolves a function
+# before an external command, so the alias shadows it once configured -- and
+# before that it is exactly the first-use message it should be.
+entry_points = {'console_scripts': [
+    'thebleep = thebleep.entrypoints.main:main',
+    'bleep = thebleep.entrypoints.not_configured:main']}
 
 setup(name='thebleep',
       version=VERSION,
@@ -105,5 +128,4 @@ setup(name='thebleep',
       python_requires='>=3.9',
       install_requires=install_requires,
       extras_require=extras_require,
-      scripts=scripts,
       entry_points=entry_points)
