@@ -27,8 +27,8 @@ FONT = ("ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, "
 FONT_SIZE = 15.0
 CHAR = FONT_SIZE * 0.6
 LINE = 23.0
-COLUMNS = 74
-PADDING = 22.0
+COLUMNS = 79
+PADDING = 24.5           # 79 columns and this padding make the chart's width
 CHROME = 36.0
 
 # Terminal colours, close enough to a default palette to look familiar and
@@ -267,6 +267,14 @@ def main(argv):
         argv = argv[:index] + argv[index + 2:]
 
     scene, total = demo()
+
+    # The loop starts on the finished screen rather than on an empty one.
+    # Anywhere the animation does not run -- a reader who scrolled past, a
+    # printed page, a client that renders the first frame and stops -- an empty
+    # terminal is a wasted picture, and the whole correction is the useful one.
+    if at is None:
+        at = scene.now
+
     svg = render(scene, total, at)
     path = argv[1] if len(argv) > 1 else 'assets/demo.svg'
     with open(path, 'w') as handle:

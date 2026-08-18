@@ -1,21 +1,44 @@
 # The Bleep [![Version][version-badge]][version-link] [![Build Status][workflow-badge]][workflow-link] [![MIT License][license-badge]](LICENSE.md)
 
-**A fast, maintained successor to [The Fuck](https://github.com/nvbn/thefuck).**
+**The maintained successor to [The Fuck](https://github.com/nvbn/thefuck).**
 
-*The Bleep* fixes mistakes in your previous console command, just like *The Fuck*,
-but with current Python support, active maintenance, and a much faster hot path.
-It is based on the original codebase by Vladimir Iakovlev and its contributors;
-their work and history remain fully credited.
+Type the command wrong. Type `bleep`. Run the right one.
 
-[![gif with examples][examples-link]][examples-link]
+![The Bleep correcting a mistyped command](assets/demo.svg)
 
-## Why The Bleep?
+## Get it
 
-The original idea is still great. The implementation just needed to catch up.
+```bash
+curl -fsSL https://raw.githubusercontent.com/stamparm/thebleep/master/install.sh | sh
+```
 
-Same machine, same Python 3.11, 30 runs each, median timings:
+That picks up whichever of `uv`, `pipx` or `pip` you already have, and prints
+the one line to add to your shell's startup file. Prefer to do it yourself:
 
-| What you do | The Fuck 3.32 | The Bleep | Improvement |
+```bash
+uv tool install thebleep          # or: pipx install thebleep
+thebleep --alias-loader >> ~/.bashrc
+```
+
+Open a new shell, and the next time you mistype something, type `bleep`.
+[The long version](#installation), including the muscle memory you already
+have:
+
+```bash
+thebleep --alias-loader fuck >> ~/.bashrc
+```
+
+## Why not just The Fuck
+
+Because the idea deserves better than its last release. *The Fuck* 3.32 is from
+January 2022: it cannot start on Python 3.12 or newer, over three hundred
+issues are open on it, and a good number of its rules quietly stopped matching
+when the tools they correct changed what they print. *The Bleep* is the same
+tool, maintained -- and several times quicker about it.
+
+![The Bleep against The Fuck, by scenario](assets/benchmark.svg)
+
+| What you do | The Fuck 3.32 | The Bleep | |
 | --- | ---: | ---: | ---: |
 | Open a shell (`--alias` in your rc) | 205 ms | 38 ms | **5.4x** |
 | Open a shell (`--alias-loader`) | 205 ms | 0.3 ms | **no Python at startup** |
@@ -23,55 +46,45 @@ Same machine, same Python 3.11, 30 runs each, median timings:
 | Correct when nothing matches | 336 ms | 72 ms | **4.7x** |
 | Correct after 1 MB of output | 3246 ms | 134 ms | **24.2x** |
 
-The benchmark harness and raw result used for these numbers are included in
-[`bench/`](bench/README.md) and `bench/results/final.json`. See
-[Performance](#performance) for methodology and implementation details.
+Median of 30 runs, same machine, same Python 3.11. The harness is
+[`bench/`](bench/README.md), the run these numbers come from is
+[`bench/results/final.json`](bench/results/final.json), and the chart is drawn
+from that file rather than typed in beside it. [Reproduce it, and read where
+the time went](#performance).
 
-Other reasons to switch:
+The rest of the reasons:
 
-- Python **3.9-3.14** support;
-- active maintenance of the original rule ecosystem;
-- much lower shell-startup overhead;
-- faster rule dispatch and executable lookup;
-- large command output no longer deadlocks the correction path;
-- Bash, Zsh, Fish, tcsh and Windows shell support inherited and maintained;
-- you can still use `fuck` as your alias if you prefer it.
+- **Python 3.9 through 3.14**, tested on Linux, macOS and Windows on every one
+  of them &ndash; and Bash, Zsh, Fish, tcsh and PowerShell as before.
+- **29 issues from *The Fuck*'s backlog are fixed here** &ndash; three of them
+  command injections &ndash; plus the rules that had rotted against current
+  `git`, `npm`, `docker`, `cargo`, `brew`, `gem`, `az`, `gradle` and
+  `terraform`. [What's fixed](#whats-fixed).
+- **It asks before running your previous command a second time.** Reading what
+  your command printed used to mean running it again, side effects and all.
+  [Safe by default](#safe-by-default).
+- **Nothing to relearn.** Same rules, same settings, same `fuck` alias if you
+  want it. [Coming from The Fuck](#coming-from-the-fuck).
 
-## Quick start
+*The Bleep* is based on the original codebase by Vladimir Iakovlev and its
+contributors; their work and history remain fully credited.
 
-Install:
+## Contents
 
-```bash
-pip install thebleep
-```
-
-Add the normal alias to your shell configuration:
-
-```bash
-eval "$(thebleep --alias)"
-```
-
-Or avoid starting Python when your shell starts:
-
-```bash
-thebleep --alias-loader >> ~/.bashrc
-```
-
-Then make a mistake:
-
-```bash
-$ git brnch
-git: 'brnch' is not a git command. See 'git --help'.
-
-$ bleep
-git branch [enter/↑/↓/ctrl+c/esc]
-```
-
-Want the old muscle memory?
-
-```bash
-eval "$(thebleep --alias fuck)"
-```
+1. [Safe by default](#safe-by-default)
+2. [Coming from The Fuck](#coming-from-the-fuck)
+3. [What's fixed](#whats-fixed)
+4. [Supported everything](#supported-everything)
+5. [Installation](#installation)
+6. [Updating](#updating)
+7. [How it works](#how-it-works)
+8. [Creating your own rules](#creating-your-own-rules)
+9. [Settings](#settings)
+10. [Third-party packages with rules](#third-party-packages-with-rules)
+11. [Experimental instant mode](#experimental-instant-mode)
+12. [Performance](#performance)
+13. [Developing](#developing)
+14. [License](#license-mit)
 
 ## Safe by default
 
@@ -109,71 +122,167 @@ Two ways to stop being asked:
   anything again, so the question never comes up. This is the better answer if
   your shell supports it.
 - **`confirm_replay = False`** in your settings, or `--yes` for a single run,
-  which restores the pre-1.0 behaviour of running the previous command again
+  which restores *The Fuck*'s behaviour of running the previous command again
   without asking.
 
-## Contents
+## Coming from The Fuck
 
-1. [Requirements](#requirements)
-2. [Installation](#installation)
-3. [Updating](#updating)
-4. [How it works](#how-it-works)
-5. [Creating your own rules](#creating-your-own-rules)
-6. [Settings](#settings)
-7. [Third-party packages with rules](#third-party-packages-with-rules)
-8. [Experimental instant mode](#experimental-instant-mode)
-9. [Performance](#performance)
-10. [Developing](#developing)
-11. [License](#license-mit)
+Nothing is relearned. The rules, the settings and the flags are the ones you
+already know; the names changed and the config moved.
 
-## Requirements
+```bash
+pip uninstall thefuck                       # optional, they coexist happily
+cp -r ~/.config/thefuck ~/.config/thebleep  # settings.py and your own rules
+```
 
-- python (3.9+)
-- pip
-- python-dev
+Then swap the line in your startup file. Keeping the word you are used to is
+one argument:
+
+```bash
+thebleep --alias-loader fuck >> ~/.bashrc   # and delete the thefuck line
+```
+
+What to know:
+
+- `THEFUCK_*` environment variables are `THEBLEEP_*`. The names after the
+  prefix are unchanged.
+- Config is `$XDG_CONFIG_HOME/thebleep/settings.py`, and your own rules go in
+  `$XDG_CONFIG_HOME/thebleep/rules`. The settings themselves are the same, so
+  the file copies straight over.
+- A rule of your own that imports `thefuck.utils` wants `thebleep.utils`. That
+  is the whole of the port.
+- A rule *package* of your own is `thebleep_contrib_*` rather than
+  `thefuck_contrib_*`.
+- One behaviour is deliberately different: *The Bleep* asks before running your
+  previous command a second time. `confirm_replay = False` in your settings
+  restores what you are used to, and
+  [Reading the previous command](#reading-the-previous-command) explains why
+  you might not want to.
+
+##### [Back to Contents](#contents)
+
+## What's fixed
+
+Every commit that fixes a reported problem names the issue it fixes, so this is
+`git log --grep 'nvbn/thefuck#'` rather than a claim in a README. Twenty-nine
+upstream issues so far, and the rest found by running the tools.
+
+**It starts on current Python.** `distutils` was removed in 3.12 and *The Fuck*
+imports it, so it cannot run there at all; `pkg_resources` and `imp` were going
+the same way. All three are gone, Python 2 support went with them, and the
+suite runs on 3.9 through 3.14 on Linux, macOS and Windows.
+&nbsp;<sub>[#1499](https://github.com/nvbn/thefuck/issues/1499)
+[#1610](https://github.com/nvbn/thefuck/issues/1610)
+[#1552](https://github.com/nvbn/thefuck/issues/1552)
+[#1479](https://github.com/nvbn/thefuck/issues/1479)
+[#873](https://github.com/nvbn/thefuck/issues/873)</sub>
+
+**Three ways a command could be turned into a different command.** Text that
+came out of the failed command's own output -- a filename, a branch, a URL --
+was pasted into the correction unquoted, and the `sudo` rule handed a
+re-quoted script to `sh -c` as root. All three are quoted now, with tests that
+run the result through a real shell and check what the program actually
+received.
+&nbsp;<sub>[#1531](https://github.com/nvbn/thefuck/issues/1531)
+[#1606](https://github.com/nvbn/thefuck/issues/1606)</sub>
+
+**It asks before running your command again.** To correct a command you have to
+know what it printed, and a shell keeps no record, so the command is run a
+second time -- `deploy`, `git push`, `rm`, whatever it was, before you have
+agreed to anything. It asks first now, except where running it again provably
+cannot do anything.
+&nbsp;<sub>[#1126](https://github.com/nvbn/thefuck/issues/1126)</sub>
+
+**Rules that had quietly stopped matching.** A rule that looks for a string in
+a tool's output stops working the day that tool rewords it, silently, and
+nothing in a test suite of fixtures notices. These were found by mistyping
+commands at the installed binaries and reading what came back: `npm` 7+,
+`cargo` 1.73+, `docker` 25+, `git` (`main` rather than `master`, and repository
+ownership), `brew` 4 (five of its seven rules), `gem` 3.2+, `az`, `gradle` 8 and
+`terraform` 1.x.
+&nbsp;<sub>[#1320](https://github.com/nvbn/thefuck/issues/1320)
+[#1172](https://github.com/nvbn/thefuck/issues/1172)
+[#1341](https://github.com/nvbn/thefuck/issues/1341)
+[#1313](https://github.com/nvbn/thefuck/issues/1313)
+[#1376](https://github.com/nvbn/thefuck/issues/1376)</sub>
+
+**Crashes, and the places it did not work at all.** An unreadable process tree,
+a process that exits while being killed, no terminal attached, a closed pipe,
+`set -u`, an empty alias, Fish's history moving to the XDG data directory, a
+command on Windows whose file is not spelled the way you typed it, and your
+environment being printed into debug output.
+&nbsp;<sub>[#1600](https://github.com/nvbn/thefuck/issues/1600)
+[#1509](https://github.com/nvbn/thefuck/issues/1509)
+[#1026](https://github.com/nvbn/thefuck/issues/1026)
+[#1040](https://github.com/nvbn/thefuck/issues/1040)
+[#1562](https://github.com/nvbn/thefuck/issues/1562)
+[#1539](https://github.com/nvbn/thefuck/issues/1539)
+[#1355](https://github.com/nvbn/thefuck/issues/1355)
+[#1551](https://github.com/nvbn/thefuck/issues/1551)
+[#1258](https://github.com/nvbn/thefuck/issues/1258)
+[#1209](https://github.com/nvbn/thefuck/issues/1209)
+[#1296](https://github.com/nvbn/thefuck/issues/1296)
+[#995](https://github.com/nvbn/thefuck/issues/995)
+[#1506](https://github.com/nvbn/thefuck/issues/1506)</sub>
+
+**And it is quicker**, which has [a section of its own](#performance).
+
+##### [Back to Contents](#contents)
+
+## Supported everything
+
+| | |
+| --- | --- |
+| **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
+| **Systems** | Linux, macOS, Windows &ndash; every Python on every one of them, on every push |
+| **Shells** | Bash, Zsh, Fish, tcsh, PowerShell, and Windows `cmd` |
+| **Rules** | 170 of them, for git, docker, npm, yarn, pip, apt, dnf, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+
+Bash, Zsh, Fish and tcsh are exercised end to end, in containers, driving a real
+terminal: the tests type a wrong command into the shell, type the alias, and
+check what the shell then runs. The Python suite covers all six.
 
 ##### [Back to Contents](#contents)
 
 ## Installation
 
-Install *The Bleep* by using `pip`:
+The one-liner picks up whichever of `uv`, `pipx` or `pip` you already have,
+never asks for `sudo`, and never edits a file of yours:
 
 ```bash
-pip install thebleep
+curl -fsSL https://raw.githubusercontent.com/stamparm/thebleep/master/install.sh | sh
 ```
 
-On Ubuntu / Mint, the Python development packages are needed first:
+Read it first if you like &ndash; that is the same file as
+[`install.sh`](install.sh) in this repository, and `sh install.sh --dry-run`
+prints what it would run without running it.
+
+Or do it by hand, in whichever way you install command line tools:
 
 ```bash
-sudo apt update
-sudo apt install python3-dev python3-pip python3-setuptools
-pip3 install thebleep --user
+uv tool install thebleep      # https://docs.astral.sh/uv/
+pipx install thebleep         # https://pipx.pypa.io/
+pip install --user thebleep   # if your distribution lets pip write there
 ```
+
+The first two put *The Bleep* in an environment of its own, which is what you
+want for a tool rather than a library: nothing you `pip install` later can break
+it. On Debian, Ubuntu and Fedora, `pip install --user` is refused outright
+([PEP 668](https://peps.python.org/pep-0668/)) &ndash; use `uv` or `pipx` there.
 
 <a href='#manual-installation' name='manual-installation'>#</a>
-It is recommended that you place this command in your `.bash_profile`,
-`.bashrc`, `.zshrc` or other startup script:
+### The alias, and why it costs nothing
 
-```bash
-eval $(thebleep --alias)
-# You can use whatever you want as an alias, like for Mondays:
-eval $(thebleep --alias BLEEP)
-# Including the alias you may already be used to:
-eval $(thebleep --alias fuck)
-```
-
-### Startup that costs nothing
-
-The line above starts a Python interpreter every time you open a shell. To
-avoid that, append the *loader* to your startup file once instead:
+Append the *loader* to your `.bashrc`, `.zshrc` or other startup script, once:
 
 ```bash
 thebleep --alias-loader >> ~/.bashrc        # or ~/.zshrc, etc.
 ```
 
 That writes a few lines of shell that define the alias the first time you use
-it, and nothing before. It is static — it does not need regenerating when The
-Bleep is upgraded, because all it does is call `thebleep --alias` on first use:
+it, and nothing before — so opening a shell costs nothing at all. It is static:
+it does not need regenerating when The Bleep is upgraded, because all it does is
+call `thebleep --alias` on first use.
 
 ```bash
 bleep() {
@@ -182,11 +291,36 @@ bleep() {
 }
 ```
 
-Use `eval $(thebleep --alias)` instead if you would rather pay at startup, and
-for the experimental instant mode, which has to set your prompt up front.
+Any name you like, including the one your fingers already know:
 
-[Shell-specific alias instructions (Bash, Zsh, Fish, Powershell, tcsh) are in *The Fuck*'s wiki](https://github.com/nvbn/thefuck/wiki/Shell-aliases)
-and still apply, with `thefuck` replaced by `thebleep`.
+```bash
+thebleep --alias-loader BLEEP >> ~/.bashrc   # for Mondays
+thebleep --alias-loader fuck >> ~/.bashrc
+```
+
+### Paying at startup instead
+
+`eval $(thebleep --alias)` in your startup file does the same job by starting a
+Python interpreter every time you open a shell, which is the 38 ms in the table
+above rather than a third of a millisecond. Use it if you prefer it, and for the
+experimental instant mode, which has to set your prompt up front.
+
+### Your shell
+
+`--alias-loader` writes the right thing for the shell you run it from, so the
+only difference between shells is the file it goes in:
+
+| Shell | |
+| --- | --- |
+| Bash | `thebleep --alias-loader >> ~/.bashrc` |
+| Zsh | `thebleep --alias-loader >> ~/.zshrc` |
+| Fish | `thebleep --alias-loader >> ~/.config/fish/config.fish` |
+| tcsh | `thebleep --alias-loader >> ~/.cshrc` |
+| PowerShell | `thebleep --alias-loader >> $profile` |
+
+[The shell-specific notes in *The Fuck*'s
+wiki](https://github.com/nvbn/thefuck/wiki/Shell-aliases) still apply too, with
+`thefuck` replaced by `thebleep`.
 
 Changes are only available in a new shell session. To make changes immediately
 available, run `source ~/.bashrc` (or your shell config file like `.zshrc`).
@@ -207,17 +341,23 @@ bleep -r
 
 ## Updating
 
+However you installed it:
+
 ```bash
-pip3 install thebleep --upgrade
+uv tool upgrade thebleep
+pipx upgrade thebleep
+pip install --user --upgrade thebleep
 ```
 
-**Note: Alias functionality was changed in v1.34 of *The Fuck*, the upstream project**
+Or run the one-liner again, which upgrades in place. The alias line in your
+startup file never needs regenerating &ndash; all it does is call
+`thebleep --alias` the first time you use it.
 
 ## Uninstall
 
-To remove *The Bleep*, reverse the installation process:
-- erase or comment *thebleep* alias line from your Bash, Zsh, Fish, Powershell, tcsh, ... shell config
-- use `pip` (or `pip3`) to uninstall the binaries
+Reverse the two steps: delete the *thebleep* line from your shell's startup
+file, then remove the package with `uv tool uninstall thebleep`,
+`pipx uninstall thebleep` or `pip uninstall thebleep`.
 
 ## How it works
 
@@ -558,13 +698,15 @@ thebleep_contrib_foo
 
 ## Experimental instant mode
 
-The default behavior of *The Bleep* requires time to re-run previous commands.
-When in instant mode, *The Bleep* saves time by logging output with [script](https://en.wikipedia.org/wiki/Script_(Unix)),
-then reading the log.
+Correcting a command means knowing what it printed, which normally means running
+it again &ndash; the reason *The Bleep*
+[asks first](#reading-the-previous-command). Instant mode takes the other way
+out: it records your session with [script](https://en.wikipedia.org/wiki/Script_(Unix))
+as it happens and reads the log, so the previous command never runs twice and
+the question never comes up. It is the better answer where it works, and it is
+also the faster one.
 
-[![gif with instant mode][instant-mode-gif-link]][instant-mode-gif-link]
-
-Currently, instant mode only supports Python 3 with bash or zsh. zsh's autocorrect function also needs to be disabled in order for thebleep to work properly.
+Currently, instant mode only supports bash and zsh. zsh's autocorrect function also needs to be disabled in order for thebleep to work properly.
 
 To enable instant mode, add `--enable-experimental-instant-mode`
 to the alias initialization in `.bashrc`, `.bash_profile` or `.zshrc`.
@@ -579,18 +721,12 @@ eval $(thebleep --alias --enable-experimental-instant-mode)
 
 ## Performance
 
-*The Bleep* is substantially faster than *The Fuck*, and the numbers are meant
-to be checked rather than believed. Same machine, same Python, 30 runs each,
-medians, measured with the harness in [`bench/`](bench/README.md). The
-run behind this table is committed as `bench/results/final.json`:
-
-| What you do | The Fuck 3.32 | The Bleep | |
-| --- | ---: | ---: | ---: |
-| Open a shell (`--alias` in your rc) | 205 ms | 38 ms | **5.4x** |
-| Open a shell (pasted `--alias-loader`) | 205 ms | 0.3 ms | **no Python at all** |
-| Correct a mistyped command | 240 ms | 57 ms | **4.2x** |
-| Correct when nothing matches | 336 ms | 72 ms | **4.7x** |
-| Correct after a command printed a megabyte | 3246 ms | 134 ms | **24.2x** |
+The numbers are [at the top](#why-not-just-the-fuck), and they are meant to be
+checked rather than believed. Same machine, same Python, 30 runs each, medians,
+measured with the harness in [`bench/`](bench/README.md); the run they come from
+is committed as [`bench/results/final.json`](bench/results/final.json), and the
+chart is generated from that file by
+[`assets/make_benchmark.py`](assets/make_benchmark.py).
 
 The shell startup row is not a typo: with the loader pasted into your rc, a
 shell takes 2.5 ms to start against 2.2 ms with nothing configured at all, so
@@ -646,10 +782,8 @@ Project License can be found [here](LICENSE.md).
 
 [version-badge]:   https://img.shields.io/pypi/v/thebleep.svg?label=version
 [version-link]:    https://pypi.python.org/pypi/thebleep/
-[workflow-badge]:  https://github.com/stamparm/thebleep/workflows/Tests/badge.svg
-[workflow-link]:   https://github.com/stamparm/thebleep/actions?query=workflow%3ATests
+[workflow-badge]:  https://github.com/stamparm/thebleep/actions/workflows/test.yml/badge.svg
+[workflow-link]:   https://github.com/stamparm/thebleep/actions/workflows/test.yml
 [license-badge]:   https://img.shields.io/badge/license-MIT-007EC7.svg
-[examples-link]:   https://raw.githubusercontent.com/stamparm/thebleep/master/example.gif
-[instant-mode-gif-link]:   https://raw.githubusercontent.com/stamparm/thebleep/master/example_instant_mode.gif
 
 ##### [Back to Contents](#contents)
