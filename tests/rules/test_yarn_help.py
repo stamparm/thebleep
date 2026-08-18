@@ -72,6 +72,8 @@ def test_a_hostile_url_stays_one_argument(url):
     output = 'Visit {} for documentation about this command.'.format(url)
     new_command = get_new_command(Command('yarn help clean', output))
 
-    opener, argument = shlex.split(new_command)
-    assert opener in ('xdg-open', 'open')
-    assert argument == url
+    # Whatever this platform's opener is — `xdg-open URL`, `open URL` or
+    # `cmd /c start URL` — the URL has to be the whole of its last argument.
+    opener = shlex.split(open_command('PLACEHOLDER'))
+    assert opener[-1] == 'PLACEHOLDER'
+    assert shlex.split(new_command) == opener[:-1] + [url]

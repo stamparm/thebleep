@@ -37,9 +37,13 @@ SHOULD_NOT_BE_IMPORTED = [
 ]
 
 # Windows has to have its console set up before anything is written, and
-# `win_unicode_console` imports these on the way in. That is a dependency doing
-# it rather than us, so the guard steps aside when it is the one responsible.
-IMPORTED_BY_THE_WINDOWS_CONSOLE = {'traceback'}
+# `win_unicode_console.readline_hook` imports `traceback` on the way in. From
+# Python 3.14 `traceback` pulls `dataclasses` with it, by way of the `ast` and
+# `inspect` machinery behind its nicer error messages. That is a dependency
+# doing it rather than us, so the guard steps aside when it is the one
+# responsible — `pprint`, our own reason for not wanting `dataclasses`, is
+# still guarded on every platform.
+IMPORTED_BY_THE_WINDOWS_CONSOLE = {'traceback', 'dataclasses'}
 
 
 def _imported_modules(env=None):

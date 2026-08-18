@@ -196,6 +196,58 @@ class TestAsk(object):
         assert replay._ask('deploy') is expected
 
 
+class TestTheChokePoint(object):
+    """The gate has to be the only way to the rerun, on every platform."""
+
+    @pytest.fixture(autouse=True)
+    def readers(self, mocker):
+        mocker.patch('thebleep.output_readers.shell_logger.is_available',
+                     return_value=False)
+        return mocker.patch('thebleep.output_readers.rerun.get_output',
+                            return_value='output')
+
+    def test_a_refusal_stops_the_rerun(self, readers, mocker, settings):
+        from thebleep import output_readers
+
+        settings.instant_mode = False
+        mocker.patch('thebleep.replay.is_allowed', return_value=False)
+        assert output_readers.get_output('deploy', 'deploy') is None
+        assert not readers.called, 'the rerun was reached anyway'
+
+    def test_permission_lets_it_through(self, readers, mocker, settings):
+        from thebleep import output_readers
+
+        settings.instant_mode = False
+        mocker.patch('thebleep.replay.is_allowed', return_value=True)
+        assert output_readers.get_output('deploy', 'deploy') == 'output'
+        readers.assert_called_once_with('deploy', 'deploy')
+
+    def test_the_gate_is_asked_about_both_forms(self, readers, mocker,
+                                                settings):
+        """It judges the expansion and names it, so it needs both."""
+        from thebleep import output_readers
+
+        settings.instant_mode = False
+        allowed = mocker.patch('thebleep.replay.is_allowed', return_value=True)
+        output_readers.get_output('ll', 'ls -lah')
+        allowed.assert_called_once_with('ll', 'ls -lah')
+
+    def test_a_recorded_output_never_reaches_the_gate(self, readers, mocker,
+                                                      settings):
+        """Instant mode has the output already, so there is nothing to ask."""
+        from thebleep import output_readers
+
+        settings.instant_mode = True
+        allowed = mocker.patch('thebleep.replay.is_allowed')
+        mocker.patch('thebleep.output_readers.read_log.get_output',
+                     return_value='recorded')
+        assert output_readers.get_output('deploy', 'deploy') == 'recorded'
+        assert not allowed.called
+        assert not readers.called
+
+
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='needs a shebang script to be the thing replayed')
 class TestTheSideEffectItself(object):
     """The whole point, end to end: a command that leaves a mark behind must
     not leave a second one without being agreed to."""
