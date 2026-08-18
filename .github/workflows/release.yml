@@ -1,14 +1,21 @@
 name: Release
 
-# Publishing happens here and nowhere else.
+# Publishing happens here and nowhere else, and where it goes is decided by how
+# it started rather than by anything anybody chooses at the time:
 #
-# Pushing a version tag builds the two artifacts once, checks them, installs the
-# wheel on Linux, macOS and Windows and corrects a command with it, and then
-# publishes those exact files to PyPI through trusted publishing -- an OIDC token
-# minted for this workflow, in this repository, for the length of one job. There
-# is no API token to leak, and nothing on a maintainer's laptop can publish.
+#   a version tag  ->  PyPI
+#   run by hand    ->  TestPyPI
 #
-# To rehearse, run it by hand with `target: testpypi`.
+# Nothing else. There used to be a `target` input offering `pypi`, which meant a
+# manual run from any branch could publish for real -- and skip the tag, version
+# and changelog checks below, since those only apply to a tag. Removing the input
+# removes the choice: a manual run has no way to reach PyPI.
+#
+# Either way the two artifacts are built once, checked, installed on Linux, macOS
+# and Windows and used to correct a command, and those exact files are what gets
+# uploaded -- through trusted publishing, over an OIDC token minted for this
+# workflow in this repository for the length of one job. There is no API token to
+# leak, and nothing on a maintainer's laptop can publish.
 
 on:
   push:
@@ -16,13 +23,6 @@ on:
       - "[0-9]+.[0-9]+.[0-9]+"
       - "[0-9]+.[0-9]+"
   workflow_dispatch:
-    inputs:
-      target:
-        description: Where to publish
-        required: true
-        default: testpypi
-        type: choice
-        options: [testpypi, pypi]
 
 # Nothing here needs to write to the repository. The publishing job asks for the
 # one permission it does need, and asks for it there rather than here.
@@ -159,13 +159,14 @@ jobs:
     needs: [build, install]
     runs-on: ubuntu-latest
     # A named environment so that publishing can be gated on a review, and so
-    # that the trusted-publishing configuration on PyPI can name it.
+    # that the trusted-publishing configuration on each index can name it. The
+    # name comes from the event, which is the same thing the steps below key on.
     environment:
-      name: ${{ github.event.inputs.target == 'testpypi' && 'testpypi' || 'pypi' }}
-      url: https://pypi.org/p/thebleep
+      name: ${{ github.event_name == 'workflow_dispatch' && 'testpypi' || 'pypi' }}
+      url: ${{ github.event_name == 'workflow_dispatch' && 'https://test.pypi.org/p/thebleep' || 'https://pypi.org/p/thebleep' }}
     permissions:
       # The only permission this workflow asks for anywhere: minting the OIDC
-      # token PyPI checks. No API token exists to be stolen.
+      # token each index checks. No API token exists to be stolen.
       id-token: write
     steps:
       - uses: actions/download-artifact@v4
@@ -173,10 +174,15 @@ jobs:
           name: artifacts
           path: dist
       - name: Publish to TestPyPI
-        if: github.event.inputs.target == 'testpypi'
+        if: github.event_name == 'workflow_dispatch'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
+
+      # A tag, and only a tag. `github.event_name == 'push'` is already true only
+      # for the tag globs at the top of this file; the ref is checked as well so
+      # that adding a branch to those globs later cannot quietly turn a branch
+      # push into a release.
       - name: Publish to PyPI
-        if: github.event.inputs.target != 'testpypi'
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         uses: pypa/gh-action-pypi-publish@release/v1

@@ -211,8 +211,8 @@ Ready. Nothing has been committed, tagged, pushed or published.
 
 Pushing the tag is what publishes: .github/workflows/release.yml builds the
 artifacts again from it, runs the checks, and uploads to PyPI through trusted
-publishing. Rehearse against TestPyPI first by running that workflow by hand
-with `target: testpypi`.
+publishing. Rehearse against TestPyPI first by running that workflow by hand --
+a manual run goes to TestPyPI and cannot go anywhere else.
 """.format(version=version))
 
 

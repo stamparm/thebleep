@@ -107,7 +107,8 @@ the artifacts again from the tag, checks that the tag, `setup.py`, the CHANGELOG
 and the README badge agree, installs the wheel on Linux, macOS and Windows, and
 uploads those exact files to PyPI through [trusted
 publishing](https://docs.pypi.org/trusted-publishers/) — no API token exists.
-Run that workflow by hand with `target: testpypi` to rehearse it.
+Running that workflow by hand publishes to TestPyPI instead, which is how to
+rehearse it; a manual run has no way to reach PyPI.
 
 ## Develop using Dev Container
 
