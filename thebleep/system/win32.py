@@ -1,6 +1,7 @@
 import msvcrt
 from pathlib import Path  # noqa: F401
 from .. import const
+from .paths import expanduser, writable  # noqa: F401
 from .streams import use_utf8
 
 

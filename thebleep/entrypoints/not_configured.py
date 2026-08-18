@@ -12,7 +12,7 @@ from psutil import Process  # noqa: E402
 from .. import logs, const  # noqa: E402
 from ..shells import shell  # noqa: E402
 from ..conf import settings  # noqa: E402
-from ..system import Path  # noqa: E402
+from ..system import Path, expanduser  # noqa: E402
 
 
 def _get_shell_pid():
@@ -72,14 +72,14 @@ def _is_second_run():
 
 def _is_already_configured(configuration_details):
     """Returns `True` when alias already in shell config."""
-    path = Path(configuration_details.path).expanduser()
+    path = expanduser(configuration_details.path)
     with path.open('r') as shell_config:
         return configuration_details.content in shell_config.read()
 
 
 def _configure(configuration_details):
     """Adds alias to shell config."""
-    path = Path(configuration_details.path).expanduser()
+    path = expanduser(configuration_details.path)
     with path.open('a') as shell_config:
         shell_config.write(u'\n')
         shell_config.write(configuration_details.content)

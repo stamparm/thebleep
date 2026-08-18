@@ -25,9 +25,8 @@ import os
 import sys
 import types as pytypes
 from importlib.util import MAGIC_NUMBER
-from . import logs
+from . import cachefile, logs
 from .conf import settings
-from .system import Path
 
 # Bumped whenever the layout or the metadata extraction changes, so an older
 # pack is rebuilt instead of misread.
@@ -54,11 +53,16 @@ def _is_disabled():
 
 
 def _cache_path():
-    """Where the pack lives. Keyed by interpreter, since code objects are."""
-    cache_home = os.environ.get('XDG_CACHE_HOME') or '~/.cache'
+    """Where the pack lives. Keyed by interpreter, since code objects are.
+
+    The directory comes from `cachefile`, which is the one place that decides
+    where anything cached goes -- and the one place that has to cope with there
+    being no home directory to put it in.
+
+    """
     magic = MAGIC_NUMBER.hex()
-    return Path(cache_home).expanduser().joinpath(
-        'thebleep', 'rules-{}-{}.pack'.format(FORMAT, magic))
+    return cachefile.directory().joinpath(
+        'rules-{}-{}.pack'.format(FORMAT, magic))
 
 
 # Metadata extraction ------------------------------------------------------

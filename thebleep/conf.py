@@ -3,7 +3,7 @@ import os
 import sys
 from warnings import warn
 from . import const
-from .system import Path
+from .system import Path, expanduser, writable
 
 
 def load_source(name, pathname, _file=None):
@@ -50,8 +50,12 @@ class Settings(dict):
     def _get_user_dir_path(self):
         """Returns Path object representing the user config resource"""
         xdg_config_home = os.environ.get('XDG_CONFIG_HOME', '~/.config')
-        user_dir = Path(xdg_config_home, 'thebleep').expanduser()
-        legacy_user_dir = Path('~', '.thebleep').expanduser()
+        # `writable`, because this is somewhere we create and write to: with no
+        # home directory to expand `~` against, the alternative is a directory
+        # named `~` in whatever the working directory happens to be.
+        user_dir = writable(expanduser(Path(xdg_config_home, 'thebleep')),
+                            'config')
+        legacy_user_dir = expanduser(Path('~', '.thebleep'))
 
         # For backward compatibility use legacy '~/.thebleep' if it exists:
         if legacy_user_dir.is_dir():

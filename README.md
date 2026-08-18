@@ -326,7 +326,6 @@ want for a tool rather than a library: nothing you `pip install` later can break
 it. On Debian, Ubuntu and Fedora, `pip install --user` is refused outright
 ([PEP 668](https://peps.python.org/pep-0668/)) — use `uv` or `pipx` there.
 
-<a href='#manual-installation' name='manual-installation'>#</a>
 ### The alias, and why it costs nothing
 
 Append the *loader* to your `.bashrc`, `.zshrc` or other startup script, once:

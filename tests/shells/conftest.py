@@ -23,7 +23,6 @@ def history_lines(mocker):
 
 @pytest.fixture
 def config_exists(mocker):
-    path_mock = mocker.patch('thebleep.shells.generic.Path')
-    return path_mock.return_value \
-        .expanduser.return_value \
-        .exists
+    # `generic` asks `expanduser(path).exists()`; it used to build a `Path` and
+    # expand it, and this mocked the whole chain.
+    return mocker.patch('thebleep.shells.generic.expanduser').return_value.exists

@@ -1,11 +1,11 @@
 from thebleep.utils import for_app, replace_command, eager, memoize
-from thebleep.system import Path
+from thebleep.system import expanduser
 
 
 @memoize
 @eager
 def _get_all_environments():
-    root = Path('~/.virtualenvs').expanduser()
+    root = expanduser('~/.virtualenvs')
     if not root.is_dir():
         return
 

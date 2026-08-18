@@ -6,7 +6,7 @@ from difflib import get_close_matches as difflib_get_close_matches
 from functools import wraps
 from . import cachefile, const
 from .conf import settings
-from .system import Path
+from .system import expanduser
 
 # Binary: nothing is ever written through this object -- it is only handed
 # to Popen as a descriptor to throw output at -- and text mode would make
@@ -408,7 +408,7 @@ def cache(*depends_on):
             if cache.disabled:
                 return fn(*args, **kwargs)
 
-            paths = [Path(name).expanduser().absolute().as_posix()
+            paths = [expanduser(name).absolute().as_posix()
                      for name in depends_on]
             fingerprint = tuple((path, _mtime(path)) for path in paths)
             name = _cache_name(fn, args, kwargs)

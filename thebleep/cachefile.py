@@ -12,7 +12,7 @@ cache costs time, never correctness.
 import marshal
 import os
 import time
-from .system import Path
+from .system import expanduser, writable
 
 FORMAT = 3
 
@@ -20,7 +20,7 @@ FORMAT = 3
 def directory():
     """Where The Bleep keeps everything it caches."""
     cache_home = os.environ.get('XDG_CACHE_HOME') or '~/.cache'
-    return Path(cache_home).expanduser().joinpath('thebleep')
+    return writable(expanduser(cache_home).joinpath('thebleep'), 'cache')
 
 
 def path_for(name):

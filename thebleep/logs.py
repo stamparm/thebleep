@@ -201,7 +201,11 @@ def how_to_configure_alias(configuration_details):
                     bold=color(colorama.Style.BRIGHT),
                     reset=color(colorama.Style.RESET_ALL)))
 
-    print(u'More details - https://github.com/stamparm/thebleep#manual-installation')
+    # A heading GitHub makes an anchor for by itself. It used to be
+    # `#manual-installation`, which existed only as a hand-written `<a name=...>`
+    # in the README and rendered there as a stray `#` above the heading.
+    print(u'More details - '
+          u'https://github.com/stamparm/thebleep#installation')
 
 
 def already_configured(configuration_details):

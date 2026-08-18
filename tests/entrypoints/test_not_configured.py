@@ -63,10 +63,9 @@ def shell(mocker):
 
 @pytest.fixture(autouse=True)
 def shell_config(mocker):
-    path_mock = mocker.patch('thebleep.entrypoints.not_configured.Path',
+    path_mock = mocker.patch('thebleep.entrypoints.not_configured.expanduser',
                              new_callable=MagicMock)
     return path_mock.return_value \
-        .expanduser.return_value \
         .open.return_value \
         .__enter__.return_value
 

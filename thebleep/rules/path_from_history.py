@@ -1,6 +1,6 @@
 from collections import Counter
 import re
-from thebleep.system import Path
+from thebleep.system import expanduser
 from thebleep.utils import (get_valid_history_without_current,
                             memoize, replace_argument)
 from thebleep.shells import shell
@@ -47,7 +47,7 @@ def get_new_command(command):
 
     return [replace_argument(command.script, destination, path)
             for path in paths if path.endswith(destination)
-            and Path(path).expanduser().exists()]
+            and expanduser(path).exists()]
 
 
 priority = 800

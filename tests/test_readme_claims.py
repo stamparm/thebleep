@@ -129,3 +129,43 @@ def test_the_environment_variables_it_documents_exist(readme):
                                      'THEBLEEP_OUTPUT_LOG',
                                      'THEBLEEP_NO_RULE_PACK'}
     assert documented <= real, sorted(documented - real)
+
+
+def _heading_anchors(readme):
+    """The anchors GitHub makes from the README's own headings.
+
+    Lowercased, punctuation dropped, spaces hyphenated -- which is the rule
+    GitHub applies, and the reason a heading is a better link target than a
+    hand-written `<a name=...>`.
+
+    """
+    anchors = set()
+    for heading in re.findall(r'^#{1,6} +(.+?) *$', readme, re.MULTILINE):
+        slug = re.sub(r'[^\w\- ]', '', heading.lower()).replace(' ', '-')
+        anchors.add(slug)
+    return anchors
+
+
+def test_the_readme_links_the_package_prints_go_somewhere(source_root, readme):
+    """`logs` tells people to read a section of this README.
+
+    It used to name `#manual-installation`, which was not a heading at all: the
+    README carried a hand-written `<a name='manual-installation'>#</a>` for it,
+    which rendered as a stray `#` above the heading it was standing in for.
+
+    """
+    anchors = _heading_anchors(readme)
+    fragments = set()
+    for path in source_root.joinpath('thebleep').rglob('*.py'):
+        with io.open(str(path), encoding='utf-8') as handle:
+            fragments.update(re.findall(
+                r'github\.com/stamparm/thebleep#([\w-]+)', handle.read()))
+
+    assert fragments, 'no README links were found in the package to check'
+    assert fragments <= anchors, sorted(fragments - anchors)
+
+
+def test_the_readme_does_not_hand_write_anchors(readme):
+    """A hand-written anchor renders as a stray `#` and needs maintaining."""
+    assert '<a name=' not in readme
+    assert "<a href='#" not in readme

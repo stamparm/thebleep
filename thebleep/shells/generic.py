@@ -6,7 +6,7 @@ from .. import const
 from ..logs import warn
 from ..utils import memoize
 from ..conf import settings
-from ..system import Path
+from ..system import expanduser
 
 
 ShellConfiguration = namedtuple('ShellConfiguration', (
@@ -192,4 +192,4 @@ class Generic(object):
             content=content,
             path=path,
             reload=reload,
-            can_configure_automatically=Path(path).expanduser().exists())
+            can_configure_automatically=expanduser(path).exists())
