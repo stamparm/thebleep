@@ -67,15 +67,16 @@ The rest of the reasons:
 
 - **Python 3.9 through 3.14**, tested on Linux, macOS and Windows on every one
   of them — and Bash, Zsh, Fish, tcsh and PowerShell as before.
-- **29 issues from *The Fuck*'s backlog are fixed here** — three of them
+- **30 issues from *The Fuck*'s backlog are fixed here** — three of them
   command injections — plus the rules that had rotted against current
   `git`, `npm`, `docker`, `cargo`, `brew`, `gem`, `az`, `gradle` and
   `terraform`. [What's fixed](#whats-fixed).
 - **It asks before running your previous command a second time.** Reading what
   your command printed used to mean running it again, side effects and all.
   [Safe by default](#safe-by-default).
-- **Nothing to relearn.** Same rules, same settings, same `fuck` alias if you
-  want it. [Coming from The Fuck](#coming-from-the-fuck).
+- **Nothing to relearn.** The same rules and settings, and the same `fuck` alias
+  if you want it; six rules are deliberately less eager, all in the direction of
+  doing only what they say. [Coming from The Fuck](#coming-from-the-fuck).
 
 *The Bleep* is based on the original codebase by Vladimir Iakovlev and its
 contributors; their work and history remain fully credited.
@@ -167,19 +168,42 @@ What to know:
   is the whole of the port.
 - A rule *package* of your own is `thebleep_contrib_*` rather than
   `thefuck_contrib_*`.
-- One behaviour is deliberately different: *The Bleep* asks before running your
-  previous command a second time. `confirm_replay = False` in your settings
-  restores what you are used to, and
+- *The Bleep* asks before running your previous command a second time.
+  `confirm_replay = False` in your settings restores what you are used to, and
   [Reading the previous command](#reading-the-previous-command) explains why
   you might not want to.
+
+Six rules behave differently on purpose, all in the same direction — what you
+agree to is what runs:
+
+- `dirty_untar` and `dirty_unzip` suggest extracting into a directory of their
+  own, and no longer delete the files that were already unpacked. They could not
+  tell an extracted file from one of yours under the same name, and their
+  containment check was a string prefix that `../` walks straight out of.
+- `ssh_known_hosts` shows you the `ssh-keygen -R` it wants to run, in front of
+  your command. It used to hand back your own command and remove the offending
+  line behind it, so a man-in-the-middle warning disappeared with nothing to
+  read.
+- `rm_dir` adds `-r`, not `-rf`. `-r` is enough to remove a directory; `-f` also
+  silences the prompt for a write-protected file.
+- `pip_install` no longer falls back to `sudo pip install`.
+- `python_module_error` is off by default. An import name is not a distribution
+  name — `import yaml` wants PyYAML — so the package it suggests installing is a
+  guess, and a mistyped import makes it `pip install <typo>`. Ask for it with
+  `rules = ['DEFAULT_RULES', 'python_module_error']`.
+- `quotation_marks` only fires when your command genuinely does not parse and
+  swapping the quotes makes it parse. It used to fire whenever both kinds of
+  quote appeared and rewrite them, so `git commit -m "it's fine"` became
+  `git commit -m "it"s fine"`.
 
 ##### [Back to Contents](#contents)
 
 ## What's fixed
 
 Every commit that fixes a reported problem names the issue it fixes, so this is
-`git log --grep 'nvbn/thefuck#'` rather than a claim in a README. Twenty-nine
-upstream issues so far, and the rest found by running the tools.
+`git log --grep 'nvbn/thefuck#'` rather than a claim in a README. Thirty
+upstream issues so far, every one of them linked below, and the rest found by
+running the tools.
 
 **It starts on current Python.** `distutils` was removed in 3.12 and *The Fuck*
 imports it, so it cannot run there at all; `pkg_resources` and `imp` were going
@@ -206,6 +230,14 @@ second time — `deploy`, `git push`, `rm`, whatever it was, before you have
 agreed to anything. It asks first now, except where there is nothing to run or
 the program only ever reads.
 &nbsp;<sub>[#1126](https://github.com/nvbn/thefuck/issues/1126)</sub>
+
+**The alias breaking because of something you pasted.** The shell handed us your
+recent history in an environment variable, and the kernel will not pass a program
+a variable larger than 128K. One pasted command that size and the alias failed
+with "Argument list too long" — for that correction and for every one afterwards,
+until the entry fell out of the history window. It asks the shell for a smaller
+window instead.
+&nbsp;<sub>[#798](https://github.com/nvbn/thefuck/issues/798)</sub>
 
 **Rules that had quietly stopped matching.** A rule that looks for a string in
 a tool's output stops working the day that tool rewords it, silently, and
@@ -239,6 +271,14 @@ environment being printed into debug output.
 [#995](https://github.com/nvbn/thefuck/issues/995)
 [#1506](https://github.com/nvbn/thefuck/issues/1506)</sub>
 
+**And the test suite itself.** Three of the upstream issues are about the tests
+rather than the tool: `mock` became `unittest.mock`, a memoized helper leaked
+between test cases, and `usefixtures` was applied to a fixture, where it does
+nothing.
+&nbsp;<sub>[#1344](https://github.com/nvbn/thefuck/issues/1344)
+[#1523](https://github.com/nvbn/thefuck/issues/1523)
+[#1550](https://github.com/nvbn/thefuck/issues/1550)</sub>
+
 **And it is quicker**, which has [a section of its own](#performance).
 
 ##### [Back to Contents](#contents)
@@ -249,12 +289,14 @@ environment being printed into debug output.
 | --- | --- |
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
-| **Shells** | Bash, Zsh, Fish, tcsh, PowerShell, and Windows `cmd` |
+| **Shells** | Bash, Zsh, Fish, tcsh, PowerShell |
 | **Rules** | 170 of them, for git, docker, npm, yarn, pip, apt, dnf, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish and tcsh are exercised end to end, in containers, driving a real
 terminal: the tests type a wrong command into the shell, type the alias, and
-check what the shell then runs. The Python suite covers all six.
+check what the shell then runs. PowerShell gets the same treatment on Windows in
+CI, in Windows PowerShell 5.1 as well as 7, because the two do not agree about
+command chaining. The Python suite covers all five.
 
 ##### [Back to Contents](#contents)
 
@@ -315,9 +357,9 @@ thebleep --alias-loader fuck >> ~/.bashrc
 ### Paying at startup instead
 
 `eval $(thebleep --alias)` in your startup file does the same job by starting a
-Python interpreter every time you open a shell, which is the 38 ms in the table
-above rather than a third of a millisecond. Use it if you prefer it, and for the
-experimental instant mode, which has to set your prompt up front.
+Python interpreter every time you open a shell, which is the 43 ms in the table
+above rather than 0.07 ms. Use it if you prefer it, and for the experimental
+instant mode, which has to set your prompt up front.
 
 ### Your shell
 
@@ -332,9 +374,28 @@ only difference between shells is the file it goes in:
 | tcsh | `thebleep --alias-loader >> ~/.cshrc` |
 | PowerShell | `thebleep --alias-loader >> $profile` |
 
-[The shell-specific notes in *The Fuck*'s
-wiki](https://github.com/nvbn/thefuck/wiki/Shell-aliases) still apply too, with
-`thefuck` replaced by `thebleep`.
+The few things worth knowing per shell:
+
+- **Bash.** A login shell reads `~/.bash_profile` and not `~/.bashrc`, which is
+  how macOS's Terminal starts one. If the alias is not there in a new window,
+  that is why; `thebleep --alias-loader >> ~/.bash_profile` as well, or source
+  one from the other.
+- **Zsh.** `~/.zshrc`, and that is all. If you use a framework that rewrites it,
+  put the line in `~/.zshrc.local` or wherever it tells you to.
+- **Fish.** `~/.config/fish/config.fish`. Fish is asked for your aliases and
+  functions by running `fish -ic`, so an alias defined only for interactive use
+  is still found; the answer is cached against `config.fish`, so it is looked up
+  again when you change it.
+- **tcsh.** `~/.tcshrc` if you have one, `~/.cshrc` otherwise.
+- **PowerShell.** `$profile` may not exist yet:
+  `New-Item -Force -Path $profile` first. If PowerShell refuses to run the
+  profile, that is the execution policy rather than us:
+  `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. Both Windows PowerShell
+  5.1 and PowerShell 7 work; a chained correction is written as
+  `first; if ($?) { second }`, because `&&` needs 7.
+- **Anything else** gets a generic alias that reads your last command with
+  `fc -ln -1`. Rules that need to know which shell you are in will not; set
+  `TB_SHELL` yourself if it guesses wrong.
 
 Changes are only available in a new shell session. To make changes immediately
 available, run `source ~/.bashrc` (or your shell config file like `.zshrc`).
@@ -636,8 +697,11 @@ Several *The Bleep* parameters can be changed in the file `$XDG_CONFIG_HOME/theb
 * `alter_history` — push fixed command to history, by default `True`;
 * `wait_slow_command` — max amount of time in seconds for getting previous command output if it in `slow_commands` list;
 * `slow_commands` — list of slow commands;
-* `num_close_matches` — the maximum number of close matches to suggest, by default `3`.
-* `excluded_search_path_prefixes` — path prefixes to ignore when searching for commands, by default `[]`.
+* `num_close_matches` — the maximum number of close matches to suggest, by default `3`;
+* `excluded_search_path_prefixes` — path prefixes to ignore when searching for commands, by default `[]`;
+* `instant_mode` — read what scrolled past instead of running your command again, by default `False`; see [Experimental instant mode](#experimental-instant-mode);
+* `repeat` — if the corrected command fails too, correct that as well, by default `False`; `--repeat` does it for one run;
+* `env` — environment variables to set for your previous command when it is run again to read its output, by default `{'LC_ALL': 'C', 'LANG': 'C'}`, which is there so that rules can look for English error messages. Git also gets `GIT_TRACE=1`, so that `git st` can be resolved to whatever alias it stands for; nothing else does.
 
 An example of `settings.py`:
 
@@ -654,6 +718,9 @@ history_limit = 9999
 wait_slow_command = 20
 slow_commands = ['react-native', 'gradle']
 num_close_matches = 5
+instant_mode = False
+repeat = False
+env = {'LC_ALL': 'C', 'LANG': 'C'}
 ```
 
 Or via environment variables:
@@ -743,8 +810,8 @@ chart at the top is written from that file by
 [`bench/chart.py`](bench/chart.py), so the two cannot drift apart.
 
 The shell startup row is not a typo: with the loader pasted into your rc, a
-shell takes 2.5 ms to start against 2.2 ms with nothing configured at all, so
-what The Bleep costs you there is a third of a millisecond.
+shell takes 876 µs to start against 835 µs with nothing configured at all, so
+what The Bleep costs you there is about 40 µs.
 
 Reproduce it yourself:
 
@@ -757,8 +824,8 @@ BENCH_CPU=2,3 ./bench/bench.py \
 
 Python 3.11 is used for the comparison because *The Fuck* cannot start on 3.12
 or newer — it imports `distutils`, which is no longer in the standard library.
-On this machine the interpreter itself costs 11 ms before either app runs a
-line, so that is the floor both are measured against.
+On this machine the interpreter itself costs 9 ms before either app runs a line,
+so that is the floor both are measured against.
 
 Where the time went:
 
@@ -767,8 +834,8 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches around 30 of the 170 rules instead
-  of all of them. Rules that don't say what they are about are always loaded,
+  running it. A typical command now reaches 28 of the 170 rules, and one for a
+  tool with many rules of its own around 38, instead of all of them. Rules that don't say what they are about are always loaded,
   so this makes corrections faster, never fewer.
 - **Startup imports almost nothing.** `pyte`, `psutil`, `argparse`, `pprint`
   and the five shells you are not using are imported only on the paths that
