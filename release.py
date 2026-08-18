@@ -1,37 +1,64 @@
 #!/usr/bin/env python
-from subprocess import call
-import os
+
+"""Publishes a release: build, check, tag, push, upload.
+
+Usage: ./release.py 4.0.1
+
+The version is given rather than guessed. The old script incremented the minor
+part of a two-part version, which silently dropped the patch part of anything
+three-part, and it tagged and pushed before finding out whether the artifacts
+were any good.
+
+"""
+
+import io
 import re
+import subprocess
+import sys
 
 
-version = None
+def run(*command):
+    print('$ %s' % ' '.join(command))
+    subprocess.check_call(command)
 
 
-def get_new_setup_py_lines():
-    global version
-    with open('setup.py', 'r') as sf:
-        current_setup = sf.readlines()
-    for line in current_setup:
-        if line.startswith('VERSION = '):
-            major, minor = re.findall(r"VERSION = '(\d+)\.(\d+)'", line)[0]
-            version = "{}.{}".format(major, int(minor) + 1)
-            yield "VERSION = '{}'\n".format(version)
-        else:
-            yield line
+def set_version(version):
+    with io.open('setup.py', encoding='utf-8') as handle:
+        source = handle.read()
+
+    replaced, count = re.subn(r"(?m)^VERSION = '[^']+'$",
+                              "VERSION = '%s'" % version, source)
+    if count != 1:
+        sys.exit('release.py: found %d VERSION lines in setup.py, wanted 1'
+                 % count)
+
+    with io.open('setup.py', 'w', encoding='utf-8') as handle:
+        handle.write(replaced)
 
 
-lines = list(get_new_setup_py_lines())
-with open('setup.py', 'w') as sf:
-    sf.writelines(lines)
+def main(argv):
+    if len(argv) != 2 or not re.match(r'^\d+\.\d+(\.\d+)?$', argv[1]):
+        sys.exit(__doc__.strip())
+    version = argv[1]
 
-call('git pull', shell=True)
-call('git commit -am "Bump to {}"'.format(version), shell=True)
-call('git tag {}'.format(version), shell=True)
-call('git push', shell=True)
-call('git push --tags', shell=True)
+    # Everything that can fail without anybody noticing goes first.
+    run('git', 'pull')
+    set_version(version)
+    run('python', '-m', 'flake8')
+    run('python', '-m', 'pytest', '-q')
+    run('rm', '-rf', 'dist')
+    run('python', '-m', 'build')
+    run('python', '-m', 'twine', 'check', '--strict', 'dist/*')
 
-env = os.environ
-env['CONVERT_README'] = 'true'
-call('rm -rf dist/*', shell=True, env=env)
-call('python setup.py sdist bdist_wheel', shell=True, env=env)
-call('twine upload dist/*', shell=True, env=env)
+    # Then the parts that are public and hard to take back.
+    run('git', 'commit', '-am', 'Bump to %s' % version)
+    run('git', 'tag', version)
+    run('git', 'push')
+    run('git', 'push', '--tags')
+    run('python', '-m', 'twine', 'upload', 'dist/*')
+
+    print('\nthebleep %s is out.' % version)
+
+
+if __name__ == '__main__':
+    main(sys.argv)
