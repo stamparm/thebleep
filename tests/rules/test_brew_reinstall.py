@@ -3,12 +3,19 @@ from thebleep.types import Command
 from thebleep.rules.brew_reinstall import get_new_command, match
 
 
-output = ("Warning: thebleep 9.9 is already installed and up-to-date\nTo "
-          "reinstall 9.9, run `brew reinstall thebleep`")
+# Homebrew 4.7.
+output = ("Warning: thebleep 9.9 is already installed and up-to-date.\n"
+          "To reinstall 9.9, run:\n"
+          "  brew reinstall thebleep\n")
+
+# The same thing before brew moved the command onto its own line.
+legacy_output = ("Warning: thebleep 9.9 is already installed and up-to-date\n"
+                 "To reinstall 9.9, run `brew reinstall thebleep`")
 
 
-def test_match():
-    command = Command('brew install thebleep', output)
+@pytest.mark.parametrize('command_output', [output, legacy_output])
+def test_match(command_output):
+    command = Command('brew install thebleep', command_output)
     assert match(command)
 
 

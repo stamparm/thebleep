@@ -4,8 +4,10 @@ from thebleep.utils import for_app
 
 warning_regex = re.compile(r'Warning: (?:.(?!is ))+ is already installed and '
                            r'up-to-date')
-message_regex = re.compile(r'To reinstall (?:(?!, ).)+, run `brew reinstall '
-                           r'[^`]+`')
+# brew puts the command on the line below now -- `To reinstall 5.8.3, run:`
+# and then `  brew reinstall xz` -- where it used to be inline in backticks.
+message_regex = re.compile(r'To reinstall (?:(?!, ).)+, run:?\s*`?'
+                           r'brew reinstall ')
 
 
 @for_app('brew', at_least=2)
