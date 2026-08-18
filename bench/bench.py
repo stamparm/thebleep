@@ -25,6 +25,7 @@ Every scenario is a name, a command template and the environment it needs.
 import argparse
 import json
 import os
+import platform
 import shutil
 import statistics
 import subprocess
@@ -60,12 +61,15 @@ SCENARIOS = [
         'what': 'generate the shell alias (paid at every shell startup)',
         'args': ['--alias'],
         'env': lambda style: _env(style, shell='bash'),
+        'expect': {'status': 0, 'stdout_contains': 'function '},
     },
     {
         'name': 'version',
         'what': 'interpreter start plus the import graph, no rules',
         'args': ['--version'],
         'env': lambda style: _env(style, shell='bash'),
+        # Both subjects print this on stderr.
+        'expect': {'status': 0, 'stderr_contains': 'using Python'},
     },
     {
         'name': 'correct-fast',
@@ -73,6 +77,7 @@ SCENARIOS = [
         'args': ['git', 'brnch'],
         'env': lambda style: _env(style, shell='bash', alias='bleep',
                                   REQUIRE_CONFIRMATION='false'),
+        'expect': {'status': 0, 'stdout_contains': 'git branch'},
     },
     {
         'name': 'correct-nomatch',
@@ -80,6 +85,10 @@ SCENARIOS = [
         'args': ['--force-command', 'zzzzz_no_such_command_zzzzz'],
         'env': lambda style: _env(style, shell='bash', alias='bleep',
                                   history='', REQUIRE_CONFIRMATION='false'),
+        # No rule matches, so nothing is suggested and the exit status says so.
+        # Which is also what a crash looks like from outside, hence the check
+        # for a traceback that every scenario gets.
+        'expect': {'status': 1, 'stdout_empty': True},
     },
     {
         'name': 'correct-slow',
@@ -87,6 +96,8 @@ SCENARIOS = [
         'args': ['--force-command', 'sh -c "sleep 0.5; exit 1"'],
         'env': lambda style: _env(style, shell='bash', alias='bleep',
                                   history='', REQUIRE_CONFIRMATION='false'),
+        # It has to have sat through the sleep, or it did not replay at all.
+        'expect': {'status': 1, 'stdout_empty': True, 'min_ms': 450},
     },
     {
         'name': 'correct-big-output',
@@ -95,6 +106,8 @@ SCENARIOS = [
                  'sh -c "yes abcdefghijklmnopqrstuvwxyz | head -n 40000; exit 1"'],
         'env': lambda style: _env(style, shell='bash', alias='bleep',
                                   history='', REQUIRE_CONFIRMATION='false'),
+        'expect': {'status': 1, 'stdout_empty': True,
+                   'prints_at_least': 1024 * 1024},
     },
     {
         'name': 'correct-in-repo',
@@ -103,6 +116,7 @@ SCENARIOS = [
         'env': lambda style: _env(style, shell='bash', alias='bleep',
                                   REQUIRE_CONFIRMATION='false'),
         'cwd': ROOT,
+        'expect': {'status': 0, 'stdout_contains': 'git status'},
     },
 ]
 
@@ -131,6 +145,135 @@ def scenario_env(scenario, style):
     # ignores the variable.
     env.update(_env(style, CONFIRM_REPLAY='false'))
     return env
+
+
+# Correctness oracles ------------------------------------------------------
+#
+# A harness that ignores what the subject did will report a crash as a very fast
+# run, and a crash is exactly what the fastest possible run looks like. So every
+# scenario says what should have happened, and it is checked once, before
+# anything is timed, outside the timed region.
+#
+# `hyperfine` needs `--ignore-failure` because two scenarios exit non-zero on
+# purpose -- nothing matched, so nothing was suggested. That is why the expected
+# status is stated here and checked here instead.
+
+
+def _prints_at_least(scenario, wanted, cwd):
+    """Whether the scenario's own command really produces that much output.
+
+    The megabyte scenario is only about a megabyte if there is one. `yes | head`
+    is cheap to get wrong and impossible to notice from a timing.
+
+    """
+    inner = [argument for argument in scenario['args']
+             if argument.startswith('sh -c ')]
+    if not inner:
+        return ['no inner command to measure']
+    command = inner[0][len('sh -c '):].strip('"')
+    produced = len(subprocess.run(['sh', '-c', command], cwd=cwd,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.DEVNULL,
+                                  timeout=120).stdout)
+    if produced < wanted:
+        return ['the scenario prints {} bytes, not the {} it is about'.format(
+            produced, wanted)]
+    return []
+
+
+def check(scenario, argv, env, cwd):
+    """Runs the scenario once, un-timed, and reports what it actually did."""
+    expect = scenario['expect']
+    finished = subprocess.run(argv, env=env, cwd=cwd, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE, timeout=300)
+    out = finished.stdout.decode('utf-8', 'replace')
+    err = finished.stderr.decode('utf-8', 'replace')
+
+    problems = []
+    if 'Traceback' in err:
+        problems.append('it raised:\n' + err.strip())
+    if finished.returncode != expect['status']:
+        problems.append('exit status {}, expected {}'.format(
+            finished.returncode, expect['status']))
+    if 'stdout_contains' in expect \
+            and expect['stdout_contains'] not in out:
+        problems.append('stdout {!r} does not contain {!r}'.format(
+            out[:200], expect['stdout_contains']))
+    if expect.get('stdout_empty') and out.strip():
+        problems.append('stdout should have been empty: {!r}'.format(out[:200]))
+    if 'stderr_contains' in expect and expect['stderr_contains'] not in err:
+        problems.append('stderr {!r} does not contain {!r}'.format(
+            err[:200], expect['stderr_contains']))
+    if 'prints_at_least' in expect:
+        problems.extend(_prints_at_least(scenario, expect['prints_at_least'],
+                                         cwd))
+
+    return {'status': finished.returncode,
+            'stdout_bytes': len(finished.stdout),
+            'stderr_bytes': len(finished.stderr),
+            'problems': problems}
+
+
+def environment(runs, warmup, cpu, tool):
+    """What produced these numbers, for whoever reads them in six months."""
+    def maybe(*command):
+        try:
+            return subprocess.check_output(
+                command, stderr=subprocess.DEVNULL).decode('utf-8').strip()
+        except Exception:                                # noqa: BLE001
+            return None
+
+    cpu_model = maybe('sysctl', '-n', 'machdep.cpu.brand_string')
+    try:
+        with open('/proc/cpuinfo') as handle:
+            for line in handle:
+                if line.startswith('model name'):
+                    cpu_model = line.split(':', 1)[1].strip()
+                    break
+    except OSError:
+        pass
+
+    return {
+        'commit': maybe('git', '-C', ROOT, 'rev-parse', 'HEAD'),
+        'working_tree_clean':
+            maybe('git', '-C', ROOT, 'status', '--porcelain') == '',
+        'timer': tool,
+        'hyperfine': maybe('hyperfine', '--version'),
+        'runs': runs,
+        'warmup': warmup,
+        'pinned_to_cpu': cpu or None,
+        'system': platform.system(),
+        'kernel': platform.release(),
+        'machine': platform.machine(),
+        'cpu': cpu_model,
+        # The harness's own interpreter. Each subject records the one it
+        # runs on, in its `version` line.
+        'harness_python': platform.python_version(),
+    }
+
+
+def describe(subject):
+    """A subject as it should be recorded: no home directory, and a version.
+
+    The path used to go into the committed results as it was on the machine that
+    ran them, which is somebody's home directory in a public file.
+
+    """
+    binary = subject['bin']
+    relative = os.path.relpath(binary, ROOT)
+    if relative.startswith(os.pardir):
+        relative = os.path.basename(binary)
+
+    reported = None
+    try:
+        finished = subprocess.run([binary, '--version'],
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT, timeout=120)
+        reported = finished.stdout.decode('utf-8', 'replace').strip()
+    except Exception:                                    # noqa: BLE001
+        pass
+
+    return {'bin': relative, 'version': reported, 'scenarios': {}}
 
 
 # Timing -------------------------------------------------------------------
@@ -255,25 +398,58 @@ def main():
         tool, args.runs, args.warmup, args.cpu or 'no'))
     print()
 
-    results = {'tool': tool, 'runs': args.runs, 'subjects': {}}
+    results = {'tool': tool, 'runs': args.runs, 'subjects': {},
+               'environment': environment(args.runs, args.warmup, args.cpu,
+                                          tool)}
+    failures = []
     for subject in args.subject:
         if not os.path.exists(subject['bin']):
             print('! missing subject {}: {}'.format(
                 subject['name'], subject['bin']), file=sys.stderr)
             continue
-        results['subjects'][subject['name']] = {
-            'bin': subject['bin'], 'scenarios': {}}
+        results['subjects'][subject['name']] = describe(subject)
         for scenario in scenarios:
             argv = [subject['bin']] + scenario['args']
             env = scenario_env(scenario, subject['style'])
             cwd = scenario.get('cwd', tempfile.gettempdir())
+
+            # What it did, before how long it took. A scenario that did not do
+            # what it claims to is not timed at all, so a crash cannot be
+            # recorded as a very fast run.
+            try:
+                did = check(scenario, argv, env, cwd)
+            except Exception as exc:                     # noqa: BLE001
+                did = {'problems': ['it would not run: {}'.format(exc)]}
+            if did['problems']:
+                failures.append('{}/{}'.format(subject['name'],
+                                               scenario['name']))
+                print('! {}/{} is not doing what it claims to:'.format(
+                    subject['name'], scenario['name']), file=sys.stderr)
+                for problem in did['problems']:
+                    print('    {}'.format(problem), file=sys.stderr)
+                continue
+
             try:
                 stats = measure(argv, env, cwd,
                                 args.runs, args.warmup, args.cpu)
             except Exception as exc:                     # noqa: BLE001
+                failures.append('{}/{}'.format(subject['name'],
+                                               scenario['name']))
                 print('! {}/{} failed: {}'.format(
                     subject['name'], scenario['name'], exc), file=sys.stderr)
                 continue
+
+            floor = scenario['expect'].get('min_ms')
+            if floor and stats['median'] < floor:
+                failures.append('{}/{}'.format(subject['name'],
+                                               scenario['name']))
+                print('! {}/{} took {} ms, less than the {} ms it has to '
+                      'spend'.format(subject['name'], scenario['name'],
+                                     stats['median'], floor), file=sys.stderr)
+                continue
+
+            stats['exit_status'] = did['status']
+            stats['output_bytes'] = did['stdout_bytes'] + did['stderr_bytes']
             results['subjects'][subject['name']]['scenarios'][
                 scenario['name']] = stats
 
@@ -286,6 +462,11 @@ def main():
         with open(args.json, 'w') as handle:
             json.dump(results, handle, indent=2, sort_keys=True)
         print('\nwrote {}'.format(args.json))
+
+    if failures:
+        print('\n! not measured, because they were not doing the thing: {}'
+              .format(', '.join(failures)), file=sys.stderr)
+        return 1
     return 0
 
 
