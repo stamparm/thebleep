@@ -162,6 +162,28 @@ jobs:
           /tmp/clean/bin/thebleep --yes ehco hello | grep -q 'echo hello'
           /tmp/clean/bin/bleep 2>&1 | grep -qi "isn't configured"
 
+  collection:
+    # A one-off. The Windows job prints nothing for minutes and then runs the
+    # tests at roughly Linux speed, so the wait is collection -- importing 225
+    # test modules -- and not the tests. This says how long that is and which
+    # files own it. Delete it once it has answered.
+    name: Collection cost on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: |
+          pip install -Ur requirements.txt
+          pip install -e .
+      - name: How long collection takes, and which files own it
+        run: python bench/collection_cost.py
+
   latency:
     # The Bleep has been called slow on Windows, and that is not a question a
     # Linux machine can answer: the cost is NTFS with a scanner in front of every
