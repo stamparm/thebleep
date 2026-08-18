@@ -27,4 +27,4 @@ def get_new_command(command):
             dir = file[0:file.rfind('/')]
 
             formatme = shell.and_('mkdir -p {}', '{}')
-            return formatme.format(dir, command.script)
+            return formatme.format(shell.quote(dir), command.script)

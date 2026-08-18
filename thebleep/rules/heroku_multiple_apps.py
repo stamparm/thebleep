@@ -1,4 +1,5 @@
 import re
+from thebleep.shells import shell
 from thebleep.utils import for_app
 
 
@@ -9,4 +10,4 @@ def match(command):
 
 def get_new_command(command):
     apps = re.findall('([^ ]*) \\([^)]*\\)', command.output)
-    return [command.script + ' --app ' + app for app in apps]
+    return [command.script + ' --app ' + shell.quote(app) for app in apps]
