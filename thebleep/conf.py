@@ -94,6 +94,34 @@ class Settings(dict):
             except ValueError:
                 continue
 
+    # What counts as yes and what counts as no. It used to be `== 'true'` and
+    # anything else at all, so `THEBLEEP_DEBUG=1` quietly meant no.
+    BOOLEANS = {'true': True, 'yes': True, 'on': True, '1': True,
+                'false': False, 'no': False, 'off': False, '0': False}
+
+    # A timeout of zero means never waiting; a history limit or a number of
+    # suggestions of zero means the setting does nothing, which nobody sets on
+    # purpose and which reads as the feature being broken.
+    COUNTS = {'wait_command': 0, 'wait_slow_command': 0,
+              'history_limit': 1, 'num_close_matches': 1}
+
+    def _number_from_env(self, attr, val):
+        try:
+            number = int(val)
+        except ValueError:
+            raise ValueError('{!r} is not a number'.format(val))
+        least = self.COUNTS[attr]
+        if number < least:
+            raise ValueError('{} is less than {}'.format(number, least))
+        return number
+
+    def _bool_from_env(self, val):
+        try:
+            return self.BOOLEANS[val.strip().lower()]
+        except KeyError:
+            raise ValueError(
+                '{!r} is neither true nor false'.format(val))
+
     def _val_from_env(self, env, attr):
         """Transforms env-strings to python."""
         val = os.environ[env]
@@ -101,22 +129,38 @@ class Settings(dict):
             return self._rules_from_env(val)
         elif attr == 'priority':
             return dict(self._priority_from_env(val))
-        elif attr in ('wait_command', 'history_limit', 'wait_slow_command',
-                      'num_close_matches'):
-            return int(val)
+        elif attr in self.COUNTS:
+            return self._number_from_env(attr, val)
         elif attr in ('require_confirmation', 'no_colors', 'debug',
                       'alter_history', 'instant_mode', 'confirm_replay'):
-            return val.lower() == 'true'
+            return self._bool_from_env(val)
         elif attr in ('slow_commands', 'excluded_search_path_prefixes'):
             return val.split(':')
         else:
             return val
 
     def _settings_from_env(self):
-        """Loads settings from env."""
-        return {attr: self._val_from_env(env, attr)
-                for env, attr in const.ENV_TO_ATTR.items()
-                if env in os.environ}
+        """Loads settings from env, one variable at a time.
+
+        One at a time on purpose. This was a comprehension, so one value that
+        would not parse -- `THEBLEEP_WAIT_COMMAND=abc` -- raised out of the whole
+        thing, the caller's `update` never happened, and *every* environment
+        setting was silently dropped: colours came back on, excluded rules came
+        back with them. A setting that cannot be understood now costs that
+        setting, says so, and costs nothing else.
+
+        """
+        from .logs import warn
+
+        settings = {}
+        for env, attr in sorted(const.ENV_TO_ATTR.items()):
+            if env not in os.environ:
+                continue
+            try:
+                settings[attr] = self._val_from_env(env, attr)
+            except ValueError as error:
+                warn(u'Ignoring {}: {}.'.format(env, error))
+        return settings
 
     def _settings_from_args(self, args):
         """Loads settings from args."""

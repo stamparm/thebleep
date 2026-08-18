@@ -3,6 +3,7 @@ import pytest
 import os
 from unittest.mock import Mock
 from thebleep import const
+from thebleep.conf import Settings
 
 
 @pytest.fixture
@@ -123,3 +124,70 @@ def test_get_user_dir_path(mocker, os_environ, settings, legacy_dir_exists,
 
     path = settings._get_user_dir_path().as_posix()
     assert path == os.path.expanduser(result)
+
+
+class TestSettingsFromEnvironment(object):
+    """One variable that cannot be understood costs that variable and no more.
+
+    It used to cost all of them: `_settings_from_env` was a comprehension, so a
+    single unparseable value raised out of the whole thing and the caller's
+    `update` never ran. Colours came back on and excluded rules came back with
+    them, silently.
+
+    """
+
+    @pytest.fixture
+    def from_env(self, os_environ):
+        def read(**variables):
+            os_environ.update(variables)
+            return Settings(const.DEFAULT_SETTINGS)._settings_from_env()
+
+        return read
+
+    def test_a_bad_value_does_not_take_the_good_ones_with_it(self, from_env,
+                                                             capsys):
+        got = from_env(THEBLEEP_WAIT_COMMAND='abc',
+                       THEBLEEP_NO_COLORS='true',
+                       THEBLEEP_EXCLUDE_RULES='git_push',
+                       THEBLEEP_NUM_CLOSE_MATCHES='7')
+        assert got == {'no_colors': True,
+                       'exclude_rules': ['git_push'],
+                       'num_close_matches': 7}
+        assert 'THEBLEEP_WAIT_COMMAND' in capsys.readouterr()[1]
+
+    @pytest.mark.parametrize('value, expected', [
+        ('true', True), ('True', True), ('TRUE', True), (' true ', True),
+        ('yes', True), ('on', True), ('1', True),
+        ('false', False), ('no', False), ('off', False), ('0', False),
+    ])
+    def test_booleans(self, from_env, value, expected):
+        assert from_env(THEBLEEP_DEBUG=value) == {'debug': expected}
+
+    @pytest.mark.parametrize('value', ['nope', 'ok', '', '2', 'truthy'])
+    def test_a_boolean_that_is_neither(self, from_env, value, capsys):
+        """Silently reading anything that is not `true` as false is a way to
+        have a setting that does nothing and says nothing."""
+        assert from_env(THEBLEEP_DEBUG=value) == {}
+        assert 'neither true nor false' in capsys.readouterr()[1]
+
+    @pytest.mark.parametrize('variable, value', [
+        ('THEBLEEP_WAIT_COMMAND', 'abc'),
+        ('THEBLEEP_WAIT_COMMAND', '-1'),
+        ('THEBLEEP_WAIT_SLOW_COMMAND', '-5'),
+        ('THEBLEEP_NUM_CLOSE_MATCHES', '0'),
+        ('THEBLEEP_NUM_CLOSE_MATCHES', '-3'),
+        ('THEBLEEP_HISTORY_LIMIT', '0'),
+    ])
+    def test_a_number_that_makes_no_sense(self, from_env, variable, value,
+                                          capsys):
+        assert from_env(**{variable: value}) == {}
+        assert variable in capsys.readouterr()[1]
+
+    @pytest.mark.parametrize('variable, value, expected', [
+        ('THEBLEEP_WAIT_COMMAND', '0', ('wait_command', 0)),
+        ('THEBLEEP_WAIT_COMMAND', '30', ('wait_command', 30)),
+        ('THEBLEEP_NUM_CLOSE_MATCHES', '1', ('num_close_matches', 1)),
+        ('THEBLEEP_HISTORY_LIMIT', '2000', ('history_limit', 2000)),
+    ])
+    def test_a_number_that_does(self, from_env, variable, value, expected):
+        assert from_env(**{variable: value}) == dict([expected])
