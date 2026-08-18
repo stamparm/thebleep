@@ -65,3 +65,6 @@ target/
 # benchmark subjects and results
 bench/.venvs/
 bench/results/
+
+# CodeGraph's local index of this checkout
+.codegraph/
