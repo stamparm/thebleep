@@ -39,7 +39,7 @@ class Generic(object):
         return command_script
 
     def app_alias(self, alias_name):
-        return """alias {0}='eval "$(TB_ALIAS={0} PYTHONIOENCODING=utf-8 """ \
+        return """alias {0}='eval "$(TB_ALIAS={0} """ \
                """thebleep "$(fc -ln -1)")"'""".format(alias_name)
 
     def app_alias_loader(self, alias_name):

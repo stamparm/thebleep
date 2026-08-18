@@ -28,8 +28,7 @@ class TestGeneric(object):
         assert 'alias bleep' in shell.app_alias('bleep')
         assert 'alias BLEEP' in shell.app_alias('BLEEP')
         assert 'thebleep' in shell.app_alias('bleep')
-        assert 'TB_ALIAS=bleep PYTHONIOENCODING' in shell.app_alias('bleep')
-        assert 'PYTHONIOENCODING=utf-8 thebleep' in shell.app_alias('bleep')
+        assert 'TB_ALIAS=bleep thebleep' in shell.app_alias('bleep')
 
     def test_app_alias_loader(self, shell):
         loader = shell.app_alias_loader('BLEEP')

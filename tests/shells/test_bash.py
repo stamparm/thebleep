@@ -58,7 +58,6 @@ class TestBash(object):
         assert 'bleep () {' in shell.app_alias('bleep')
         assert 'BLEEP () {' in shell.app_alias('BLEEP')
         assert 'thebleep' in shell.app_alias('bleep')
-        assert 'PYTHONIOENCODING' in shell.app_alias('bleep')
 
     def test_app_alias_loader(self, shell):
         loader = shell.app_alias_loader('bleep')
@@ -71,7 +70,6 @@ class TestBash(object):
         assert "bleep () {" in alias
         assert 'TB_SHELL=bash' in alias
         assert "TB_ALIAS=bleep" in alias
-        assert 'PYTHONIOENCODING=utf-8' in alias
         assert 'TB_SHELL_ALIASES=$(alias)' in alias
 
     def test_get_history(self, history_lines, shell):

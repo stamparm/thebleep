@@ -57,7 +57,7 @@ class Fish(Generic):
         # It is VERY important to have the variables declared WITHIN the alias
         return ('function {0} -d "Correct your previous console command"\n'
                 '  set -l broken_command $history[1]\n'
-                '  env TB_SHELL=fish TB_ALIAS={0} PYTHONIOENCODING=utf-8'
+                '  env TB_SHELL=fish TB_ALIAS={0}'
                 ' thebleep $broken_command {2} $argv | read -l fixed_command\n'
                 '  if [ "$fixed_command" != "" ]\n'
                 '    eval $fixed_command\n{1}'

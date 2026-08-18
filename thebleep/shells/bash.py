@@ -16,17 +16,14 @@ class Bash(Generic):
         # It is VERY important to have the variables declared WITHIN the function
         return '''
             function {name} () {{
-                TB_PYTHONIOENCODING=${{PYTHONIOENCODING:-}};
                 export TB_SHELL=bash;
                 export TB_ALIAS={name};
                 export TB_SHELL_ALIASES=$(alias);
                 export TB_HISTORY=$(fc -ln -10);
-                export PYTHONIOENCODING=utf-8;
                 TB_CMD=$(
                     thebleep {argument_placeholder} "$@"
                 ) && eval "$TB_CMD";
                 unset TB_HISTORY;
-                export PYTHONIOENCODING=$TB_PYTHONIOENCODING;
                 {alter_history}
             }}
         '''.format(

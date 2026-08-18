@@ -5,15 +5,17 @@ import tty
 import termios
 from pathlib import Path  # noqa: F401
 from .. import const
+from .streams import use_utf8
 
 
 def init_output():
-    """Nothing to set up: ANSI is native here.
+    """ANSI is native here, so this is only about the encoding.
 
-    Windows needs a console handler installed before anything is written, which
-    is why this exists at all; see `system.win32`.
+    Windows also needs a console handler installed before anything is written,
+    which is why this exists at all; see `system.win32`.
 
     """
+    use_utf8()
 
 
 # How long to wait for the rest of an escape sequence before deciding that

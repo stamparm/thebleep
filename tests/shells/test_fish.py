@@ -83,8 +83,7 @@ class TestFish(object):
         assert 'function BLEEP' in shell.app_alias('BLEEP')
         assert 'thebleep' in shell.app_alias('bleep')
         assert 'TB_SHELL=fish' in shell.app_alias('bleep')
-        assert 'TB_ALIAS=bleep PYTHONIOENCODING' in shell.app_alias('bleep')
-        assert 'PYTHONIOENCODING=utf-8 thebleep' in shell.app_alias('bleep')
+        assert 'TB_ALIAS=bleep thebleep' in shell.app_alias('bleep')
         assert ARGUMENT_PLACEHOLDER in shell.app_alias('bleep')
 
     def test_app_alias_loader(self, shell):

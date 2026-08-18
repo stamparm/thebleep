@@ -3,10 +3,15 @@ import msvcrt
 from pathlib import Path
 import win_unicode_console
 from .. import const
+from .streams import use_utf8
 
 
 def init_output():
     import colorama
+
+    # Before colorama, which replaces the streams with proxies that have no
+    # encoding of their own to set.
+    use_utf8()
     win_unicode_console.enable()
     colorama.init()
 

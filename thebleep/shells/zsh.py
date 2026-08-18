@@ -17,19 +17,16 @@ class Zsh(Generic):
         # It is VERY important to have the variables declared WITHIN the function
         return '''
             {name} () {{
-                TB_PYTHONIOENCODING=${{PYTHONIOENCODING:-}};
                 export TB_SHELL=zsh;
                 export TB_ALIAS={name};
                 TB_SHELL_ALIASES=$(alias);
                 export TB_SHELL_ALIASES;
                 TB_HISTORY="$(fc -ln -10)";
                 export TB_HISTORY;
-                export PYTHONIOENCODING=utf-8;
                 TB_CMD=$(
                     thebleep {argument_placeholder} $@
                 ) && eval $TB_CMD;
                 unset TB_HISTORY;
-                export PYTHONIOENCODING=$TB_PYTHONIOENCODING;
                 {alter_history}
             }}
         '''.format(
