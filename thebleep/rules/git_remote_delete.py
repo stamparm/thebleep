@@ -10,4 +10,4 @@ def match(command):
 
 @git_support
 def get_new_command(command):
-    return re.sub(r"delete", "remove", command.script, 1)
+    return re.sub(r"delete", "remove", command.script, count=1)
