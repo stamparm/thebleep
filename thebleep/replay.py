@@ -20,8 +20,15 @@ Two cases answer no with certainty. Everything else gets a prompt.
 """
 
 import os
+import re
 from . import logs
 from .conf import settings
+
+# A program name is only worth looking up when it is exactly what `sh` will
+# run. `$X`, `"deploy"`, `\deploy`, `~/bin/deploy` and `depl*y` each name
+# something other than what they look like, and looking the literal text up on
+# PATH finds nothing — which would read as "there is nothing to run".
+LITERAL_PROGRAM = re.compile(r'^[\w./+:@,-]+$')
 
 # Shell syntax that redirects, chains, substitutes or backgrounds. With any of
 # it present the script is no longer one call to one program, so the program's
@@ -87,6 +94,9 @@ def _program(script):
     if not words:
         # Assignments and nothing else, which a subshell throws away.
         return ''
+
+    if not LITERAL_PROGRAM.match(words[0]):
+        return None
 
     return words[0]
 
