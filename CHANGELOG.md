@@ -33,8 +33,9 @@ rather than restarting it, because this is the same codebase carried forward.
 - **The previous command is no longer run again without asking.** Correcting a
   command means knowing what it printed, and a shell keeps no record, so the
   command was run a second time — before any correction had been offered or
-  agreed to. It is now confirmed first, unless running it again provably cannot
-  have an effect. `confirm_replay = False` restores the old behaviour.
+  agreed to. It is now confirmed first, unless there is no such program to run
+  or the program is one that only ever reads. `confirm_replay = False` restores
+  the old behaviour.
   ([#1126](https://github.com/nvbn/thefuck/issues/1126))
 
 ### Speed

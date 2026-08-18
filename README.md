@@ -116,11 +116,14 @@ deploy production has to run again to be read, and anything it changes will
 change twice. Run it? [y/N]
 ```
 
-So it asks first, and only skips asking when running the command again cannot
-have an effect — because the program is not there to be found (`gti status`),
-or because it only ever reads (`ls`, `cat`, `grep`). It is deliberately *not* a
-list of dangerous commands: such a list only declares the ones nobody thought
-of to be safe.
+So it asks first. It skips asking in two cases: the program is not there to be
+found, so nothing runs either time (`gti status`), or the program is one of a
+short list that only ever read, whatever they are asked to do (`ls`, `cat`,
+`grep`). That second one is a judgement about the *name*, and a name is not a
+proof about the program a `PATH` lookup will find — what makes it a reasonable
+one is that the same program under the same name ran a moment ago, when you
+typed it. It is deliberately *not* a list of dangerous commands: such a list
+only declares the ones nobody thought of to be safe.
 
 Where nobody can be asked — a pipe, a subprocess, CI — the answer is no, and
 the correction is attempted from the command alone.
@@ -199,8 +202,8 @@ received.
 **It asks before running your command again.** To correct a command you have to
 know what it printed, and a shell keeps no record, so the command is run a
 second time — `deploy`, `git push`, `rm`, whatever it was, before you have
-agreed to anything. It asks first now, except where running it again provably
-cannot do anything.
+agreed to anything. It asks first now, except where there is nothing to run or
+the program only ever reads.
 &nbsp;<sub>[#1126](https://github.com/nvbn/thefuck/issues/1126)</sub>
 
 **Rules that had quietly stopped matching.** A rule that looks for a string in

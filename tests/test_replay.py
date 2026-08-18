@@ -8,6 +8,8 @@ effect, or the user said it could.
 """
 
 import os
+import shutil
+import subprocess
 import sys
 import pexpect
 import pytest
@@ -120,6 +122,51 @@ class TestIsInert(object):
         variable in an argument cannot turn `ls` into something else."""
         assert replay.is_inert('ls $HOME')
         assert replay.is_inert('grep -r "$PATTERN" .')
+
+
+@pytest.mark.parametrize('program, effect', [
+    ('uniq', 'takes an output file as its second operand'),
+    ('file', '-C writes a compiled magic file'),
+    ('info', '--output writes the page to a file'),
+    ('less', 'runs whatever LESSOPEN names'),
+    ('man', 'writes into the cat page cache'),
+    ('more', 'a pager, like less'),
+    ('bat', 'a pager, like less'),
+    ('tldr', 'downloads pages and caches them'),
+    ('ldd', 'its own manual page says not to, on an untrusted executable'),
+])
+def test_programs_that_only_look_like_they_read(program, effect):
+    """These were on the list and do not meet its own bar.
+
+    The bar is that no combination of flags makes the command change anything,
+    which is a strong claim; a program that can be talked into writing a file or
+    running another program is not on the list however usual its usual form is.
+
+    """
+    assert program not in replay.READ_ONLY, effect
+
+
+@pytest.mark.skipif(sys.platform == 'win32', reason='needs LESSOPEN')
+def test_less_really_does_run_a_program(tmpdir, os_environ):
+    """Why `less` came off the list, demonstrated rather than asserted."""
+    if not shutil.which('less'):
+        pytest.skip('less is not installed')
+
+    mark = tmpdir.join('lessopen-ran')
+    preprocessor = tmpdir.join('preprocess')
+    preprocessor.write('#!/bin/sh\necho ran >> "{}"\ncat "$1"\n'.format(mark))
+    preprocessor.chmod(0o755)
+    subject = tmpdir.join('subject')
+    subject.write('hello\n')
+
+    subprocess.call(['less', str(subject)],
+                    env=dict(os.environ,
+                             LESSOPEN='|{} %s'.format(str(preprocessor))),
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    stdin=subprocess.DEVNULL)
+
+    assert mark.check(), 'LESSOPEN did not run, so this is no longer the reason'
+    assert not replay.is_inert('less {}'.format(subject))
 
 
 @pytest.mark.usefixtures('on_path')

@@ -13,9 +13,21 @@ has no dependable answer, and a list of dangerous commands would only say that
 the ones nobody thought of are safe. The question asked instead is much
 narrower, and fails towards asking rather than running:
 
-    can running this again have any effect at all?
+    is there a reason to believe running this again does nothing?
 
-Two cases answer no with certainty. Everything else gets a prompt.
+One answer is certain: there is no such program, so the shell will fail to find
+it a second time exactly as it did the first.
+
+The other is a judgement, and worth stating as one. `READ_ONLY` below is a list
+of programs that only read, whatever they are asked to do -- and it is a
+judgement about the name, which is not a proof about the program that will run.
+A program of that name earlier on `PATH`, or a shell wrapper around it, is
+outside anything a name can tell us. What makes it a defensible judgement rather
+than a guess is that the same program under the same name already ran once, a
+moment earlier, when the user typed it: this decides whether it runs a *second*
+time, not whether it is safe.
+
+Everything else gets a prompt.
 
 """
 
@@ -57,17 +69,30 @@ EFFECTIVE_BUILTINS = frozenset({
 # flags — `git branch` reads, `git branch -d` deletes — and a list that got
 # that distinction subtly wrong would be worse than no list at all, because it
 # would run the dangerous cases without asking.
+#
+# Held to that bar, these did not make it, each having been made to demonstrate
+# the effect it is not supposed to be able to have:
+#
+#   uniq   takes an output file as its second operand and overwrites it
+#   file   `-C` compiles a magic file and writes the `.mgc` beside it
+#   info   `--output` writes the page to a file
+#   less   runs whatever `LESSOPEN` names, on a file that need not even exist
+#   man    writes a formatted copy into the cat page cache
+#
+# and `bat`, `more`, `tldr` and `ldd` went with them: pagers and manual readers
+# are the same kind of program as the two above, and `ldd`'s own manual page
+# says not to run it on an untrusted executable.
 READ_ONLY = frozenset({
-    'ack', 'ag', 'apropos', 'arch', 'base32', 'base64', 'basename', 'bat',
+    'ack', 'ag', 'apropos', 'arch', 'base32', 'base64', 'basename',
     'cal', 'cat', 'cksum', 'cmp', 'column', 'comm', 'cut', 'df', 'diff',
     'dirname', 'du', 'echo', 'egrep', 'expand', 'expr', 'false', 'fgrep',
-    'file', 'fmt', 'fold', 'free', 'getconf', 'grep', 'groups', 'head',
-    'hexdump', 'id', 'info', 'jq', 'ldd', 'less', 'locale', 'ls', 'lsblk',
-    'lscpu', 'lsmod', 'lspci', 'lsusb', 'man', 'md5sum', 'more', 'nl', 'nm',
+    'fmt', 'fold', 'free', 'getconf', 'grep', 'groups', 'head',
+    'hexdump', 'id', 'jq', 'locale', 'ls', 'lsblk',
+    'lscpu', 'lsmod', 'lspci', 'lsusb', 'md5sum', 'nl', 'nm',
     'objdump', 'od', 'paste', 'pgrep', 'printenv', 'printf', 'ps', 'pstree',
     'pwd', 'readelf', 'readlink', 'realpath', 'rev', 'rg', 'sha1sum',
     'sha256sum', 'sha512sum', 'size', 'stat', 'strings', 'tac', 'tail',
-    'tldr', 'tr', 'true', 'type', 'uname', 'unexpand', 'uniq', 'uptime',
+    'tr', 'true', 'type', 'uname', 'unexpand', 'uptime',
     'users', 'vdir', 'vmstat', 'w', 'wc', 'whatis', 'whereis', 'which', 'who',
     'whoami', 'xxd', 'zcat', 'zgrep',
 })
@@ -104,13 +129,14 @@ def _program(script):
 
 
 def is_inert(script):
-    """Whether running `script` again cannot have any effect.
+    """Whether there is reason to believe running `script` again does nothing.
 
-    Only two things are certain enough to skip asking about:
+    Two things are worth not asking about:
 
     - the program is not there to run, so the shell will fail to find it a
       second time exactly as it did the first;
-    - the program only ever reads, whatever it is asked to do.
+    - the program is one of the ones that only ever read, whatever they are
+      asked to do.
 
     """
     program = _program(script)
