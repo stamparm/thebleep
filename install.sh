@@ -12,10 +12,10 @@
 # Knobs, if you want them:
 #
 #   THEBLEEP_INSTALLER=uv|pipx|pip   force the installer
-#   THEBLEEP_INSTALL_FROM=pypi|git   force where the package comes from;
-#                                    or anything else your installer
-#                                    understands, such as a fork's URL or a
-#                                    local checkout
+#   THEBLEEP_INSTALL_FROM=git        install from the repository instead of
+#                                    from PyPI; or give anything else your
+#                                    installer understands, such as a fork's
+#                                    URL or a local checkout
 #   THEBLEEP_ALIAS=name              the alias to suggest (default: bleep)
 #   --dry-run                        print the command instead of running it
 
@@ -88,32 +88,24 @@ or install uv (https://docs.astral.sh/uv/) and run this again"
         "$python" -m pip --version >/dev/null 2>&1 \
             || fail "$python has no pip; install python3-pip, or install uv"
         ;;
-    "") fail "found none of uv, pipx or python3; install one and run again" ;;
+    "") fail "found no uv, no pipx, and no python3 3.9 or newer. Install one \
+of them and run this again -- uv is the smallest thing to install: \
+https://docs.astral.sh/uv/" ;;
     *) fail "THEBLEEP_INSTALLER must be uv, pipx or pip, not $installer" ;;
 esac
 
 # -- where the package comes from ---------------------------------------------
 
-on_pypi() {
-    if have curl; then
-        curl -fsS -o /dev/null -m 6 "https://pypi.org/simple/$PACKAGE/" \
-            2>/dev/null
-    elif have wget; then
-        wget -q -O /dev/null -T 6 "https://pypi.org/simple/$PACKAGE/" \
-            2>/dev/null
-    else
-        return 0    # no way to ask; assume it is there and let the install say
-    fi
-}
-
-source_of="${THEBLEEP_INSTALL_FROM:-}"
-if [ -z "$source_of" ]; then
-    if on_pypi; then
-        source_of="pypi"
-    else
-        source_of="git"
-    fi
-fi
+# PyPI, and only PyPI, unless you say otherwise.
+#
+# This used to probe PyPI and fall back to installing from git when the probe
+# failed. That is convenient exactly once -- before the first release -- and
+# wrong afterwards: an outage, a proxy, or a captive portal would quietly turn
+# "install the released version" into "install whatever is on master", which is
+# not a decision an installer gets to make on somebody's behalf. If PyPI cannot
+# be reached the install fails and says so, and `THEBLEEP_INSTALL_FROM=git` is
+# there for anyone who means it.
+source_of="${THEBLEEP_INSTALL_FROM:-pypi}"
 
 case "$source_of" in
     pypi) target="$PACKAGE" ;;
@@ -147,44 +139,46 @@ say "  installer  $installer"
 say "  package    $target"
 say ""
 
+# `--dry-run` prints the whole plan, including the line at the end, rather than
+# stopping here: the line at the end is the part worth looking at first.
 if [ -n "$DRY_RUN" ]; then
     say "would run: $*"
-    exit 0
-fi
-
-if ! "$@"; then
-    say ""
-    say "install.sh: that did not work. Usually it is one of these:"
-    if [ "$source_of" = "pypi" ]; then
-        say "  - The Bleep is not on PyPI yet, so install it from the"
-        say "    repository:  THEBLEEP_INSTALL_FROM=git sh install.sh"
-    fi
-    if [ "$installer" = "pip" ]; then
-        say "  - your distribution looks after its own Python packages and"
-        say "    will not let pip write there (PEP 668). Install pipx or uv"
-        say "    and run this again, and it will be used instead."
-    fi
-    say "  - the full error is above."
-    exit 1
-fi
-
-# -- and tell them what to do next --------------------------------------------
-
-say ""
-if have "$PACKAGE"; then
-    say "Installed: $(command -v "$PACKAGE")"
 else
-    for directory in "${UV_TOOL_BIN_DIR:-}" "${PIPX_BIN_DIR:-}" \
-                     "$HOME/.local/bin"; do
-        [ -n "$directory" ] || continue
-        if [ -x "$directory/$PACKAGE" ]; then
-            say "Installed: $directory/$PACKAGE"
-            say ""
-            say "That directory is not on your PATH yet. Add it:"
-            say "    export PATH=\"$directory:\$PATH\""
-            break
+    if ! "$@"; then
+        say ""
+        say "install.sh: that did not work. Usually it is one of these:"
+        if [ "$source_of" = "pypi" ]; then
+            say "  - PyPI could not be reached. Try again, or install straight"
+            say "    from the repository if you mean to:"
+            say "        THEBLEEP_INSTALL_FROM=git sh install.sh"
         fi
-    done
+        if [ "$installer" = "pip" ]; then
+            say "  - your distribution looks after its own Python packages and"
+            say "    will not let pip write there (PEP 668). Install pipx or uv"
+            say "    and run this again, and it will be used instead."
+        fi
+        say "  - the full error is above."
+        exit 1
+    fi
+
+    # -- where it landed ------------------------------------------------------
+
+    say ""
+    if have "$PACKAGE"; then
+        say "Installed: $(command -v "$PACKAGE")"
+    else
+        for directory in "${UV_TOOL_BIN_DIR:-}" "${PIPX_BIN_DIR:-}" \
+                         "$HOME/.local/bin"; do
+            [ -n "$directory" ] || continue
+            if [ -x "$directory/$PACKAGE" ]; then
+                say "Installed: $directory/$PACKAGE"
+                say ""
+                say "That directory is not on your PATH yet. Add it:"
+                say "    export PATH=\"$directory:\$PATH\""
+                break
+            fi
+        done
+    fi
 fi
 
 # The loader defines the alias the first time you use it, so opening a shell
