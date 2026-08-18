@@ -291,3 +291,66 @@ def test_get_new_management_command(wrong, fixed):
 def test_get_new_management_command_subcommand(wrong, fixed, output):
     command = Command('docker {}'.format(wrong), output)
     assert get_new_command(command) == ['docker {}'.format(x) for x in fixed]
+
+
+# What docker has said since version 25.
+def unknown(path):
+    return "docker: unknown command: docker {}\n\n" \
+           "Run 'docker --help' for more information\n".format(path)
+
+
+def unknown_subcommand(path, management):
+    return "docker: unknown command: docker {}\n\nUsage:  docker {}\n\n" \
+           "Run 'docker {} --help' for more information\n" \
+           .format(path, management, management)
+
+
+@pytest.mark.parametrize('script, output', [
+    ('docker pes', unknown('pes')),
+    ('docker imge', unknown('imge')),
+    ('docker image lss', unknown_subcommand('image lss', 'image'))])
+def test_match_modern_docker(script, output):
+    assert match(Command(script, output))
+
+
+@pytest.mark.usefixtures('no_memoize', 'docker_help_new')
+@pytest.mark.parametrize('wrong, fixed', [
+    ('pes', ['ps', 'push', 'pause']),
+    ('swarn', ['swarm', 'start', 'search'])])
+def test_get_new_command_modern_docker(wrong, fixed):
+    command = Command('docker {}'.format(wrong), unknown(wrong))
+    assert get_new_command(command) == ['docker {}'.format(x) for x in fixed]
+
+
+@pytest.mark.usefixtures('no_memoize', 'docker_help_new')
+def test_a_management_subcommand_is_looked_up_under_its_command(mocker):
+    """The error no longer lists the subcommands, so docker gets asked."""
+    popen = mocker.patch('subprocess.Popen')
+    popen.return_value.stdout = BytesIO(b'')
+    popen.return_value.stderr = BytesIO(
+        b'Usage:  docker image COMMAND\n\nCommands:\n'
+        b'  load        Load an image\n  ls          List images\n')
+
+    command = Command('docker image la',
+                      unknown_subcommand('image la', 'image'))
+    assert get_new_command(command) == ['docker image load', 'docker image ls']
+    assert popen.call_args[0][0] == ('docker', 'image', '--help')
+
+
+@pytest.mark.usefixtures('no_memoize')
+def test_commands_under_every_heading_are_found():
+    """`ps` and `run` live under `Common Commands:` in the current help."""
+    from thebleep.rules.docker_not_command import _parse_commands
+
+    help_text = ('Usage:  docker [OPTIONS] COMMAND\n'
+                 '\n'
+                 'Common Commands:\n'
+                 '  run         Create and run a new container\n'
+                 '  ps          List containers\n'
+                 '\n'
+                 'Management Commands:\n'
+                 '  image       Manage images\n'
+                 '\n'
+                 'Global Options:\n'
+                 '  --config string   Location of client config files\n')
+    assert _parse_commands(help_text.split('\n')) == ['run', 'ps', 'image']

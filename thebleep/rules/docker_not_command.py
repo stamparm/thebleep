@@ -1,49 +1,91 @@
-from itertools import dropwhile, takewhile, islice
 import re
 import subprocess
 from thebleep.utils import replace_command, for_app, which, cache
 from thebleep.specific.sudo import sudo_support
 
+# Docker up to 19 said `docker: 'imge' is not a docker command.`; it now says
+# `docker: unknown command: docker imge`, and for a management command it names
+# the whole path, as in `docker: unknown command: docker image lss`.
+UNKNOWN_COMMAND = re.compile(r'unknown command: docker ([^\r\n]+)')
+NOT_A_COMMAND = re.compile(r"docker: '(\w+)' is not a docker command\.")
 
-@sudo_support
-@for_app('docker')
-def match(command):
-    return 'is not a docker command' in command.output or 'Usage:	docker' in command.output
-
-
-def _parse_commands(lines, starts_with):
-    lines = dropwhile(lambda line: not line.startswith(starts_with), lines)
-    lines = islice(lines, 1, None)
-    lines = list(takewhile(lambda line: line.strip(), lines))
-    return [line.strip().split(' ')[0] for line in lines]
+# Older docker separated `Usage:` from the command with a tab, newer with
+# spaces.
+USAGE = re.compile(r'Usage:\s+docker')
 
 
-def get_docker_commands():
-    proc = subprocess.Popen('docker', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+def _is_command_heading(line):
+    """`Commands:`, and also `Common Commands:`, `Management Commands:` and
+    `Swarm Commands:`, which is where docker now keeps most of what people
+    type."""
+    return line.endswith('Commands:') and not line.startswith((' ', '\t'))
 
-    # Old version docker returns its output to stdout, while newer version returns to stderr.
+
+def _parse_commands(lines):
+    """Every command listed under any of a help text's command headings."""
+    commands = []
+    in_section = False
+    for line in lines:
+        line = line.rstrip('\r\n')
+        if _is_command_heading(line):
+            in_section = True
+        elif not line.strip() or not line.startswith((' ', '\t')):
+            # A blank or unindented line ends the listing, which is how
+            # `Options:` and the rest of the help get left out.
+            in_section = False
+        elif in_section:
+            commands.append(line.split()[0])
+
+    return commands
+
+
+def get_docker_commands(prefix=()):
+    """What `docker <prefix>` accepts next, according to docker."""
+    proc = subprocess.Popen(('docker',) + tuple(prefix) + ('--help',),
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Old versions of docker write their help to stdout, newer ones to stderr.
     lines = proc.stdout.readlines() or proc.stderr.readlines()
-    lines = [line.decode('utf-8') for line in lines]
-
-    # Only newer versions of docker have management commands in the help text.
-    if 'Management Commands:\n' in lines:
-        management_commands = _parse_commands(lines, 'Management Commands:')
-    else:
-        management_commands = []
-    regular_commands = _parse_commands(lines, 'Commands:')
-    return management_commands + regular_commands
+    return _parse_commands(line.decode('utf-8', 'replace') for line in lines)
 
 
 if which('docker'):
     get_docker_commands = cache(which('docker'))(get_docker_commands)
 
 
+def _listed_in_the_output(command):
+    """Docker 19 to 24 answered an unknown subcommand of a management command
+    with that command's usage, which lists what it does accept."""
+    if not USAGE.search(command.output) or len(command.script_parts) < 3:
+        return []
+
+    return _parse_commands(command.output.split('\n'))
+
+
+@sudo_support
+@for_app('docker')
+def match(command):
+    return bool(NOT_A_COMMAND.search(command.output)
+                or UNKNOWN_COMMAND.search(command.output)
+                or _listed_in_the_output(command))
+
+
 @sudo_support
 def get_new_command(command):
-    if 'Usage:' in command.output and len(command.script_parts) > 1:
-        management_subcommands = _parse_commands(command.output.split('\n'), 'Commands:')
-        return replace_command(command, command.script_parts[2], management_subcommands)
+    unknown = UNKNOWN_COMMAND.search(command.output)
+    if unknown:
+        parts = unknown.group(1).split()
+        if parts:
+            return replace_command(command, parts[-1],
+                                   get_docker_commands(tuple(parts[:-1])))
 
-    wrong_command = re.findall(
-        r"docker: '(\w+)' is not a docker command.", command.output)[0]
-    return replace_command(command, wrong_command, get_docker_commands())
+    not_a_command = NOT_A_COMMAND.search(command.output)
+    if not_a_command:
+        return replace_command(command, not_a_command.group(1),
+                               get_docker_commands())
+
+    listed = _listed_in_the_output(command)
+    if listed:
+        return replace_command(command, command.script_parts[-1], listed)
+
+    return []
