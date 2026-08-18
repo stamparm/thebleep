@@ -60,12 +60,12 @@ Run unit and functional tests (requires docker):
 pytest --enable-functional
 ```
 
-Redraw the README's demo and benchmark chart (the chart reads the committed
-benchmark run, so run it after recording a new one):
+Redraw the README's demo, and rewrite its benchmark chart from the committed
+benchmark run (do the second after recording a new one):
 
 ```bash
 python assets/make_demo.py
-python assets/make_benchmark.py
+python bench/chart.py
 ```
 
 `python assets/make_demo.py /tmp/at.svg --at 3000` writes the demo frozen three
