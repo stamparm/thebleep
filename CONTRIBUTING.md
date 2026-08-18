@@ -6,8 +6,8 @@ update The Bleep and see if the bug is still there.
 If it is (sorry again), check if the problem has not already been reported and
 if not, just open an issue on [GitHub](https://github.com/stamparm/thebleep) with
 the following basic information:
-  - the output of `thebleep --version` (something like `The Bleep 3.1 using
-    Python 3.5.0`);
+  - the output of `thebleep --version` (something like `The Bleep 4.0.0 using
+    Python 3.12.3 and Bash 5.2.21(1)-release`);
   - your shell and its version (`bash`, `zsh`, *Windows PowerShell*, etc.);
   - your system (Debian 7, ArchLinux, Windows, etc.);
   - how to reproduce the bug;
@@ -39,7 +39,7 @@ Install `The Bleep` for development:
 
 ```bash
 pip install -r requirements.txt
-python setup.py develop
+pip install -e .
 ```
 
 Run code style checks:
@@ -71,16 +71,42 @@ python bench/chart.py
 `python assets/make_demo.py /tmp/at.svg --at 3000` writes the demo frozen three
 seconds into its animation, which is how to look at a single frame of it.
 
-For sending package to pypi:
+## Everything CI checks, in one command
 
 ```bash
-sudo apt-get install pandoc
-./release.py
+flake8 && pytest -q && python bench/chart.py --check
 ```
+
+Add `--enable-functional` to `pytest` for the tests that drive real shells and
+a real PowerShell in docker. `pytest tests/test_rulepack_equivalence.py` is the
+slow one and the one worth keeping: it proves the rule cache cannot change which
+corrections exist.
+
+## Releasing
+
+`release.py` prepares and checks a release. It does not publish one.
+
+```bash
+./release.py 4.0.1
+```
+
+That writes the version into `setup.py`, the README badge and the CHANGELOG
+heading, runs the gates, builds both artifacts, checks their metadata and
+contents, installs the wheel into a clean virtualenv and corrects a command with
+it. Then it prints the two git commands to run.
+
+Pushing the version tag is what publishes. `.github/workflows/release.yml` builds
+the artifacts again from the tag, checks that the tag, `setup.py`, the CHANGELOG
+and the README badge agree, installs the wheel on Linux, macOS and Windows, and
+uploads those exact files to PyPI through [trusted
+publishing](https://docs.pypi.org/trusted-publishers/) — no API token exists.
+Run that workflow by hand with `target: testpypi` to rehearse it.
 
 ## Develop using Dev Container
 
-To make local development easier a [VSCode Devcontainer](https://code.visualstudio.com/docs/remote/remote-overview) is included with this repository. This will allows you to spin up a Docker container with all the necessary prerequisites for this project pre-installed ready to go, no local Python install/setup required.
+A [dev container](https://containers.dev/) is included: Python 3.12, the shells
+the functional tests drive, docker-in-docker for the ones that need it, and The
+Bleep installed for development. No local Python setup required.
 
 ### Prerequisites
 
