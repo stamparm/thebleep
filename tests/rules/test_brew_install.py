@@ -28,6 +28,21 @@ def brew_already_installed():
     return '''Warning: git-2.3.5 already installed'''
 
 
+@pytest.fixture
+def brew_no_such_formula_to_uninstall():
+    """The same sentence, from `brew uninstall foo`, under `Error:`."""
+    return '''Error: No available formula with the name "foo". Did you mean foot, fox, fop or fio?'''
+
+
+@pytest.mark.parametrize('script', [
+    'brew uninstall foo', 'brew reinstall foo'])
+def test_not_match_for_a_command_that_is_not_install(
+        script, brew_no_such_formula_to_uninstall):
+    """`install` is a substring of both, and correcting either to an install
+    would undo what was asked for."""
+    assert not match(Command(script, brew_no_such_formula_to_uninstall))
+
+
 def test_suggestions():
     assert _get_suggestions("one") == ['one']
     assert _get_suggestions("one or two") == ['one', 'two']
