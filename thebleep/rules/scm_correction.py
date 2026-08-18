@@ -6,6 +6,9 @@ path_to_scm = {
     '.hg': 'hg',
 }
 
+# Spelled out in the decorator below rather than starred from these keys: the
+# rule pack reads the app names from the syntax tree, and a name it cannot
+# resolve means the rule is consulted for every command there is.
 wrong_scm_patterns = {
     'git': 'fatal: Not a git repository',
     'hg': 'abort: no repository found',
@@ -19,7 +22,7 @@ def _get_actual_scm():
             return scm
 
 
-@for_app(*wrong_scm_patterns.keys())
+@for_app('git', 'hg')
 def match(command):
     scm = command.script_parts[0]
     pattern = wrong_scm_patterns[scm]

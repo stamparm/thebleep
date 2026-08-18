@@ -12,6 +12,7 @@ import io
 import os
 import subprocess
 import pytest
+from thebleep import rulepack
 from thebleep import rules as rules_package
 from thebleep.types import Command, Rule
 
@@ -71,8 +72,15 @@ def test_no_new_hidden_side_effects(loaded):
 
 
 def declared_apps():
-    """Every app name any rule says it is about."""
-    apps = set()
+    """Every app name any rule says it is about.
+
+    `git_support` is one of the ways of saying it, and saying it that way is why
+    a bare `git` went untested for so long.
+
+    """
+    apps = set(app for apps in rulepack.APP_DECORATORS.values()
+               for app in apps)
+    apps.update(('hub', 'sudo'))
     for path in rule_paths():
         with io.open(path, encoding='utf-8') as handle:
             tree = ast.parse(handle.read(), filename=path)
@@ -152,3 +160,29 @@ def test_a_rule_does_not_raise_on_a_command_it_cannot_help_with(name, loaded):
             raise AssertionError(
                 u'{}.get_new_command({!r}) raised {}: {}'.format(
                     name, command.script, type(error).__name__, error))
+
+
+def test_every_for_app_names_its_apps_where_the_pack_can_read_them():
+    """`@for_app(*names)` is a name the rule pack cannot resolve.
+
+    It reads the app names out of the syntax tree without executing anything, so
+    a starred argument means "app unknown", and the rule is then consulted for
+    every command there is. `ssh_known_hosts` and `scm_correction` were, which
+    is two extra rules loaded and run on every correction.
+
+    A rule of somebody's own may of course write it any way it likes; this is
+    about the ones shipped here.
+
+    """
+    starred = []
+    for path in rule_paths():
+        with io.open(path, encoding='utf-8') as handle:
+            tree = ast.parse(handle.read(), filename=path)
+        for node in ast.walk(tree):
+            if not (isinstance(node, ast.Call)
+                    and getattr(node.func, 'id', None) == 'for_app'):
+                continue
+            if any(isinstance(argument, ast.Starred)
+                   for argument in node.args):
+                starred.append(os.path.basename(path))
+    assert starred == []

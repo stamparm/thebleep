@@ -4,6 +4,9 @@ from thebleep.utils import (cache, for_app, replace_argument, replace_command,
 from subprocess import PIPE, Popen
 
 
+# Spelled out in the decorator below rather than starred from this tuple: the
+# rule pack reads the app names from the syntax tree, and a name it cannot
+# resolve means the rule is consulted for every command there is.
 supported_apps = 'goenv', 'nodenv', 'pyenv', 'rbenv'
 enabled_by_default = any(which(a) for a in supported_apps)
 
@@ -14,7 +17,7 @@ COMMON_TYPOS = {
 }
 
 
-@for_app(*supported_apps, at_least=1)
+@for_app('goenv', 'nodenv', 'pyenv', 'rbenv', at_least=1)
 def match(command):
     return 'env: no such command ' in command.output
 

@@ -10,7 +10,10 @@ def first_0flag(script_parts):
 
 @git_support
 def match(command):
-    return command.script_parts[1] == "branch" and first_0flag(command.script_parts)
+    # `git` on its own is a thing people type, and `git_support` only says which
+    # program this is, not that it has a subcommand.
+    parts = command.script_parts
+    return len(parts) > 1 and parts[1] == "branch" and first_0flag(parts)
 
 
 @git_support

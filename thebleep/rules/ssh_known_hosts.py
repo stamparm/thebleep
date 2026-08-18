@@ -16,6 +16,9 @@ import re
 from thebleep.shells import shell
 from thebleep.utils import for_app
 
+# Spelled out rather than starred from a tuple: the rule pack reads the app
+# names straight from the syntax tree, and `for_app(*commands)` is a name it
+# cannot resolve, so the rule was consulted for every command there is.
 commands = ('ssh', 'scp')
 
 WARNINGS = (
@@ -62,7 +65,7 @@ def _removal(output):
     return None
 
 
-@for_app(*commands)
+@for_app('ssh', 'scp')
 def match(command):
     # No `startswith` check: `for_app` has already established which command
     # this is, and does it without being fooled by `TERM=xterm-256color ssh`.
