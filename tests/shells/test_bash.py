@@ -90,6 +90,29 @@ class TestBash(object):
         config_exists.return_value = False
         assert not shell.how_to_configure().can_configure_automatically
 
+    @pytest.mark.parametrize('present, path', [
+        (('.bashrc',), '~/.bashrc'),
+        (('.bash_profile',), '~/.bash_profile'),
+        (('.bashrc', '.bash_profile'), '~/.bashrc'),
+        ((), 'bash config'),
+    ])
+    def test_how_to_configure_names_a_file_that_is_there(
+            self, shell, present, path, monkeypatch, config_exists):
+        """The test used to be `if os.path.join(home, '.bashrc')`.
+
+        A joined path is a non-empty string, so the first branch always won and
+        `.bash_profile` was never named -- on a machine with one and no
+        `.bashrc`, the advice was to edit a file that does not exist.
+
+        """
+        config_exists.return_value = True
+        home = os.path.expanduser('~')
+        monkeypatch.setattr(
+            'os.path.exists',
+            lambda candidate: os.path.basename(candidate) in present
+            and os.path.dirname(candidate) == home)
+        assert shell.how_to_configure().path == path
+
     def test_info(self, shell, Popen):
         Popen.return_value.stdout.read.side_effect = [b'3.5.9']
         assert shell.info() == 'Bash 3.5.9'

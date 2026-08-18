@@ -77,9 +77,15 @@ class Bash(Generic):
         return u'{}\n'.format(command_script)
 
     def how_to_configure(self):
-        if os.path.join(os.path.expanduser('~'), '.bashrc'):
+        # `os.path.join(...)` was the test here, and a joined path is a
+        # non-empty string, so the first branch always won and `.bash_profile`
+        # was never named -- on a machine that has one and no `.bashrc`, which
+        # is the usual macOS shape, the advice was to edit a file that is not
+        # there.
+        home = os.path.expanduser('~')
+        if os.path.exists(os.path.join(home, '.bashrc')):
             config = '~/.bashrc'
-        elif os.path.join(os.path.expanduser('~'), '.bash_profile'):
+        elif os.path.exists(os.path.join(home, '.bash_profile')):
             config = '~/.bash_profile'
         else:
             config = 'bash config'
