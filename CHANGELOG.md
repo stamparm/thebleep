@@ -52,7 +52,7 @@ rather than restarting it, because this is the same codebase carried forward.
   `builtin`, `nice`, `nohup`, `setsid` and `stdbuf` are peeled off, nested and
   in any combination, every rule sees what is underneath, and the
   wrapper comes back in front of the suggestion exactly as it was typed. One
-  model for all 170 rules, where before there was a `sudo`-only decorator that
+  model for all 173 rules, where before there was a `sudo`-only decorator that
   26 of them had asked for individually. It refuses rather than guesses: not
   for `sudo -i`, `sudo -s`, `sudo -e`, `sudo -l` or `command -v`, which do not
   run the command; not past an option it does not recognise, which might be one
@@ -67,7 +67,7 @@ rather than restarting it, because this is the same codebase carried forward.
   declares and the text it requires in the output are read out of its own
   `match`, by the same extraction that decides which rules to load at all — so
   a rule of your own explains itself as well as a bundled one does, and not one
-  of the 170 needed a hand-written description. `--explain` starts that way and
+  of the 173 needed a hand-written description. `--explain` starts that way and
   `explain = True` makes it permanent.
 
 ### It runs on current Python
@@ -170,15 +170,15 @@ rather than restarting it, because this is the same codebase carried forward.
 Measured against *The Fuck* 3.32 on the same machine and the same Python 3.11,
 median of 30 runs; the harness and the recorded run are in `bench/`.
 
-- Opening a shell: 218 ms → 28 ms, or to 0.07 ms with `--alias-loader`, which
+- Opening a shell: 199 ms → 27 ms, or to 0.07 ms with `--alias-loader`, which
   defines the alias on first use so shell startup runs no Python at all.
-- Correcting a mistyped command: 247 ms → 53 ms.
-- Correcting after a command printed a megabyte: 3257 ms → 115 ms. This one is
+- Correcting a mistyped command: 240 ms → 51 ms.
+- Correcting after a command printed a megabyte: 3240 ms → 109 ms. This one is
   a correctness fix as much as a speed one: output used to be read only after
   the command exited, which deadlocks once the output fills the pipe buffer, so
   anything printing more than about 64 KB produced nothing to correct from.
 - Rules are compiled once into a cache, and a command is only dispatched to the
-  rules that could match it — 28 of 170 rather than all of them.
+  rules that could match it — 28 of 173 rather than all of them.
 - A rule that looked for twenty-eight different messages lowercased the whole
   output once per message. On a megabyte that was 66 ms; it is 4.6 ms.
 - On Windows, where *The Fuck* has long been called slow, a correction takes

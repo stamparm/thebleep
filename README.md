@@ -41,12 +41,12 @@ Same machine, same Python 3.11, 30 runs each, medians:
 <!-- benchmark: written by bench/chart.py -->
 ```text
                                % of The Fuck's time  The Fuck  The Bleep  faster
-Open a shell                     ██▍░░░░░░░░░░░░░░░    218 ms      28 ms    7.7×
-Correct a mistyped command       ███▉░░░░░░░░░░░░░░    247 ms      53 ms    4.7×
-Correct inside a git repository  ███▉░░░░░░░░░░░░░░    243 ms      53 ms    4.6×
-Correct when nothing matches     ███▍░░░░░░░░░░░░░░    349 ms      66 ms    5.3×
-Correct a slow command *         ████████████▎░░░░░    825 ms     562 ms    1.5×
-Correct after 1 MB of output     ▋░░░░░░░░░░░░░░░░░    3.26 s     115 ms   28.3×
+Open a shell                     ██▌░░░░░░░░░░░░░░░    199 ms      27 ms    7.3×
+Correct a mistyped command       ███▊░░░░░░░░░░░░░░    240 ms      51 ms    4.7×
+Correct inside a git repository  ███▉░░░░░░░░░░░░░░    234 ms      51 ms    4.6×
+Correct when nothing matches     ███▍░░░░░░░░░░░░░░    339 ms      62 ms    5.4×
+Correct a slow command *         ████████████▍░░░░░    814 ms     558 ms    1.5×
+Correct after 1 MB of output     ▋░░░░░░░░░░░░░░░░░    3.24 s     109 ms   29.8×
 ```
 <!-- end benchmark -->
 
@@ -310,8 +310,8 @@ $ thebleep --doctor
   Executable          ~/.local/bin/thebleep
   On PATH             yes
   Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
-  Rules               170 bundled, 3 of your own
-  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (170 rules cached)
+  Rules               173 bundled, 3 of your own
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (173 rules cached)
 - Replayless capture  available, not switched on
                       See --enable-experimental-instant-mode.
   Editing             supported by this shell (tab at the prompt)
@@ -486,7 +486,7 @@ nothing.
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
-| **Rules** | 170 of them, for git, docker, npm, yarn, pip, apt, dnf, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+| **Rules** | 173 of them, for git, docker, npm, yarn, pip, apt, dnf, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
@@ -672,7 +672,7 @@ sudo -u www-data git checkout main
 and `stdbuf` are peeled off — nested, in any combination — the command
 underneath is corrected by every rule as though you had typed it on its own,
 and the wrapper comes back in front of the suggestion exactly as you wrote it.
-That is one model applied to all 170 rules, replacing a `sudo`-only decorator
+That is one model applied to all 173 rules, replacing a `sudo`-only decorator
 that 26 of them had asked for individually.
 
 It fails towards leaving your command alone. A wrapper that is not transparent
@@ -1140,7 +1140,7 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches 28 of the 170 rules, and one for a
+  running it. A typical command now reaches 28 of the 173 rules, and one for a
   tool with many rules of its own around 38, instead of all of them. Rules that don't say what they are about are always loaded,
   so this makes corrections faster, never fewer.
 - **Startup imports almost nothing, and so does a correction.** `pyte`,
@@ -1191,7 +1191,7 @@ it first:
 ```text
                                      Linux    Windows   Windows pays
 os.stat, a thousand times          1.71 ms   23.70 ms          13.9x
-read all 171 rule files            1.06 ms    8.98 ms           8.5x
+read all 174 rule files            1.06 ms    8.98 ms           8.5x
 create, write and delete 20 files  1.28 ms  124.71 ms          97.5x
 start a bare interpreter          24.17 ms  105.76 ms           4.4x
 ```
