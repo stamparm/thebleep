@@ -1,21 +1,39 @@
+# -*- encoding: utf-8 -*-
+
+"""`kubectl gat pods` -> `kubectl get pods`.
+
+kubectl names the word it did not understand and then lists what it might have
+been, which is more than most tools do:
+
+    error: unknown command "gat" for "kubectl"
+
+    Did you mean this?
+        set
+        get
+        wait
+
+kubectl indents those with a tab; they are spaces above so that this file has
+none in it. Its order is not the useful order -- `get` is second there -- so the
+suggestions are sorted by how close each is to what was typed. `replace_command`
+does that, and quotes what it puts back: the words come out of another program's
+output, and a suggestion is evaluated by the shell once it is accepted.
+
+Sometimes there is no `Did you mean` block at all (`kubectl zzzzzz`), and then
+there is nothing to suggest.
+
+"""
+
 import re
-from thebleep.utils import replace_argument, for_app
+from thebleep.utils import for_app, replace_command
 
-
-# kubectl prints `unknown command "<cmd>"` followed by one or more suggestions:
-#
-#   error: unknown command "gat" for "kubectl"
-#
-#   Did you mean this?
-#           get
-#
-# Older kubectl (before 1.26) used slightly different wording but kept the
-# `Did you mean` block.
-SUGGESTION = re.compile(r'^\s+(\S+)\s*$', re.MULTILINE)
+# A suggestion is an indented word on a line of its own. kubectl indents with a
+# tab; the guard against reading the rest of the message as suggestions is that
+# anything else non-blank ends the block.
+SUGGESTION = re.compile(r'^\s+(\S+)\s*$')
 
 
 def _get_suggestions(output):
-    """Return the commands kubectl itself suggested, in its order."""
+    """The commands kubectl itself offered, in the order it printed them."""
     suggestions = []
     after_marker = False
     for line in output.split('\n'):
@@ -25,9 +43,9 @@ def _get_suggestions(output):
         if not after_marker:
             continue
 
-        m = SUGGESTION.match(line)
-        if m:
-            suggestions.append(m.group(1))
+        found = SUGGESTION.match(line)
+        if found:
+            suggestions.append(found.group(1))
         elif line.strip():
             # The suggestions are over.
             break
@@ -44,9 +62,5 @@ def get_new_command(command):
     # The mistyped subcommand is the first non-flag argument after `kubectl`.
     misspelled_command = command.script_parts[1]
 
-    suggestions = _get_suggestions(command.output)
-    if suggestions:
-        return [replace_argument(command.script, misspelled_command, s)
-                for s in suggestions]
-
-    return []
+    return replace_command(command, misspelled_command,
+                           _get_suggestions(command.output))

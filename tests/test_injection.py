@@ -47,7 +47,7 @@ def canary(tmpdir):
     stub.chmod(0o755)
     for name in ('git', 'az', 'composer', 'grunt', 'npm', 'yarn', 'gradle',
                  'sh', 'env', 'rm', 'kill', 'ssh', 'ssh-keygen', 'vim',
-                 'rails'):
+                 'rails', 'kubectl'):
         shutil.copy(str(stub), str(stubs.join(name)))
 
     work = tmpdir.mkdir('work')
@@ -257,3 +257,15 @@ class TestNamesFromSomewhereElse(object):
         if not fix_file.match(command):
             return
         assert canary(fix_file.get_new_command(command)) == []
+
+    def test_kubectl(self, name, payload, canary):
+        """kubectl lists what it thinks you meant, and we repeat one back."""
+        from thebleep.rules import kubectl_unknown_command
+
+        output = (u'error: unknown command "gat" for "kubectl"\n\n'
+                  u'Did you mean this?\n\t{}\n\n'.format(payload))
+        command = Command(u'kubectl gat pods', output)
+        if not kubectl_unknown_command.match(command):
+            return
+        for suggestion in kubectl_unknown_command.get_new_command(command):
+            assert canary(suggestion) == []

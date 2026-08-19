@@ -313,8 +313,8 @@ $ thebleep --doctor
   Executable          ~/.local/bin/thebleep
   On PATH             yes
   Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
-  Rules               174 bundled, 3 of your own
-  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (174 rules cached)
+  Rules               175 bundled, 3 of your own
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (175 rules cached)
 - Replayless capture  available, not switched on
                       See --enable-experimental-instant-mode.
   Editing             supported by this shell (tab at the prompt)
@@ -495,7 +495,7 @@ nothing.
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
-| **Rules** | 174 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+| **Rules** | 175 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
@@ -794,6 +794,7 @@ The following rules are enabled by default:
 * `ifconfig_device_not_found` — fixes wrong device names like `wlan0` to `wlp2s0`;
 * `java` — removes `.java` extension when running Java programs;
 * `javac` — appends missing `.java` when compiling Java files;
+* `kubectl_unknown_command` — fixes mistyped `kubectl` subcommands like `kubectl gat pods`, from the suggestions kubectl itself prints;
 * `lein_not_task` — fixes wrong `lein` tasks like `lein rpl`;
 * `long_form_help` — changes `-h` to `--help` when the short form version is not supported
 * `ln_no_hard_link` — catches hard link creation on directories, suggest symbolic link;
@@ -1200,7 +1201,7 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches about a fifth of the 174 rules, and
+  running it. A typical command now reaches about a fifth of the 175 rules, and
   one for a tool with many rules of its own — `git` — under a quarter, instead of
   all of them. Rules that don't say what they are about are always loaded, so
   this makes corrections faster, never fewer.
