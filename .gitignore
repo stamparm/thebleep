@@ -62,9 +62,13 @@ target/
 # vim temporary files
 .*.swp
 
-# benchmark subjects and results
+# Benchmark subjects, and every result but the canonical one. `final.json` is
+# the run the README's table is written from, so it is committed on purpose --
+# named here rather than force-added, so that keeping it does not depend on
+# somebody remembering `git add -f`.
 bench/.venvs/
-bench/results/
+bench/results/*
+!bench/results/final.json
 
 # CodeGraph's local index of this checkout
 .codegraph/

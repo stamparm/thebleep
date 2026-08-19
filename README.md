@@ -41,12 +41,12 @@ Same machine, same Python 3.11, 30 runs each, medians:
 <!-- benchmark: written by bench/chart.py -->
 ```text
                                % of The Fuck's time  The Fuck  The Bleep  faster
-Open a shell                     ██▌░░░░░░░░░░░░░░░    199 ms      27 ms    7.3×
-Correct a mistyped command       ███▊░░░░░░░░░░░░░░    240 ms      51 ms    4.7×
-Correct inside a git repository  ███▉░░░░░░░░░░░░░░    234 ms      51 ms    4.6×
-Correct when nothing matches     ███▍░░░░░░░░░░░░░░    339 ms      62 ms    5.4×
-Correct a slow command *         ████████████▍░░░░░    814 ms     558 ms    1.5×
-Correct after 1 MB of output     ▋░░░░░░░░░░░░░░░░░    3.24 s     109 ms   29.8×
+Open a shell                     ██▍░░░░░░░░░░░░░░░    210 ms      28 ms    7.6×
+Correct a mistyped command       ████▏░░░░░░░░░░░░░    246 ms      56 ms    4.4×
+Correct inside a git repository  ████░░░░░░░░░░░░░░    250 ms      55 ms    4.5×
+Correct when nothing matches     ███▋░░░░░░░░░░░░░░    341 ms      68 ms    5.0×
+Correct a slow command *         ████████████▎░░░░░    827 ms     563 ms    1.5×
+Correct after 1 MB of output     ▋░░░░░░░░░░░░░░░░░    3.25 s     117 ms   27.8×
 ```
 <!-- end benchmark -->
 
@@ -56,7 +56,7 @@ read what it printed, so this row is mostly the sleep.
 Opening a shell is worth a second look: that row is `eval "$(thebleep --alias)"`
 in your rc, which starts a Python interpreter every time. Use the
 [loader](#the-alias-and-why-it-costs-nothing) instead and opening a shell defines
-a shell function and **runs no Python at all** — the 27 ms goes, and what is left
+a shell function and **runs no Python at all** — the 28 ms goes, and what is left
 is too small to measure honestly against the noise in shell startup.
 
 Those are Linux numbers, on the machine named in the result file. Windows and
@@ -556,7 +556,7 @@ thebleep --alias-loader fuck >> ~/.bashrc
 ### Paying at startup instead
 
 `eval $(thebleep --alias)` in your startup file does the same job by starting a
-Python interpreter every time you open a shell, which is the 27 ms in the table
+Python interpreter every time you open a shell, which is the 28 ms in the table
 above. Use it if you prefer it, and for the experimental instant mode, which has
 to set your prompt up front.
 
@@ -1174,7 +1174,7 @@ Reproduce it yourself:
 
 ```bash
 ./bench/setup_subjects.sh python3.11      # builds both, from their own packages
-BENCH_CPU=2,3 ./bench/bench.py \
+BENCH_CPU=2,3 ./bench/bench.py --runs 30 \
     --subject fuck=bench/.venvs/fuck-3.11/bin/thefuck \
     --subject bleep=bench/.venvs/bleep-3.11/bin/thebleep
 ```
@@ -1182,7 +1182,10 @@ BENCH_CPU=2,3 ./bench/bench.py \
 Python 3.11 is used for the comparison because *The Fuck* cannot start on 3.12
 or newer — it imports `distutils`, which is no longer in the standard library.
 On this machine the interpreter itself costs 9 ms before either app runs a line,
-so that is the floor both are measured against.
+so that is the floor both are measured against. The `environment` block in the
+result file records the commit it was measured at, the kernel, the CPU and the
+harness's interpreter, so `git show` is what says which source those numbers
+belong to.
 
 Where the time went:
 
@@ -1211,7 +1214,7 @@ Where the time went:
 - **The failed command's output is read while it runs.** It used to be read
   after the command exited, which deadlocks as soon as the output fills the
   pipe buffer: anything printing more than about 64KB waited out the full
-  timeout and then produced *nothing to correct from*. That is the 29.8× row
+  timeout and then produced *nothing to correct from*. That is the 27.8× row
   above, and it is a correctness fix as much as a speed one.
 - **Nothing is scanned twice.** The list of everything on your `$PATH` is
   remembered until a directory on it changes.

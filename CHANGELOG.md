@@ -173,11 +173,11 @@ rather than restarting it, because this is the same codebase carried forward.
 Measured against *The Fuck* 3.32 on the same machine and the same Python 3.11,
 median of 30 runs; the harness and the recorded run are in `bench/`.
 
-- Opening a shell: 199 ms → 27 ms with `eval "$(thebleep --alias)"`, and with
+- Opening a shell: 210 ms → 28 ms with `eval "$(thebleep --alias)"`, and with
   `--alias-loader` to nothing worth timing — the alias is defined on first use,
   so shell startup runs no Python at all.
-- Correcting a mistyped command: 240 ms → 51 ms.
-- Correcting after a command printed a megabyte: 3240 ms → 109 ms. This one is
+- Correcting a mistyped command: 246 ms → 56 ms.
+- Correcting after a command printed a megabyte: 3251 ms → 117 ms. This one is
   a correctness fix as much as a speed one: output used to be read only after
   the command exited, which deadlocks once the output fills the pipe buffer, so
   anything printing more than about 64 KB produced nothing to correct from.

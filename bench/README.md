@@ -13,13 +13,15 @@ does not trust it. That is what this directory is for.
 ```
 
 Output is a table of median wall-clock times per scenario, plus a ratio column
-when exactly two subjects are given.
+when exactly two subjects are given. The committed run in
+`results/final.json` begins:
 
 ```
 scenario                  fuck         bleep     ratio
 ------------------------------------------------------
-alias                202.01 ms      82.55 ms     2.45x
-correct-fast         237.22 ms     117.24 ms     2.02x
+alias                209.93 ms      27.77 ms     7.56x
+version              208.65 ms      55.82 ms     3.74x
+correct-fast         245.83 ms      55.87 ms     4.40x
 ```
 
 ## The scenarios
@@ -32,6 +34,14 @@ correct-fast         237.22 ms     117.24 ms     2.02x
 | `correct-nomatch` | nothing matches, so every rule gets consulted |
 | `correct-slow` | the failed command takes 500 ms to re-run |
 | `correct-in-repo` | inside a git repository, where the git rules do real work |
+| `correct-big-output` | the failed command printed a megabyte first |
+| `correct-wrapped` | `nice -n 10 git brnch`, corrected behind its wrapper — which upstream cannot do, so it has no baseline |
+
+There is no `alias-loader` scenario, and deliberately: the loader runs no Python
+at all, so what there would be to time is a shell defining a function, and the
+difference between that and a shell doing nothing is smaller than the run-to-run
+spread of starting a shell. Subtracting two noisy medians to four decimal places
+is not a measurement.
 
 `./bench/bench.py --list` prints them too.
 
@@ -81,20 +91,26 @@ aggregating the app's own `--debug` timers and the `-X importtime` graph:
 ```
 phase                       time    events
 ------------------------------------------
-rule imports             21.2 ms       169
-rule matching             1.1 ms        63
-command re-run           14.0 ms         1
+rule imports              8.7 ms        86
+rule matching             0.0 ms         2
+unaccounted              23.3 ms
 ```
 
 That table is the whole reason the optimisation work is ordered the way it is:
-matching 169 rules is nearly free, loading them is not.
+matching rules is nearly free, loading them is not — so the work went into
+loading fewer of them, and `events` is how many were reached. The unaccounted
+time is the interpreter starting and the failed command being read.
 
 ## The published numbers
 
 `bench/results/final.json` is the run behind the table in the project README:
-Python 3.11 on Linux, 30 runs per scenario, CPUs pinned. Re-running the harness
-with `--json bench/results/final.json` replaces it, and `--baseline` compares
-against it:
+Python 3.11 on Linux, 30 runs per scenario, CPUs pinned. Its `environment` block
+records the commit it was measured at, the kernel, the CPU and the harness's own
+interpreter, so what it is a measurement *of* is not a matter of memory —
+`git show <that commit>` is the source. Re-running the harness with `--json
+bench/results/final.json` replaces it; `python bench/chart.py` then rewrites the
+README's table from it, and `python bench/chart.py --check` fails if the two have
+drifted apart. `--baseline` compares against it:
 
 ```bash
 ./bench/bench.py --subject bleep=... --baseline bench/results/final.json
