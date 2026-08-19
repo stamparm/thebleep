@@ -4,18 +4,28 @@ can to fix that. Actually, maybe we already have, so first thing to do is to
 update The Bleep and see if the bug is still there.
 
 If it is (sorry again), check if the problem has not already been reported and
-if not, just open an issue on [GitHub](https://github.com/stamparm/thebleep) with
-the following basic information:
-  - the output of `thebleep --version` (something like `The Bleep 4.0.0 using
-    Python 3.12.3 and Bash 5.2.21(1)-release`);
-  - your shell and its version (`bash`, `zsh`, *Windows PowerShell*, etc.);
-  - your system (Debian 7, ArchLinux, Windows, etc.);
-  - how to reproduce the bug;
-  - the output of The Bleep with `THEBLEEP_DEBUG=true` exported (typically execute
-    `export THEBLEEP_DEBUG=true` in your shell before The Bleep);
-  - if the bug only appears with a specific application, the output of that
-    application and its version;
-  - anything else you think is relevant.
+if not, just open an issue on [GitHub](https://github.com/stamparm/thebleep) with:
+
+  - **the output of `thebleep --doctor`.** That is the version, the Python, the
+    system, the shell and how it was worked out, where the alias is, which copy
+    of `thebleep` your shell is finding, and whether the settings file loads —
+    which is nearly always where the answer turns out to be. It is built to be
+    pasted: it reports that a setting is set and never what it is set to, names
+    nothing out of your environment but the handful of variables The Bleep itself
+    defines, and folds your home directory back to `~`;
+  - how to reproduce it: the command you typed, and what you expected instead;
+  - if it is about a specific tool, what that tool printed and its version.
+
+Two more, only when the above has not explained it:
+
+  - the output with `THEBLEEP_DEBUG=true` exported;
+  - if the bug only shows up with one of your own rules, that rule.
+
+**Read what you are about to paste.** A failed command's output is the thing
+being corrected from, so it is the thing an issue tends to end up containing —
+and it can hold a host name, a path inside your employer, a repository URL or a
+token a tool printed at you. Redact it. Debug output is longer and worth the same
+second look. Do not paste your environment.
 
 It's only with enough information that we can do something to fix the problem.
 

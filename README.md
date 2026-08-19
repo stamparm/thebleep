@@ -54,13 +54,14 @@ Correct after 1 MB of output     ▋░░░░░░░░░░░░░░�
 read what it printed, so this row is mostly the sleep.
 
 Opening a shell is worth a second look: that row is `eval "$(thebleep --alias)"`
-in your rc. Use the loader instead and it costs **0.07 ms** — measured against an
-empty `bash -c true` on the same machine — because then opening a shell defines a
-shell function and runs no Python at all.
+in your rc, which starts a Python interpreter every time. Use the
+[loader](#the-alias-and-why-it-costs-nothing) instead and opening a shell defines
+a shell function and **runs no Python at all** — the 27 ms goes, and what is left
+is too small to measure honestly against the noise in shell startup.
 
-Those are Linux numbers. On Windows, where *The Fuck* has been called slow for
-years, a correction on a real Windows 10 machine with Defender live takes
-**308 ms against 876 ms** — see [On Windows](#on-windows).
+Those are Linux numbers, on the machine named in the result file. Windows and
+PowerShell are exercised in CI on every push; [On Windows](#on-windows) is about
+what makes a correction expensive there and what was done about it.
 
 The harness is [`bench/`](bench/README.md), the run these numbers come from is
 [`bench/results/final.json`](bench/results/final.json), and the block above is
@@ -72,8 +73,9 @@ The rest of the reasons:
 - **Python 3.9 through 3.14**, tested on Linux, macOS and Windows on every one
   of them — and Bash, Zsh, Fish, tcsh and PowerShell as before, with
   Nushell added. [Supported everything](#supported-everything).
-- **30 issues from *The Fuck*'s backlog are fixed here** — three of them
-  command injections — plus the rules that had rotted against current
+- **30 items from *The Fuck*'s backlog are fixed here**, issues and pull
+  requests, several of them command injections — plus the rules that had rotted
+  against current
   `git`, `npm`, `docker`, `cargo`, `brew`, `gem`, `az`, `gradle` and
   `terraform`. [What's fixed](#whats-fixed).
 - **It asks before running your previous command a second time.** Reading what
@@ -89,8 +91,8 @@ The rest of the reasons:
   with, in one screen you can paste anywhere.
   [Diagnostics](#thebleep---doctor).
 - **Nothing to relearn.** The same rules and settings, and the same `fuck` alias
-  if you want it; six rules are deliberately less eager, all in the direction of
-  doing only what they say. [Coming from The Fuck](#coming-from-the-fuck).
+  if you want it; seven rules are deliberately less eager, all in the direction
+  of doing only what they say. [Coming from The Fuck](#coming-from-the-fuck).
 
 *The Bleep* is based on the original codebase by Vladimir Iakovlev and its
 contributors; their work and history remain fully credited.
@@ -106,14 +108,15 @@ contributors; their work and history remain fully credited.
 7. [Supported everything](#supported-everything)
 8. [Installation](#installation)
 9. [Updating](#updating)
-10. [How it works](#how-it-works)
-11. [Creating your own rules](#creating-your-own-rules)
-12. [Settings](#settings)
-13. [Third-party packages with rules](#third-party-packages-with-rules)
-14. [Experimental instant mode](#experimental-instant-mode)
-15. [Performance](#performance)
-16. [Developing](#developing)
-17. [License](#license-mit)
+10. [Uninstall](#uninstall)
+11. [How it works](#how-it-works)
+12. [Creating your own rules](#creating-your-own-rules)
+13. [Settings](#settings)
+14. [Third-party packages with rules](#third-party-packages-with-rules)
+15. [Experimental instant mode](#experimental-instant-mode)
+16. [Performance](#performance)
+17. [Developing](#developing)
+18. [License](#license-mit)
 
 ## Safe by default
 
@@ -191,8 +194,8 @@ editing before you edit it.
 The correction goes into the line editor through whatever the shell offers for
 exactly that. There is no fallback for the shells that offer nothing: the trick
 that would work everywhere is `TIOCSTI`, which pushes characters into another
-process's terminal as though they had been typed, and which Linux has been able
-to refuse outright since 5.17 — for good reasons that apply here too.
+process's terminal as though they had been typed. Modern Linux can refuse it
+outright, and does by default — for good reasons that apply here too.
 
 | Shell | How | What you get |
 | --- | --- | --- |
@@ -369,7 +372,7 @@ What to know:
   [Reading the previous command](#reading-the-previous-command) explains why
   you might not want to.
 
-Six rules behave differently on purpose, all in the same direction — what you
+Seven rules behave differently on purpose, all in the same direction — what you
 agree to is what runs:
 
 - `dirty_untar` and `dirty_unzip` suggest extracting into a directory of their
@@ -398,18 +401,19 @@ agree to is what runs:
 
 Every commit that fixes a reported problem names the issue it fixes, so this is
 `git log --grep 'nvbn/thefuck#'` rather than a claim in a README. Thirty
-upstream issues so far, every one of them linked below, and the rest found by
+upstream backlog items so far — half of them issues and half of them pull
+requests nobody merged — every one of them linked below, and the rest found by
 running the tools.
 
 **It starts on current Python.** `distutils` was removed in 3.12 and *The Fuck*
 imports it, so it cannot run there at all; `pkg_resources` and `imp` were going
 the same way. All three are gone, Python 2 support went with them, and the
 suite runs on 3.9 through 3.14 on Linux, macOS and Windows.
-&nbsp;<sub>[#1499](https://github.com/nvbn/thefuck/issues/1499)
-[#1610](https://github.com/nvbn/thefuck/issues/1610)
+&nbsp;<sub>[#1499](https://github.com/nvbn/thefuck/pull/1499)
+[#1610](https://github.com/nvbn/thefuck/pull/1610)
 [#1552](https://github.com/nvbn/thefuck/issues/1552)
-[#1479](https://github.com/nvbn/thefuck/issues/1479)
-[#873](https://github.com/nvbn/thefuck/issues/873)</sub>
+[#1479](https://github.com/nvbn/thefuck/pull/1479)
+[#873](https://github.com/nvbn/thefuck/pull/873)</sub>
 
 **Three ways a command could be turned into a different command.** Text that
 came out of the failed command's own output — a filename, a branch, a URL —
@@ -453,27 +457,27 @@ a process that exits while being killed, no terminal attached, a closed pipe,
 `set -u`, an empty alias, Fish's history moving to the XDG data directory, a
 command on Windows whose file is not spelled the way you typed it, and your
 environment being printed into debug output.
-&nbsp;<sub>[#1600](https://github.com/nvbn/thefuck/issues/1600)
+&nbsp;<sub>[#1600](https://github.com/nvbn/thefuck/pull/1600)
 [#1509](https://github.com/nvbn/thefuck/issues/1509)
 [#1026](https://github.com/nvbn/thefuck/issues/1026)
 [#1040](https://github.com/nvbn/thefuck/issues/1040)
-[#1562](https://github.com/nvbn/thefuck/issues/1562)
-[#1539](https://github.com/nvbn/thefuck/issues/1539)
-[#1355](https://github.com/nvbn/thefuck/issues/1355)
-[#1551](https://github.com/nvbn/thefuck/issues/1551)
-[#1258](https://github.com/nvbn/thefuck/issues/1258)
+[#1562](https://github.com/nvbn/thefuck/pull/1562)
+[#1539](https://github.com/nvbn/thefuck/pull/1539)
+[#1355](https://github.com/nvbn/thefuck/pull/1355)
+[#1551](https://github.com/nvbn/thefuck/pull/1551)
+[#1258](https://github.com/nvbn/thefuck/pull/1258)
 [#1209](https://github.com/nvbn/thefuck/issues/1209)
 [#1296](https://github.com/nvbn/thefuck/issues/1296)
-[#995](https://github.com/nvbn/thefuck/issues/995)
-[#1506](https://github.com/nvbn/thefuck/issues/1506)</sub>
+[#995](https://github.com/nvbn/thefuck/pull/995)
+[#1506](https://github.com/nvbn/thefuck/pull/1506)</sub>
 
-**And the test suite itself.** Three of the upstream issues are about the tests
-rather than the tool: `mock` became `unittest.mock`, a memoized helper leaked
+**And the test suite itself.** Three of the thirty are about the tests rather
+than the tool: `mock` became `unittest.mock`, a memoized helper leaked
 between test cases, and `usefixtures` was applied to a fixture, where it does
 nothing.
-&nbsp;<sub>[#1344](https://github.com/nvbn/thefuck/issues/1344)
-[#1523](https://github.com/nvbn/thefuck/issues/1523)
-[#1550](https://github.com/nvbn/thefuck/issues/1550)</sub>
+&nbsp;<sub>[#1344](https://github.com/nvbn/thefuck/pull/1344)
+[#1523](https://github.com/nvbn/thefuck/pull/1523)
+[#1550](https://github.com/nvbn/thefuck/pull/1550)</sub>
 
 **And it is quicker**, which has [a section of its own](#performance).
 
@@ -553,8 +557,8 @@ thebleep --alias-loader fuck >> ~/.bashrc
 
 `eval $(thebleep --alias)` in your startup file does the same job by starting a
 Python interpreter every time you open a shell, which is the 27 ms in the table
-above rather than 0.07 ms. Use it if you prefer it, and for the experimental
-instant mode, which has to set your prompt up front.
+above. Use it if you prefer it, and for the experimental instant mode, which has
+to set your prompt up front.
 
 ### Your shell
 
@@ -622,10 +626,10 @@ the certain one.
 Changes are only available in a new shell session. To make changes immediately
 available, run `source ~/.bashrc` (or your shell config file like `.zshrc`).
 
-To run fixed commands without confirmation, use the `--yeah` option (or just `-y` for short, or `--hard` if you're especially frustrated):
+To run fixed commands without confirmation, use `--yes` (or `-y` for short):
 
 ```bash
-bleep --yeah
+bleep --yes
 ```
 
 To fix commands recursively until succeeding, use the `-r` option:
@@ -675,8 +679,9 @@ sudo -u www-data git checkout main
 and `stdbuf` are peeled off — nested, in any combination — the command
 underneath is corrected by every rule as though you had typed it on its own,
 and the wrapper comes back in front of the suggestion exactly as you wrote it.
-That is one model applied to all 173 rules, replacing a `sudo`-only decorator
-that 26 of them had asked for individually.
+That is one model applied to every rule, in place of the `sudo`-only decorator
+that 26 of them had to ask for individually — which is still there, and still
+works, for rules outside this repository.
 
 It fails towards leaving your command alone. A wrapper that is not transparent
 is not peeled: `sudo -i` and `sudo -s` run a shell, `sudo -e` opens an editor,
@@ -728,7 +733,7 @@ The following rules are enabled by default:
 * `git_add_force` — adds `--force` to `git add <pathspec>...` when paths are .gitignore'd;
 * `git_bisect_usage` — fixes `git bisect strt`, `git bisect goood`, `git bisect rset`, etc. when bisecting;
 * `git_branch_delete` — changes `git branch -d` to `git branch -D`;
-* `git_branch_delete_checked_out` — changes `git branch -d` to `git checkout master && git branch -D` when trying to delete a checked out branch;
+* `git_branch_delete_checked_out` — when you try to delete the branch you are on, checks out the default branch first and then deletes it: whatever `origin/HEAD` points at, or `main` or `master` if there is no remote to ask;
 * `git_branch_exists` — offers `git branch -d foo`, `git branch -D foo` or `git checkout foo` when creating a branch that already exists;
 * `git_branch_list` — catches `git branch list` in place of `git branch` and removes created branch;
 * `git_branch_0flag` — fixes commands such as `git branch 0v` and `git branch 0r` removing the created branch;
@@ -804,7 +809,7 @@ The following rules are enabled by default:
 * `no_such_file` — creates missing directories with `mv` and `cp` commands;
 * `omnienv_no_such_command` — fixes wrong commands for `goenv`, `nodenv`, `pyenv` and `rbenv` (eg.: `pyenv isntall` or `goenv list`);
 * `open` — either prepends `http://` to address passed to `open` or creates a new file or directory and passes it to `open`;
-* `pip_install` — fixes permission issues with `pip install` commands by adding `--user` or prepending `sudo` if necessary;
+* `pip_install` — adds `--user` when `pip install` failed for want of permission. It does not offer `sudo pip install`; where `--user` is not enough, `pip_externally_managed` below has the answer;
 * `pip_externally_managed` — offers `pipx` or a virtual environment when pip refuses to install into the system Python (PEP 668);
 * `pip_unknown_command` — fixes wrong `pip` commands, for example `pip instatl/pip install`;
 * `php_s` — replaces `-s` by `-S` when trying to run a local php server;
@@ -864,9 +869,9 @@ The following rules are enabled by default on specific platforms only:
 * `brew_update_formula` — turns `brew update <formula>` into `brew upgrade <formula>`;
 * `dnf_no_such_command` — fixes mistyped DNF commands;
 * `nixos_cmd_not_found` — installs apps on NixOS;
-* `pacman` — installs app with `pacman` if it is not installed (uses `yay`, `pikaur` or `yaourt` if available);
+* `pacman` — installs app with `pacman` if it is not installed (uses `paru`, `yay`, `pikaur` or `yaourt` if available, in that order);
 * `pacman_invalid_option` — replaces lowercase `pacman` options with uppercase.
-* `pacman_not_found` — fixes package name with `pacman`, `yay`, `pikaur` or `yaourt`.
+* `pacman_not_found` — fixes package name with `pacman`, `paru`, `yay`, `pikaur` or `yaourt`.
 * `yum_invalid_operation` — fixes invalid `yum` calls, like `yum isntall vim`;
 
 The following commands are bundled with *The Bleep*, but are not enabled by
@@ -888,12 +893,8 @@ match(command: Command) -> bool
 get_new_command(command: Command) -> str | list[str]
 ```
 
-Additionally, rules can contain optional functions:
-
-```python
-side_effect(old_command: Command, fixed_command: str) -> None
-```
-Rules can also contain the optional variables `enabled_by_default`, `requires_output` and `priority`.
+Rules can also contain the optional variables `enabled_by_default`,
+`requires_output` and `priority`.
 
 `Command` has three attributes: `script`, `output` and `script_parts`.
 Your rule should not change `Command`.
@@ -905,31 +906,59 @@ Your rule should not change `Command`.
 `settings` is a special object assembled from `~/.config/thebleep/settings.py`,
 and values from env ([see more below](#settings)).
 
-A simple example rule for running a script with `sudo`:
+A whole rule, for a `kubectl` that wants `--namespace` and did not get one:
 
 ```python
+import re
+
+# Read out of the rule by the loader, so a `kubectl` rule is never even
+# compiled for your `git push`. Worth declaring; see How it works.
+from thebleep.utils import for_app
+
+
+@for_app('kubectl')
 def match(command):
-    return ('permission denied' in command.output.lower()
-            or 'EACCES' in command.output)
+    return 'the server doesn\'t have a resource type' in command.output
 
 
 def get_new_command(command):
-    return 'sudo {}'.format(command.script)
+    return re.sub(r'^kubectl ', 'kubectl --namespace default ', command.script)
 
-# Optional:
+
+# All optional, and these are the defaults.
 enabled_by_default = True
-
-def side_effect(command, fixed_command):
-    subprocess.call('chmod 777 .', shell=True)
-
-priority = 1000  # Lower first, default is 1000
-
-requires_output = True
+requires_output = True    # do not even try me without the command's output
+priority = 1000           # lower is matched first
 ```
 
-[More examples of rules](https://github.com/stamparm/thebleep/tree/master/thebleep/rules),
-[utility functions for rules](https://github.com/stamparm/thebleep/tree/master/thebleep/utils.py),
-[app/os-specific helpers](https://github.com/stamparm/thebleep/tree/master/thebleep/specific/).
+That is the whole interface. A rule reads a command and returns a string — or a
+list of strings, to offer several — and the one you accept is the one that runs.
+
+### side_effect, and why to think twice
+
+A rule may also define:
+
+```python
+side_effect(old_command: Command, fixed_command: str) -> None
+```
+
+which runs after you accept the correction, and only then — pressing
+<kbd>tab</kbd> to [edit](#edit-before-you-run) does not fire it, because nothing
+has run. It is supported and is not going away, and third-party rules that use it
+keep working.
+
+It is still the wrong tool nine times out of ten. Whatever it does happens
+*outside* the command you were shown and agreed to, so the thing you approved is
+not the thing that happened — which is exactly how `dirty_untar` came to delete
+files and `ssh_known_hosts` came to drop a host key behind a warning you never
+read. Both are now rules that say what they do in the command itself, and both
+are better rules for it. Prefer `shell.and_('the thing you want first',
+command.script)`: it is visible, it is refusable, and it appears in your history
+like anything else you ran.
+
+[More examples of rules](thebleep/rules),
+[utility functions for rules](thebleep/utils.py),
+[app/os-specific helpers](thebleep/specific/).
 
 ##### [Back to Contents](#contents)
 
@@ -999,8 +1028,10 @@ rule with lower `priority` will be matched first;
 * `THEBLEEP_WAIT_SLOW_COMMAND` — the max amount of time in seconds for getting previous command output if it in `slow_commands` list;
 * `THEBLEEP_SLOW_COMMANDS` — list of slow commands, like `lein:gradle`;
 * `THEBLEEP_NUM_CLOSE_MATCHES` — the maximum number of close matches to suggest, like `5`.
+* `THEBLEEP_REPEAT` — if the corrected command fails too, correct that as well, `true/false`.
 * `THEBLEEP_EDIT` — hand the correction to your command line to edit instead of running it, `true/false`.
 * `THEBLEEP_EXPLAIN` — say which rule made each suggestion and what it matched, `true/false`.
+* `THEBLEEP_INSTANT_MODE` — read what scrolled past instead of running your command again, `true/false`; see [Experimental instant mode](#experimental-instant-mode).
 * `THEBLEEP_EXCLUDED_SEARCH_PATH_PREFIXES` — path prefixes to ignore when searching for commands, by default `[]`.
 
 For example:
@@ -1072,10 +1103,20 @@ zsh 5.9:
 | After <kbd>ctrl+c</kbd>, or a window resize | works |
 | Unicode in the output | works |
 | Megabytes of output, wrapping the recording several times | works |
+| Megabytes of Unicode output, wrapping mid-character | works |
+| Output that was never text at all (a `cat` of a binary) | works |
 | After a full-screen program (`less`, `vim`, `top`) | **does not correct** |
 | After a shell started inside the shell | **does not correct** |
 
-The last two are the same limitation. What is recorded is the raw terminal
+The two Unicode rows are one row in the tests and were two bugs until this
+release: the recording is a ring, so reading the last megabyte of it begins at
+whatever byte is a megabyte back, and that is inside a character as often as the
+output has multibyte characters in it. Decoding it raised, and the traceback came
+out of the middle of a correction.
+[`tests/output_readers/test_read_log.py`](tests/output_readers/test_read_log.py)
+holds every offset into that seam.
+
+The last two rows are the same limitation. What is recorded is the raw terminal
 stream, and where one command's output ends is worked out by looking for a mark
 that instant mode puts in your `PS1`. A program that takes over the screen moves
 the cursor wherever it likes and the marks stop lining up with what is on it; a
@@ -1084,9 +1125,12 @@ nested shell writes a second set of them. For the same reason it needs your
 after the alias is set up — powerlevel10k, starship, some oh-my-zsh themes —
 switches instant mode off, with a warning saying so.
 
-Where it does not work it does not go wrong: the mark is missing or the command
-is not found in the recording, and *The Bleep* falls back to
-[asking before it runs anything again](#reading-the-previous-command).
+Where it does not work it does not go wrong: the mark is missing, or the command
+has scrolled out of the recording, and instant mode is simply not in play for
+that correction — which takes the ordinary route and
+[asks before it runs anything again](#reading-the-previous-command). Falling back
+gains nothing: the question is the same question, and the same short list of
+programs that only ever read is what skips it.
 
 What is fixed rather than documented:
 
@@ -1118,9 +1162,13 @@ is committed as [`bench/results/final.json`](bench/results/final.json), and the
 chart at the top is written from that file by
 [`bench/chart.py`](bench/chart.py), so the two cannot drift apart.
 
-The shell startup row is not a typo: with the loader pasted into your rc, a
-shell takes 876 µs to start against 835 µs with nothing configured at all, so
-what The Bleep costs you there is about 40 µs.
+The shell startup row is the eager alias, `eval "$(thebleep --alias)"`, which
+starts an interpreter every time you open a shell. The loader is the row that is
+not in the table, because there is nothing to time: it is five lines of shell
+that define a function, and the interpreter starts the first time you use the
+alias instead. Timing it against a shell with nothing configured at all comes out
+inside the run-to-run spread of shell startup, which is the honest answer rather
+than a number.
 
 Reproduce it yourself:
 
@@ -1143,24 +1191,28 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches 28 of the 173 rules, and one for a
-  tool with many rules of its own around 38, instead of all of them. Rules that don't say what they are about are always loaded,
-  so this makes corrections faster, never fewer.
+  running it. A typical command now reaches about a fifth of the 173 rules, and
+  one for a tool with many rules of its own — `git` — under a quarter, instead of
+  all of them. Rules that don't say what they are about are always loaded, so
+  this makes corrections faster, never fewer.
+  [`tests/test_performance.py`](tests/test_performance.py) fails if dispatch
+  goes broad again.
 - **Startup imports almost nothing, and so does a correction.** `pyte`,
   `psutil`, `argparse`, `pprint` and the five shells you are not using never
   arrive at all; `ast`, `pickle`, `socket`, `uuid`, `tempfile`, `shutil`,
-  `subprocess`, `difflib` and `ctypes` arrive only on the paths that use them.
-  Correcting a command costs 42 modules beyond a bare interpreter, where it
-  used to cost 81, and `tests/test_performance.py` fails if that creeps back.
+  `subprocess`, `difflib` and `ctypes` arrive only on the paths that use them —
+  roughly half of what a correction used to open.
+  [`tests/test_performance.py`](tests/test_performance.py) names every module
+  that has to stay out and holds the total to a budget, measured on whatever
+  machine it is running on: the absolute count depends on the interpreter and on
+  how the package was installed, so it is a test rather than a number here.
   This matters most on Windows, where every module is a file a virus scanner
-  reads before the interpreter may map it: measured on a real Windows 10
-  machine with Defender live, `os.stat` costs 14 times what it does on Linux,
-  reading a file 8 times, and creating one 97 times.
+  reads before the interpreter may map it.
 - **The failed command's output is read while it runs.** It used to be read
   after the command exited, which deadlocks as soon as the output fills the
   pipe buffer: anything printing more than about 64KB waited out the full
-  timeout and then produced *nothing to correct from*. That is the 28x above,
-  and it is a correctness fix as much as a speed one.
+  timeout and then produced *nothing to correct from*. That is the 29.8× row
+  above, and it is a correctness fix as much as a speed one.
 - **Nothing is scanned twice.** The list of everything on your `$PATH` is
   remembered until a directory on it changes.
 
@@ -1169,48 +1221,33 @@ and `THEBLEEP_NO_RULE_PACK=true` turns the rule cache off entirely.
 
 ### On Windows
 
-*The Fuck* has been called slow on Windows for years. On a real Windows 10
-machine with Defender live and nothing excluded, correcting a command:
+*The Fuck* has been called slow on Windows for years, and the reason is not
+either tool's own logic. Windows charges for *opening files*, and a Python module
+is a file the interpreter has to find and then open — with a virus scanner reading
+it first. So the work was to open fewer of them, which is the module list above,
+and it is the change that matters most here.
 
-```text
-                            The Fuck 3.32        The Bleep      faster
-Defender live                      876 ms           308 ms        2.8x
-Defender told to look away         667 ms           250 ms        2.7x
-Defender live, repeated            855 ms           292 ms        2.9x
+There are no numbers in this section, and that is deliberate. The Linux table at
+the top comes from a committed result file with the machine, the kernel, the CPU,
+the interpreter and the source commit recorded in it, produced by a harness in
+this repository that anybody can run. Nothing equivalent exists for Windows: the
+GitHub runner is Windows Server rather than a desktop with Defender in its
+default configuration, and a figure measured once on somebody's laptop with no
+artifact behind it is marketing rather than evidence. If you would like the same
+table for Windows, [`bench/bench.py`](bench/bench.py) runs there —
+[`bench/README.md`](bench/README.md) says how — and a recorded run would be a
+welcome pull request.
 
-modules imported for one              424               109
-```
+What *is* checked on Windows, on every push: the whole test suite on Python 3.9
+through 3.14, and the correction loop end to end in real Windows PowerShell 5.1
+and PowerShell 7, because the two do not agree about command chaining. The
+import budget in [`tests/test_performance.py`](tests/test_performance.py) is
+enforced there as well as everywhere else, which is what stops the thing that
+made it slow from coming back.
 
-Three passes of fifteen rounds each, both tools installed side by side and
-asked in turn, so whatever the machine was doing happened to both. The middle
-row is the same machine with the scanner told to look away; the third repeats
-the first, to show the first was not a warm-up. **The scanner is not the
-difference — the module count is.**
-
-Which is the whole of it. Windows charges for *opening files*, and a module is
-a file the interpreter has to find and then open with a virus scanner reading
-it first:
-
-```text
-                                     Linux    Windows   Windows pays
-os.stat, a thousand times          1.71 ms   23.70 ms          13.9x
-read all 174 rule files            1.06 ms    8.98 ms           8.5x
-create, write and delete 20 files  1.28 ms  124.71 ms          97.5x
-start a bare interpreter          24.17 ms  105.76 ms           4.4x
-```
-
-None of that is either tool's own logic, and *The Bleep*'s own logic was never
-the problem: on that same guest, matching every candidate rule takes 1.4 ms
-against Linux's 9.1 ms, reading the rule pack 2.5 ms against 2.3 ms, a warm
-`PATH` lookup 0.3 ms against 0.4 ms. So the work was to open fewer files.
-Correcting a command imports 42 modules beyond a bare interpreter where it used
-to import 81, and [`tests/test_performance.py`](tests/test_performance.py)
-fails if any of the ones that went comes back.
-
-What is left is not ours to remove: an interpreter takes 106 ms to start on
-Windows against 24 ms on Linux, and the failed command has to be run a second
-time to see what it printed. Both tools pay both, which is why 308 ms is the
-floor here and not 52 ms.
+Two costs are left, and neither belongs to either tool: an interpreter takes
+several times longer to start on Windows than on Linux, and the failed command
+still has to be run a second time to see what it printed. Both tools pay both.
 
 ##### [Back to Contents](#contents)
 

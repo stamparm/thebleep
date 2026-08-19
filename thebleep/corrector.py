@@ -66,7 +66,7 @@ def _rule_files(directory):
     The size and the timestamp come along because the listing has already been
     told them and the rule pack is about to ask. Windows carries both in the
     directory entry, so `DirEntry.stat()` there costs nothing, and the pack's own
-    `os.stat` of all 171 rules was the most expensive thing between a mistyped
+    `os.stat` of every rule file was the most expensive thing between a mistyped
     command and a correction on the platform where a syscall is dearest.
 
     A mapping rather than a list of pairs, so that iterating it still yields the

@@ -19,8 +19,7 @@ rather than restarting it, because this is the same codebase carried forward.
   has no supported way to do it, the offer is not made. `--edit` makes it the
   behaviour of return for one run and `edit = True` makes it permanent.
   (based on [#1063](https://github.com/nvbn/thefuck/pull/1063),
-  [#1104](https://github.com/nvbn/thefuck/pull/1104),
-  [#1186](https://github.com/nvbn/thefuck/pull/1186))
+  [#1104](https://github.com/nvbn/thefuck/pull/1104))
 - **`--shell` says which shell you are in**, for the places where working it
   out from the process tree gets it wrong: containers, IDE terminals, wrapper
   scripts, `distrobox`. An unknown name is an error listing the known ones
@@ -78,12 +77,12 @@ rather than restarting it, because this is the same codebase carried forward.
 
 - `distutils` is gone, which is what stopped *The Fuck* from starting on Python
   3.12 at all, and `pkg_resources` and `imp` went with it.
-  ([#1499](https://github.com/nvbn/thefuck/issues/1499),
-  [#1610](https://github.com/nvbn/thefuck/issues/1610),
+  ([#1499](https://github.com/nvbn/thefuck/pull/1499),
+  [#1610](https://github.com/nvbn/thefuck/pull/1610),
   [#1552](https://github.com/nvbn/thefuck/issues/1552))
 - Python 2 support removed.
-  ([#1479](https://github.com/nvbn/thefuck/issues/1479),
-  [#873](https://github.com/nvbn/thefuck/issues/873))
+  ([#1479](https://github.com/nvbn/thefuck/pull/1479),
+  [#873](https://github.com/nvbn/thefuck/pull/873))
 - Tested on Python 3.9 through 3.14, on Linux, macOS and Windows.
 
 ### Security
@@ -138,7 +137,7 @@ rather than restarting it, because this is the same codebase carried forward.
   or the program is one that only ever reads. `confirm_replay = False` restores
   the old behaviour.
   ([#1126](https://github.com/nvbn/thefuck/issues/1126))
-- **What you agree to is what runs.** Six rules did more than they said, and
+- **What you agree to is what runs.** Seven rules did more than they said, and
   now do only what they say:
   - `dirty_untar` and `dirty_unzip` deleted every file named in the archive
     after you accepted extracting it into a directory of its own. They could not
@@ -174,26 +173,26 @@ rather than restarting it, because this is the same codebase carried forward.
 Measured against *The Fuck* 3.32 on the same machine and the same Python 3.11,
 median of 30 runs; the harness and the recorded run are in `bench/`.
 
-- Opening a shell: 199 ms → 27 ms, or to 0.07 ms with `--alias-loader`, which
-  defines the alias on first use so shell startup runs no Python at all.
+- Opening a shell: 199 ms → 27 ms with `eval "$(thebleep --alias)"`, and with
+  `--alias-loader` to nothing worth timing — the alias is defined on first use,
+  so shell startup runs no Python at all.
 - Correcting a mistyped command: 240 ms → 51 ms.
 - Correcting after a command printed a megabyte: 3240 ms → 109 ms. This one is
   a correctness fix as much as a speed one: output used to be read only after
   the command exited, which deadlocks once the output fills the pipe buffer, so
   anything printing more than about 64 KB produced nothing to correct from.
 - Rules are compiled once into a cache, and a command is only dispatched to the
-  rules that could match it — 28 of 173 rather than all of them.
+  rules that could match it — around a fifth of the 173, rather than all of them.
 - A rule that looked for twenty-eight different messages lowercased the whole
-  output once per message. On a megabyte that was 66 ms; it is 4.6 ms.
-- On Windows, where *The Fuck* has long been called slow, a correction takes
-  308 ms where *The Fuck* takes 876 ms — measured on a real Windows 10 machine
-  with Defender live and nothing excluded. Windows charges for opening files,
-  so what decides it is how many modules each tool opens: 109 against 424.
-  A correction now imports 42 modules beyond a bare interpreter rather than 81;
-  `ast`, `pickle`, `socket`, `uuid`, `tempfile`, `shutil`, `subprocess`,
-  `difflib` and `colorama` are loaded only where they are used, and `which` and
-  `ShellConfiguration` no longer pull in `shutil` and `collections` to do what
-  they do.
+  output once per message. It lowercases it once.
+- A correction opens roughly half the Python modules it used to: `ast`,
+  `pickle`, `socket`, `uuid`, `tempfile`, `shutil`, `subprocess`, `difflib` and
+  `colorama` are loaded only where they are used, `pyte`, `psutil`, `argparse`
+  and `pprint` not at all, and `which` and `ShellConfiguration` no longer pull in
+  `shutil` and `collections` to do what they do. `tests/test_performance.py`
+  names every module that has to stay out and holds the total to a budget. This
+  is what decides the cost on Windows, where a module is a file the interpreter
+  must find and open and a scanner reads first.
 - `python -m thebleep` runs the same entry point as the `thebleep` command, for
   environments whose scripts directory is not on `PATH`.
 
@@ -209,14 +208,14 @@ New in this release:
   which is in the message and is one word and is the one outcome the error
   exists to prevent — nor `sudo pip install`, nor `--user`, which PEP 668 marks
   as externally managed too.
-  ([#1553](https://github.com/nvbn/thefuck/issues/1553))
+  ([#1553](https://github.com/nvbn/thefuck/pull/1553))
 - `docker_daemon_not_running` — `sudo systemctl start docker` in front of your
   command when Docker's daemon is not listening. Both spellings of the message
   are matched, the one Docker used up to 24 and the one it uses from 25. Only
   where `systemctl` is on the machine to run: `service docker start` and
   `open -a Docker` are each right somewhere else, and a suggestion that starts
   nothing is worse than none.
-  ([#1102](https://github.com/nvbn/thefuck/issues/1102))
+  ([#1102](https://github.com/nvbn/thefuck/pull/1102))
 - `ping_url` — `ping https://github.com/` becomes `ping github.com`. The host is
   taken out with `urlsplit`, so a URL carrying a user name, a password or a port
   comes out as the host and nothing else.
@@ -230,7 +229,7 @@ And fixed:
   three of the four got no correction. A bare name with no separator in it is
   still left alone — that is a `PATH` lookup, where the file that could not run
   is somewhere else entirely.
-  ([#1470](https://github.com/nvbn/thefuck/issues/1470))
+  ([#1470](https://github.com/nvbn/thefuck/pull/1470))
 - `paru` is recognised alongside `yay`, `pikaur` and `yaourt`, and preferred
   over them, both for suggesting a package to install and for correcting a
   package name. The list lives in one place now, so adding a helper adds it to
@@ -271,25 +270,25 @@ by reading their old fixtures: `npm` 7+, `cargo` 1.73+, `docker` 25+, `brew` 4,
 ### Fixed
 
 - Crash walking an unreadable process tree, and on a process that exits while
-  being killed. ([#1600](https://github.com/nvbn/thefuck/issues/1600),
+  being killed. ([#1600](https://github.com/nvbn/thefuck/pull/1600),
   [#1509](https://github.com/nvbn/thefuck/issues/1509),
   [#1026](https://github.com/nvbn/thefuck/issues/1026),
   [#1040](https://github.com/nvbn/thefuck/issues/1040))
 - Works with no terminal attached, and exits quietly on a closed pipe.
-  ([#1562](https://github.com/nvbn/thefuck/issues/1562),
-  [#1539](https://github.com/nvbn/thefuck/issues/1539))
+  ([#1562](https://github.com/nvbn/thefuck/pull/1562),
+  [#1539](https://github.com/nvbn/thefuck/pull/1539))
 - Works under `bash`/`zsh` with `set -u`, and with an empty alias value.
-  ([#1355](https://github.com/nvbn/thefuck/issues/1355),
-  [#1551](https://github.com/nvbn/thefuck/issues/1551))
+  ([#1355](https://github.com/nvbn/thefuck/pull/1355),
+  [#1551](https://github.com/nvbn/thefuck/pull/1551))
 - Fish history is read from the XDG data directory.
-  ([#1258](https://github.com/nvbn/thefuck/issues/1258))
+  ([#1258](https://github.com/nvbn/thefuck/pull/1258))
 - Commands on Windows are found when the file is not spelled as typed.
   ([#1209](https://github.com/nvbn/thefuck/issues/1209),
   [#1296](https://github.com/nvbn/thefuck/issues/1296))
 - The environment is no longer printed into debug output.
-  ([#995](https://github.com/nvbn/thefuck/issues/995))
+  ([#995](https://github.com/nvbn/thefuck/pull/995))
 - The selection can be abandoned with the escape key.
-  ([#1506](https://github.com/nvbn/thefuck/issues/1506))
+  ([#1506](https://github.com/nvbn/thefuck/pull/1506))
 - A correction is not applied when nobody confirmed it, which is what happened
   in a pipe, a subprocess or CI. Pass `--yes` to apply without asking.
 - **The alias no longer breaks because of something you pasted.** Your recent
@@ -306,8 +305,8 @@ by reading their old fixtures: `npm` 7+, `cargo` 1.73+, `docker` 25+, `brew` 4,
   loop now runs in real Windows PowerShell 5.1 and 7 in CI.
 - **A rule that fails is that rule's problem.** One that matched and then raised
   while working out its suggestion took the whole correction down with a
-  traceback, losing every other rule's suggestions. Six rules that raised on a
-  bare `git`, `go`, `composer` or `touch` were fixed too, and a file in your
+  traceback, losing every other rule's suggestions. Five rules that raised on a
+  bare `go`, `composer`, `touch` or `sudo` were fixed too, and a file in your
   rules directory that is not a rule no longer stops corrections entirely.
 - **One setting that cannot be understood costs one setting.** A single
   unparseable environment variable silently discarded every other one, so an
