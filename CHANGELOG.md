@@ -1,6 +1,6 @@
 # Changelog
 
-## 4.0.0 — unreleased
+## 4.0.0 — 2026-08-19
 
 The first release of *The Bleep*, and the first release of this codebase since
 *The Fuck* 3.32 in January 2022. The version continues *The Fuck*'s numbering
