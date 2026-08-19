@@ -18,6 +18,7 @@ go is a lot of irreversible authority to hand to a typo.
 
 """
 
+import datetime
 import io
 import os
 import re
@@ -58,6 +59,21 @@ def read(path):
 def write(path, text):
     with io.open(os.path.join(HERE, path), 'w', encoding='utf-8') as handle:
         handle.write(text)
+
+
+def today():
+    """The date the release is being prepared, as the CHANGELOG writes it.
+
+    This was `git log -1 --format=%cs`, which is the date of the last *commit* --
+    so a release prepared on Tuesday from a tree last touched on Friday was dated
+    Friday, and the CHANGELOG said a day the release did not happen on.
+
+    Local time on purpose. A release is prepared by a person in a place, the
+    CHANGELOG is read by people in other places, and there is no reading of
+    "released on the 3rd" precise enough for UTC to be the more correct answer.
+
+    """
+    return datetime.date.today().isoformat()
 
 
 def set_version(version, date):
@@ -178,7 +194,7 @@ def main(argv):
     if len(argv) != 2 or not re.match(r'^\d+\.\d+(\.\d+)?$', argv[1]):
         sys.exit(__doc__.strip())
     version = argv[1]
-    date = output('git', 'log', '-1', '--format=%cs')
+    date = today()
 
     check_working_tree()
     check_tag_is_free(version)
