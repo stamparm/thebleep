@@ -24,6 +24,21 @@ import pytest
 VERSIONED = ('setup.py', 'README.md', 'CHANGELOG.md')
 
 
+def _is_absolute_enough(path):
+    """Whether a path in the recipe resolves somewhere other than the checkout.
+
+    Deliberately about the string and nothing else -- no `os.path`, no `HOME`.
+    `os.path.isabs('/x')` is True on POSIX and False on Windows, and the suite
+    clears the environment, so anything that consults either answers differently
+    depending on where it runs. What has to be true is that a shell would not
+    resolve this against the working directory: it begins with `~`, or with a
+    separator, or with a drive letter.
+    """
+    return (path.startswith('~')
+            or path.startswith(('/', '\\'))
+            or (len(path) > 1 and path[1] == ':'))
+
+
 @pytest.fixture(autouse=True)
 def the_real_files_are_not_touched(source_root):
     """Every test here works on a copy; this is what says so.
@@ -117,8 +132,9 @@ class TestTheBootstrapRecipe(object):
         assert lines[2].strip().endswith(
             '-m pip install -r requirements.txt -e .')
 
-    def test_the_environment_is_not_in_the_checkout(self, release,
-                                                    source_root):
+    @pytest.mark.parametrize('name', ['posix', 'nt'])
+    def test_the_environment_is_not_in_the_checkout(self, release, monkeypatch,
+                                                    name):
         """The whole reason it moved.
 
         A virtualenv in the working tree is somebody else's Python inside the
@@ -127,16 +143,24 @@ class TestTheBootstrapRecipe(object):
         it was not told about. It used to be `.release-venv` in the root, and
         that is what it cost.
 
+        The property is that the path is not a *relative* one, since a relative
+        path is resolved against the checkout -- and that is a question about the
+        string, answered without touching the filesystem or the environment. It
+        used to `expanduser` the path and join it onto the source root, which
+        said the wrong thing twice: `expanduser` cannot expand `~` in a suite
+        that clears the environment, so the join put `~` inside the repository
+        and the test failed on the one platform where nobody had run it.
+
         """
+        monkeypatch.setattr(release.os, 'name', name)
+        found = 0
         for line in release.bootstrap('4.0.1').strip().splitlines():
             for word in line.split():
                 if 'release-venv' not in word:
                     continue
-                assert word.startswith(('~', '/')) or ':' in word, word
-                inside = os.path.abspath(
-                    os.path.join(str(source_root),
-                                 os.path.expanduser(word)))
-                assert not inside.startswith(str(source_root) + os.sep), word
+                found += 1
+                assert _is_absolute_enough(word), word
+        assert found >= 2, 'the recipe stopped naming the environment'
 
     @pytest.mark.parametrize('name, expected', [('posix', 'bin'),
                                                 ('nt', 'Scripts')])
@@ -152,12 +176,26 @@ class TestTheBootstrapRecipe(object):
         monkeypatch.setattr(release.os, 'name', 'nt')
         assert '\\\\' not in release.bootstrap()
 
-    def test_the_location_can_be_said_outright(self, release, monkeypatch):
-        """`THEBLEEP_RELEASE_VENV`, and the whole recipe follows it."""
-        monkeypatch.setenv('THEBLEEP_RELEASE_VENV', '~/Temp/somewhere-else')
+    @pytest.mark.parametrize('name, where', [('posix', '~/Temp/elsewhere'),
+                                             ('nt', 'D:/Temp/elsewhere')])
+    def test_the_location_can_be_said_outright(self, release, monkeypatch,
+                                               name, where):
+        """`THEBLEEP_RELEASE_VENV`, and the whole recipe follows it.
+
+        The interpreter inside it is asked for rather than spelled `/bin/python`,
+        which is only where POSIX keeps it -- and asserting that on a Windows
+        runner, where `bootstrap` correctly says `Scripts`, is a test being wrong
+        about the code rather than the other way round.
+
+        """
+        monkeypatch.setattr(release.os, 'name', name)
+        monkeypatch.setenv('THEBLEEP_RELEASE_VENV', where)
         recipe = release.bootstrap('4.0.1')
-        assert 'python3 -m venv ~/Temp/somewhere-else' in recipe
-        assert '~/Temp/somewhere-else/bin/python ./release.py 4.0.1' in recipe
+        assert 'python3 -m venv {}'.format(where) in recipe
+        assert '{} ./release.py 4.0.1'.format(
+            release.venv_python()) in recipe
+        assert release.venv_python().startswith(where + '/'), \
+            'the interpreter is not inside the environment that was named'
         assert '.cache' not in recipe
 
     def test_a_leftover_from_the_old_location_is_still_ignored(
