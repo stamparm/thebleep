@@ -350,3 +350,14 @@ def test_the_benchmark_block_is_the_recorded_run(source_root):
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT)
     assert finished.returncode == 0, finished.stdout.decode('utf-8', 'replace')
+
+
+def test_the_shell_names_shell_takes_are_the_ones_it_documents(readme):
+    """`--shell` lists what it accepts, and an unknown name is an error."""
+    from thebleep import const
+
+    listed = re.search(r'It takes any of ([^.]+?), and\n?an unknown name',
+                       readme, re.DOTALL)
+    assert listed, "the --shell wording changed shape"
+    named = set(re.findall(r'`([a-z]+)`', listed.group(1)))
+    assert named == set(const.SHELLS), sorted(named ^ set(const.SHELLS))

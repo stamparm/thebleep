@@ -63,3 +63,38 @@ def test_every_released_version_has_a_date(source_root):
     for name, state in headings[1:]:
         assert RELEASED.match(state.strip()), \
             '{} is not the top entry, so it should have a date'.format(name)
+
+
+def test_the_release_date_is_today_and_not_the_last_commit(source_root):
+    """`release.py` dated a release from `git log -1 --format=%cs`.
+
+    Which is the date of the last commit, so a release prepared on Tuesday from
+    a tree last touched on Friday said Friday -- a date the release did not
+    happen on, in the one file people read to find out when it did.
+
+    """
+    import datetime
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        'release_script', str(source_root.joinpath('release.py')))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    assert module.today() == datetime.date.today().isoformat()
+    assert re.match(r'^\d{4}-\d{2}-\d{2}$', module.today())
+
+
+def test_it_states_the_version_in_exactly_the_places_it_rewrites(source_root):
+    """Each pattern in `release.py` has to match once, or a release is wrong."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        'release_script', str(source_root.joinpath('release.py')))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    for name, pattern, _ in module.STATES_THE_VERSION:
+        found = pattern.findall(_read(source_root, name))
+        assert len(found) == 1, '{} has {} lines stating the version'.format(
+            name, len(found))
