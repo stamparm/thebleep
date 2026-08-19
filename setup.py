@@ -12,7 +12,7 @@ if version < (3, 9):
           ' ({}.{} detected).'.format(*version))
     sys.exit(-1)
 
-VERSION = '4.0.1'
+VERSION = '4.0.2'
 
 REPOSITORY = 'https://github.com/stamparm/thebleep'
 IMAGES = ('.svg', '.png', '.gif', '.jpg', '.jpeg')

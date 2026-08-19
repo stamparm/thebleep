@@ -1,5 +1,22 @@
 # Changelog
 
+## 4.0.2 — 2026-08-19
+
+Nothing about the tool itself changed. `pip install --upgrade` is worth it only
+if the PyPI page bothered you.
+
+- The build badge is no longer on the PyPI page. Its image is served live from
+  the default branch, so every version's page read out whatever master happened
+  to be doing that day -- a red master put "build failing" on the page of a
+  release that was green when it was made. It stays on the README, where it tells
+  a contributor something true.
+- The test matrix no longer runs twice for every release. A tag push is a `push`
+  event and the concurrency group is keyed on the ref, so the same commit was
+  tested once when it landed on master and again when it was tagged.
+- Some tests of `release.py`'s own printed output are gone. They asserted the
+  shape of strings a developer script prints, which cost a CI cycle every time
+  anybody touched it.
+
 ## 4.0.1 — 2026-08-19
 
 ### Security
