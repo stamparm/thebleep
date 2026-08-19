@@ -119,3 +119,30 @@ class TestCorrectionsBehindAWrapper(object):
     def test_a_wrapper_that_runs_something_else_is_left_alone(self, script):
         """These do not run the command, so it is not the one to correct."""
         assert 'git checkout master' not in ' '.join(self._corrections(script))
+
+
+class TestSuggestionsWorthMaking(object):
+    """Somebody's own command handed back is not a correction."""
+
+    def _organized(self, scripts, script, side_effect=None):
+        return [corrected.script for corrected in organize_commands(
+            iter([CorrectedCommand(one, side_effect, 100) for one in scripts]),
+            script)]
+
+    def test_a_suggestion_identical_to_the_command_is_dropped(self):
+        assert self._organized(['git status'], 'git status') == []
+
+    def test_whitespace_does_not_make_it_a_different_command(self):
+        assert self._organized(['git status '], '  git status') == []
+
+    def test_the_others_are_kept(self):
+        assert self._organized(['git status', 'git stash'], 'git status') == \
+            ['git stash']
+
+    def test_an_identical_one_with_a_side_effect_stays(self):
+        """There the command being unchanged is the point of the suggestion."""
+        assert self._organized(['ssh host'], 'ssh host',
+                               side_effect=lambda *_: None) == ['ssh host']
+
+    def test_nothing_left_is_nothing_offered(self):
+        assert self._organized(['git status'], 'git status') == []

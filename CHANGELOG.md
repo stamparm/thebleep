@@ -49,8 +49,8 @@ rather than restarting it, because this is the same codebase carried forward.
 - **A command behind a wrapper is corrected as though it were on its own.**
   `sudo -u www-data git chekout main`, `env FOO=bar npm sart`, `nice -n 10
   cargo buld`, `nohup ./deply.sh` — `sudo`, `doas`, `env`, `command`,
-  `builtin`, `nice`, `nohup`, `setsid`, `stdbuf` and `time` are peeled off,
-  nested and in any combination, every rule sees what is underneath, and the
+  `builtin`, `nice`, `nohup`, `setsid` and `stdbuf` are peeled off, nested and
+  in any combination, every rule sees what is underneath, and the
   wrapper comes back in front of the suggestion exactly as it was typed. One
   model for all 170 rules, where before there was a `sudo`-only decorator that
   26 of them had asked for individually. It refuses rather than guesses: not
@@ -236,6 +236,16 @@ And fixed:
   no possibilities to be close to. A rule that asks npm or lein for its list of
   subcommands and finds the tool is not installed gets an empty list, and
   `npm_wrong_command` died of it.
+- **A suggestion identical to the command you typed is not offered.** A rule
+  that matches on something in the output and then finds nothing in the script
+  to change hands your own command back, which reads as a correction, takes a
+  place in the list the arrow keys walk, and runs the same failure again when
+  accepted. `docker ps -q --filter` and `git stauts` each came with one. A rule
+  with a side effect still may, because there the command being unchanged is the
+  point.
+- `missing_space_before_subcommand` knows the shell's builtins. They are not on
+  `PATH`, so it read `command`, `time` and `builtin` as words nobody could run
+  and offered to break `command git status` into `comm and git status`.
 
 
 Refreshed against what the tools print today, found by running them rather than

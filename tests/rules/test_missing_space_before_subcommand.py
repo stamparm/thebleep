@@ -29,3 +29,17 @@ def test_not_match(script):
     ('watchls', 'watch ls')])
 def test_get_new_command(script, result):
     assert get_new_command(Command(script, '')) == result
+
+
+def test_a_shell_builtin_is_a_command_already(mocker):
+    """`command`, `time` and `builtin` are not on PATH and are still commands.
+
+    Without this the rule offered to break `command git status` into
+    `comm and git status`.
+
+    """
+    mocker.patch(
+        'thebleep.rules.missing_space_before_subcommand.get_all_executables',
+        return_value=['comm', 'git', 'ls'])
+    assert not match(Command('command git status', ''))
+    assert not match(Command('builtin cd /tmp', ''))

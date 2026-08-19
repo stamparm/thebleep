@@ -87,6 +87,10 @@ class Wrapper(object):
 #                    does not apply
 #   strace, ltrace,  transparent, but the output being corrected from is
 #   valgrind         theirs rather than the command's
+#   time             the same: `time git stauts` prints git's error *and*
+#                    time's report, and the rules that pick a name out of a
+#                    command's output offered "Command exited with non-zero
+#                    status 1" as a branch to check out
 WRAPPERS = {
     wrapper.name: wrapper for wrapper in [
         Wrapper(
@@ -144,12 +148,6 @@ WRAPPERS = {
             'stdbuf',
             valued='ioe',
             long_valued=('input', 'output', 'error'),
-            long_unsafe=('help', 'version')),
-        Wrapper(
-            'time',
-            boolean='apqv',
-            valued='of',
-            long_valued=('output', 'format'),
             long_unsafe=('help', 'version')),
     ]
 }

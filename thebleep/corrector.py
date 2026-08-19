@@ -120,13 +120,33 @@ def get_rules(command=None):
                   key=lambda rule: rule.priority)
 
 
-def organize_commands(corrected_commands):
+def _worth_offering(corrected, command):
+    """Whether this suggestion is different from what the user already typed.
+
+    Offering somebody their own command back is not a correction. It happens:
+    a rule matches on something in the output and then finds nothing in the
+    script to change, and what comes out is the failed command again -- which
+    reads as a suggestion, takes a place in the list the arrow keys walk, and
+    runs the same failure a second time when accepted.
+
+    Except when the rule has a side effect. Then the command being unchanged is
+    the point: what the suggestion does is the side effect, and running the
+    command afterwards is what makes it useful.
+
+    """
+    return corrected.side_effect or corrected.script.strip() != command.strip()
+
+
+def organize_commands(corrected_commands, script=''):
     """Yields sorted commands without duplicates.
 
     :type corrected_commands: Iterable[thebleep.types.CorrectedCommand]
+    :type script: str
     :rtype: Iterable[thebleep.types.CorrectedCommand]
 
     """
+    corrected_commands = (corrected for corrected in corrected_commands
+                          if _worth_offering(corrected, script))
     try:
         first_command = next(corrected_commands)
         yield first_command
@@ -206,4 +226,4 @@ def get_corrected_commands(command):
         corrected_commands = _corrections_behind_the_wrapper(
             rules, command, prefix, inner_script)
 
-    return organize_commands(corrected_commands)
+    return organize_commands(corrected_commands, command.script)

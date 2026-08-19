@@ -26,7 +26,6 @@ def peel(script):
     ('nohup ./deploy.sh', 'nohup ', './deploy.sh'),
     ('command git chekout', 'command ', 'git chekout'),
     ('builtin cd /tmp', 'builtin ', 'cd /tmp'),
-    ('time git chekout', 'time ', 'git chekout'),
     # Options with values, separate and glued on.
     ('sudo -u www-data git chekout', 'sudo -u www-data ', 'git chekout'),
     ('sudo -uwww-data git chekout', 'sudo -uwww-data ', 'git chekout'),
@@ -78,6 +77,8 @@ def test_what_is_peeled(script, prefix, command):
     'doas -s git status',
     'command -v git',
     'command -V git',
+    # `time` prints a report of its own into the output the rules read.
+    'time git chekout',
     # `env -S` re-splits its argument into a command line of its own.
     'env -S "git status"',
     'env --split-string="git status"',

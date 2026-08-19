@@ -668,8 +668,8 @@ $ bleep
 sudo -u www-data git checkout main
 ```
 
-`sudo`, `doas`, `env FOO=bar`, `command`, `builtin`, `nice`, `nohup`, `setsid`,
-`stdbuf` and `time` are peeled off — nested, in any combination — the command
+`sudo`, `doas`, `env FOO=bar`, `command`, `builtin`, `nice`, `nohup`, `setsid`
+and `stdbuf` are peeled off — nested, in any combination — the command
 underneath is corrected by every rule as though you had typed it on its own,
 and the wrapper comes back in front of the suggestion exactly as you wrote it.
 That is one model applied to all 170 rules, replacing a `sudo`-only decorator
@@ -682,7 +682,11 @@ the command underneath in a hat. Neither is an option it does not recognise —
 that option might take a value, and mistaking a value for the command is worse
 than not offering a correction. Nor is a script with shell syntax in it, where
 the first word is not the only command anyway, nor a wrapper whose words would
-have to be re-quoted to be handed back.
+have to be re-quoted to be handed back. `time`, `strace` and `valgrind` are
+transparent and still not peeled, because the output being corrected from is
+partly theirs: `time git stauts` prints git's error and `time`'s report, and a
+rule that picks a name out of a command's output would offer one of `time`'s
+lines as a branch to check out.
 
 The following rules are enabled by default:
 
