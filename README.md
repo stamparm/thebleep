@@ -41,12 +41,12 @@ Same machine, same Python 3.11, 30 runs each, medians:
 <!-- benchmark: written by bench/chart.py -->
 ```text
                                % of The Fuck's time  The Fuck  The Bleep  faster
-Open a shell                     ██▍░░░░░░░░░░░░░░░    210 ms      28 ms    7.6×
-Correct a mistyped command       ████▏░░░░░░░░░░░░░    246 ms      56 ms    4.4×
-Correct inside a git repository  ████░░░░░░░░░░░░░░    250 ms      55 ms    4.5×
-Correct when nothing matches     ███▋░░░░░░░░░░░░░░    341 ms      68 ms    5.0×
-Correct a slow command *         ████████████▎░░░░░    827 ms     563 ms    1.5×
-Correct after 1 MB of output     ▋░░░░░░░░░░░░░░░░░    3.25 s     117 ms   27.8×
+Open a shell                     ██▌░░░░░░░░░░░░░░░    206 ms      29 ms    7.1×
+Correct a mistyped command       ████▌░░░░░░░░░░░░░    240 ms      60 ms    4.0×
+Correct inside a git repository  ████░░░░░░░░░░░░░░    248 ms      54 ms    4.6×
+Correct when nothing matches     ███▉░░░░░░░░░░░░░░    333 ms      72 ms    4.6×
+Correct a slow command *         ████████████▍░░░░░    816 ms     562 ms    1.5×
+Correct after 1 MB of output     ▋░░░░░░░░░░░░░░░░░    3.25 s     114 ms   28.4×
 ```
 <!-- end benchmark -->
 
@@ -56,7 +56,7 @@ read what it printed, so this row is mostly the sleep.
 Opening a shell is worth a second look: that row is `eval "$(thebleep --alias)"`
 in your rc, which starts a Python interpreter every time. Use the
 [loader](#the-alias-and-why-it-costs-nothing) instead and opening a shell defines
-a shell function and **runs no Python at all** — the 28 ms goes, and what is left
+a shell function and **runs no Python at all** — the 29 ms goes, and what is left
 is too small to measure honestly against the noise in shell startup.
 
 Those are Linux numbers, on the machine named in the result file. Windows and
@@ -561,7 +561,7 @@ thebleep --alias-loader fuck >> ~/.bashrc
 ### Paying at startup instead
 
 `eval $(thebleep --alias)` in your startup file does the same job by starting a
-Python interpreter every time you open a shell, which is the 28 ms in the table
+Python interpreter every time you open a shell, which is the 29 ms in the table
 above. Use it if you prefer it, and for the experimental instant mode, which has
 to set your prompt up front.
 
@@ -1219,7 +1219,7 @@ Where the time went:
 - **The failed command's output is read while it runs.** It used to be read
   after the command exited, which deadlocks as soon as the output fills the
   pipe buffer: anything printing more than about 64KB waited out the full
-  timeout and then produced *nothing to correct from*. That is the 27.8× row
+  timeout and then produced *nothing to correct from*. That is the 28.4× row
   above, and it is a correctness fix as much as a speed one.
 - **Nothing is scanned twice.** The list of everything on your `$PATH` is
   remembered until a directory on it changes.
