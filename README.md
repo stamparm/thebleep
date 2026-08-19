@@ -74,7 +74,7 @@ The rest of the reasons:
   of them — and Bash, Zsh, Fish, tcsh and PowerShell as before, with
   Nushell added. [Supported everything](#supported-everything).
 - **30 items from *The Fuck*'s backlog are fixed here**, issues and pull
-  requests, several of them command injections — plus the rules that had rotted
+  requests, four of them command injections — plus the rules that had rotted
   against current
   `git`, `npm`, `docker`, `cargo`, `brew`, `gem`, `az`, `gradle` and
   `terraform`. [What's fixed](#whats-fixed).
@@ -415,12 +415,17 @@ suite runs on 3.9 through 3.14 on Linux, macOS and Windows.
 [#1479](https://github.com/nvbn/thefuck/pull/1479)
 [#873](https://github.com/nvbn/thefuck/pull/873)</sub>
 
-**Three ways a command could be turned into a different command.** Text that
-came out of the failed command's own output — a filename, a branch, a URL —
-was pasted into the correction unquoted, and the `sudo` rule handed a
-re-quoted script to `sh -c` as root. All three are quoted now, with tests that
-run the result through a real shell and check what the program actually
-received.
+**Four ways a command could be turned into a different command.** A correction
+is text a shell then evaluates, and much of that text is copied out of somewhere
+you do not control — a tool's error message, a repository's branches, a package
+file's scripts — where shell syntax is perfectly legal: git will make you a
+branch called `feature;rm -rf ~`. Unquoted were the names the `*_no_command`
+rules read out of another command's output; the paths and names read out of the
+failed command's own output, `ssh`'s `known_hosts` line and a branch from
+`origin/HEAD` among them; the URL handed to `open`; and the `sudo` rule, which
+re-quoted your whole script and gave it to `sh -c` as root. All four are quoted
+now, and [`tests/test_injection.py`](tests/test_injection.py) runs each
+suggestion through a real shell and checks what the program actually received.
 &nbsp;<sub>[#1531](https://github.com/nvbn/thefuck/issues/1531)
 [#1606](https://github.com/nvbn/thefuck/issues/1606)</sub>
 
