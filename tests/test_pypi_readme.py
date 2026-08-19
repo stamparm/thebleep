@@ -47,6 +47,13 @@ def version(setup_namespace):
 
 
 @pytest.fixture
+def readme(source_root):
+    with io.open(str(source_root.joinpath('README.md')),
+                 encoding='utf-8') as handle:
+        return handle.read()
+
+
+@pytest.fixture
 def long_description(setup_namespace):
     """What is actually handed to `setup()` as the long description."""
     return setup_namespace['_called']['long_description']
@@ -111,10 +118,9 @@ class TestTheRenderedPage(object):
     def test_every_absolute_link_is_pinned_to_this_release(
             self, long_description, version):
         """Not to `master`, so that the 4.0.0 page keeps showing 4.0.0."""
-        # Only the links this transformation makes. Two written by hand are
-        # deliberately not pinned and are not the transformation's business: the
-        # workflow badge, which has to point at the live workflow, and the
-        # `curl | sh` one-liner, which has to fetch the current installer.
+        # Only the links this transformation makes. The `curl | sh` one-liner is
+        # written by hand and deliberately not pinned: it has to fetch the
+        # current installer.
         text = long_description.replace(
             'raw.githubusercontent.com/stamparm/thebleep/master/install.sh', '')
         ours = re.findall(
@@ -133,3 +139,31 @@ class TestTheRenderedPage(object):
         assert 'raw.githubusercontent.com' in long_description
         assert '](https://github.com/stamparm/thebleep/blob/' not in \
             long_description.split('assets/demo.svg')[0][-120:]
+
+
+class TestTheCiBadge(object):
+    """It belongs on GitHub, not on a release page.
+
+    The badge image is served live from the default branch, so every version's
+    PyPI page reads out whatever master is doing today -- a red master puts
+    "build failing" on the page of a release that was green when it was made.
+
+    """
+
+    def test_it_is_not_on_the_pypi_page(self, long_description):
+        assert 'Build Status' not in long_description
+        assert 'workflows/test.yml/badge.svg' not in long_description
+
+    def test_it_is_still_in_the_readme(self, readme):
+        assert 'Build Status' in readme
+        assert 'workflows/test.yml/badge.svg' in readme
+
+    def test_the_other_badges_survive(self, long_description):
+        assert 'Version' in long_description
+        assert 'MIT License' in long_description
+
+    def test_the_heading_is_left_tidy(self, long_description):
+        """No double space where the badge was."""
+        heading = long_description.splitlines()[0]
+        assert heading.startswith('# The Bleep [')
+        assert '  ' not in heading

@@ -65,12 +65,38 @@ def for_pypi(markdown):
     return re.sub(r'(?m)^(\[[^\]]+\]:\s+)(\S+)$', reference, markdown)
 
 
+# The CI badge where it is used, and the two reference definitions behind it.
+# Both have to go: a definition nobody references renders as nothing, but it is
+# still a dead line sitting in the page's source.
+CI_BADGE = re.compile(r' *\[!\[Build Status\]\[workflow-badge\]\]'
+                      r'\[workflow-link\]')
+CI_BADGE_LINKS = re.compile(r'(?m)^\[workflow-(?:badge|link)\]:.*\n')
+
+
+def without_ci_badge(markdown):
+    """Takes the build badge out of the page on PyPI.
+
+    It belongs on GitHub, where it tells a contributor whether master is passing.
+    On a release page it is worse than nothing: the badge image is served live
+    from the default branch, so every version's PyPI page reads out whatever
+    master happens to be doing today. A red master puts "build failing" on the
+    page for a release that was green when it was made.
+
+    Pinning it to the tag instead was the other option and it is not better --
+    `?branch=4.0.2` on a branch that does not exist renders as an error. The
+    honest answer is that somebody deciding whether to `pip install` this is not
+    asking about our branch, so they are not shown a claim about it.
+
+    """
+    return CI_BADGE_LINKS.sub('', CI_BADGE.sub('', markdown, count=1))
+
+
 # The README is the PyPI page. Read with an explicit encoding: it has em dashes
 # and arrow keys in it, and a build on a machine whose default encoding is not
 # UTF-8 would fail on them.
 here = os.path.dirname(os.path.abspath(__file__))
 with io.open(os.path.join(here, 'README.md'), encoding='utf-8') as readme:
-    long_description = for_pypi(readme.read())
+    long_description = without_ci_badge(for_pypi(readme.read()))
 
 # What the package needs at run time.
 #
