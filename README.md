@@ -583,8 +583,11 @@ The few things worth knowing per shell:
   is still found; the answer is cached against `config.fish`, so it is looked up
   again when you change it.
 - **tcsh.** `~/.tcshrc` if you have one, `~/.cshrc` otherwise.
-- **Nushell.** `~/.config/nushell/config.nu` (`%APPDATA%\nushell` on Windows,
-  `~/Library/Application Support/nushell` on macOS). Here `--alias-loader`
+- **Nushell.** `$XDG_CONFIG_HOME/nushell/config.nu` if that is set — on every
+  platform, which is the order Nushell itself reads them in — otherwise
+  `~/.config/nushell/config.nu`, `%APPDATA%\nushell` on Windows or
+  `~/Library/Application Support/nushell` on macOS. `thebleep --doctor` tells
+  you which one it found. Here `--alias-loader`
   writes the alias itself rather than a stub that fetches it, because Nushell
   has no `eval` to define a command from a string — which costs nothing, since
   what your shell then reads at startup is a dozen lines of Nushell rather than

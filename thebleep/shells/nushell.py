@@ -70,6 +70,24 @@ BUILTINS = [
 UNSAFE = re.compile(r'[^\w@%+=:,./-]', re.ASCII)
 
 
+def _expanded(path):
+    """`path` with a leading `~` expanded, or `None` if it could not be.
+
+    `os.path.expanduser` hands the `~` straight back rather than raising when it
+    cannot work out where home is -- which on POSIX effectively never happens,
+    because the password database answers even with `HOME` unset, and on Windows
+    happens whenever `USERPROFILE`, `HOME` and `HOMEDRIVE` are all absent: a
+    service account, a stripped container, a test that cleared the environment.
+    See `thebleep.system.paths` for the longer version.
+
+    What comes back then is a path that does not exist and cannot be created,
+    and the honest answer is not to name it at all.
+
+    """
+    expanded = os.path.expanduser(path)
+    return None if expanded.startswith('~') else expanded
+
+
 def _read_only_uri(path):
     """`path` as a SQLite URI that cannot create or modify the database.
 
@@ -199,32 +217,40 @@ class Nushell(Generic):
         answer -- it can look in both and take the one that is there.
 
         """
-        places = []
+        bases = []
         xdg = os.environ.get('XDG_CONFIG_HOME')
         if xdg:
-            places.append(os.path.join(xdg, 'nushell'))
+            bases.append(xdg)
 
         if os.name == 'nt':
-            base = os.environ.get('APPDATA') or os.path.expanduser('~')
+            bases.append(os.environ.get('APPDATA')
+                         or os.path.join('~', 'AppData', 'Roaming'))
         elif sys.platform == 'darwin':
-            base = os.path.expanduser(
-                os.path.join('~', 'Library', 'Application Support'))
+            bases.append(os.path.join('~', 'Library', 'Application Support'))
+            bases.append(os.path.join('~', '.config'))
         else:
-            base = os.path.expanduser(os.path.join('~', '.config'))
-        places.append(os.path.join(base, 'nushell'))
+            bases.append(os.path.join('~', '.config'))
 
-        if sys.platform == 'darwin':
-            places.append(os.path.expanduser(
-                os.path.join('~', '.config', 'nushell')))
-
-        return list(dict.fromkeys(places))
+        places = []
+        for base in bases:
+            place = _expanded(os.path.join(base, 'nushell'))
+            if place is not None and place not in places:
+                places.append(place)
+        return places
 
     def _config_dir(self):
-        """The one to tell somebody to edit: the one they already have."""
-        for place in self._config_dirs():
+        """The one to tell somebody to edit, or `None`.
+
+        The one they already have, when they have one. `None` when there is
+        nowhere to name -- see `_expanded` -- because a path with an unexpanded
+        `~` still in it is worse advice than telling them to ask Nushell.
+
+        """
+        places = self._config_dirs()
+        for place in places:
             if os.path.isdir(place):
                 return place
-        return self._config_dirs()[0]
+        return places[0] if places else None
 
     # The two shapes reedline writes, depending on
     # `$env.config.history.file_format`.
@@ -252,8 +278,12 @@ class Nushell(Generic):
 
         # None yet. Named in the format Nushell writes by default, in the
         # directory it would write it to, so that `get_history` looks in the
-        # right place once there is something to find.
-        return os.path.join(self._config_dir(), self.HISTORY_FILES[0])
+        # right place once there is something to find. With nowhere to name, the
+        # empty string: `Generic._get_history_lines` asks `os.path.isfile` about
+        # it, gets `False`, and there is simply no history.
+        directory = self._config_dir()
+        return os.path.join(directory, self.HISTORY_FILES[0]) if directory \
+            else ''
 
     def _get_history_lines(self):
         name = self._get_history_file_name()
@@ -311,7 +341,22 @@ class Nushell(Generic):
         return list(BUILTINS)
 
     def how_to_configure(self):
-        path = os.path.join(self._config_dir(), 'config.nu')
+        """Where to put the alias, and whether we can put it there.
+
+        With nowhere resolvable to name -- no `APPDATA` and no home directory
+        Windows will admit to -- the advice is to ask Nushell, which knows: a
+        path with an unexpanded `~` in it is not somewhere anybody can edit.
+
+        """
+        directory = self._config_dir()
+        if directory is None:
+            return ShellConfiguration(
+                content=self.app_alias(get_alias()),
+                path='($nu.default-config-dir | path join "config.nu")',
+                reload='exec nu',
+                can_configure_automatically=False)
+
+        path = os.path.join(directory, 'config.nu')
         return ShellConfiguration(
             content=self.app_alias(get_alias()),
             path=path,

@@ -106,6 +106,15 @@ class TestNushell(object):
         assert shell._config_dirs()[0] == os.path.join(
             os_environ['APPDATA'], 'nushell')
 
+    def test_windows_honours_xdg_too(self, shell, os_environ, monkeypatch,
+                                     tmpdir):
+        """It was in the branch Windows never took, so Windows never read it."""
+        monkeypatch.setattr('sys.platform', 'win32')
+        monkeypatch.setattr('os.name', 'nt')
+        os_environ['APPDATA'] = os.path.join('C:', 'Users', 'x', 'AppData')
+        os_environ['XDG_CONFIG_HOME'] = str(tmpdir)
+        assert shell._config_dirs()[0] == os.path.join(str(tmpdir), 'nushell')
+
     def test_macos_also_looks_in_the_xdg_default(self, shell, os_environ,
                                                  monkeypatch):
         """Which of the two a given Nushell build uses is not a question this
@@ -192,3 +201,44 @@ class TestNushell(object):
     def test_info(self, shell, Popen):
         Popen.return_value.stdout.read.return_value = b'0.108.0\n'
         assert shell.info() == 'Nushell 0.108.0'
+
+
+class TestWithNowhereToLook(object):
+    """No `APPDATA` and no home directory Windows will admit to.
+
+    `os.path.expanduser` hands the `~` back rather than raising, so this used to
+    produce `~\\nushell\\history.sqlite3` -- a path nobody can read and, worse,
+    advice to edit a file called `~`.
+
+    """
+
+    @pytest.fixture
+    def shell(self):
+        return Nushell()
+
+    @pytest.fixture(autouse=True)
+    def no_home(self, os_environ, monkeypatch):
+        monkeypatch.setattr('sys.platform', 'win32')
+        monkeypatch.setattr('os.name', 'nt')
+        # What Windows does when it cannot work out where home is.
+        monkeypatch.setattr('os.path.expanduser', lambda path: path)
+
+    def test_no_place_is_named_at_all(self, shell):
+        assert shell._config_dirs() == []
+        assert shell._config_dir() is None
+
+    def test_no_tilde_path_is_offered_as_the_history(self, shell):
+        assert shell._get_history_file_name() == ''
+        assert list(shell.get_history()) == []
+
+    def test_the_advice_is_to_ask_nushell(self, shell):
+        configuration = shell.how_to_configure()
+        assert '~' not in configuration.path
+        assert '$nu.default-config-dir' in configuration.path
+        assert not configuration.can_configure_automatically
+        assert 'def bleep' in configuration.content
+
+    def test_xdg_still_answers_when_it_is_set(self, shell, os_environ, tmpdir):
+        """Nothing to expand there, so it is usable even with no home."""
+        os_environ['XDG_CONFIG_HOME'] = str(tmpdir)
+        assert shell._config_dirs() == [os.path.join(str(tmpdir), 'nushell')]
