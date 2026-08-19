@@ -26,8 +26,14 @@ def install_sh(source_root):
 
     def run(*arguments, **environment):
         # A HOME of its own: the tcsh branch looks for `~/.tcshrc`, and the
-        # answer must not depend on whose machine the suite is running on.
+        # answer must not depend on whose machine the suite is running on. Same
+        # reason the installer's own knobs are cleared -- a developer with
+        # THEBLEEP_SHELL exported would otherwise get different answers here
+        # from the ones CI gets.
         env = dict(os.environ, HOME=environment.pop('home', '/nonexistent'))
+        for knob in ('THEBLEEP_SHELL', 'THEBLEEP_ALIAS', 'THEBLEEP_INSTALLER',
+                     'THEBLEEP_INSTALL_FROM'):
+            env.pop(knob, None)
         env.update(environment)
         process = subprocess.run(
             ['sh', path] + list(arguments), env=env,
