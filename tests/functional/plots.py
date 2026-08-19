@@ -34,6 +34,34 @@ def history_not_changed(proc, TIMEOUT):
     assert proc.expect([TIMEOUT, u'bleep'])
 
 
+def _agree(proc, TIMEOUT, expected, attempts=5, patience=8):
+    """Answers the replay question, and keeps answering until it is heard.
+
+    The first `y` can be thrown away, and that is deliberate on The Bleep's part
+    rather than a bug to work around here. Reading the answer means putting the
+    terminal into raw mode, and `tty.setraw` discards whatever was typed before
+    it -- so a keystroke that arrived before the question was drawn is not read
+    as consent to run a command again that "will change anything it changes
+    twice". A person cannot answer a question they have not been shown yet; a
+    test can, and does, in the fraction of a second between the prompt being
+    flushed and raw mode being entered. On a loaded two-core runner that window
+    is wide enough to lose in.
+
+    The alternative -- flushing before drawing the prompt instead of after --
+    was measured and rejected: it closes this window and opens the one that
+    matters, where a keystroke from before the question *is* taken as the answer.
+
+    So the fix belongs here, and it is to ask again.
+
+    """
+    for _ in range(attempts):
+        proc.send(u'y')
+        if proc.expect([TIMEOUT, expected], timeout=patience):
+            return
+    raise AssertionError(
+        'no {!r} after agreeing {} times'.format(expected, attempts))
+
+
 def select_command_with_arrows(proc, TIMEOUT):
     """Ensures that command can be selected with arrow keys."""
     _set_confirmation(proc, True)
@@ -48,8 +76,7 @@ def select_command_with_arrows(proc, TIMEOUT):
     asked = proc.expect([TIMEOUT, u'Run it', u'git show'])
     assert asked
     if asked == 1:
-        proc.send(u'y')
-        assert proc.expect([TIMEOUT, u'git show'])
+        _agree(proc, TIMEOUT, u'git show')
     proc.send('\033[B')
     assert proc.expect([TIMEOUT, u'git push'])
     proc.send('\033[B')

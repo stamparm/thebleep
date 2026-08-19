@@ -86,6 +86,19 @@ jobs:
           # exercises the same things in real Windows PowerShell 5.1 and 7.
           pytest -q --enable-functional tests/functional \
               --ignore=tests/functional/test_powershell.py
+      - name: Nushell, and editing a correction, inside that same container
+        # These drive the shell that pytest itself is running next to, so they
+        # have to run *in* the image rather than attaching to it: that is the
+        # only place with fish and Nushell on PATH. Each one skips when its
+        # shell is missing, so a base image Nushell will not run on costs the
+        # Nushell tests and nothing else.
+        run: |
+          docker run --rm thebleep/python3 sh -c '
+              pip install --quiet pytest pytest-mock pexpect
+              cd /src
+              python -m pytest -q -rs \
+                  tests/shells/test_edit_buffer.py \
+                  tests/shells/test_nushell_real.py'
 
   minimum-dependencies:
     # The floors in setup.py are a claim about what works. This is the claim

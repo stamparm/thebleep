@@ -5,6 +5,23 @@ import pytest
 from thebleep.shells import Nushell
 
 
+@pytest.fixture
+def a_home(monkeypatch):
+    """A home directory that expands the same way on every platform.
+
+    The suite replaces `os.environ` with almost nothing, so on Windows there is
+    no `USERPROFILE` for `expanduser` to find and it hands the `~` back
+    unexpanded -- which the code correctly treats as "nowhere to look", and
+    which left these tests asserting against an empty list. Whether `~` expands
+    is not what they are about, so it is decided here.
+
+    """
+    home = os.path.join(os.sep + 'fake', 'home')
+    monkeypatch.setattr('os.path.expanduser',
+                        lambda path: path.replace('~', home, 1))
+    return home
+
+
 @pytest.mark.usefixtures('no_memoize', 'no_cache')
 class TestNushell(object):
     @pytest.fixture
@@ -80,13 +97,12 @@ class TestNushell(object):
         os_environ['XDG_CONFIG_HOME'] = str(tmpdir)
         assert shell._config_dirs()[0] == os.path.join(str(tmpdir), 'nushell')
 
-    @pytest.mark.parametrize('platform, name, expected', [
-        ('linux', 'posix', os.path.join('~', '.config', 'nushell')),
-        ('darwin', 'posix',
-         os.path.join('~', 'Library', 'Application Support', 'nushell')),
+    @pytest.mark.parametrize('platform, under', [
+        ('linux', ('.config', 'nushell')),
+        ('darwin', ('Library', 'Application Support', 'nushell')),
     ])
     def test_the_platform_answers_when_xdg_says_nothing(
-            self, shell, os_environ, monkeypatch, platform, name, expected):
+            self, shell, os_environ, a_home, monkeypatch, platform, under):
         """Every branch is checked from here, not only the one we run on.
 
         The macOS branch was wrong and only the macOS runner said so, which is
@@ -94,10 +110,8 @@ class TestNushell(object):
 
         """
         monkeypatch.setattr('sys.platform', platform)
-        monkeypatch.setattr('os.name', name)
-        home = os.path.expanduser('~')
-        assert shell._config_dirs()[0] == os.path.join(
-            home, *expected.split(os.sep)[1:])
+        monkeypatch.setattr('os.name', 'posix')
+        assert shell._config_dirs()[0] == os.path.join(a_home, *under)
 
     def test_windows_uses_appdata(self, shell, os_environ, monkeypatch):
         monkeypatch.setattr('sys.platform', 'win32')
@@ -116,7 +130,7 @@ class TestNushell(object):
         assert shell._config_dirs()[0] == os.path.join(str(tmpdir), 'nushell')
 
     def test_macos_also_looks_in_the_xdg_default(self, shell, os_environ,
-                                                 monkeypatch):
+                                                 a_home, monkeypatch):
         """Which of the two a given Nushell build uses is not a question this
         has to answer: it can look in both."""
         monkeypatch.setattr('sys.platform', 'darwin')
