@@ -116,9 +116,13 @@ class TestTheBootstrapRecipe(object):
         assert lines[2].strip().endswith(
             '-m pip install -r requirements.txt -e .')
 
-    def test_it_uses_this_platform_s_virtualenv_layout(self, release):
-        wanted = 'Scripts' if os.name == 'nt' else 'bin'
-        assert os.path.join('.release-venv', wanted, 'python') in \
+    @pytest.mark.parametrize('name, expected', [('posix', 'bin'),
+                                                ('nt', 'Scripts')])
+    def test_it_uses_the_running_platform_s_virtualenv_layout(
+            self, release, monkeypatch, name, expected):
+        """Both, on whichever one the suite happens to be running on."""
+        monkeypatch.setattr(release.os, 'name', name)
+        assert '.release-venv' + os.sep + expected + os.sep + 'python' in \
             release.bootstrap()
 
     def test_git_ignores_the_environment_it_asks_for(self, source_root):
@@ -138,14 +142,26 @@ class TestTheBootstrapRecipe(object):
 
     def test_contributing_documents_exactly_this_recipe(self, release,
                                                         source_root):
+        """Against the POSIX spelling, and asked for by name.
+
+        A document has to pick one, and it picked that one -- so comparing it
+        with whatever this platform renders made the check fail on Windows, where
+        the recipe says `.release-venv\\Scripts\\python`. What is worth holding
+        is that the words in CONTRIBUTING are the words the script prints, not
+        that CONTRIBUTING was written on a particular kind of machine.
+
+        """
         with io.open(str(source_root.joinpath('CONTRIBUTING.md')),
                      encoding='utf-8') as handle:
             contributing = handle.read()
-        for line in release.bootstrap('4.0.1').strip().splitlines():
+
+        recipe = release.bootstrap('4.0.1',
+                                   python=release.POSIX_VENV_PYTHON)
+        for line in recipe.strip().splitlines():
             assert line.strip() in contributing, line.strip()
         # And that a second release can reuse it.
-        assert '.release-venv/bin/python -m pip install -r requirements.txt' \
-            ' -e .' in contributing
+        assert '{} -m pip install -r requirements.txt -e .'.format(
+            release.POSIX_VENV_PYTHON) in contributing
 
 
 class TestAnInterpreterThatCannot(object):

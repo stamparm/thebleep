@@ -116,17 +116,31 @@ NEEDS = (
 )
 
 
-def bootstrap(version='<version>'):
+VENV = '.release-venv'
+
+# Where a virtualenv puts its interpreter, which is not the same on both. The
+# POSIX one is what CONTRIBUTING documents, because a document has to pick one.
+POSIX_VENV_PYTHON = VENV + '/bin/python'
+
+
+def venv_python():
+    return os.path.join(VENV, 'Scripts' if os.name == 'nt' else 'bin', 'python')
+
+
+def bootstrap(version='<version>', python=None):
     """The one recipe, for an interpreter that cannot do this.
 
     Printed rather than run. Creating a virtualenv and installing into it is a
     decision about somebody's machine, and a release script is the last place to
     be making those on their behalf.
 
+    `python` is which interpreter path to write into it, and it exists so that
+    the test which holds CONTRIBUTING to this recipe can ask for the POSIX
+    spelling on any platform. Left alone it is this platform's.
+
     """
-    python = os.path.join('.release-venv',
-                          'Scripts' if os.name == 'nt' else 'bin',
-                          'python')
+    if python is None:
+        python = venv_python()
     return ('    python3 -m venv .release-venv\n'
             '    {python} -m pip install -U pip\n'
             '    {python} -m pip install -r requirements.txt -e .\n'
