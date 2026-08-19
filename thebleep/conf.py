@@ -96,16 +96,38 @@ class Settings(dict):
 
         namespace = {'__file__': path, '__name__': 'settings'}
         exec(compile(source, path, 'exec'), namespace)
-        return {key: namespace[key]
-                for key in const.DEFAULT_SETTINGS.keys()
-                if key in namespace}
+        from_file = {key: namespace[key]
+                     for key in const.DEFAULT_SETTINGS.keys()
+                     if key in namespace}
+        for key in ('rules', 'exclude_rules'):
+            if key in from_file:
+                from_file[key] = self._expand_default_rules(from_file[key])
+        return from_file
+
+    def _expand_default_rules(self, rules):
+        """A rules list with the `DEFAULT_RULES` sentinel expanded.
+
+        The environment variable spells "and everything that is on by default"
+        as the string `DEFAULT_RULES`, and every example spells it that way. In
+        a settings file the same string used to mean a rule of that name, of
+        which there is none -- so `rules = ['DEFAULT_RULES', 'python_module_error']`
+        enabled one rule and disabled the other 172, and the only symptom was
+        that nothing was ever corrected again. It means the same thing in both
+        places now.
+
+        A settings file is Python, so `from thebleep.const import DEFAULT_RULES`
+        and splicing the real constant in works as well, and always did.
+
+        """
+        if not isinstance(rules, list) or 'DEFAULT_RULES' not in rules:
+            return rules
+        return [item for rule in rules
+                for item in (const.DEFAULT_RULES if rule == 'DEFAULT_RULES'
+                             else [rule])]
 
     def _rules_from_env(self, val):
         """Transforms rules list from env-string to python."""
-        val = val.split(':')
-        if 'DEFAULT_RULES' in val:
-            val = const.DEFAULT_RULES + [rule for rule in val if rule != 'DEFAULT_RULES']
-        return val
+        return self._expand_default_rules(val.split(':'))
 
     def _priority_from_env(self, val):
         """Gets priority pairs from env."""

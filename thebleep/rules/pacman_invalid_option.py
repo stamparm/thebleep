@@ -17,4 +17,8 @@ def get_new_command(command):
     return re.sub(option, option.upper(), command.script)
 
 
-enabled_by_default = archlinux_env()
+# The pair, not the tuple: `archlinux_env()` answers with (enabled, helper), and
+# a two-element tuple is truthy, so this rule was on everywhere -- including
+# machines with no `pacman` at all, where its own `@for_app` was the only thing
+# stopping it.
+enabled_by_default, _ = archlinux_env()

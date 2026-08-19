@@ -64,6 +64,33 @@ class TestSettingsFromFile(object):
         settings.init()
         assert settings.rules == const.DEFAULT_RULES + ['test']
 
+    def test_the_DEFAULT_RULES_string_means_what_it_does_in_the_env(
+            self, written_settings):
+        """The spelling every example uses, in the other place settings live.
+
+        It used to be read as the name of a rule, of which there is none, so a
+        settings file copied out of the documentation left one rule enabled and
+        every other one off -- and said nothing about it.
+
+        """
+        settings = written_settings(
+            "rules = ['DEFAULT_RULES', 'python_module_error']\n")
+        settings.init()
+        assert settings.rules == const.DEFAULT_RULES + ['python_module_error']
+        assert const.ALL_ENABLED in settings.rules
+
+    def test_the_string_is_expanded_in_exclude_rules_too(
+            self, written_settings):
+        settings = written_settings("exclude_rules = ['DEFAULT_RULES']\n")
+        settings.init()
+        assert settings.exclude_rules == const.DEFAULT_RULES
+
+    def test_a_rules_list_without_it_is_left_exactly_as_written(
+            self, written_settings):
+        settings = written_settings("rules = ['sudo', 'no_command']\n")
+        settings.init()
+        assert settings.rules == ['sudo', 'no_command']
+
     def test_a_file_that_imports_something_still_works(self, written_settings):
         """Running it is the same execution an import would have done."""
         settings = written_settings(

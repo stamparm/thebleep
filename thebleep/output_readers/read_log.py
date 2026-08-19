@@ -44,12 +44,38 @@ def _get_script_group_lines(grouped, script):
     raise ScriptNotInLog
 
 
+def _decode(raw):
+    """The recording as text, from a window that can start anywhere.
+
+    Two things make a plain `.decode()` wrong here, and both of them reach the
+    user as a traceback rather than as a missed correction.
+
+    The recording is a ring: once it is full, reading the last megabyte of it
+    starts at whatever byte is a megabyte back, which lands in the middle of a
+    character as often as the output has multibyte characters in it. The leading
+    continuation bytes belong to a character whose first byte was overwritten, so
+    they are dropped -- deliberately, and only at the front, where a partial
+    character is the one thing the window's own boundary can create.
+
+    Anything else undecodable is output that was never UTF-8: a command that
+    printed a JPEG, a `cat` of a binary. Those bytes are replaced rather than
+    raised on. Neither can invent or destroy a command boundary -- the mark
+    instant mode puts in `PS1` is ten zero-width spaces, and a run of bytes that
+    does not decode is not that.
+
+    """
+    start = 0
+    while start < len(raw) and 0x80 <= raw[start] <= 0xbf:
+        start += 1
+    return raw[start:].decode('utf-8', 'replace')
+
+
 def _get_output_lines(script, log_file):
     # Imported here because rendering a terminal is only needed in instant
     # mode, and pyte is one of the slowest imports we have.
     import pyte
 
-    data = log_file.read().decode()
+    data = _decode(log_file.read())
     data = re.sub(r'\x00+$', '', data)
     lines = data.split('\n')
     grouped = list(_group_by_calls(lines))

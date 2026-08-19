@@ -1,6 +1,8 @@
 """Where the output of the command that failed comes from.
 
-Three readers, and a correction uses exactly one of them. They used to all be
+Three readers. A correction normally uses one of them -- and in instant mode,
+where the recording turns out to hold no answer, falls through from that one to
+the replay path with its question intact. They used to all be
 imported here, so every correction paid for all three: `shell_logger` brings in
 `socket` and `json`, `rerun` brings in `subprocess` and the threading and
 signal machinery underneath it, and `read_log` brings in `mmap` and `re`. On
@@ -53,7 +55,18 @@ def get_output(script, expanded):
         return shell_logger.get_output(script)
     if settings.instant_mode:
         from . import read_log
-        return read_log.get_output(script)
+
+        output = read_log.get_output(script)
+        if output is not None:
+            return output
+        # The recording could not answer -- no mark in `PS1`, no recording, or
+        # the command is not in the window any more, each of which `read_log`
+        # has already said out loud. Instant mode is then simply not in play for
+        # this correction, so it takes the ordinary route, which is to ask
+        # before running anything a second time. Falling through rather than
+        # giving up is what makes "where it does not work, it does not go
+        # wrong" true; `replay.is_allowed` below is untouched, so nothing gained
+        # consent by this path that would not have had it anyway.
 
     from .. import replay
     if not replay.is_allowed(script, expanded):
