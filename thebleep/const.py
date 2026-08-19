@@ -70,6 +70,7 @@ SHELLS = {'bash': 'Bash',
           'zsh': 'Zsh',
           'csh': 'Tcsh',
           'tcsh': 'Tcsh',
+          'nu': 'Nushell',
           'powershell': 'Powershell',
           'pwsh': 'Powershell'}
 

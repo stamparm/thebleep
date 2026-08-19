@@ -70,3 +70,10 @@ def _raise(error):
         raise error()
 
     return raiser
+
+
+def test_nushell_in_the_tree_is_found(mocker):
+    """Nushell calls itself `nu`, which is what the process is named."""
+    shell = _process('nu', parent=None)
+    mocker.patch('psutil.Process', return_value=_process('python', shell))
+    assert isinstance(shells._get_shell_from_proc(), shells.Nushell)

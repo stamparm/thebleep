@@ -88,8 +88,11 @@ def test_the_shells_it_claims_are_the_shells_it_has(readme):
     promised = {word.strip().strip('*`').lower()
                 for word in re.split(r',|and', table.group(1))
                 if word.strip()}
-    # `csh` and `pwsh` are the same drivers under other names.
-    known = {name.lower() for name in shells.shells} | {'powershell'}
+    # Both what a shell calls itself (`nu`, `pwsh`) and what its driver is
+    # called (`Nushell`, `Powershell`), because the README names shells the way
+    # their users do rather than the way `TB_SHELL` spells them.
+    known = ({name.lower() for name in shells.shells}
+             | {driver.lower() for driver in shells.shells.values()})
     assert promised <= known, sorted(promised - known)
 
 

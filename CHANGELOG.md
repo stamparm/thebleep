@@ -11,8 +11,9 @@ rather than restarting it, because this is the same codebase carried forward.
 - **Press tab to edit a correction instead of running it.** A suggestion is
   often ninety-five percent right, and the last five percent used to mean
   retyping it. `tab` at the confirmation prompt hands it to your shell's line
-  editor with the cursor at the end; nothing runs until you press return. Zsh
-  and Fish put it in the next prompt (`print -z`, `commandline --replace`),
+  editor with the cursor at the end; nothing runs until you press return. Zsh,
+  Fish and Nushell put it in the next prompt (`print -z`, `commandline
+  --replace`, `commandline edit --replace`),
   bash reopens it in readline (`read -e -i`), PowerShell makes it the newest
   history entry for `↑`. No `TIOCSTI`, no synthesised keystrokes: where a shell
   has no supported way to do it, the offer is not made. `--edit` makes it the
@@ -26,6 +27,16 @@ rather than restarting it, because this is the same codebase carried forward.
   rather than a silent fallback to the generic shell, and naming the shell
   skips the walk up the process tree instead of adding to it.
   ([#1538](https://github.com/nvbn/thefuck/pull/1538))
+- **Nushell is supported.** Shell detection, the alias, quoting, command
+  chaining and history — both the plain-text and the SQLite one — with a real
+  Nushell driving a real terminal in the tests. A correction there goes into
+  your command line for you to submit, because Nushell has no `eval` by design
+  and `nu -c` would run a corrected `cd` in a process that then exits. Chaining
+  is `try { a; b }`: `and`/`or` in Nushell are boolean operators, not command
+  separators, which is what the old patch for this got wrong.
+  (based on [#1442](https://github.com/nvbn/thefuck/pull/1442),
+  [#1441](https://github.com/nvbn/thefuck/issues/1441),
+  [#1254](https://github.com/nvbn/thefuck/issues/1254))
 
 ### It runs on current Python
 

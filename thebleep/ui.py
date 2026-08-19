@@ -81,11 +81,20 @@ def select_command(corrected_commands):
     :rtype: (thebleep.types.CorrectedCommand | None, thebleep.const._GenConst)
 
     """
+    # Imported here rather than at the top so that a test replacing
+    # `thebleep.shells.shell` is the one that answers.
+    from .shells import shell
+
+    # Nushell has no way to run a string in the session it is running in, so
+    # there every correction goes to the line editor and the user submits it.
+    # See `shells.nushell`.
+    must_edit = not shell.can_run_corrections()
+
     # Whether the shell on the other end of the alias can take a command back
     # for editing. Asked once: it decides both what the prompt offers and
     # whether `--edit` can be honoured at all.
-    editable = const.can_edit()
-    wants_edit = bool(settings.edit)
+    editable = must_edit or const.can_edit()
+    wants_edit = must_edit or bool(settings.edit)
 
     if wants_edit and not editable:
         logs.cannot_edit()

@@ -190,6 +190,7 @@ case "$(basename "${SHELL:-sh}")" in
     fish) rc="~/.config/fish/config.fish" ;;
     zsh) rc="~/.zshrc" ;;
     tcsh|csh) rc="~/.cshrc" ;;
+    nu) rc="~/.config/nushell/config.nu" ;;
     *) rc="~/.bashrc" ;;
 esac
 

@@ -115,6 +115,17 @@ class Generic(object):
                 '    {name} "$@";\n'
                 '}}').format(name=alias_name, shell=self._shell_name())
 
+    def can_run_corrections(self):
+        """Whether a correction can be handed back to this shell to be run.
+
+        Every shell here but Nushell evaluates what we print. Nushell has no
+        `eval` -- by design, because it parses a script through before running
+        any of it -- so there a correction goes into the line editor and the
+        user submits it themselves. See `shells.nushell`.
+
+        """
+        return True
+
     def can_edit_buffer(self):
         """Whether this shell can be handed a command to edit rather than run.
 

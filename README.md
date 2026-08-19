@@ -70,7 +70,8 @@ read where the time went](#performance).
 The rest of the reasons:
 
 - **Python 3.9 through 3.14**, tested on Linux, macOS and Windows on every one
-  of them — and Bash, Zsh, Fish, tcsh and PowerShell as before.
+  of them — and Bash, Zsh, Fish, tcsh and PowerShell as before, with
+  Nushell added. [Supported everything](#supported-everything).
 - **30 issues from *The Fuck*'s backlog are fixed here** — three of them
   command injections — plus the rules that had rotted against current
   `git`, `npm`, `docker`, `cargo`, `brew`, `gem`, `az`, `gradle` and
@@ -189,6 +190,7 @@ to refuse outright since 5.17 — for good reasons that apply here too.
 | --- | --- | --- |
 | Zsh | `print -z` | your next prompt, already filled in |
 | Fish | `commandline --replace` | your next prompt, already filled in |
+| Nushell ≥ 0.87 | `commandline edit --replace` | every correction, always |
 | Bash ≥ 4.0 | `read -e -i` | a readline prompt, already filled in |
 | PowerShell | `PSConsoleReadLine::AddToHistory` | press <kbd>↑</kbd> to bring it up |
 | Bash 3.2 (macOS system bash) | — | not offered |
@@ -209,6 +211,39 @@ works.
 Editing does not fire a rule's side effect and does not touch your history. Both
 belong to a command that ran, and an edited one has not — your shell records
 whatever you finally submit, which is the command you actually chose.
+
+### Nushell
+
+Nushell is the shell where this is not an option but the whole design, so it is
+worth saying plainly what happens: **a correction always goes to your command
+line, and you press return to run it.**
+
+```
+> gti status
+Error: nu::shell::external_command
+  × External command failed
+> bleep
+git status [enter/↑/↓/ctrl+c/esc]
+> git status█
+```
+
+That is not a shortcoming worked around. Nushell has no `eval`, deliberately —
+it parses a script all the way through before running any of it, which is where
+most of what it can tell you about a pipeline comes from, and code that appears
+at run time cannot be parsed that way. `nu -c '...'` is not a substitute: it
+starts a second Nushell, so a corrected `cd`, `mkdir -p x; cd x` or `$env`
+assignment would happen to a process that immediately exits, and a correction
+that silently does nothing is worse than no correction. Writing it into your
+command line runs it in the session you are actually in.
+
+Two smaller differences follow from the same place. `and`/`or` in Nushell are
+boolean operators and not command separators, so a chained correction is written
+`try { git pull; git push }` — `try` stops at the command that failed, which is
+what `&&` means. And the broken command is not removed from your history, since
+Nushell has no way to delete an entry; the corrected one is recorded normally
+when you submit it.
+
+Nushell 0.87 or newer, which is where `commandline edit` arrived.
 
 ## Coming from The Fuck
 
@@ -359,14 +394,14 @@ nothing.
 | --- | --- |
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
-| **Shells** | Bash, Zsh, Fish, tcsh, PowerShell |
+| **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
 | **Rules** | 170 of them, for git, docker, npm, yarn, pip, apt, dnf, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
-Bash, Zsh, Fish and tcsh are exercised end to end, in containers, driving a real
-terminal: the tests type a wrong command into the shell, type the alias, and
-check what the shell then runs. PowerShell gets the same treatment on Windows in
-CI, in Windows PowerShell 5.1 as well as 7, because the two do not agree about
-command chaining. The Python suite covers all five.
+Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
+driving a real terminal: the tests type a wrong command into the shell, type the
+alias, and check what the shell then runs. PowerShell gets the same treatment on
+Windows in CI, in Windows PowerShell 5.1 as well as 7, because the two do not
+agree about command chaining. The Python suite covers all six.
 
 ##### [Back to Contents](#contents)
 
@@ -441,6 +476,7 @@ only difference between shells is the file it goes in:
 | Zsh | `thebleep --alias-loader >> ~/.zshrc` |
 | Fish | `thebleep --alias-loader >> ~/.config/fish/config.fish` |
 | tcsh | `thebleep --alias-loader >> ~/.cshrc` |
+| Nushell | `thebleep --alias-loader >> ~/.config/nushell/config.nu` |
 | PowerShell | `thebleep --alias-loader >> $profile` |
 
 The few things worth knowing per shell:
@@ -456,6 +492,13 @@ The few things worth knowing per shell:
   is still found; the answer is cached against `config.fish`, so it is looked up
   again when you change it.
 - **tcsh.** `~/.tcshrc` if you have one, `~/.cshrc` otherwise.
+- **Nushell.** `~/.config/nushell/config.nu` (`%APPDATA%\nushell` on Windows,
+  `~/Library/Application Support/nushell` on macOS). Here `--alias-loader`
+  writes the alias itself rather than a stub that fetches it, because Nushell
+  has no `eval` to define a command from a string — which costs nothing, since
+  what your shell then reads at startup is a dozen lines of Nushell rather than
+  a Python interpreter. Nushell 0.87 or newer, for `commandline edit`.
+  [What a correction does there](#nushell).
 - **PowerShell.** `$profile` may not exist yet:
   `New-Item -Force -Path $profile` first. If PowerShell refuses to run the
   profile, that is the execution policy rather than us:
@@ -476,7 +519,8 @@ thebleep --shell fish --alias-loader >> ~/.config/fish/config.fish
 thebleep --shell bash git brnch          # correct as though bash had asked
 ```
 
-It takes any of `bash`, `csh`, `fish`, `powershell`, `pwsh`, `tcsh`, `zsh`, and
+It takes any of `bash`, `csh`, `fish`, `nu`, `powershell`, `pwsh`, `tcsh`,
+`zsh`, and
 an unknown name is an error rather than a silent fallback. Naming the shell also
 skips the walk up the process tree, so it is the cheaper way round as well as
 the certain one.
