@@ -81,6 +81,9 @@ class Bash(Generic):
                 ' && { ' + history + 'eval "$TB_EDIT"; };'
                 ' unset TB_PROMPT TB_EDIT;')
 
+    def supports_instant_mode(self):
+        return True
+
     def instant_mode_alias(self, alias_name):
         if os.environ.get('THEBLEEP_INSTANT_MODE', '').lower() == 'true':
             mark = USER_COMMAND_MARK + '\b' * len(USER_COMMAND_MARK)

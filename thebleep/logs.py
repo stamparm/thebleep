@@ -258,6 +258,60 @@ def configured_successfully(configuration_details):
             reload=configuration_details.reload))
 
 
+def doctor_report(lines):
+    """Prints `--doctor`'s findings, aligned, with the advice underneath.
+
+    On stdout rather than stderr: this is the output somebody asked for and is
+    about to redirect into an issue, not a diagnostic alongside something else.
+
+    """
+    width = max([len(label) for label, _, _, _ in lines] or [0])
+    problems = 0
+
+    for label, value, status, advice in lines:
+        if status == 'warn':
+            problems += 1
+            mark = u'{}!{}'.format(color(colorama.Fore.RED),
+                                   color(colorama.Style.RESET_ALL))
+        elif status == 'note':
+            mark = u'{}-{}'.format(color(colorama.Fore.BLUE),
+                                   color(colorama.Style.RESET_ALL))
+        else:
+            mark = u' '
+        print(u'{mark} {label}{pad}  {value}'.format(
+            mark=mark, label=label, pad=' ' * (width - len(label)),
+            value=value))
+        if advice:
+            # Wrapped under the value, so that a long sentence stays readable
+            # in a terminal and in a pasted block.
+            for line in _wrapped(advice, width + 4):
+                print(line)
+
+    print('')
+    if problems:
+        print(u'{red}{count} thing{plural} to look at.{reset}'.format(
+            count=problems, plural='' if problems == 1 else 's',
+            red=color(colorama.Fore.RED),
+            reset=color(colorama.Style.RESET_ALL)))
+    else:
+        print(u'{green}Everything looks good.{reset}'.format(
+            green=color(colorama.Fore.GREEN),
+            reset=color(colorama.Style.RESET_ALL)))
+
+
+def _wrapped(text, indent, width=76):
+    """`text` broken into lines that fit, indented by `indent` spaces."""
+    pad = u' ' * indent
+    line = pad
+    for word in text.split():
+        if line != pad and len(line) + 1 + len(word) > width:
+            yield line
+            line = pad
+        line += (u'' if line == pad else u' ') + word
+    if line != pad:
+        yield line
+
+
 def version(thebleep_version, python_version, shell_info):
     sys.stderr.write(
         u'The Bleep {} using Python {} and {}\n'.format(thebleep_version,

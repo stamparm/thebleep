@@ -48,6 +48,10 @@ def _main():
     # It's important to check if an alias is being requested before checking if
     # `TB_HISTORY` is in `os.environ`, otherwise it might mess with subshells.
     # Check https://github.com/nvbn/thefuck/issues/921 for reference
+    elif known_args.doctor:
+        from .doctor import doctor
+
+        sys.exit(doctor())
     elif known_args.clear_cache:
         from .. import cachefile, rulepack
 

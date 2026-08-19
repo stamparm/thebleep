@@ -65,6 +65,9 @@ class Zsh(Generic):
         """
         return 'print -z -r -- "$TB_CMD";'
 
+    def supports_instant_mode(self):
+        return True
+
     def instant_mode_alias(self, alias_name):
         if os.environ.get('THEBLEEP_INSTANT_MODE', '').lower() == 'true':
             mark = ('%{' +

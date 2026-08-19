@@ -82,6 +82,9 @@ The rest of the reasons:
 - **Press tab to edit the correction instead of running it.** The suggestion
   lands in your own command line, with the cursor at the end of it, and nothing
   runs until you press return. [Edit before you run](#edit-before-you-run).
+- **`thebleep --doctor`** answers the questions a bug report usually starts
+  with, in one screen you can paste anywhere.
+  [Diagnostics](#thebleep---doctor).
 - **Nothing to relearn.** The same rules and settings, and the same `fuck` alias
   if you want it; six rules are deliberately less eager, all in the direction of
   doing only what they say. [Coming from The Fuck](#coming-from-the-fuck).
@@ -93,19 +96,20 @@ contributors; their work and history remain fully credited.
 
 1. [Safe by default](#safe-by-default)
 2. [Edit before you run](#edit-before-you-run)
-3. [Coming from The Fuck](#coming-from-the-fuck)
-4. [What's fixed](#whats-fixed)
-5. [Supported everything](#supported-everything)
-6. [Installation](#installation)
-7. [Updating](#updating)
-8. [How it works](#how-it-works)
-9. [Creating your own rules](#creating-your-own-rules)
-10. [Settings](#settings)
-11. [Third-party packages with rules](#third-party-packages-with-rules)
-12. [Experimental instant mode](#experimental-instant-mode)
-13. [Performance](#performance)
-14. [Developing](#developing)
-15. [License](#license-mit)
+3. [thebleep --doctor](#thebleep---doctor)
+4. [Coming from The Fuck](#coming-from-the-fuck)
+5. [What's fixed](#whats-fixed)
+6. [Supported everything](#supported-everything)
+7. [Installation](#installation)
+8. [Updating](#updating)
+9. [How it works](#how-it-works)
+10. [Creating your own rules](#creating-your-own-rules)
+11. [Settings](#settings)
+12. [Third-party packages with rules](#third-party-packages-with-rules)
+13. [Experimental instant mode](#experimental-instant-mode)
+14. [Performance](#performance)
+15. [Developing](#developing)
+16. [License](#license-mit)
 
 ## Safe by default
 
@@ -244,6 +248,51 @@ Nushell has no way to delete an entry; the corrected one is recorded normally
 when you submit it.
 
 Nushell 0.87 or newer, which is where `commandline edit` arrived.
+
+## thebleep --doctor
+
+When something is not working, it is nearly always one of a dozen things, and
+every one of them is a fact about the machine rather than about the code — the
+alias is in a file this shell does not read, `thebleep` on `PATH` is an older
+copy in another virtualenv, the settings file has a typo so every setting in it
+was dropped, `~/.config/thefuck` was never copied over. `--doctor` checks all of
+them at once:
+
+```
+$ thebleep --doctor
+  The Bleep           4.0.0
+  Python              3.12.3 (/usr/bin/python3)
+  Platform            Linux 6.8.0 (x86_64)
+  Shell               ZSH 5.9 (from TB_SHELL)
+  Integration         alias loader in ~/.zshrc
+  Executable          ~/.local/bin/thebleep
+  On PATH             yes
+  Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
+  Rules               170 bundled, 3 of your own
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (170 rules cached)
+- Replayless capture  available, not switched on
+                      See --enable-experimental-instant-mode.
+  Editing             supported by this shell (tab at the prompt)
+
+Everything looks good.
+```
+
+`!` marks something worth fixing and the advice sits under it; `-` is worth
+knowing. The exit status is non-zero when there is a `!`, so it is usable in a
+script.
+
+**It is safe to paste.** A diagnostic ends up in an issue, so it says that a
+setting is set and not what it is set to, that an alias is defined and not what
+it expands to, which rules exist and not what is in them. Nothing is read out of
+the environment except the handful of names *The Bleep* itself defines, and
+those are reported as set or unset. Paths have your home directory folded back
+to `~`, so your username does not travel either.
+
+**It changes nothing.** No config directory is created, no settings file is
+written, no rule pack is built — a report that has to alter the machine before
+it can describe it is describing a different machine.
+
+##### [Back to Contents](#contents)
 
 ## Coming from The Fuck
 

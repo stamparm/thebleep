@@ -37,6 +37,15 @@ rather than restarting it, because this is the same codebase carried forward.
   (based on [#1442](https://github.com/nvbn/thefuck/pull/1442),
   [#1441](https://github.com/nvbn/thefuck/issues/1441),
   [#1254](https://github.com/nvbn/thefuck/issues/1254))
+- **`thebleep --doctor`** checks the dozen things a bug report usually turns out
+  to be: the alias in a file this shell does not read, `thebleep` on `PATH`
+  being an older copy in another environment, a settings file with a typo in it
+  so every setting was dropped, a `~/.config/thefuck` nobody copied over, an
+  unwritable cache, a shell that was guessed wrong. It is safe to paste — names
+  of settings and never their values, nothing out of the environment but the
+  handful of names The Bleep defines, home folded back to `~` — and it changes
+  nothing on the way: no config directory created, no settings file written, no
+  rule pack built.
 
 ### It runs on current Python
 

@@ -8,6 +8,7 @@ DEFAULTS = {'alias': None,
             'clear_cache': False,
             'command': [],
             'debug': False,
+            'doctor': False,
             'edit': False,
             'enable_experimental_instant_mode': False,
             'force_command': None,
@@ -111,6 +112,10 @@ class Parser(object):
             metavar='SHELL',
             help='the shell to act as, when working it out from the process'
                  ' tree gets it wrong: {}'.format(', '.join(sorted(SHELLS))))
+        self._parser.add_argument(
+            '--doctor',
+            action='store_true',
+            help='report what is installed and configured, and what is wrong')
         self._parser.add_argument(
             '--clear-cache',
             action='store_true',

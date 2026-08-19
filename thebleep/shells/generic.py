@@ -157,6 +157,15 @@ class Generic(object):
         """
         return ''
 
+    def supports_instant_mode(self):
+        """Whether this shell can have its output recorded as it scrolls past.
+
+        Only the shells that override `instant_mode_alias` below; `--doctor`
+        asks so it can say which case a user is in.
+
+        """
+        return False
+
     def instant_mode_alias(self, alias_name):
         warn("Instant mode not supported by your shell")
         return self.app_alias(alias_name)
