@@ -6,6 +6,21 @@ The first release of *The Bleep*, and the first release of this codebase since
 *The Fuck* 3.32 in January 2022. The version continues *The Fuck*'s numbering
 rather than restarting it, because this is the same codebase carried forward.
 
+### New
+
+- **Press tab to edit a correction instead of running it.** A suggestion is
+  often ninety-five percent right, and the last five percent used to mean
+  retyping it. `tab` at the confirmation prompt hands it to your shell's line
+  editor with the cursor at the end; nothing runs until you press return. Zsh
+  and Fish put it in the next prompt (`print -z`, `commandline --replace`),
+  bash reopens it in readline (`read -e -i`), PowerShell makes it the newest
+  history entry for `↑`. No `TIOCSTI`, no synthesised keystrokes: where a shell
+  has no supported way to do it, the offer is not made. `--edit` makes it the
+  behaviour of return for one run and `edit = True` makes it permanent.
+  (based on [#1063](https://github.com/nvbn/thefuck/pull/1063),
+  [#1104](https://github.com/nvbn/thefuck/pull/1104),
+  [#1186](https://github.com/nvbn/thefuck/pull/1186))
+
 ### It runs on current Python
 
 - `distutils` is gone, which is what stopped *The Fuck* from starting on Python

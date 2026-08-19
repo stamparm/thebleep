@@ -53,9 +53,19 @@ def fix_command(known_args):
             return
 
         corrected_commands = get_corrected_commands(command)
-        selected_command = select_command(corrected_commands)
+        selected_command, action = select_command(corrected_commands)
 
-        if selected_command:
-            selected_command.run(command)
-        else:
+        if selected_command is None:
             sys.exit(1)
+        elif action is const.ACTION_EDIT:
+            selected_command.edit()
+            # The shell alias reads this status and puts what is on stdout in
+            # the line editor. Nothing has been run.
+            from ..shells import shell
+
+            hint = shell.edit_hint()
+            if hint:
+                logs.edit_hint(hint)
+            sys.exit(const.EXIT_EDIT)
+        else:
+            selected_command.run(command)

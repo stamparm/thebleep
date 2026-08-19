@@ -29,6 +29,8 @@ def read_actions():
             yield const.ACTION_NEXT
         elif key in (const.KEY_CTRL_C, const.KEY_ESCAPE, 'q'):
             yield const.ACTION_ABORT
+        elif key == const.KEY_TAB:
+            yield const.ACTION_EDIT
         elif key in ('\n', '\r'):
             yield const.ACTION_SELECT
 
@@ -66,46 +68,73 @@ class CommandSelector(object):
 
 
 def select_command(corrected_commands):
-    """Returns:
+    """What to do with which correction.
 
-     - the first command when confirmation disabled;
-     - None when ctrl+c pressed or when there's no terminal to confirm on;
-     - selected command.
+    Returns a pair of the chosen command and what was asked of it:
+
+     - `(None, ACTION_ABORT)` when ctrl+c was pressed, when nothing matched, or
+       when there is no terminal to confirm on;
+     - `(command, ACTION_SELECT)` to run it;
+     - `(command, ACTION_EDIT)` to hand it to the shell's line editor instead.
 
     :type corrected_commands: Iterable[thebleep.types.CorrectedCommand]
-    :rtype: thebleep.types.CorrectedCommand | None
+    :rtype: (thebleep.types.CorrectedCommand | None, thebleep.const._GenConst)
 
     """
+    # Whether the shell on the other end of the alias can take a command back
+    # for editing. Asked once: it decides both what the prompt offers and
+    # whether `--edit` can be honoured at all.
+    editable = const.can_edit()
+    wants_edit = bool(settings.edit)
+
+    if wants_edit and not editable:
+        logs.cannot_edit()
+        return None, const.ACTION_ABORT
+
     try:
         selector = CommandSelector(corrected_commands)
     except NoRuleMatched:
         logs.failed('No bleeps given' if get_alias() == 'bleep'
                     else 'Nothing found')
-        return
+        return None, const.ACTION_ABORT
+
+    chosen = const.ACTION_EDIT if wants_edit else const.ACTION_SELECT
 
     if not settings.require_confirmation:
         logs.show_corrected_command(selector.value)
-        return selector.value
+        return selector.value, chosen
 
     if not is_interactive():
         # Nobody is there to confirm, so show what we'd run and leave the
         # decision to whoever reads the output.
         logs.show_corrected_command(selector.value)
         logs.failed('Aborted: no terminal to confirm on, rerun with --yes')
-        return
+        return None, const.ACTION_ABORT
 
-    logs.confirm_text(selector.value)
+    # With `--edit` the question is still which suggestion, only the answer
+    # goes to the line editor rather than to the shell.
+    offer_edit = editable and not wants_edit
+    logs.confirm_text(selector.value, offer_edit)
 
     for action in read_actions():
         if action == const.ACTION_SELECT:
             sys.stderr.write('\n')
-            return selector.value
+            return selector.value, chosen
+        elif action == const.ACTION_EDIT:
+            if not offer_edit:
+                # Not offered, so nothing was promised: tab does nothing rather
+                # than something the shell cannot carry out.
+                continue
+            sys.stderr.write('\n')
+            return selector.value, const.ACTION_EDIT
         elif action == const.ACTION_ABORT:
             logs.failed('\nAborted')
-            return
+            return None, const.ACTION_ABORT
         elif action == const.ACTION_PREVIOUS:
             selector.previous()
-            logs.confirm_text(selector.value)
+            logs.confirm_text(selector.value, offer_edit)
         elif action == const.ACTION_NEXT:
             selector.next()
-            logs.confirm_text(selector.value)
+            logs.confirm_text(selector.value, offer_edit)
+
+    return None, const.ACTION_ABORT

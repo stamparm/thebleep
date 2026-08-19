@@ -7,7 +7,7 @@ def _args(**override):
     args = {'alias': None, 'alias_loader': None, 'clear_cache': False,
             'command': [], 'yes': False,
             'help': False, 'version': False, 'debug': False,
-            'force_command': None, 'repeat': False,
+            'force_command': None, 'repeat': False, 'edit': False,
             'enable_experimental_instant_mode': False,
             'shell_logger': None}
     args.update(override)
@@ -30,6 +30,8 @@ def _args(**override):
      _args(command=['git', 'branch', '-a'], yes=True, debug=True)),
     (['thebleep', 'git', 'branch', '-a', ARGUMENT_PLACEHOLDER, '-r', '-d'],
      _args(command=['git', 'branch', '-a'], repeat=True, debug=True)),
+    (['thebleep', 'git', 'branch', ARGUMENT_PLACEHOLDER, '--edit'],
+     _args(command=['git', 'branch'], edit=True)),
     (['thebleep', '--clear-cache'], _args(clear_cache=True)),
     (['thebleep', '--alias-loader'], _args(alias_loader='bleep')),
     (['thebleep', '--alias-loader', 'fix'], _args(alias_loader='fix')),
@@ -57,6 +59,9 @@ FAST_PATH_SHAPES = [
     ['thebleep', 'ls', ARGUMENT_PLACEHOLDER, '--debug'],
     ['thebleep', 'ls', ARGUMENT_PLACEHOLDER, '-y', '-d'],
     ['thebleep', 'ls', ARGUMENT_PLACEHOLDER, '-r', '-d'],
+    ['thebleep', 'ls', ARGUMENT_PLACEHOLDER, '-e'],
+    ['thebleep', 'ls', ARGUMENT_PLACEHOLDER, '--edit'],
+    ['thebleep', 'ls', ARGUMENT_PLACEHOLDER, '-e', '-y'],
     ['thebleep', 'git', 'commit', '-m', 'a message', ARGUMENT_PLACEHOLDER, '-y'],
     ['thebleep', u'echo café', ARGUMENT_PLACEHOLDER],
 ]

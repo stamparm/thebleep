@@ -8,6 +8,7 @@ DEFAULTS = {'alias': None,
             'clear_cache': False,
             'command': [],
             'debug': False,
+            'edit': False,
             'enable_experimental_instant_mode': False,
             'force_command': None,
             'help': False,
@@ -22,6 +23,8 @@ SIMPLE_FLAGS = {'-y': 'yes',
                 '--hard': 'yes',
                 '-r': 'repeat',
                 '--repeat': 'repeat',
+                '-e': 'edit',
+                '--edit': 'edit',
                 '-d': 'debug',
                 '--debug': 'debug'}
 
@@ -117,6 +120,11 @@ class Parser(object):
             '-h', '--help',
             action='store_true',
             help='show this help message and exit')
+        self._parser.add_argument(
+            '-e', '--edit',
+            action='store_true',
+            help='put the correction in your command line to edit'
+                 ' instead of running it')
         self._add_conflicting_arguments()
         self._parser.add_argument(
             '-d', '--debug',

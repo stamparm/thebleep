@@ -108,20 +108,40 @@ def show_corrected_command(corrected_command):
         reset=color(colorama.Style.RESET_ALL)))
 
 
-def confirm_text(corrected_command):
+def confirm_text(corrected_command, offer_edit=False):
     sys.stderr.write(
         (u'{prefix}{clear}{bold}{script}{reset}{side_effect} '
-         u'[{green}enter{reset}/{blue}↑{reset}/{blue}↓{reset}'
+         u'[{green}enter{reset}/{blue}↑{reset}/{blue}↓{reset}{edit}'
          u'/{red}ctrl+c{reset}/{red}esc{reset}]').format(
             prefix=const.USER_COMMAND_MARK,
             script=corrected_command.script,
             side_effect=' (+side effect)' if corrected_command.side_effect else '',
             clear='\033[1K\r',
+            edit=u'/{blue}tab{reset}=edit'.format(
+                blue=color(colorama.Fore.BLUE),
+                reset=color(colorama.Style.RESET_ALL)) if offer_edit else u'',
             bold=color(colorama.Style.BRIGHT),
             green=color(colorama.Fore.GREEN),
             red=color(colorama.Fore.RED),
             reset=color(colorama.Style.RESET_ALL),
             blue=color(colorama.Fore.BLUE)))
+
+
+def cannot_edit():
+    """Says why a correction cannot be handed back to be edited."""
+    failed(u'Your shell integration cannot put a command in the line editor.')
+    sys.stderr.write(
+        u'Editing works in bash, zsh, fish, Nushell and PowerShell. If you are'
+        u' using one of those, start a new shell so the alias is redefined by'
+        u' this version, or re-run `thebleep --alias`.\n')
+
+
+def edit_hint(message):
+    """A word about where the correction went, when it is not obvious."""
+    sys.stderr.write(u'{blue}{message}{reset}\n'.format(
+        message=message,
+        blue=color(colorama.Fore.BLUE),
+        reset=color(colorama.Style.RESET_ALL)))
 
 
 def confirm_replay(script):

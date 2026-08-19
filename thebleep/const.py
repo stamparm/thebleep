@@ -8,6 +8,19 @@ def get_alias():
     return os.environ.get('TB_ALIAS', 'bleep')
 
 
+def can_edit():
+    """Whether the alias that called us can put a command in the line editor.
+
+    The alias sets this, not us: whether a correction can be handed back for
+    editing depends on shell code that was written by whichever version of The
+    Bleep defined the alias, and a shell started before an upgrade is still
+    running the old one. Asking the environment means the offer is only made
+    when the shell on the other end actually knows what to do with it.
+
+    """
+    return bool(os.environ.get('TB_CAN_EDIT'))
+
+
 class _GenConst(object):
     def __init__(self, name):
         self._name = name
@@ -31,6 +44,19 @@ ACTION_SELECT = _GenConst('select')
 ACTION_ABORT = _GenConst('abort')
 ACTION_PREVIOUS = _GenConst('previous')
 ACTION_NEXT = _GenConst('next')
+ACTION_EDIT = _GenConst('edit')
+
+# Tab, which is what asks for the suggestion to be handed to the line editor
+# rather than run. It is the one obvious free key: `e` is already the colemak
+# spelling of "previous", and the gesture matches what tab does everywhere else
+# in a shell -- put something on the line for me to finish.
+KEY_TAB = '\t'
+
+# The exit status that means "what is on stdout is to be edited, not run".
+# The shell alias reads it and puts the command in the line editor; every other
+# status keeps its old meaning, so an alias that predates this feature simply
+# never sees it -- and `can_edit` above makes sure we never produce it for one.
+EXIT_EDIT = 3
 
 ALL_ENABLED = _GenConst('All rules enabled')
 DEFAULT_RULES = [ALL_ENABLED]
@@ -49,6 +75,7 @@ DEFAULT_SETTINGS = {'rules': DEFAULT_RULES,
                     'slow_commands': ['lein', 'react-native', 'gradle',
                                       './gradlew', 'vagrant'],
                     'repeat': False,
+                    'edit': False,
                     'instant_mode': False,
                     'num_close_matches': 3,
                     'confirm_replay': True,
@@ -67,6 +94,7 @@ ENV_TO_ATTR = {'THEBLEEP_RULES': 'rules',
                'THEBLEEP_WAIT_SLOW_COMMAND': 'wait_slow_command',
                'THEBLEEP_SLOW_COMMANDS': 'slow_commands',
                'THEBLEEP_REPEAT': 'repeat',
+               'THEBLEEP_EDIT': 'edit',
                'THEBLEEP_INSTANT_MODE': 'instant_mode',
                'THEBLEEP_NUM_CLOSE_MATCHES': 'num_close_matches',
                'THEBLEEP_CONFIRM_REPLAY': 'confirm_replay',

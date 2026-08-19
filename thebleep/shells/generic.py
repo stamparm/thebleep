@@ -115,6 +115,37 @@ class Generic(object):
                 '    {name} "$@";\n'
                 '}}').format(name=alias_name, shell=self._shell_name())
 
+    def can_edit_buffer(self):
+        """Whether this shell can be handed a command to edit rather than run.
+
+        Only shells with a documented way of writing their own line editor
+        answer yes. There is no fallback for the ones that cannot: the trick
+        that would work everywhere is pushing characters back into the
+        terminal's input queue with `TIOCSTI`, which is injecting keystrokes
+        into somebody's terminal from another process, and which Linux has
+        been able to refuse since 5.17 for exactly that reason.
+
+        """
+        return False
+
+    def edit_hint(self):
+        """What to tell the user about where the correction went, or `None`.
+
+        A shell that puts it straight into the line editor needs no
+        explanation -- the correction is simply there, at the next prompt.
+
+        """
+        return None
+
+    def _edit_line(self):
+        """Shell code that acts on a correction the user asked to edit.
+
+        It runs with the correction in `$TB_CMD`, in the alias, in the user's
+        own shell -- which is the only place with a line editor to write to.
+
+        """
+        return ''
+
     def instant_mode_alias(self, alias_name):
         warn("Instant mode not supported by your shell")
         return self.app_alias(alias_name)

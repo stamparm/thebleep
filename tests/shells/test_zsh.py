@@ -2,6 +2,7 @@
 
 import os
 import pytest
+from thebleep import const
 from thebleep.shells.zsh import Zsh
 
 
@@ -70,6 +71,13 @@ class TestZsh(object):
         assert 'TB_SHELL=zsh' in alias
         assert "TB_ALIAS=bleep" in alias
         assert 'TB_SHELL_ALIASES=$(alias)' in alias
+
+    def test_app_alias_can_edit(self, shell):
+        alias = shell.app_alias('bleep')
+        assert 'TB_CAN_EDIT=1' in alias
+        # `-r`, or `print` would eat the backslashes in a correction.
+        assert 'print -z -r -- "$TB_CMD"' in alias
+        assert '-eq {}'.format(const.EXIT_EDIT) in alias
 
     def test_get_history(self, history_lines, shell):
         history_lines([': 1432613911:0;ls', ': 1432613916:0;rm'])

@@ -3,7 +3,7 @@ import os
 import sys
 from .. import logs
 from ..conf import settings
-from ..const import ARGUMENT_PLACEHOLDER, get_alias
+from ..const import ARGUMENT_PLACEHOLDER, EXIT_EDIT, get_alias
 from ..utils import DEVNULL, cache, load_subprocess
 from .generic import Generic
 
@@ -61,14 +61,35 @@ class Fish(Generic):
         else:
             alter_history = ''
         # It is VERY important to have the variables declared WITHIN the alias
+        #
+        # The status is taken from `$pipestatus`, not `$status`: the correction
+        # arrives through a pipe into `read`, so `$status` is the reader's and
+        # says nothing about whether the user asked to edit.
         return ('function {0} -d "Correct your previous console command"\n'
                 '  set -l broken_command $history[1]\n'
-                '  env TB_SHELL=fish TB_ALIAS={0}'
+                '  env TB_SHELL=fish TB_ALIAS={0} TB_CAN_EDIT=1'
                 ' thebleep $broken_command {2} $argv | read -l fixed_command\n'
-                '  if [ "$fixed_command" != "" ]\n'
+                '  set -l tb_status $pipestatus[1]\n'
+                '  if test $tb_status -eq {3}\n'
+                '    {4}\n'
+                '  else if [ "$fixed_command" != "" ]\n'
                 '    eval $fixed_command\n{1}'
                 '  end\n'
-                'end').format(alias_name, alter_history, ARGUMENT_PLACEHOLDER)
+                'end').format(alias_name, alter_history, ARGUMENT_PLACEHOLDER,
+                              EXIT_EDIT, self._edit_line())
+
+    def can_edit_buffer(self):
+        return True
+
+    def _edit_line(self):
+        """`commandline -r` writes fish's own line editor.
+
+        Fish is one of the shells that will simply do this: the correction is
+        in the buffer at the next prompt, with the cursor at the end of it, and
+        nothing runs until the user presses return.
+
+        """
+        return 'commandline --replace -- $fixed_command'
 
     def app_alias_loader(self, alias_name):
         return ('function {name} -d "Correct your previous console command"\n'

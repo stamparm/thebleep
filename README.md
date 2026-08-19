@@ -78,6 +78,9 @@ The rest of the reasons:
 - **It asks before running your previous command a second time.** Reading what
   your command printed used to mean running it again, side effects and all.
   [Safe by default](#safe-by-default).
+- **Press tab to edit the correction instead of running it.** The suggestion
+  lands in your own command line, with the cursor at the end of it, and nothing
+  runs until you press return. [Edit before you run](#edit-before-you-run).
 - **Nothing to relearn.** The same rules and settings, and the same `fuck` alias
   if you want it; six rules are deliberately less eager, all in the direction of
   doing only what they say. [Coming from The Fuck](#coming-from-the-fuck).
@@ -88,19 +91,20 @@ contributors; their work and history remain fully credited.
 ## Contents
 
 1. [Safe by default](#safe-by-default)
-2. [Coming from The Fuck](#coming-from-the-fuck)
-3. [What's fixed](#whats-fixed)
-4. [Supported everything](#supported-everything)
-5. [Installation](#installation)
-6. [Updating](#updating)
-7. [How it works](#how-it-works)
-8. [Creating your own rules](#creating-your-own-rules)
-9. [Settings](#settings)
-10. [Third-party packages with rules](#third-party-packages-with-rules)
-11. [Experimental instant mode](#experimental-instant-mode)
-12. [Performance](#performance)
-13. [Developing](#developing)
-14. [License](#license-mit)
+2. [Edit before you run](#edit-before-you-run)
+3. [Coming from The Fuck](#coming-from-the-fuck)
+4. [What's fixed](#whats-fixed)
+5. [Supported everything](#supported-everything)
+6. [Installation](#installation)
+7. [Updating](#updating)
+8. [How it works](#how-it-works)
+9. [Creating your own rules](#creating-your-own-rules)
+10. [Settings](#settings)
+11. [Third-party packages with rules](#third-party-packages-with-rules)
+12. [Experimental instant mode](#experimental-instant-mode)
+13. [Performance](#performance)
+14. [Developing](#developing)
+15. [License](#license-mit)
 
 ## Safe by default
 
@@ -143,6 +147,68 @@ Two ways to stop being asked:
 - **`confirm_replay = False`** in your settings, or `--yes` for a single run,
   which restores *The Fuck*'s behaviour of running the previous command again
   without asking.
+
+## Edit before you run
+
+A suggestion is often ninety-five percent of what you wanted. Press <kbd>tab</kbd>
+instead of <kbd>enter</kbd> and it is handed to you in your own command line to
+finish:
+
+```bash
+$ git chekout featuer
+git: 'chekout' is not a git command. See 'git --help'.
+$ bleep
+git checkout feature [enter/↑/↓/tab=edit/ctrl+c/esc]
+```
+
+<kbd>tab</kbd>, and the next thing you see is your own prompt, with the cursor
+after the last character:
+
+```bash
+$ git checkout feature█
+```
+
+From there it is an ordinary command line: edit it, or press return to run it,
+or <kbd>ctrl+c</kbd> to throw it away. Nothing has run yet. `bleep --edit` (or
+`-e`) makes that the behaviour of <kbd>enter</kbd> too, and `edit = True` in
+your settings makes it permanent — a mode where *The Bleep* never runs anything,
+it only writes your next command for you.
+
+The arrow keys still walk the other suggestions, so you can pick the one worth
+editing before you edit it.
+
+### Which shells
+
+The correction goes into the line editor through whatever the shell offers for
+exactly that. There is no fallback for the shells that offer nothing: the trick
+that would work everywhere is `TIOCSTI`, which pushes characters into another
+process's terminal as though they had been typed, and which Linux has been able
+to refuse outright since 5.17 — for good reasons that apply here too.
+
+| Shell | How | What you get |
+| --- | --- | --- |
+| Zsh | `print -z` | your next prompt, already filled in |
+| Fish | `commandline --replace` | your next prompt, already filled in |
+| Bash ≥ 4.0 | `read -e -i` | a readline prompt, already filled in |
+| PowerShell | `PSConsoleReadLine::AddToHistory` | press <kbd>↑</kbd> to bring it up |
+| Bash 3.2 (macOS system bash) | — | not offered |
+| tcsh | — | not offered |
+
+Bash is the one that is close rather than exact. It has no way to write the
+*next* prompt's buffer, so what you get is readline itself — your keymap, your
+history, your editing keys — on a line that already holds the correction, and
+the prompt is your own `PS1`. PowerShell's editing API belongs to a key handler
+and does nothing when called from a function, so there the correction becomes
+the newest history entry and one <kbd>↑</kbd> brings it up.
+
+Where editing is not available, <kbd>tab</kbd> is not offered and does nothing;
+`--edit` says so and runs nothing rather than falling back to running the
+command. The prompt tells you which case you are in: if it says `tab=edit`, it
+works.
+
+Editing does not fire a rule's side effect and does not touch your history. Both
+belong to a command that ran, and an edited one has not — your shell records
+whatever you finally submit, which is the command you actually chose.
 
 ## Coming from The Fuck
 
@@ -704,6 +770,7 @@ Several *The Bleep* parameters can be changed in the file `$XDG_CONFIG_HOME/theb
 * `excluded_search_path_prefixes` — path prefixes to ignore when searching for commands, by default `[]`;
 * `instant_mode` — read what scrolled past instead of running your command again, by default `False`; see [Experimental instant mode](#experimental-instant-mode);
 * `repeat` — if the corrected command fails too, correct that as well, by default `False`; `--repeat` does it for one run;
+* `edit` — hand the correction to your command line to edit instead of running it, by default `False`; `--edit` does it for one run, and <kbd>tab</kbd> does it for one suggestion; see [Edit before you run](#edit-before-you-run);
 * `env` — environment variables to set for your previous command when it is run again to read its output, by default `{'LC_ALL': 'C', 'LANG': 'C'}`, which is there so that rules can look for English error messages. Git also gets `GIT_TRACE=1`, so that `git st` can be resolved to whatever alias it stands for; nothing else does.
 
 An example of `settings.py`:
@@ -723,6 +790,7 @@ slow_commands = ['react-native', 'gradle']
 num_close_matches = 5
 instant_mode = False
 repeat = False
+edit = False
 env = {'LC_ALL': 'C', 'LANG': 'C'}
 ```
 
@@ -742,6 +810,7 @@ rule with lower `priority` will be matched first;
 * `THEBLEEP_WAIT_SLOW_COMMAND` — the max amount of time in seconds for getting previous command output if it in `slow_commands` list;
 * `THEBLEEP_SLOW_COMMANDS` — list of slow commands, like `lein:gradle`;
 * `THEBLEEP_NUM_CLOSE_MATCHES` — the maximum number of close matches to suggest, like `5`.
+* `THEBLEEP_EDIT` — hand the correction to your command line to edit instead of running it, `true/false`.
 * `THEBLEEP_EXCLUDED_SEARCH_PATH_PREFIXES` — path prefixes to ignore when searching for commands, by default `[]`.
 
 For example:

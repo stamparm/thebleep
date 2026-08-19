@@ -154,7 +154,8 @@ class Settings(dict):
         elif attr in self.COUNTS:
             return self._number_from_env(attr, val)
         elif attr in ('require_confirmation', 'no_colors', 'debug',
-                      'alter_history', 'instant_mode', 'confirm_replay'):
+                      'alter_history', 'instant_mode', 'confirm_replay',
+                      'edit'):
             return self._bool_from_env(val)
         elif attr in ('slow_commands', 'excluded_search_path_prefixes'):
             return val.split(':')
@@ -199,6 +200,8 @@ class Settings(dict):
             from_args['debug'] = args.debug
         if args.repeat:
             from_args['repeat'] = args.repeat
+        if args.edit:
+            from_args['edit'] = args.edit
         return from_args
 
 

@@ -1,7 +1,7 @@
 from time import time
 import os
 from ..conf import settings
-from ..const import (ARGUMENT_PLACEHOLDER, USER_COMMAND_MARK,
+from ..const import (ARGUMENT_PLACEHOLDER, EXIT_EDIT, USER_COMMAND_MARK,
                      get_alias)
 from ..utils import DEVNULL, load_subprocess, memoize
 from .generic import Generic, fit_transport
@@ -28,17 +28,42 @@ class Zsh(Generic):
                 TB_HISTORY="$(fc -ln -10)";
                 {fit_transport}
                 TB_CMD=$(
-                    TB_SHELL=zsh TB_ALIAS={name} TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" thebleep {argument_placeholder} "$@"
-                ) && eval "$TB_CMD";
-                {alter_history}
-                unset TB_SHELL_ALIASES TB_HISTORY TB_CMD;
+                    TB_SHELL=zsh TB_ALIAS={name} TB_CAN_EDIT=1 TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" thebleep {argument_placeholder} "$@"
+                );
+                TB_STATUS=$?;
+                if [ "$TB_STATUS" -eq {exit_edit} ]; then
+                    {edit_line}
+                elif [ "$TB_STATUS" -eq 0 ]; then
+                    eval "$TB_CMD";
+                    {alter_history}
+                fi;
+                unset TB_SHELL_ALIASES TB_HISTORY TB_CMD TB_STATUS;
             }}
         '''.format(
             name=alias_name,
             argument_placeholder=ARGUMENT_PLACEHOLDER,
             fit_transport=fit_transport(),
+            exit_edit=EXIT_EDIT,
+            edit_line=self._edit_line(),
             alter_history=('test -n "$TB_CMD" && print -s "$TB_CMD";'
                            if settings.alter_history else ''))
+
+    def can_edit_buffer(self):
+        return True
+
+    def _edit_line(self):
+        """`print -z` is zsh's own answer to this, and has been for decades.
+
+        It pushes the text onto the editor buffer stack, and the next prompt
+        comes up with it already in the line editor -- the real ZLE, with the
+        user's own keymap, at the real prompt. Nothing is typed at the terminal
+        and nothing runs until they press return themselves.
+
+        `-r` because `print` would otherwise read backslash escapes in a
+        command that is meant to keep them.
+
+        """
+        return 'print -z -r -- "$TB_CMD";'
 
     def instant_mode_alias(self, alias_name):
         if os.environ.get('THEBLEEP_INSTANT_MODE', '').lower() == 'true':

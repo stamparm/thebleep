@@ -288,3 +288,19 @@ class CorrectedCommand(object):
             shell.put_to_history(self.script)
 
         sys.stdout.write(self._get_script())
+
+    def edit(self):
+        """Hands the script back to be edited rather than run.
+
+        The script as the rule wrote it, and nothing else. `_get_script` is for
+        a command about to be executed: in repeat mode it glues a second call to
+        The Bleep onto the end, which is not something to put in front of
+        somebody to edit.
+
+        The side effect does not fire and the history is not touched either.
+        Both belong to a command that ran, and this one has not -- the shell
+        will record whatever the user finally submits from the line editor,
+        which is the command they actually chose.
+
+        """
+        sys.stdout.write(self.script)

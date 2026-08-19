@@ -43,6 +43,26 @@ class TestCorrectedCommand(object):
         out, _ = capsys.readouterr()
         assert out == printed
 
+    def test_edit_hands_over_the_script_itself(self, capsys, settings):
+        """Not `_get_script`: repeat mode's tail is not for editing."""
+        settings.update({'repeat': True, 'debug': False})
+        CorrectedCommand('git branch', None, 1000).edit()
+        assert capsys.readouterr()[0] == 'git branch'
+
+    def test_edit_does_not_fire_the_side_effect(self, capsys, settings):
+        """It belongs to a command that ran, and this one has not."""
+        happened = []
+        CorrectedCommand('git branch', lambda *_: happened.append(1),
+                         1000).edit()
+        assert happened == []
+        assert capsys.readouterr()[0] == 'git branch'
+
+    def test_edit_does_not_touch_the_history(self, capsys, settings, mocker):
+        settings.update({'alter_history': True})
+        put = mocker.patch('thebleep.types.shell.put_to_history')
+        CorrectedCommand('git branch', None, 1000).edit()
+        assert not put.called
+
 
 class TestRule(object):
     def test_from_path_rule_exception(self, mocker):

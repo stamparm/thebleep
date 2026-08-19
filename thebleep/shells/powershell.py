@@ -1,4 +1,4 @@
-from ..const import get_alias
+from ..const import EXIT_EDIT, get_alias
 from ..utils import DEVNULL, load_subprocess
 from .generic import Generic, ShellConfiguration
 
@@ -28,20 +28,51 @@ class Powershell(Generic):
                 '    if (-not [string]::IsNullOrWhiteSpace($history)) {{\n'
                 '        $shell = $env:TB_SHELL;\n'
                 '        $alias = $env:TB_ALIAS;\n'
+                '        $edit = $env:TB_CAN_EDIT;\n'
                 '        $env:TB_SHELL = "powershell";\n'
                 '        $env:TB_ALIAS = "{name}";\n'
+                '        $env:TB_CAN_EDIT = $(if (Get-Module PSReadLine)'
+                ' {{ "1" }} else {{ $null }});\n'
                 '        try {{\n'
                 '            $bleep = $(thebleep $args $history);\n'
+                '            $code = $LASTEXITCODE;\n'
                 '        }} finally {{\n'
                 '            $env:TB_SHELL = $shell;\n'
                 '            $env:TB_ALIAS = $alias;\n'
+                '            $env:TB_CAN_EDIT = $edit;\n'
                 '        }}\n'
                 '        if (-not [string]::IsNullOrWhiteSpace($bleep)) {{\n'
-                '            iex "$bleep";\n'
+                '            if ($code -eq {exit_edit}) {{\n'
+                '                [Microsoft.PowerShell.PSConsoleReadLine]'
+                '::AddToHistory($bleep);\n'
+                '            }} else {{\n'
+                '                iex "$bleep";\n'
+                '            }}\n'
                 '        }}\n'
                 '    }}\n'
                 '    [Console]::ResetColor()\n'
-                '}}\n').format(name=alias_name)
+                '}}\n').format(name=alias_name, exit_edit=EXIT_EDIT)
+
+    def can_edit_buffer(self):
+        """As far as PSReadLine will go, which is not all the way.
+
+        PSReadLine's editing API belongs to a key handler: outside one, the
+        line it would write does not exist yet, and `Insert` called from a
+        function at the prompt renders the text into the scrollback of a buffer
+        that has already been submitted. Measured against PSReadLine 2.3.5 on
+        PowerShell 7 -- `Insert` returns without complaint and the next prompt
+        comes up empty.
+
+        `AddToHistory` is the part that does work: the correction becomes the
+        newest history entry, and one press of the up arrow brings it into the
+        line editor to be edited. That is a keystroke more than the other
+        shells need, which is why `edit_hint` says so.
+
+        """
+        return True
+
+    def edit_hint(self):
+        return 'Press the up arrow to edit it.'
 
     def app_alias_loader(self, alias_name):
         return ('function {name} {{\n'

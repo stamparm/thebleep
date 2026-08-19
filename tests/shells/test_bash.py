@@ -2,6 +2,7 @@
 
 import os
 import pytest
+from thebleep import const
 from thebleep.shells import Bash
 
 
@@ -71,6 +72,20 @@ class TestBash(object):
         assert 'TB_SHELL=bash' in alias
         assert "TB_ALIAS=bleep" in alias
         assert 'TB_SHELL_ALIASES=$(alias)' in alias
+
+    def test_app_alias_can_edit(self, shell):
+        alias = shell.app_alias('bleep')
+        # Offered only from bash 4, which is where `read -i` starts.
+        assert 'BASH_VERSINFO[0]' in alias
+        assert 'TB_CAN_EDIT="$TB_CAN_EDIT"' in alias
+        assert 'read -r -e -i "$TB_CMD"' in alias
+        assert '-eq {}'.format(const.EXIT_EDIT) in alias
+
+    def test_app_alias_edit_respects_alter_history(self, settings, shell):
+        settings.alter_history = True
+        assert 'history -s "$TB_EDIT"' in shell.app_alias('bleep')
+        settings.alter_history = False
+        assert 'history -s "$TB_EDIT"' not in shell.app_alias('bleep')
 
     def test_get_history(self, history_lines, shell):
         history_lines(['ls', 'rm'])
