@@ -200,6 +200,14 @@ median of 30 runs; the harness and the recorded run are in `bench/`.
 
 New in this release:
 
+- `zypper_no_such_command` — openSUSE and SLE had no rules at all, while apt,
+  dnf, yum, pacman and brew each had theirs. zypper says which word it did not
+  understand and then does not say what it could have been, so the candidates
+  come from `zypper --help`, which lists every command with its abbreviations:
+  `zypper isntall vim` becomes `zypper install vim`, and `zypper dpu` becomes
+  `zypper dup`. Read out of `--help` rather than written into the rule, because a
+  list in a rule file is a snapshot of whichever zypper its author had. Off
+  unless `zypper` is installed.
 - `pip_externally_managed` — since PEP 668, Debian, Ubuntu, Fedora and Arch all
   refuse `pip install` into the system Python. This offers what the error
   message itself recommends: `pipx install` for a single application where pipx
