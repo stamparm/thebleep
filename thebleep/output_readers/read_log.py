@@ -111,10 +111,26 @@ def get_output(script):
 
     try:
         with logs.debug_time(u'Read output from log'):
+            # `access=ACCESS_READ` rather than `MAP_SHARED, PROT_READ`: it is
+            # the same read-only shared mapping, spelled the way that exists on
+            # both platforms. Neither of those constants is defined on Windows,
+            # so this raised AttributeError there -- which nothing noticed,
+            # because instant mode needs a pty and so is never switched on on
+            # Windows, and until there was a test for this reader nothing called
+            # it at all.
+            #
+            # Both handles are closed on the way out, which they were not. A
+            # correction exits immediately afterwards so nothing leaked for long
+            # -- but on Windows an open mapping keeps the file locked, and the
+            # recording is a file somebody else is still writing to.
             fd = os.open(os.environ['THEBLEEP_OUTPUT_LOG'], os.O_RDONLY)
-            buffer = mmap.mmap(fd, const.LOG_SIZE_IN_BYTES, mmap.MAP_SHARED, mmap.PROT_READ)
-            _skip_old_lines(buffer)
-            lines = _get_output_lines(script, buffer)
+            try:
+                with mmap.mmap(fd, const.LOG_SIZE_IN_BYTES,
+                               access=mmap.ACCESS_READ) as buffer:
+                    _skip_old_lines(buffer)
+                    lines = _get_output_lines(script, buffer)
+            finally:
+                os.close(fd)
             output = '\n'.join(lines).strip()
             logs.debug(u'Received output: {}'.format(output))
             return output

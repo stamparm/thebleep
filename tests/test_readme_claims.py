@@ -11,7 +11,6 @@ and links twenty-six is worse than one that counts nothing.
 import io
 import re
 import subprocess
-import sys
 import pytest
 
 WORDS = {
@@ -343,13 +342,75 @@ def test_the_startup_files_agree_with_the_shells_and_the_installer(
     assert '`~/.tcshrc` if you have one, `~/.cshrc` otherwise' in readme
 
 
-def test_the_benchmark_block_is_the_recorded_run(source_root):
-    """What `bench/chart.py --check` checks, so that `pytest` checks it too."""
-    chart = source_root.joinpath('bench', 'chart.py')
-    finished = subprocess.run([sys.executable, str(chart), '--check'],
+def test_the_benchmark_block_is_the_recorded_run(source_root, readme):
+    """What `bench/chart.py --check` checks, so that `pytest` checks it too.
+
+    In process rather than as a subprocess: the chart is drawn with block
+    characters, and a subprocess writing those to a pipe on Windows encodes them
+    with the locale's codec. That would turn a benchmark that has drifted into a
+    UnicodeEncodeError, which is a worse way to be told.
+
+    """
+    import importlib.util
+    import json
+
+    spec = importlib.util.spec_from_file_location(
+        'bench_chart', str(source_root.joinpath('bench', 'chart.py')))
+    chart = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(chart)
+
+    with io.open(str(source_root.joinpath('bench', 'results', 'final.json')),
+                 encoding='utf-8') as handle:
+        results = json.load(handle)
+
+    assert chart.BEGIN in readme and chart.END in readme, \
+        'no benchmark block in the README to check'
+    start = readme.index(chart.BEGIN)
+    finish = readme.index(chart.END) + len(chart.END)
+    assert readme[start:finish] == chart.block(results), \
+        'the README has drifted from bench/results/final.json; run ' \
+        '`python bench/chart.py`'
+
+
+def test_the_recorded_benchmark_names_a_commit_that_exists(source_root):
+    """A result whose source cannot be checked out is not evidence.
+
+    The previous one named a commit that stopped being reachable when the fork's
+    author email was rewritten, so there was nothing to check out and see what
+    those numbers were a measurement of.
+
+    Only meaningful in a full clone. CI checks out one commit and an sdist has no
+    repository at all, so this skips there rather than pretending; the moment it
+    matters is when somebody records a new run, and they have the history.
+
+    """
+    import json
+
+    with io.open(str(source_root.joinpath('bench', 'results', 'final.json')),
+                 encoding='utf-8') as handle:
+        recorded = json.load(handle)['environment']
+
+    commit = recorded.get('commit')
+    assert commit, 'the recorded run does not say which commit it measured'
+    assert recorded.get('working_tree_clean') is True, \
+        'the run was recorded from a tree with uncommitted changes in it'
+
+    def git(*arguments):
+        return subprocess.run(['git'] + list(arguments), cwd=str(source_root),
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT)
-    assert finished.returncode == 0, finished.stdout.decode('utf-8', 'replace')
+
+    try:
+        present = git('cat-file', '-e', commit + '^{commit}')
+    except OSError:                                          # pragma: no cover
+        pytest.skip('git is not installed')
+    if present.returncode != 0:
+        pytest.skip('this checkout does not have that commit')
+
+    reachable = git('merge-base', '--is-ancestor', commit, 'HEAD')
+    assert reachable.returncode == 0, \
+        '{} is not reachable from HEAD: {}'.format(
+            commit, reachable.stdout.decode('utf-8', 'replace'))
 
 
 def test_the_shell_names_shell_takes_are_the_ones_it_documents(readme):
