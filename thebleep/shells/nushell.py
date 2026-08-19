@@ -24,7 +24,7 @@ import os
 import re
 import sys
 from ..const import ARGUMENT_PLACEHOLDER, get_alias
-from ..utils import DEVNULL, load_subprocess
+from ..utils import DEVNULL, load_subprocess, memoize
 from .generic import Generic, ShellConfiguration
 
 
@@ -368,3 +368,41 @@ class Nushell(Generic):
         Popen, PIPE = load_subprocess(globals())
         proc = Popen(['nu', '--version'], stdout=PIPE, stderr=DEVNULL)
         return proc.stdout.read().decode('utf-8').strip()
+
+    @memoize
+    def _version_pair(self):
+        """`(major, minor)` from `nu --version`, or `None` if it could not ask.
+
+        Memoized because starting Nushell to ask costs more than everything else
+        `--doctor` does put together, and two checks want the answer.
+
+        """
+        try:
+            version = self._get_version()
+        except Exception:
+            return None
+        match = re.match(r'\s*(\d+)\.(\d+)', version)
+        return (int(match.group(1)), int(match.group(2))) if match else None
+
+    def unsupported_version(self):
+        """Nushell before `commandline edit`, which is the whole integration.
+
+        A correction here is written into the command line and nowhere else, so
+        on a Nushell without `commandline edit --replace` there is no correction
+        at all -- and the way that failed was a Nushell parse error out of the
+        alias, several steps away from the thing that was wrong. `0.87` is where
+        the subcommand arrived; before it the spelling was `commandline
+        --replace`, and rather than writing both this says so.
+
+        A version it could not read is not reported as too old: `nu` not being on
+        `PATH` is an ordinary thing for a machine that is configured for Nushell
+        and running something else at the moment.
+
+        """
+        version = self._version_pair()
+        if version is None or version >= MINIMUM_VERSION:
+            return None
+        return 'Nushell {}.{} is older than {}.{}, where `commandline edit`' \
+               ' arrived. A correction has no way to reach your command line' \
+               ' before that, so it would not appear at all.'.format(
+                   version[0], version[1], *MINIMUM_VERSION)

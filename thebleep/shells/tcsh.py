@@ -44,9 +44,20 @@ class Tcsh(Generic):
         return u'#+{}\n{}\n'.format(int(time()), command_script)
 
     def how_to_configure(self):
+        # tcsh reads `~/.tcshrc` if it is there and falls back to `~/.cshrc`,
+        # which it shares with csh -- so that is the order here, and `~/.cshrc`
+        # is what gets named on a machine with neither, because it is the one
+        # csh would also read. The README and the installer said one each; this
+        # is the shell's own rule and all three now follow it.
+        home = os.path.expanduser('~')
+        if os.path.exists(os.path.join(home, '.tcshrc')):
+            config = '~/.tcshrc'
+        else:
+            config = '~/.cshrc'
+
         return self._create_shell_configuration(
             content=self.app_alias_loader(get_alias()),
-            path='~/.tcshrc',
+            path=config,
             reload='tcsh')
 
     def _get_version(self):

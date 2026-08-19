@@ -218,6 +218,76 @@ class TestConfig(object):
         _, output = _run(capsys)
         assert 'defaults in use' in output
 
+    def test_a_rules_list_that_enables_nothing_is_a_problem(self, capsys,
+                                                            home):
+        """Naming rules replaces the default set rather than adding to it.
+
+        So a list of one name that is not a rule is a list of no rules, the
+        whole tool goes quiet, and this used to be reported as healthy.
+
+        """
+        self._settings(home, u"rules = ['python_moduel_error']\n")
+        code, output = _run(capsys)
+        assert 'Rules enabled' in output
+        assert 'none' in output
+        assert 'DEFAULT_RULES' in output
+        assert code == 1
+
+    def test_the_DEFAULT_RULES_string_is_not_a_problem(self, capsys, home):
+        self._settings(
+            home, u"rules = ['DEFAULT_RULES', 'python_module_error']\n")
+        _, output = _run(capsys)
+        assert 'Rules enabled' not in output
+
+    def test_a_misspelling_beside_real_rules_is_pointed_out(self, capsys,
+                                                            home):
+        self._settings(home, u"rules = ['sudo', 'no_commnad']\n")
+        _, output = _run(capsys)
+        assert 'no_commnad' in output
+        assert '1 of the 2 named' in output
+
+    def test_a_narrow_rules_list_of_real_rules_is_fine(self, capsys, home):
+        self._settings(home, u"rules = ['sudo', 'no_command']\n")
+        _, output = _run(capsys)
+        assert 'Rules enabled' not in output
+
+
+class TestRulePack(object):
+    def test_entries_from_another_installation_are_not_counted(
+            self, capsys, home, monkeypatch):
+        """The pack is keyed by absolute path, and two installations share it.
+
+        Which is harmless -- nothing loads a rule from a path this installation
+        does not look in -- but reporting "346 rules cached" against "173
+        bundled" describes a machine with two copies on it and reads as a number
+        that has gone wrong.
+
+        """
+        from thebleep import rulepack
+
+        bundled = os.path.join(os.path.dirname(os.path.dirname(
+            os.path.abspath(doctor_module.__file__))), 'rules')
+        monkeypatch.setattr(rulepack, '_read_pack', lambda: {
+            os.path.join(bundled, 'sudo.py'): object(),
+            os.path.join(bundled, '__init__.py'): object(),
+            os.path.join(os.sep, 'somebody', 'else', 'rules', 'sudo.py'):
+                object(),
+            os.path.join(os.sep, 'somebody', 'else', 'rules', 'git_add.py'):
+                object(),
+        })
+        _, output = _run(capsys)
+        assert '(1 rules cached)' in output
+        assert '2 entries from somewhere else' in output
+
+    def test_a_pack_with_nothing_of_ours_in_it_reads_as_not_built(
+            self, capsys, home, monkeypatch):
+        from thebleep import rulepack
+
+        monkeypatch.setattr(rulepack, '_read_pack', lambda: {
+            os.path.join(os.sep, 'elsewhere', 'rules', 'sudo.py'): object()})
+        _, output = _run(capsys)
+        assert 'not built yet' in output
+
 
 class TestPerShell(object):
     def test_an_unrecognised_shell_is_a_problem(self, capsys, home,
@@ -234,6 +304,34 @@ class TestPerShell(object):
                             lambda self: '0.108.0')
         _, output = _run(capsys)
         assert 'always go to your command line' in output
+
+    def test_a_nushell_too_old_for_commandline_edit_is_a_problem(
+            self, capsys, home, monkeypatch):
+        """Where the whole integration is `commandline edit --replace`.
+
+        Without it there is no correction at all, and the way that failed was a
+        Nushell parse error out of the middle of the alias.
+
+        """
+        monkeypatch.setattr('thebleep.shells.shell', Nushell())
+        monkeypatch.setattr('thebleep.shells.nushell.Nushell._get_version',
+                            lambda self: '0.86.0')
+        code, output = _run(capsys)
+        said = ' '.join(output.split())
+        assert 'Shell version' in said
+        assert 'Nushell 0.86 is older than 0.87' in said
+        assert 'commandline edit' in said
+        assert code == 1
+
+    def test_a_nushell_it_cannot_ask_is_not_called_too_old(
+            self, capsys, home, monkeypatch):
+        """`nu` not being on PATH right now is not a version problem."""
+        monkeypatch.setattr('thebleep.shells.shell', Nushell())
+        monkeypatch.setattr(
+            'thebleep.shells.nushell.Nushell._get_version',
+            lambda self: (_ for _ in ()).throw(OSError('no nu')))
+        code, output = _run(capsys)
+        assert 'Shell version' not in output
 
     def test_a_shell_that_records_output_says_so(self, capsys, home):
         _, output = _run(capsys)

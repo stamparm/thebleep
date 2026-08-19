@@ -105,14 +105,21 @@ class TestBash(object):
         config_exists.return_value = False
         assert not shell.how_to_configure().can_configure_automatically
 
-    @pytest.mark.parametrize('present, path', [
-        (('.bashrc',), '~/.bashrc'),
-        (('.bash_profile',), '~/.bash_profile'),
-        (('.bashrc', '.bash_profile'), '~/.bashrc'),
-        ((), 'bash config'),
+    @pytest.mark.parametrize('present, platform, path', [
+        (('.bashrc',), 'linux', '~/.bashrc'),
+        (('.bash_profile',), 'linux', '~/.bash_profile'),
+        (('.bashrc', '.bash_profile'), 'linux', '~/.bashrc'),
+        # Neither there. What is named has to be a path -- `bash config` was
+        # printed into the advice, which came out as "Run `thebleep
+        # --alias-loader >> bash config`" -- and which path depends on the
+        # platform, because macOS's Terminal starts a login shell and a login
+        # shell reads `.bash_profile`.
+        ((), 'linux', '~/.bashrc'),
+        ((), 'darwin', '~/.bash_profile'),
+        (('.bashrc',), 'darwin', '~/.bashrc'),
     ])
     def test_how_to_configure_names_a_file_that_is_there(
-            self, shell, present, path, monkeypatch, config_exists):
+            self, shell, present, platform, path, monkeypatch, config_exists):
         """The test used to be `if os.path.join(home, '.bashrc')`.
 
         A joined path is a non-empty string, so the first branch always won and
@@ -122,11 +129,14 @@ class TestBash(object):
         """
         config_exists.return_value = True
         home = os.path.expanduser('~')
+        monkeypatch.setattr('thebleep.shells.bash.sys.platform', platform)
         monkeypatch.setattr(
             'os.path.exists',
             lambda candidate: os.path.basename(candidate) in present
             and os.path.dirname(candidate) == home)
         assert shell.how_to_configure().path == path
+        assert shell.how_to_configure().path.startswith('~/'), \
+            'the advice has to name a file, not describe one'
 
     def test_info(self, shell, Popen):
         Popen.return_value.stdout.read.side_effect = [b'3.5.9']

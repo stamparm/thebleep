@@ -1,4 +1,5 @@
 import os
+import sys
 from ..conf import settings
 from ..const import (ARGUMENT_PLACEHOLDER, EXIT_EDIT, USER_COMMAND_MARK,
                      get_alias)
@@ -132,13 +133,23 @@ class Bash(Generic):
         # was never named -- on a machine that has one and no `.bashrc`, which
         # is the usual macOS shape, the advice was to edit a file that is not
         # there.
+        #
+        # With neither there, the answer has to be a file and not a description
+        # of one: `bash config` was printed straight into the advice, which came
+        # out as ``Run `thebleep --alias-loader >> bash config` `` -- a sentence
+        # where a path belongs. The file to name is then the one bash would read
+        # if it existed, which differs by platform: macOS's Terminal starts a
+        # login shell, and a login shell reads `~/.bash_profile` and not
+        # `~/.bashrc`. Appending to either creates it.
         home = os.path.expanduser('~')
         if os.path.exists(os.path.join(home, '.bashrc')):
             config = '~/.bashrc'
         elif os.path.exists(os.path.join(home, '.bash_profile')):
             config = '~/.bash_profile'
+        elif sys.platform == 'darwin':
+            config = '~/.bash_profile'
         else:
-            config = 'bash config'
+            config = '~/.bashrc'
 
         return self._create_shell_configuration(
             content=self.app_alias_loader(get_alias()),

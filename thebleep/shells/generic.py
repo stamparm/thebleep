@@ -287,6 +287,17 @@ class Generic(object):
         """Returns the version of the current shell"""
         return ''
 
+    def unsupported_version(self):
+        """Why this shell is too old to be supported, or `None` if it is not.
+
+        Asked by `--doctor` and by the first-use message, and by nothing on the
+        path a correction takes -- answering it means starting the shell to ask
+        its version, which is most of the cost of a correction. A shell that
+        needs a floor says so by overriding this.
+
+        """
+        return None
+
     def info(self):
         """Returns the name and version of the current shell"""
         try:

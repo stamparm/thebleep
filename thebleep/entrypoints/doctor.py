@@ -106,6 +106,14 @@ def _shell(report):
             'Shell support', 'generic', WARN,
             'The shell was not recognised, so only the rules that do not care'
             ' which shell you are in will work. Try --shell to say.')
+        return
+
+    try:
+        too_old = shell.unsupported_version()
+    except Exception:                                            # pragma: no cover
+        too_old = None
+    if too_old:
+        report.add('Shell version', 'too old', WARN, too_old)
 
 
 # The startup files worth looking in for an alias, per shell driver. Only the
@@ -222,27 +230,51 @@ def _config(report):
                    'Not settings The Bleep knows, so they do nothing.'
                    ' A misspelling looks exactly like this.')
 
-
-def _count_rules(directory):
-    try:
-        return len([entry for entry in os.scandir(str(directory))
-                    if entry.name.endswith('.py')
-                    and entry.name != '__init__.py'])
-    except OSError:
-        return 0
+    _configured_rules(report, namespace.get('rules'))
 
 
-def _rules(report):
-    bundled = os.path.join(
+def _configured_rules(report, rules):
+    """Whether a `rules` list in the settings file leaves anything enabled.
+
+    Naming rules by hand replaces the default set rather than adding to it, so a
+    list of one misspelling is a list of no rules -- and the only symptom is that
+    nothing is ever corrected again, which looks like the tool being broken
+    rather than like the setting it is.
+
+    `DEFAULT_RULES` is expanded here the same way loading the file expands it, so
+    that this agrees with what a correction will actually do.
+
+    """
+    if not isinstance(rules, list):
+        return
+
+    from ..conf import settings
+
+    named = settings._expand_default_rules(rules)
+    if const.ALL_ENABLED in named:
+        return
+
+    known = _rule_names()
+    unknown = sorted(name for name in named
+                     if isinstance(name, str) and name not in known)
+    if not [name for name in named if name in known]:
+        report.add('Rules enabled', 'none', WARN,
+                   'Your `rules` names no rule that exists, and naming rules'
+                   ' replaces the default set rather than adding to it, so'
+                   ' nothing can be corrected. Add `DEFAULT_RULES` to the list'
+                   ' to keep the rest.')
+    elif unknown:
+        report.add('Rules enabled', '{} of the {} named'.format(
+            len(named) - len(unknown), len(named)), NOTE,
+            'No such rule: {}. A misspelling looks exactly like this.'.format(
+                ', '.join(unknown)))
+
+
+def _rule_directories():
+    """Every directory this installation would load rules from."""
+    yield os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'rules')
-    user = _user_dir().joinpath('rules')
-
-    counts = ['{} bundled'.format(_count_rules(bundled))]
-    user_count = _count_rules(user)
-    if user_count:
-        counts.append('{} of your own'.format(user_count))
-
-    contrib = 0
+    yield str(_user_dir().joinpath('rules'))
     for path in sys.path:
         try:
             entries = list(os.scandir(path))
@@ -250,7 +282,39 @@ def _rules(report):
             continue
         for entry in entries:
             if entry.name.startswith('thebleep_contrib_'):
-                contrib += _count_rules(os.path.join(entry.path, 'rules'))
+                yield os.path.join(entry.path, 'rules')
+
+
+def _rule_files(directory):
+    try:
+        return [entry.name for entry in os.scandir(str(directory))
+                if entry.name.endswith('.py')
+                and entry.name != '__init__.py']
+    except OSError:
+        return []
+
+
+def _count_rules(directory):
+    return len(_rule_files(directory))
+
+
+def _rule_names():
+    """The names of every rule on this machine, as a `rules` setting spells
+    them."""
+    return {name[:-3] for directory in _rule_directories()
+            for name in _rule_files(directory)}
+
+
+def _rules(report):
+    directories = list(_rule_directories())
+    bundled, user = directories[0], directories[1]
+
+    counts = ['{} bundled'.format(_count_rules(bundled))]
+    user_count = _count_rules(user)
+    if user_count:
+        counts.append('{} of your own'.format(user_count))
+
+    contrib = sum(_count_rules(directory) for directory in directories[2:])
     if contrib:
         counts.append('{} from packages'.format(contrib))
 
@@ -267,16 +331,36 @@ def _rule_pack(report):
 
     path = rulepack._cache_path()
     # Counted the way the rules above are counted, so that two numbers about
-    # the same rules agree: the pack has an entry for the package's
-    # `__init__.py` too, which is not a rule.
-    entries = [key for key in rulepack._read_pack()
-               if not key.endswith('__init__.py')]
+    # the same rules agree. Two things stop them agreeing on their own: the pack
+    # has an entry for the package's `__init__.py`, which is not a rule, and it
+    # is keyed by absolute path -- so a second installation writing the same
+    # pack, in the same cache directory under the same interpreter, leaves
+    # entries in it for rule files this installation will never load. Reporting
+    # "346 rules cached" against "173 bundled" describes a machine with two
+    # copies on it and reads as a number that has gone wrong.
+    ours = {os.path.normcase(os.path.abspath(directory))
+            for directory in _rule_directories()}
+    entries, elsewhere = [], 0
+    for key in rulepack._read_pack():
+        if key.endswith('__init__.py'):
+            continue
+        if os.path.normcase(os.path.dirname(os.path.abspath(key))) in ours:
+            entries.append(key)
+        else:
+            elsewhere += 1
+
     if not entries:
         report.add('Rule pack', '{} (not built yet)'.format(tidy(path)), NOTE,
                    'The next correction builds it.')
     else:
         report.add('Rule pack', '{} ({} rules cached)'.format(
             tidy(path), len(entries)))
+    if elsewhere:
+        report.add('Rule pack extras', '{} entries from somewhere else'.format(
+            elsewhere), NOTE,
+            'Another installation shares this cache. Harmless -- they are'
+            ' keyed by path and never loaded from here.'
+            ' `thebleep --clear-cache` clears it.')
 
     directory = cachefile.directory()
     if not os.access(str(directory), os.W_OK) and directory.exists():

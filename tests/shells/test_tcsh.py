@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import pytest
 from thebleep.shells.tcsh import Tcsh
 
@@ -66,6 +67,30 @@ class TestTcsh(object):
                                                     config_exists):
         config_exists.return_value = False
         assert not shell.how_to_configure().can_configure_automatically
+
+    @pytest.mark.parametrize('present, path', [
+        (('.tcshrc',), '~/.tcshrc'),
+        (('.cshrc',), '~/.cshrc'),
+        (('.tcshrc', '.cshrc'), '~/.tcshrc'),
+        ((), '~/.cshrc'),
+    ])
+    def test_which_startup_file_it_names(self, shell, config_exists,
+                                         monkeypatch, present, path):
+        """tcsh's own rule: `~/.tcshrc` when there is one, `~/.cshrc` otherwise.
+
+        This said `~/.tcshrc` always, the installer said `~/.cshrc` always and
+        the README said the rule -- so on the usual machine, which has a
+        `.cshrc` and no `.tcshrc`, `--doctor` looked in a file the shell does
+        not read and reported the alias missing from it.
+
+        """
+        config_exists.return_value = True
+        home = os.path.expanduser('~')
+        monkeypatch.setattr(
+            'os.path.exists',
+            lambda candidate: os.path.basename(candidate) in present
+            and os.path.dirname(candidate) == home)
+        assert shell.how_to_configure().path == path
 
     def test_info(self, shell, Popen):
         Popen.return_value.stdout.read.side_effect = [
