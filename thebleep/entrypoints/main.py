@@ -5,8 +5,26 @@ init_output()
 
 import os  # noqa: E402
 import sys  # noqa: E402
-from .. import logs  # noqa: E402
+from .. import const, logs  # noqa: E402
 from ..argument_parser import Parser  # noqa: E402
+
+
+def _use_shell(name):
+    """Honours `--shell`, by telling us what the alias normally would.
+
+    `TB_SHELL` is how a shell introduces itself, so setting it is the whole
+    implementation -- and it has to happen here, before anything imports
+    `thebleep.shells`, because that package works out the shell as it is
+    imported. Walking the process tree with psutil is both the expensive part
+    and the part that gets the answer wrong in a container, an IDE terminal or
+    under a wrapper script, which is what this flag is for.
+
+    """
+    if name not in const.SHELLS:
+        logs.failed(u'Unknown shell {!r}. Known shells: {}.'.format(
+            name, ', '.join(sorted(const.SHELLS))))
+        sys.exit(2)
+    os.environ['TB_SHELL'] = name
 
 
 def _main():
@@ -15,6 +33,9 @@ def _main():
     # startup, so it is the one that must not pay for the rest.
     parser = Parser()
     known_args = parser.parse(sys.argv)
+
+    if known_args.shell:
+        _use_shell(known_args.shell)
 
     if known_args.help:
         parser.print_help()

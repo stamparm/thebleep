@@ -9,7 +9,7 @@ def _args(**override):
             'help': False, 'version': False, 'debug': False,
             'force_command': None, 'repeat': False, 'edit': False,
             'enable_experimental_instant_mode': False,
-            'shell_logger': None}
+            'shell': None, 'shell_logger': None}
     args.update(override)
     return args
 
@@ -37,7 +37,10 @@ def _args(**override):
     (['thebleep', '--alias-loader', 'fix'], _args(alias_loader='fix')),
     (['thebleep', '-l', '/tmp/log'], _args(shell_logger='/tmp/log')),
     (['thebleep', '--shell-logger', '/tmp/log'],
-     _args(shell_logger='/tmp/log'))])
+     _args(shell_logger='/tmp/log')),
+    (['thebleep', '--shell', 'fish'], _args(shell='fish')),
+    (['thebleep', 'git', 'branch', ARGUMENT_PLACEHOLDER, '--shell', 'fish'],
+     _args(command=['git', 'branch'], shell='fish'))])
 def test_parse(argv, result):
     assert vars(Parser().parse(argv)) == result
 
@@ -79,6 +82,7 @@ ARGPARSE_SHAPES = [
     ['thebleep', '-l', '/tmp/log'],
     ['thebleep', '--force-command', 'git brnch'],
     ['thebleep', '--enable-experimental-instant-mode'],
+    ['thebleep', '--shell', 'fish'],
     ['thebleep', 'ls', ARGUMENT_PLACEHOLDER, '--nonsense'],
 ]
 

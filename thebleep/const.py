@@ -58,6 +58,21 @@ KEY_TAB = '\t'
 # never sees it -- and `can_edit` above makes sure we never produce it for one.
 EXIT_EDIT = 3
 
+# Shell name, as the alias reports it in `TB_SHELL` and as `--shell` accepts
+# it -> the class that drives that shell.
+#
+# It lives here rather than in `shells` because asking `shells` anything runs
+# shell detection, and `--shell` exists precisely for the cases where detection
+# is what went wrong. Validating a name must not first do the thing the name is
+# there to skip.
+SHELLS = {'bash': 'Bash',
+          'fish': 'Fish',
+          'zsh': 'Zsh',
+          'csh': 'Tcsh',
+          'tcsh': 'Tcsh',
+          'powershell': 'Powershell',
+          'pwsh': 'Powershell'}
+
 ALL_ENABLED = _GenConst('All rules enabled')
 DEFAULT_RULES = [ALL_ENABLED]
 DEFAULT_PRIORITY = 1000

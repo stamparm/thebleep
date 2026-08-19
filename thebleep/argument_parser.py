@@ -1,5 +1,5 @@
 import sys
-from .const import ARGUMENT_PLACEHOLDER, get_alias
+from .const import ARGUMENT_PLACEHOLDER, SHELLS, get_alias
 
 # The defaults every parse starts from, and the flags the fast path below can
 # account for on its own. Everything else means argparse gets the job.
@@ -13,6 +13,7 @@ DEFAULTS = {'alias': None,
             'force_command': None,
             'help': False,
             'repeat': False,
+            'shell': None,
             'shell_logger': None,
             'version': False,
             'yes': False}
@@ -104,6 +105,12 @@ class Parser(object):
             const=get_alias(),
             help='[custom-alias-name] prints shell code that defines the alias'
                  ' on first use, so shell startup costs nothing')
+        self._parser.add_argument(
+            '--shell',
+            action='store',
+            metavar='SHELL',
+            help='the shell to act as, when working it out from the process'
+                 ' tree gets it wrong: {}'.format(', '.join(sorted(SHELLS))))
         self._parser.add_argument(
             '--clear-cache',
             action='store_true',

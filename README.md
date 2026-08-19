@@ -466,6 +466,21 @@ The few things worth knowing per shell:
   `fc -ln -1`. Rules that need to know which shell you are in will not; set
   `TB_SHELL` yourself if it guesses wrong.
 
+Without an alias to tell it, *The Bleep* works out which shell it is in by
+walking up the process tree — which is right almost always, and wrong in the
+places where the process above it is not the shell: a container, an IDE's
+integrated terminal, a wrapper script, `distrobox`. `--shell` says so outright:
+
+```bash
+thebleep --shell fish --alias-loader >> ~/.config/fish/config.fish
+thebleep --shell bash git brnch          # correct as though bash had asked
+```
+
+It takes any of `bash`, `csh`, `fish`, `powershell`, `pwsh`, `tcsh`, `zsh`, and
+an unknown name is an error rather than a silent fallback. Naming the shell also
+skips the walk up the process tree, so it is the cheaper way round as well as
+the certain one.
+
 Changes are only available in a new shell session. To make changes immediately
 available, run `source ~/.bashrc` (or your shell config file like `.zshrc`).
 

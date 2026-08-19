@@ -7,15 +7,7 @@ attributes of this package, they just arrive when something asks for one.
 """
 import os
 from importlib import import_module
-
-# Shell name as the alias reports it -> the class that drives it.
-shells = {'bash': 'Bash',
-          'fish': 'Fish',
-          'zsh': 'Zsh',
-          'csh': 'Tcsh',
-          'tcsh': 'Tcsh',
-          'powershell': 'Powershell',
-          'pwsh': 'Powershell'}
+from ..const import SHELLS as shells  # noqa: F401  (re-exported by name)
 
 # Class name -> the module it lives in.
 _MODULES = {'Bash': 'bash',

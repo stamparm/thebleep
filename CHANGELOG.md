@@ -20,6 +20,12 @@ rather than restarting it, because this is the same codebase carried forward.
   (based on [#1063](https://github.com/nvbn/thefuck/pull/1063),
   [#1104](https://github.com/nvbn/thefuck/pull/1104),
   [#1186](https://github.com/nvbn/thefuck/pull/1186))
+- **`--shell` says which shell you are in**, for the places where working it
+  out from the process tree gets it wrong: containers, IDE terminals, wrapper
+  scripts, `distrobox`. An unknown name is an error listing the known ones
+  rather than a silent fallback to the generic shell, and naming the shell
+  skips the walk up the process tree instead of adding to it.
+  ([#1538](https://github.com/nvbn/thefuck/pull/1538))
 
 ### It runs on current Python
 
