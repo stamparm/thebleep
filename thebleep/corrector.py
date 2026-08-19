@@ -155,6 +155,37 @@ def organize_commands(corrected_commands):
     yield from sorted_commands
 
 
+def _corrections(rules, command):
+    return (corrected for rule in rules if rule.is_match(command)
+            for corrected in rule.get_corrected_commands(command))
+
+
+def _corrections_behind_the_wrapper(rules, command, prefix, inner_script):
+    """Corrections for the command underneath, each given its wrapper back.
+
+    Both commands are offered to every rule, because a rule may be about the
+    wrapper -- `sudo` suggests adding one, `no_command` fixes a misspelled one
+    -- or about what it wraps. The rules are looked up once for the two of them:
+    dispatch already knows the command could be about either, so the second pass
+    costs matching and not loading.
+
+    The wrapper goes back in front of the whole suggestion, as `sudo_support`
+    has always put `sudo` back, and it goes back as the user wrote it: the
+    prefix is the text cut out of their own command line, not words joined up
+    again.
+
+    """
+    inner = command.update(script=inner_script)
+
+    for rule in rules:
+        if rule.is_match(command):
+            for corrected in rule.get_corrected_commands(command):
+                yield corrected
+        if rule.is_match(inner):
+            for corrected in rule.get_corrected_commands(inner):
+                yield corrected.with_prefix(prefix)
+
+
 def get_corrected_commands(command):
     """Returns generator with sorted and unique corrected commands.
 
@@ -162,8 +193,17 @@ def get_corrected_commands(command):
     :rtype: Iterable[thebleep.types.CorrectedCommand]
 
     """
-    corrected_commands = (
-        corrected for rule in get_rules(command)
-        if rule.is_match(command)
-        for corrected in rule.get_corrected_commands(command))
+    from . import wrappers
+
+    rules = get_rules(command)
+    prefix, inner_script = wrappers.peel(command.script, command.script_parts)
+
+    if prefix is None:
+        corrected_commands = _corrections(rules, command)
+    else:
+        logs.debug(u'Wrapped command: {!r} behind {!r}'.format(
+            inner_script, prefix))
+        corrected_commands = _corrections_behind_the_wrapper(
+            rules, command, prefix, inner_script)
+
     return organize_commands(corrected_commands)

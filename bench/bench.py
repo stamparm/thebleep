@@ -110,6 +110,14 @@ SCENARIOS = [
                    'prints_at_least': 1024 * 1024},
     },
     {
+        'name': 'correct-wrapped',
+        'what': 'the command is behind a wrapper, so the rules run twice',
+        'args': ['nice', '-n', '10', 'git', 'brnch'],
+        'env': lambda style: _env(style, shell='bash', alias='bleep',
+                                  REQUIRE_CONFIRMATION='false'),
+        'expect': {'status': 0, 'stdout_contains': 'nice -n 10 git branch'},
+    },
+    {
         'name': 'correct-in-repo',
         'what': 'correct inside a git repository, where git rules do work',
         'args': ['git', 'stats'],

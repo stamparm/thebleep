@@ -423,21 +423,29 @@ def load_module(name, path, code_bytes):
 def command_apps(command):
     """The app names a command could plausibly be about.
 
-    The first word, and the second as well when the first is `sudo`, because
-    `sudo_support` hands the unprefixed command to the rule. Environment
-    assignments in front of the command are skipped, exactly as `is_app` skips
-    them, so that dispatch and the rules agree on what the command is.
+    The first word, and the command behind it when the first word is one of the
+    wrappers a command can be hidden behind -- `sudo`, `env FOO=bar`, `nice -n
+    10`, `nohup` and the rest of them; see `thebleep.wrappers`. Both, because a
+    rule may be about the wrapper (`sudo`, `no_command`) or about what it wraps,
+    and dispatch has to load either.
+
+    Environment assignments in front of the command are skipped, exactly as
+    `is_app` skips them, so that dispatch and the rules agree on what the
+    command is.
 
     """
     from .utils import command_word_index
+    from . import wrappers
 
     parts = command.script_parts or command.script.split()
     parts = parts[command_word_index(parts):]
     if not parts:
         return frozenset()
+
     apps = {os.path.basename(parts[0])}
-    if apps == {'sudo'} and len(parts) > 1:
-        apps.add(os.path.basename(parts[1]))
+    wrapped = wrappers.wrapped_app(parts)
+    if wrapped:
+        apps.add(os.path.basename(wrapped))
     return frozenset(apps)
 
 

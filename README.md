@@ -614,8 +614,35 @@ file, then remove the package with `uv tool uninstall thebleep`,
 ## How it works
 
 *The Bleep* attempts to match the previous command with a rule. If a match is
-found, a new command is created using the matched rule and executed. The
-following rules are enabled by default:
+found, a new command is created using the matched rule and executed.
+
+### Commands with something in front of them
+
+The interesting command is not always the first word:
+
+```bash
+$ sudo -u www-data git chekout main
+$ bleep
+sudo -u www-data git checkout main
+```
+
+`sudo`, `doas`, `env FOO=bar`, `command`, `builtin`, `nice`, `nohup`, `setsid`,
+`stdbuf` and `time` are peeled off — nested, in any combination — the command
+underneath is corrected by every rule as though you had typed it on its own,
+and the wrapper comes back in front of the suggestion exactly as you wrote it.
+That is one model applied to all 170 rules, replacing a `sudo`-only decorator
+that 26 of them had asked for individually.
+
+It fails towards leaving your command alone. A wrapper that is not transparent
+is not peeled: `sudo -i` and `sudo -s` run a shell, `sudo -e` opens an editor,
+`sudo -l` lists privileges and `command -v` prints a path, so none of those is
+the command underneath in a hat. Neither is an option it does not recognise —
+that option might take a value, and mistaking a value for the command is worse
+than not offering a correction. Nor is a script with shell syntax in it, where
+the first word is not the only command anyway, nor a wrapper whose words would
+have to be re-quoted to be handed back.
+
+The following rules are enabled by default:
 
 * `adb_unknown_command` — fixes misspelled commands like `adb logcta`;
 * `ag_literal` — adds `-Q` to `ag` when suggested;

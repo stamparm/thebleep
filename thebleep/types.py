@@ -257,6 +257,17 @@ class CorrectedCommand(object):
         return u'CorrectedCommand(script={}, side_effect={}, priority={})'.format(
             self.script, self.side_effect, self.priority)
 
+    def with_prefix(self, prefix):
+        """The same correction with the wrapper it was found behind put back.
+
+        :type prefix: str
+        :rtype: CorrectedCommand
+
+        """
+        return CorrectedCommand(script=prefix + self.script,
+                                side_effect=self.side_effect,
+                                priority=self.priority)
+
     def _get_script(self):
         """Returns fixed commands script.
 

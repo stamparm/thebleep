@@ -208,9 +208,19 @@ def default_settings(params):
 
 
 def get_closest(word, possibilities, cutoff=0.6, fallback_to_first=True):
-    """Returns closest match or just first from possibilities."""
+    """Returns closest match or just first from possibilities.
+
+    `None` when there are no possibilities. The fallback used to be
+    `possibilities[0]` with nothing checking that there was one, so a rule that
+    asks npm or lein for its list of subcommands and finds the tool is not
+    installed got an empty list back and then died of an `IndexError` here,
+    instead of simply having nothing to suggest.
+
+    """
     _load_difflib()
     possibilities = list(possibilities)
+    if not possibilities:
+        return None
     try:
         return difflib_get_close_matches(word, possibilities, 1, cutoff)[0]
     except IndexError:

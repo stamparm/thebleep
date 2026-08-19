@@ -46,6 +46,19 @@ rather than restarting it, because this is the same codebase carried forward.
   handful of names The Bleep defines, home folded back to `~` — and it changes
   nothing on the way: no config directory created, no settings file written, no
   rule pack built.
+- **A command behind a wrapper is corrected as though it were on its own.**
+  `sudo -u www-data git chekout main`, `env FOO=bar npm sart`, `nice -n 10
+  cargo buld`, `nohup ./deply.sh` — `sudo`, `doas`, `env`, `command`,
+  `builtin`, `nice`, `nohup`, `setsid`, `stdbuf` and `time` are peeled off,
+  nested and in any combination, every rule sees what is underneath, and the
+  wrapper comes back in front of the suggestion exactly as it was typed. One
+  model for all 170 rules, where before there was a `sudo`-only decorator that
+  26 of them had asked for individually. It refuses rather than guesses: not
+  for `sudo -i`, `sudo -s`, `sudo -e`, `sudo -l` or `command -v`, which do not
+  run the command; not past an option it does not recognise, which might be one
+  that takes a value; and not through shell syntax, where the first word is not
+  the only command anyway.
+  (based on [#1101](https://github.com/nvbn/thefuck/pull/1101))
 
 ### It runs on current Python
 

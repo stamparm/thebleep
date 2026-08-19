@@ -79,3 +79,43 @@ def test_organize_commands():
         == [CorrectedCommand('ls'), CorrectedCommand('ls -lh', priority=100),
             CorrectedCommand(u'echo café', priority=200),
             CorrectedCommand('ls -la', priority=9000)]
+
+
+class TestCorrectionsBehindAWrapper(object):
+    """Every rule gets the command underneath, and the wrapper comes back."""
+
+    OUTPUT = ("git: 'chekout' is not a git command. See 'git --help'.\n\n"
+              "The most similar command is\n\tcheckout\n")
+
+    def _corrections(self, script):
+        from thebleep.corrector import get_corrected_commands
+        from thebleep.types import Command
+
+        return [corrected.script for corrected
+                in get_corrected_commands(Command(script, self.OUTPUT))]
+
+    @pytest.mark.parametrize('script, corrected', [
+        ('git chekout master', 'git checkout master'),
+        ('sudo git chekout master', 'sudo git checkout master'),
+        ('sudo -u www-data git chekout master',
+         'sudo -u www-data git checkout master'),
+        ('nice -n 10 git chekout master', 'nice -n 10 git checkout master'),
+        ('env FOO=bar git chekout master', 'env FOO=bar git checkout master'),
+        ('nohup git chekout master', 'nohup git checkout master'),
+        ('doas git chekout master', 'doas git checkout master'),
+        ('command git chekout master', 'command git checkout master'),
+        ('setsid -f sudo -u root git chekout master',
+         'setsid -f sudo -u root git checkout master'),
+    ])
+    def test_the_wrapper_comes_back_with_the_correction(self, script,
+                                                        corrected):
+        assert corrected in self._corrections(script)
+
+    @pytest.mark.parametrize('script', [
+        'sudo -i git chekout master',
+        'sudo -e git chekout master',
+        'command -v git chekout master',
+    ])
+    def test_a_wrapper_that_runs_something_else_is_left_alone(self, script):
+        """These do not run the command, so it is not the one to correct."""
+        assert 'git checkout master' not in ' '.join(self._corrections(script))
