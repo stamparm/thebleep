@@ -65,8 +65,12 @@ def test_not_match(output, script, branch_name):
      'git push --set-upstream origin master --quiet'),
     ('git -c test=test push --quiet origin', 'master',
      'git -c test=test push --set-upstream origin master --quiet'),
+    # An apostrophe is legal in a ref name. This used to be `test\\'s`, from a
+    # `.replace("'", r"\\'")` upstream added to stop the eval crashing on it --
+    # which left `;`, `$()` and a backtick untouched. Quoted properly now, and
+    # `tests/test_injection.py` is what holds it that way.
     ('git push', "test's",
-     "git push --set-upstream origin test\\'s"),
+     "git push --set-upstream origin 'test'\"'\"'s'"),
     ('git push --force', 'master',
      'git push --set-upstream origin master --force'),
     ('git push --force-with-lease', 'master',

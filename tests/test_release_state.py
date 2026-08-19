@@ -86,7 +86,15 @@ def test_the_release_date_is_today_and_not_the_last_commit(source_root):
 
 
 def test_it_states_the_version_in_exactly_the_places_it_rewrites(source_root):
-    """Each pattern in `release.py` has to match once, or a release is wrong."""
+    """Every pattern in `release.py` has to rewrite exactly one line.
+
+    Not "match exactly one line", which is what this asserted and which was only
+    ever true while there had been one release: the CHANGELOG's heading pattern
+    matches every heading in it, and gains one each time. What `release.py`
+    depends on is what it actually does -- `subn(..., count=1)` -- so that is what
+    is checked, and the first heading is the one that gets the new version.
+
+    """
     import importlib.util
 
     spec = importlib.util.spec_from_file_location(
@@ -94,7 +102,26 @@ def test_it_states_the_version_in_exactly_the_places_it_rewrites(source_root):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
 
-    for name, pattern, _ in module.STATES_THE_VERSION:
-        found = pattern.findall(_read(source_root, name))
-        assert len(found) == 1, '{} has {} lines stating the version'.format(
-            name, len(found))
+    for name, pattern, replacement in module.STATES_THE_VERSION:
+        text = _read(source_root, name)
+        if replacement is None:
+            new, count = pattern.subn(r'\g<1>9.9.9\g<2>', text)
+        else:
+            new, count = pattern.subn(
+                replacement.format(version='9.9.9', date='2099-01-01'),
+                text, count=1)
+        assert count == 1, \
+            '{} has {} lines a release would rewrite, wanted 1'.format(
+                name, count)
+        assert '9.9.9' in new, '{} did not take the new version'.format(name)
+
+    # And the one it rewrites in the CHANGELOG is the top one, not a historical
+    # entry further down.
+    changelog = _read(source_root, 'CHANGELOG.md')
+    name, pattern, replacement = module.STATES_THE_VERSION[-1]
+    assert name == 'CHANGELOG.md'
+    rewritten = pattern.subn(
+        replacement.format(version='9.9.9', date='2099-01-01'),
+        changelog, count=1)[0]
+    headings = CHANGELOG_HEADING.findall(rewritten)
+    assert headings[0] == ('9.9.9', '2099-01-01'), headings[:2]

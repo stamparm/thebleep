@@ -12,7 +12,7 @@ if version < (3, 9):
           ' ({}.{} detected).'.format(*version))
     sys.exit(-1)
 
-VERSION = '4.0.0'
+VERSION = '4.0.1'
 
 REPOSITORY = 'https://github.com/stamparm/thebleep'
 IMAGES = ('.svg', '.png', '.gif', '.jpg', '.jpeg')
@@ -25,7 +25,8 @@ def for_pypi(markdown):
     checkout -- including a private one, where raw.githubusercontent.com
     serves nothing at all. PyPI has no repository to resolve them against, so
     for the page there they are made absolute, and pinned to this release's
-    tag rather than to master, so that the 4.0.0 page keeps showing 4.0.0.
+    tag rather than to master, so that a release's page keeps showing what that
+    release said.
 
     Markdown has two ways to write a link and this used to know about one of
     them. `[text](target)` was rewritten; a reference definition at the foot of

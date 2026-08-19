@@ -4,6 +4,7 @@ import pytest
 import os
 from collections import namedtuple
 from thebleep.rules.fix_file import match, get_new_command
+from thebleep.shells import shell
 from thebleep.types import Command
 
 FixFileTest = namedtuple('FixFileTest', ['script', 'file', 'line', 'col', 'output'])
@@ -215,9 +216,14 @@ def test_get_new_command_with_settings(mocker, monkeypatch, test, settings):
     cmd = Command(test.script, test.output)
     settings.fixcolcmd = '{editor} {file} +{line}:{col}'
 
+    # The file is quoted on its way into the command: it is read out of whatever
+    # printed the error, and a filename may be shell syntax. Compared against the
+    # quoting rather than against a literal, so that a name needing no quotes
+    # still reads as itself here.
+    quoted = shell.quote(test.file)
     if test.col:
         assert (get_new_command(cmd) ==
-                u'dummy_editor {} +{}:{} && {}'.format(test.file, test.line, test.col, test.script))
+                u'dummy_editor {} +{}:{} && {}'.format(quoted, test.line, test.col, test.script))
     else:
         assert (get_new_command(cmd) ==
-                u'dummy_editor {} +{} && {}'.format(test.file, test.line, test.script))
+                u'dummy_editor {} +{} && {}'.format(quoted, test.line, test.script))

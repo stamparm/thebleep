@@ -1,3 +1,4 @@
+from thebleep.shells import shell
 from thebleep.specific.git import git_support
 
 
@@ -8,5 +9,6 @@ def match(command):
 
 @git_support
 def get_new_command(command):
+    # The alias comes out of `.git/config`, so a repository you cloned chose it.
     aliased = command.output.split('`', 2)[2].split("'", 1)[0].split(' ', 1)[0]
-    return 'git help {}'.format(aliased)
+    return 'git help {}'.format(shell.quote(aliased))

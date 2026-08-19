@@ -46,7 +46,8 @@ def canary(tmpdir):
     stub.write('#!/bin/sh\nexit 0\n')
     stub.chmod(0o755)
     for name in ('git', 'az', 'composer', 'grunt', 'npm', 'yarn', 'gradle',
-                 'sh', 'env', 'rm', 'kill', 'ssh', 'ssh-keygen'):
+                 'sh', 'env', 'rm', 'kill', 'ssh', 'ssh-keygen', 'vim',
+                 'rails'):
         shutil.copy(str(stub), str(stubs.join(name)))
 
     work = tmpdir.mkdir('work')
@@ -151,3 +152,108 @@ class TestNamesFromSomewhereElse(object):
         if not ssh_known_hosts.match(command):
             return
         assert canary(ssh_known_hosts.get_new_command(command)) == []
+
+    # Reported as stamparm/thebleep#2, with a working proof of concept: a branch
+    # name reaches these through git's own hint, and only whitespace, control
+    # characters and `~^:?*[\\` are illegal in a ref name -- so `;`, `$()`, a
+    # backtick, `&`, `|` and `#` are all fair game for whoever named the branch.
+    # Three of them were reported; `git_help_aliased`, `git_merge` and `fix_file`
+    # turned up in the sweep that followed.
+    def test_git_push_set_upstream(self, name, payload, canary):
+        """git's `--set-upstream` hint, which has the branch name in it."""
+        from thebleep.rules import git_push
+
+        output = (u'fatal: The current branch {0} has no upstream branch.\n'
+                  u'To push the current branch and set the remote as upstream, '
+                  u'use\n\n    git push --set-upstream origin {0}\n'.format(payload))
+        command = Command(u'git push', output)
+        if not git_push.match(command):
+            return
+        assert canary(git_push.get_new_command(command)) == []
+
+    def test_git_push_different_branch_names(self, name, payload, canary):
+        """A whole `git push <remote> <branch>` line, repeated back."""
+        from thebleep.rules import git_push_different_branch_names as rule
+
+        output = (u'error: The upstream branch of your current branch does not '
+                  u'match\nthe name of your current branch.  To push to the '
+                  u'upstream branch\non the remote, use\n\n'
+                  u'    git push origin {0}\n'.format(payload))
+        command = Command(u'git push', output)
+        if not rule.match(command):
+            return
+        assert canary(rule.get_new_command(command)) == []
+
+    def test_git_pull_set_upstream_to(self, name, payload, canary):
+        """The branch name arrives twice in this one."""
+        from thebleep.rules import git_pull
+
+        output = (u'There is no tracking information for the current branch.\n'
+                  u'\n    git pull <remote> <branch>\n\nIf you wish to set '
+                  u'tracking information for this branch you can do so with:'
+                  u'\n\n    git branch --set-upstream-to=origin/<branch> {0}'
+                  u'\n\n'.format(payload))
+        command = Command(u'git pull', output)
+        if not git_pull.match(command):
+            return
+        assert canary(git_pull.get_new_command(command)) == []
+
+    def test_git_help_aliased(self, name, payload, canary):
+        """An alias out of the `.git/config` of a repository you cloned."""
+        from thebleep.rules import git_help_aliased
+
+        output = u"`git st' is aliased to `{}'".format(payload)
+        command = Command(u'git help st', output)
+        if not git_help_aliased.match(command):
+            return
+        assert canary(git_help_aliased.get_new_command(command)) == []
+
+    def test_git_merge(self, name, payload, canary):
+        """A branch name that came from the remote."""
+        from thebleep.rules import git_merge
+
+        output = (u'merge: feature - not something we can merge\n\n'
+                  u'Did you mean this?\n\t{}\n'.format(payload))
+        command = Command(u'git merge feature', output)
+        if not git_merge.match(command):
+            return
+        assert canary(git_merge.get_new_command(command)) == []
+
+    def test_yarn_alias(self, name, payload, canary):
+        from thebleep.rules import yarn_alias
+
+        output = u'Did you mean `yarn {}`'.format(payload)
+        command = Command(u'yarn ls', output)
+        if not yarn_alias.match(command):
+            return
+        assert canary(yarn_alias.get_new_command(command)) == []
+
+    def test_rails_migrations_pending(self, name, payload, canary):
+        from thebleep.rules import rails_migrations_pending
+
+        output = (u'Migrations are pending. To resolve this issue, run:\n'
+                  u'        bin/rails db:migrate {}\n'.format(payload))
+        command = Command(u'rails s', output)
+        if not rails_migrations_pending.match(command):
+            return
+        assert canary(rails_migrations_pending.get_new_command(command)) == []
+
+    def test_fix_file(self, name, payload, canary, tmpdir, monkeypatch,
+                      settings):
+        """A filename, which needs no git at all: cloning a repository or
+        unpacking an archive is enough to put one on disk."""
+        from thebleep.rules import fix_file
+
+        hostile = tmpdir.mkdir('src-' + name).join(payload + '.py')
+        hostile.write('')
+        monkeypatch.chdir(hostile.dirpath())
+        monkeypatch.setitem(os.environ, 'EDITOR', 'vim')
+        settings.fixlinecmd = u'{editor} {file} +{line}'
+        settings.fixcolcmd = None
+
+        output = (u'  File "{}.py", line 3\n    x=\n     ^\n'
+                  u'SyntaxError: invalid syntax\n'.format(payload))
+        command = Command(u'python x.py', output)
+        if not fix_file.match(command):
+            return
+        assert canary(fix_file.get_new_command(command)) == []

