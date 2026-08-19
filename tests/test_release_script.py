@@ -24,6 +24,31 @@ import pytest
 VERSIONED = ('setup.py', 'README.md', 'CHANGELOG.md')
 
 
+@pytest.fixture(autouse=True)
+def the_real_files_are_not_touched(source_root):
+    """Every test here works on a copy; this is what says so.
+
+    It used to be a test asserting the repository stood at `4.0.0 -- unreleased`,
+    which is a fact about a moment rather than about this code: the first person
+    to prepare a release made it false, and the failure pointed at the CHANGELOG
+    instead of at the test. What actually matters is that nothing in this file
+    writes to the real tree, whatever version the tree happens to say.
+
+    """
+    def snapshot():
+        contents = {}
+        for name in VERSIONED:
+            with io.open(str(source_root.joinpath(name)),
+                         encoding='utf-8') as handle:
+                contents[name] = handle.read()
+        return contents
+
+    before = snapshot()
+    yield
+    assert snapshot() == before, \
+        'a test in this file wrote to the real tree'
+
+
 @pytest.fixture
 def release(source_root):
     """`release.py`, loaded without running it."""
@@ -250,9 +275,3 @@ class TestWhatItWritesWhenTheGatesPass(object):
         release.main(['release.py', '4.0.1'])
         assert "VERSION = '4.0.1'" in a_tree.read('setup.py')
         assert 'badge/version-4.0.1-' in a_tree.read('README.md')
-
-    def test_the_real_tree_still_says_4_0_0_unreleased(self, source_root):
-        """Every test above works on a copy. This is the one that says so."""
-        with io.open(str(source_root.joinpath('CHANGELOG.md')),
-                     encoding='utf-8') as handle:
-            assert handle.read().splitlines()[2] == '## 4.0.0 — unreleased'
