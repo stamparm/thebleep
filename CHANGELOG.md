@@ -1,5 +1,16 @@
 # Changelog
 
+## 4.0.3 — unreleased
+
+### Rules
+
+- `kubectl_unknown_command` — fixes a mistyped `kubectl` subcommand from the
+  suggestions kubectl itself prints: `kubectl gat pods` becomes
+  `kubectl get pods`. Sorted by how close each suggestion is to what was typed,
+  because kubectl's own order offers `set` before `get` for `gat`.
+  (by [@TrixSec](https://github.com/TrixSec) in
+  [#1](https://github.com/stamparm/thebleep/pull/1))
+
 ## 4.0.2 — 2026-08-19
 
 Nothing about the tool itself changed. `pip install --upgrade` is worth it only
