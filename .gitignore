@@ -68,3 +68,14 @@ bench/results/
 
 # CodeGraph's local index of this checkout
 .codegraph/
+
+# Scratch notes and triage that belong to working on this, not to the project.
+# This lived in .git/info/exclude, which is one machine's file: a `git add -f`
+# or a fresh clone was all it took to publish 25 KB of working notes.
+.scratch/
+
+# pytest, tox and virtualenv leftovers not covered above
+.pytest_cache/
+.benchmarks/
+venv/
+.venv/
