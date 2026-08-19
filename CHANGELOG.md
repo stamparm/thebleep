@@ -34,6 +34,10 @@ rather than restarting it, because this is the same codebase carried forward.
   and `nu -c` would run a corrected `cd` in a process that then exits. Chaining
   is `try { a; b }`: `and`/`or` in Nushell are boolean operators, not command
   separators, which is what the old patch for this got wrong.
+  Its configuration is looked for where Nushell looks for it:
+  `XDG_CONFIG_HOME` first on every platform — which is the order Nushell reads
+  them in — then `%APPDATA%` on Windows and `~/Library/Application Support` on
+  macOS, and on macOS `~/.config` as well, since either may be the one in use.
   (based on [#1442](https://github.com/nvbn/thefuck/pull/1442),
   [#1441](https://github.com/nvbn/thefuck/issues/1441),
   [#1254](https://github.com/nvbn/thefuck/issues/1254))

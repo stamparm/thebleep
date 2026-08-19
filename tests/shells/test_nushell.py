@@ -70,13 +70,78 @@ class TestNushell(object):
     def test_quote(self, shell, given, quoted):
         assert shell.quote(given) == quoted
 
-    def test_history_file_prefers_the_one_that_exists(self, shell, mocker,
-                                                      os_environ, tmpdir):
+    def test_the_xdg_directory_comes_first(self, shell, os_environ, tmpdir):
+        """On every platform, because that is the order Nushell reads them in.
+
+        Asking the platform first sent this looking in `~/Library/Application
+        Support` on a macOS machine whose Nushell was using the XDG directory.
+
+        """
+        os_environ['XDG_CONFIG_HOME'] = str(tmpdir)
+        assert shell._config_dirs()[0] == os.path.join(str(tmpdir), 'nushell')
+
+    @pytest.mark.parametrize('platform, name, expected', [
+        ('linux', 'posix', os.path.join('~', '.config', 'nushell')),
+        ('darwin', 'posix',
+         os.path.join('~', 'Library', 'Application Support', 'nushell')),
+    ])
+    def test_the_platform_answers_when_xdg_says_nothing(
+            self, shell, os_environ, monkeypatch, platform, name, expected):
+        """Every branch is checked from here, not only the one we run on.
+
+        The macOS branch was wrong and only the macOS runner said so, which is
+        the slowest possible way to find out.
+
+        """
+        monkeypatch.setattr('sys.platform', platform)
+        monkeypatch.setattr('os.name', name)
+        home = os.path.expanduser('~')
+        assert shell._config_dirs()[0] == os.path.join(
+            home, *expected.split(os.sep)[1:])
+
+    def test_windows_uses_appdata(self, shell, os_environ, monkeypatch):
+        monkeypatch.setattr('sys.platform', 'win32')
+        monkeypatch.setattr('os.name', 'nt')
+        os_environ['APPDATA'] = os.path.join('C:', 'Users', 'x', 'AppData')
+        assert shell._config_dirs()[0] == os.path.join(
+            os_environ['APPDATA'], 'nushell')
+
+    def test_macos_also_looks_in_the_xdg_default(self, shell, os_environ,
+                                                 monkeypatch):
+        """Which of the two a given Nushell build uses is not a question this
+        has to answer: it can look in both."""
+        monkeypatch.setattr('sys.platform', 'darwin')
+        monkeypatch.setattr('os.name', 'posix')
+        places = shell._config_dirs()
+        assert any(place.endswith(os.path.join('.config', 'nushell'))
+                   for place in places)
+        assert any('Application Support' in place for place in places)
+
+    def test_no_history_yet_names_the_default_format(
+            self, shell, os_environ, tmpdir):
+        os_environ['XDG_CONFIG_HOME'] = str(tmpdir)
+        assert shell._get_history_file_name() == os.path.join(
+            str(tmpdir), 'nushell', 'history.txt')
+
+    @pytest.mark.parametrize('name', ['history.txt', 'history.sqlite3'])
+    def test_the_history_that_is_there_is_the_one_read(
+            self, shell, os_environ, tmpdir, name):
+        os_environ['XDG_CONFIG_HOME'] = str(tmpdir)
+        tmpdir.mkdir('nushell').join(name).write('')
+        assert shell._get_history_file_name().endswith(name)
+
+    def test_the_newest_wins_when_both_are_there(self, shell, os_environ,
+                                                 tmpdir):
+        """Switching `file_format` leaves the other file behind rather than
+        removing it, so the stale one must not be the one that is read."""
         os_environ['XDG_CONFIG_HOME'] = str(tmpdir)
         directory = tmpdir.mkdir('nushell')
+        stale = directory.join('history.txt')
+        stale.write('')
+        os.utime(str(stale), (1, 1))
+        current = directory.join('history.sqlite3')
+        current.write('')
         assert shell._get_history_file_name().endswith('history.sqlite3')
-        directory.join('history.txt').write('')
-        assert shell._get_history_file_name().endswith('history.txt')
 
     def test_get_history_from_plain_text(self, shell, os_environ, tmpdir):
         os_environ['XDG_CONFIG_HOME'] = str(tmpdir)

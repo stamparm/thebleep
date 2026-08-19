@@ -18,6 +18,7 @@ bash still checks bash. `tests/Dockerfile` has the rest of them.
 
 import os
 import shutil
+import subprocess
 import sys
 import pytest
 from thebleep import const
@@ -71,6 +72,39 @@ echo 'echo RAN-AAA'
 exit 0
 """
 
+# Reports what the alias decided about editing, the way the real one reads it.
+FAKE_REPORTS = u"""#!/bin/sh
+echo "CAN_EDIT=[$TB_CAN_EDIT]" 1>&2
+echo 'echo RANMARK'
+exit 0
+"""
+
+
+def _bash_can_edit():
+    """Whether the bash on this machine has the `read -e -i` the branch needs.
+
+    It arrived in bash 4.0, and macOS still ships 3.2.57 -- where `read -i` is
+    "invalid option". The alias works this out for itself and never tells The
+    Bleep that editing is available, so the feature is correct there; what
+    cannot be exercised is the branch, because the stand-in for `thebleep` below
+    asks for editing whatever the shell said.
+
+    """
+    binary = shutil.which('bash')
+    if binary is None:
+        return False
+    try:
+        reported = subprocess.check_output(
+            [binary, '-c', 'echo ${BASH_VERSINFO[0]}'],
+            stderr=subprocess.DEVNULL).decode('utf-8', 'replace')
+        return int(reported.strip()) >= 4
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return False
+
+
+def _can_edit(name):
+    return _bash_can_edit() if name == 'bash' else True
+
 
 def _spawn(name, tmpdir, fake_source):
     under = SHELLS[name]
@@ -103,6 +137,9 @@ def _spawn(name, tmpdir, fake_source):
 class TestEditBuffer(object):
     def test_the_correction_is_offered_for_editing(self, name, tmpdir):
         """It arrives on a line the user is editing, and has not run."""
+        if not _can_edit(name):
+            pytest.skip('this {} cannot edit; see TestTheAliasKnowsWhatItCanDo'
+                        .format(name))
         proc = _spawn(name, tmpdir, FAKE)
         proc.sendline(u'bleep')
         proc.expect_exact(u'echo AAA')
@@ -113,6 +150,9 @@ class TestEditBuffer(object):
 
     def test_the_edited_command_is_what_runs(self, name, tmpdir):
         """The suggestion is a starting point, not what gets executed."""
+        if not _can_edit(name):
+            pytest.skip('this {} cannot edit; see TestTheAliasKnowsWhatItCanDo'
+                        .format(name))
         proc = _spawn(name, tmpdir, FAKE)
         proc.sendline(u'bleep')
         proc.expect_exact(u'echo AAA')
@@ -133,6 +173,9 @@ class TestEditBuffer(object):
         if not SHELLS[name].keeps_variables:
             pytest.skip('{} sets no shell variables to leave behind'
                         .format(name))
+        if not _can_edit(name):
+            pytest.skip('this {} cannot edit; see TestTheAliasKnowsWhatItCanDo'
+                        .format(name))
         proc = _spawn(name, tmpdir, FAKE)
         proc.sendline(u'bleep')
         proc.expect_exact(u'echo AAA')
@@ -141,3 +184,27 @@ class TestEditBuffer(object):
         proc.sendline(u'echo "left: $(set | grep -cE \'^TB_[A-Z]+=\')"')
         proc.expect_exact(u'left: 0')
         proc.close(force=True)
+
+
+@pytest.mark.skipif(sys.platform == 'win32', reason='needs a POSIX shell')
+class TestTheAliasKnowsWhatItCanDo(object):
+    """Whether editing is offered is the alias's decision, in the real shell.
+
+    This is the half that matters on a machine whose bash is too old: the
+    feature is correct there precisely because the alias never advertises it, so
+    The Bleep never hands back a command the shell could not put anywhere.
+
+    """
+
+    @pytest.mark.parametrize('name', sorted(SHELLS))
+    def test_it_says_so_only_when_it_can(self, name, tmpdir):
+        proc = _spawn(name, tmpdir, FAKE_REPORTS)
+        proc.sendline(u'bleep')
+        expected = u'CAN_EDIT=[1]' if _can_edit(name) else u'CAN_EDIT=[]'
+        proc.expect_exact(expected)
+        proc.close(force=True)
+
+    def test_bash_four_is_where_read_i_arrived(self):
+        """A statement of the fact the alias's test encodes, so that a machine
+        with an older bash reads as a skip rather than as a mystery."""
+        assert _bash_can_edit() == _can_edit('bash')

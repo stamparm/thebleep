@@ -70,6 +70,23 @@ BUILTINS = [
 UNSAFE = re.compile(r'[^\w@%+=:,./-]', re.ASCII)
 
 
+def _read_only_uri(path):
+    """`path` as a SQLite URI that cannot create or modify the database.
+
+    `mode=ro` so that reading somebody's history never creates one where there
+    was none and never disturbs the shell that is writing it.
+
+    The path is percent-encoded because a URI is not a path: `?` would start the
+    query, `#` a fragment, and a space is not allowed. `/` and `:` are left
+    alone, or `C:/Users/...` on Windows would stop naming a drive.
+
+    """
+    from urllib.parse import quote
+
+    return 'file:{}?mode=ro'.format(
+        quote(path.replace(os.sep, '/'), safe='/:'))
+
+
 class Nushell(Generic):
     friendly_name = 'Nushell'
 
@@ -166,35 +183,77 @@ class Nushell(Generic):
         return u'"{}"'.format(
             s.replace(u'\\', u'\\\\').replace(u'"', u'\\"'))
 
-    def _config_dir(self):
-        """Where Nushell keeps `config.nu` and, beside it, the history.
+    def _config_dirs(self):
+        """Everywhere Nushell might keep `config.nu` and, beside it, the history.
 
-        Nushell asks the platform, so this does too: `%APPDATA%` on Windows,
-        `~/Library/Application Support` on macOS, `$XDG_CONFIG_HOME` elsewhere.
+        `XDG_CONFIG_HOME` first, and on every platform rather than only on
+        Linux: Nushell reads it before asking the platform, which `nu -c 'print
+        $nu.default-config-dir'` confirms. Getting that order wrong is what sent
+        this looking in `~/Library/Application Support` on a macOS machine whose
+        Nushell was using the XDG directory.
+
+        Then the platform's own answer, which is what Nushell falls back to:
+        `%APPDATA%` on Windows, `~/Library/Application Support` on macOS,
+        `~/.config` elsewhere. And on macOS `~/.config` as well, because which of
+        the two a given Nushell build uses is a question this does not have to
+        answer -- it can look in both and take the one that is there.
 
         """
+        places = []
+        xdg = os.environ.get('XDG_CONFIG_HOME')
+        if xdg:
+            places.append(os.path.join(xdg, 'nushell'))
+
         if os.name == 'nt':
             base = os.environ.get('APPDATA') or os.path.expanduser('~')
         elif sys.platform == 'darwin':
-            base = os.path.expanduser('~/Library/Application Support')
+            base = os.path.expanduser(
+                os.path.join('~', 'Library', 'Application Support'))
         else:
-            base = (os.environ.get('XDG_CONFIG_HOME')
-                    or os.path.expanduser('~/.config'))
-        return os.path.join(base, 'nushell')
+            base = os.path.expanduser(os.path.join('~', '.config'))
+        places.append(os.path.join(base, 'nushell'))
+
+        if sys.platform == 'darwin':
+            places.append(os.path.expanduser(
+                os.path.join('~', '.config', 'nushell')))
+
+        return list(dict.fromkeys(places))
+
+    def _config_dir(self):
+        """The one to tell somebody to edit: the one they already have."""
+        for place in self._config_dirs():
+            if os.path.isdir(place):
+                return place
+        return self._config_dirs()[0]
+
+    # The two shapes reedline writes, depending on
+    # `$env.config.history.file_format`.
+    HISTORY_FILES = ('history.txt', 'history.sqlite3')
 
     def _get_history_file_name(self):
-        """Whichever of the two formats is there.
+        """Whichever history is there, and if several, the one being written.
 
-        Nushell writes plain text or SQLite depending on
-        `$env.config.history.file_format`, and the file that exists says which
-        one this user chose.
+        Switching `file_format` leaves the other file behind rather than
+        removing it, so "the one that exists" is not enough to go on -- the
+        newest is the one this shell is actually appending to.
 
         """
-        directory = self._config_dir()
-        plain = os.path.join(directory, 'history.txt')
-        if os.path.isfile(plain):
-            return plain
-        return os.path.join(directory, 'history.sqlite3')
+        found = []
+        for directory in self._config_dirs():
+            for name in self.HISTORY_FILES:
+                candidate = os.path.join(directory, name)
+                try:
+                    found.append((os.stat(candidate).st_mtime_ns, candidate))
+                except OSError:
+                    continue
+
+        if found:
+            return max(found)[1]
+
+        # None yet. Named in the format Nushell writes by default, in the
+        # directory it would write it to, so that `get_history` looks in the
+        # right place once there is something to find.
+        return os.path.join(self._config_dir(), self.HISTORY_FILES[0])
 
     def _get_history_lines(self):
         name = self._get_history_file_name()
@@ -216,8 +275,13 @@ class Nushell(Generic):
 
         # Only a Nushell user with a SQLite history reaches this, so the module
         # arrives here rather than at the top of the file.
+        #
+        # `urllib.parse.quote` and not `urllib.request.pathname2url`, which is
+        # the obvious name for this: `urllib.request` brings `http.client`,
+        # `email`, `ssl` and `socket` with it, and on macOS it also imports
+        # `_scproxy` to ask the system about proxies. That is a great deal of
+        # machinery to percent-encode a file name with.
         import sqlite3
-        from urllib.request import pathname2url
 
         from ..conf import settings
 
@@ -228,8 +292,7 @@ class Nushell(Generic):
                      ' ORDER BY id DESC LIMIT {}) ORDER BY id'.format(
                          int(settings.history_limit)))
         try:
-            connection = sqlite3.connect(
-                'file:{}?mode=ro'.format(pathname2url(path)), uri=True)
+            connection = sqlite3.connect(_read_only_uri(path), uri=True)
             try:
                 return [line.strip() for (line,) in connection.execute(query)
                         if line and line.strip()]
