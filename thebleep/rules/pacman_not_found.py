@@ -7,12 +7,17 @@ should be:
 """
 
 from thebleep.utils import replace_command
-from thebleep.specific.archlinux import get_pkgfile, archlinux_env
+from thebleep.specific.archlinux import HELPERS, get_pkgfile, archlinux_env
+
+# pacman itself and every AUR helper that wraps it; `sudo` in front of pacman is
+# how it is normally typed. The helpers come from one list, so adding one adds
+# it here too.
+PACKAGE_MANAGERS = ('pacman',) + HELPERS
 
 
 def match(command):
     return (command.script_parts
-            and (command.script_parts[0] in ('pacman', 'yay', 'pikaur', 'yaourt')
+            and (command.script_parts[0] in PACKAGE_MANAGERS
                  or command.script_parts[0:2] == ['sudo', 'pacman'])
             and 'error: target not found:' in command.output)
 

@@ -34,17 +34,25 @@ def get_pkgfile(command):
         return []
 
 
+# The AUR helpers, in the order they are looked for. `paru` first because it is
+# what most of Arch moved to when `yay` slowed down, and `yaourt` last because
+# it has been unmaintained since 2018 and is only still here for the machines
+# that still have it.
+#
+# Refs: nvbn/thefuck#1514
+HELPERS = ('paru', 'yay', 'pikaur', 'yaourt')
+
+
 def archlinux_env():
-    if utils.which('yay'):
-        pacman = 'yay'
-    elif utils.which('pikaur'):
-        pacman = 'pikaur'
-    elif utils.which('yaourt'):
-        pacman = 'yaourt'
-    elif utils.which('pacman'):
-        pacman = 'sudo pacman'
+    for helper in HELPERS:
+        if utils.which(helper):
+            pacman = helper
+            break
     else:
-        return False, None
+        if utils.which('pacman'):
+            pacman = 'sudo pacman'
+        else:
+            return False, None
 
     enabled_by_default = utils.which('pkgfile')
 

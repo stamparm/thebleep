@@ -195,6 +195,49 @@ median of 30 runs; the harness and the recorded run are in `bench/`.
 
 ### Rules
 
+New in this release:
+
+- `pip_externally_managed` — since PEP 668, Debian, Ubuntu, Fedora and Arch all
+  refuse `pip install` into the system Python. This offers what the error
+  message itself recommends: `pipx install` for a single application where pipx
+  is installed, and `python3 -m venv .venv && .venv/bin/pip install ...` for
+  anything else. It deliberately does **not** offer `--break-system-packages`,
+  which is in the message and is one word and is the one outcome the error
+  exists to prevent — nor `sudo pip install`, nor `--user`, which PEP 668 marks
+  as externally managed too.
+  ([#1553](https://github.com/nvbn/thefuck/issues/1553))
+- `docker_daemon_not_running` — `sudo systemctl start docker` in front of your
+  command when Docker's daemon is not listening. Both spellings of the message
+  are matched, the one Docker used up to 24 and the one it uses from 25. Only
+  where `systemctl` is on the machine to run: `service docker start` and
+  `open -a Docker` are each right somewhere else, and a suggestion that starts
+  nothing is worse than none.
+  ([#1102](https://github.com/nvbn/thefuck/issues/1102))
+- `ping_url` — `ping https://github.com/` becomes `ping github.com`. The host is
+  taken out with `urlsplit`, so a URL carrying a user name, a password or a port
+  comes out as the host and nothing else.
+  ([#1243](https://github.com/nvbn/thefuck/pull/1243))
+
+And fixed:
+
+- `chmod_x` now works for a script run by any path and not only `./one`:
+  `scripts/deploy.sh`, `~/scripts/deploy.sh` and
+  `/home/alice/scripts/deploy.sh` are the same mistake with the same fix, and
+  three of the four got no correction. A bare name with no separator in it is
+  still left alone — that is a `PATH` lookup, where the file that could not run
+  is somewhere else entirely.
+  ([#1470](https://github.com/nvbn/thefuck/issues/1470))
+- `paru` is recognised alongside `yay`, `pikaur` and `yaourt`, and preferred
+  over them, both for suggesting a package to install and for correcting a
+  package name. The list lives in one place now, so adding a helper adds it to
+  both rules.
+  ([#1514](https://github.com/nvbn/thefuck/pull/1514))
+- `get_closest` returns nothing rather than raising `IndexError` when there are
+  no possibilities to be close to. A rule that asks npm or lein for its list of
+  subcommands and finds the tool is not installed gets an empty list, and
+  `npm_wrong_command` died of it.
+
+
 Refreshed against what the tools print today, found by running them rather than
 by reading their old fixtures: `npm` 7+, `cargo` 1.73+, `docker` 25+, `brew` 4,
 `gem` 3.2+, `az`, `gradle` 8, `terraform` 1.x, and `git` for `main` rather than

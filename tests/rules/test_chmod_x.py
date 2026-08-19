@@ -48,3 +48,56 @@ def test_a_name_the_shell_would_read_is_quoted(set_shell, mocker):
     mocker.patch('os.access', return_value=False)
     assert get_new_command(Command('./a$(id)', 'permission denied')) == \
         "chmod +x 'a$(id)' && ./a$(id)"
+
+
+class TestPathsThatAreNotRelative(object):
+    """`./x` was the only form that used to be corrected.
+
+    Every one of these is the same mistake with the same fix, and three of the
+    four said "permission denied" and got nothing.
+
+    Refs: nvbn/thefuck#1470
+
+    """
+
+    @pytest.fixture(autouse=True)
+    def unrunnable(self, mocker):
+        mocker.patch('os.path.exists', return_value=True)
+        mocker.patch('os.access', return_value=False)
+
+    @pytest.mark.parametrize('script', [
+        './deploy.sh',
+        'scripts/deploy.sh',
+        '~/scripts/deploy.sh',
+        '/home/alice/scripts/deploy.sh',
+        '../deploy.sh',
+    ])
+    def test_match(self, script):
+        assert match(Command(script, 'bash: {}: Permission denied'.format(
+            script)))
+
+    def test_a_bare_name_is_a_path_lookup_and_not_this(self):
+        """`chmod +x deploy.sh` would be about a file in this directory, and
+        the one that could not run is somewhere on PATH."""
+        assert not match(Command('deploy.sh', 'permission denied'))
+
+    @pytest.mark.parametrize('script, fixed', [
+        ('scripts/deploy.sh',
+         'chmod +x scripts/deploy.sh && scripts/deploy.sh'),
+        ('/home/alice/scripts/deploy.sh',
+         'chmod +x /home/alice/scripts/deploy.sh'
+         ' && /home/alice/scripts/deploy.sh'),
+        ('../deploy.sh', 'chmod +x ../deploy.sh && ../deploy.sh'),
+    ])
+    def test_get_new_command(self, script, fixed):
+        assert get_new_command(Command(script, '')) == fixed
+
+    def test_a_tilde_stays_a_tilde(self):
+        """Quoting it is what would stop the shell expanding it."""
+        assert get_new_command(Command('~/scripts/deploy.sh', '')) == \
+            'chmod +x ~/scripts/deploy.sh && ~/scripts/deploy.sh'
+
+    def test_a_tilde_path_with_a_space_in_it(self):
+        """The tilde stays outside the quotes so that the shell expands it."""
+        assert get_new_command(Command("'~/my scripts/deploy.sh'", '')) == \
+            "chmod +x ~/'my scripts/deploy.sh' && '~/my scripts/deploy.sh'"

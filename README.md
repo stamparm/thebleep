@@ -708,6 +708,7 @@ The following rules are enabled by default:
 * `dirty_unzip` — the same for `unzip`;
 * `django_south_ghost` — adds `--delete-ghost-migrations` to failed because ghosts django south migration;
 * `django_south_merge` — adds `--merge` to inconsistent django south migration;
+* `docker_daemon_not_running` — starts Docker with `systemctl` when its daemon is not listening;
 * `docker_login` — executes a `docker login` and repeats the previous command;
 * `docker_not_command` — fixes wrong docker commands like `docker tags`;
 * `docker_image_being_used_by_container` — removes the container that is using the image before removing the image;
@@ -797,8 +798,10 @@ The following rules are enabled by default:
 * `omnienv_no_such_command` — fixes wrong commands for `goenv`, `nodenv`, `pyenv` and `rbenv` (eg.: `pyenv isntall` or `goenv list`);
 * `open` — either prepends `http://` to address passed to `open` or creates a new file or directory and passes it to `open`;
 * `pip_install` — fixes permission issues with `pip install` commands by adding `--user` or prepending `sudo` if necessary;
+* `pip_externally_managed` — offers `pipx` or a virtual environment when pip refuses to install into the system Python (PEP 668);
 * `pip_unknown_command` — fixes wrong `pip` commands, for example `pip instatl/pip install`;
 * `php_s` — replaces `-s` by `-S` when trying to run a local php server;
+* `ping_url` — pings the host in a URL you pasted, not the URL;
 * `port_already_in_use` — kills process that bound port;
 * `prove_recursively` — adds `-r` when called with directory;
 * `python_command` — prepends `python` when you try to run non-executable/without `./` python script;
