@@ -72,6 +72,37 @@ def fit_transport():
     return ' '.join(steps)
 
 
+def instant_log_path():
+    """Where to keep the recording of a shell session, and under what name.
+
+    `$XDG_RUNTIME_DIR` in preference to the temporary directory. What goes in
+    this file is everything that scrolls past in a terminal for as long as the
+    shell lives -- which is the contents of every file read, every token a
+    command prints, and every password typed at a prompt that echoes. The
+    runtime directory belongs to one user and is mode 0700; `/tmp` is shared,
+    and the file used to be created there world-readable.
+
+    The name still carries a UUID, because the directory may be shared and
+    several shells may be recording at once.
+
+    """
+    # `tempfile` (which brings `shutil`, `random` and `bisect`) and `uuid`
+    # (which brings `platform`) are imported here rather than at the top of the
+    # module: only an instant-mode alias reaches this, and a correction was
+    # paying to find and open seven modules for it.
+    from tempfile import gettempdir
+    from uuid import uuid4
+
+    runtime = os.environ.get('XDG_RUNTIME_DIR')
+    if runtime and os.path.isdir(runtime):
+        directory = runtime
+    else:
+        directory = gettempdir()
+
+    return os.path.join(directory,
+                        'thebleep-script-log-{}'.format(uuid4().hex))
+
+
 class Generic(object):
     friendly_name = 'Generic Shell'
 

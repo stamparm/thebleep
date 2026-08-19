@@ -88,6 +88,22 @@ rather than restarting it, because this is the same codebase carried forward.
 
 ### Safety
 
+- **Instant mode's recording of your terminal is no longer world-readable.** It
+  is a megabyte of everything that has scrolled past — the contents of every
+  file read, every token a command printed, every password typed at a prompt
+  that echoes — and it was created in `/tmp` with no mode at all, which is 0666
+  less your umask. It is 0600 now, in `$XDG_RUNTIME_DIR` where there is one,
+  opened with `O_EXCL` and `O_NOFOLLOW` so that a name somebody else got to
+  first is refused rather than opened and a symlink left in the way is not
+  followed.
+- **Instant mode cleans up after itself.** Closing the terminal left the
+  recording on disk, along with the logger and the shell inside it, for the
+  rest of the login session: the copy loop it used waits on for a shell nobody
+  can type at any more. The logger now removes its own recording however it
+  leaves, and the shell that started it has a `trap` as a backstop for the one
+  signal nothing can catch. Two more while there: a chunk of output that
+  overflowed the recording was dropped rather than kept after the room was
+  made, and a shell that exited normally left the terminal in raw mode.
 - **The previous command is no longer run again without asking.** Correcting a
   command means knowing what it printed, and a shell keeps no record, so the
   command was run a second time — before any correction had been offered or

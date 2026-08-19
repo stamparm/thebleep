@@ -978,6 +978,53 @@ For example:
 eval $(thebleep --alias --enable-experimental-instant-mode)
 ```
 
+### What it does, and where it stops
+
+It is called experimental because it is, and it is worth being specific about
+which parts. This is what a real terminal was driven through, on bash 5.2 and
+zsh 5.9:
+
+| | |
+| --- | --- |
+| A correction with no rerun and no question | works |
+| After <kbd>ctrl+c</kbd>, or a window resize | works |
+| Unicode in the output | works |
+| Megabytes of output, wrapping the recording several times | works |
+| After a full-screen program (`less`, `vim`, `top`) | **does not correct** |
+| After a shell started inside the shell | **does not correct** |
+
+The last two are the same limitation. What is recorded is the raw terminal
+stream, and where one command's output ends is worked out by looking for a mark
+that instant mode puts in your `PS1`. A program that takes over the screen moves
+the cursor wherever it likes and the marks stop lining up with what is on it; a
+nested shell writes a second set of them. For the same reason it needs your
+`PS1` to still contain that mark, so a prompt framework that rebuilds `PS1`
+after the alias is set up — powerlevel10k, starship, some oh-my-zsh themes —
+switches instant mode off, with a warning saying so.
+
+Where it does not work it does not go wrong: the mark is missing or the command
+is not found in the recording, and *The Bleep* falls back to
+[asking before it runs anything again](#reading-the-previous-command).
+
+What is fixed rather than documented:
+
+- **The recording is yours alone.** It used to be created world-readable in
+  `/tmp` — a megabyte of everything that had scrolled past, which is the
+  contents of every file you read, every token a command printed, and every
+  password typed at a prompt that echoes. It is mode 0600 now, in
+  `$XDG_RUNTIME_DIR` where there is one, created with `O_EXCL` and `O_NOFOLLOW`
+  so a name somebody else got to first is refused rather than opened.
+- **It goes when the session goes.** Closing the terminal used to leave the
+  recording, the logger and the shell inside it running for the rest of the
+  login session. The logger removes its own recording on the way out however it
+  leaves, and the shell that started it has a `trap` as a backstop for
+  `SIGKILL`.
+- **No more holes in it.** When the recording filled up, the chunk that
+  overflowed was dropped rather than written after the room was made, so a busy
+  session lost up to a kilobyte of output every time it wrapped.
+- **The terminal is put back.** A shell that exited normally used to leave your
+  terminal in raw mode.
+
 ##### [Back to Contents](#contents)
 
 ## Performance

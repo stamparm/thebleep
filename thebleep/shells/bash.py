@@ -3,7 +3,7 @@ from ..conf import settings
 from ..const import (ARGUMENT_PLACEHOLDER, EXIT_EDIT, USER_COMMAND_MARK,
                      get_alias)
 from ..utils import DEVNULL, load_subprocess, memoize
-from .generic import Generic, fit_transport
+from .generic import Generic, fit_transport, instant_log_path
 
 
 # Bound the first time a process is started here; see `utils.load_subprocess`.
@@ -93,21 +93,16 @@ class Bash(Generic):
             '''.format(user_command_mark=mark,
                        app_alias=self.app_alias(alias_name))
         else:
-            # `tempfile` (which drags in `shutil`, `random` and `bisect`)
-            # and `uuid` (which drags in `platform`) are imported here rather
-            # than at the top of the module. Only instant mode's alias reaches
-            # this line; a correction never does, and it was paying to find and
-            # open seven modules for it.
-            from tempfile import gettempdir
-            from uuid import uuid4
-
-            log_path = os.path.join(
-                gettempdir(), 'thebleep-script-log-{}'.format(uuid4().hex))
+            # The recording is removed by a trap and not by the line after the
+            # logger: closing the terminal sends this shell a HUP and it never
+            # reaches that line, which used to leave a megabyte of everything
+            # that scrolled past sitting in /tmp until somebody noticed.
+            log_path = self.quote(instant_log_path())
             return '''
                 export THEBLEEP_INSTANT_MODE=True;
                 export THEBLEEP_OUTPUT_LOG={log};
+                trap 'rm -f {log}' EXIT HUP INT TERM;
                 thebleep --shell-logger {log};
-                rm {log};
                 exit
             '''.format(log=log_path)
 
