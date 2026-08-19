@@ -27,17 +27,41 @@ def for_pypi(markdown):
     for the page there they are made absolute, and pinned to this release's
     tag rather than to master, so that the 4.0.0 page keeps showing 4.0.0.
 
+    Markdown has two ways to write a link and this used to know about one of
+    them. `[text](target)` was rewritten; a reference definition at the foot of
+    the file, `[name]: target`, was not -- so the first badge on the PyPI page,
+    whose `[version-link]` resolves to `CHANGELOG.md`, was a dead relative link
+    on a page with nothing to resolve it against.
+
     """
     blob = '%s/blob/%s/' % (REPOSITORY, VERSION)
     raw = 'https://raw.githubusercontent.com/stamparm/thebleep/%s/' % VERSION
 
-    def absolute(match):
-        target = match.group(1)
-        if target.startswith(('http:', 'https:', 'mailto:', '#')):
-            return match.group(0)
-        return '](%s%s)' % (raw if target.endswith(IMAGES) else blob, target)
+    def resolved(target):
+        """`target` as it has to be written for a page outside the repository.
 
-    return re.sub(r'\]\(([^)]+)\)', absolute, markdown)
+        An anchor stays an anchor -- PyPI renders the headings, so `#settings`
+        still goes to the right place -- and anything already absolute is left
+        exactly as it is.
+
+        """
+        if target.startswith(('http:', 'https:', 'mailto:', '#')):
+            return None
+        return (raw if target.endswith(IMAGES) else blob) + target
+
+    def inline(match):
+        target = resolved(match.group(1))
+        return match.group(0) if target is None else '](%s)' % target
+
+    def reference(match):
+        target = resolved(match.group(2))
+        return match.group(0) if target is None \
+            else '%s%s' % (match.group(1), target)
+
+    markdown = re.sub(r'\]\(([^)]+)\)', inline, markdown)
+    # A reference definition: `[name]: target` at the start of a line, with the
+    # optional title left alone by only taking the first word as the target.
+    return re.sub(r'(?m)^(\[[^\]]+\]:\s+)(\S+)$', reference, markdown)
 
 
 # The README is the PyPI page. Read with an explicit encoding: it has em dashes
