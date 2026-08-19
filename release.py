@@ -4,6 +4,11 @@
 
 Usage: ./release.py 4.0.1
 
+Needs an environment with the development requirements in it, and will not make
+you one -- run it with the wrong interpreter and it says how, before writing
+anything. That environment lives outside the checkout, at
+`~/.cache/thebleep/release-venv` unless `THEBLEEP_RELEASE_VENV` says otherwise.
+
 What it does: checks that this interpreter can do the job at all, runs the gates
 against the tree as it stands, writes the version into the three places that say
 it, builds both artifacts, checks their metadata and contents, installs the wheel
@@ -116,15 +121,35 @@ NEEDS = (
 )
 
 
-VENV = '.release-venv'
+# Where the release environment goes, and it is not in the checkout. A
+# virtualenv in the working tree is somebody else's Python sitting in your
+# project: `git status` has to be told to ignore it, flake8 has to be told not to
+# lint it, and `check_working_tree` below refuses to release past anything it was
+# not told about. It is a build tool rather than part of the project, so it lives
+# where build tools live.
+#
+# `~` and not the expanded path: this string is printed for somebody to paste
+# into a shell, and the shell is what expands it.
+DEFAULT_VENV = '~/.cache/thebleep/release-venv'
 
-# Where a virtualenv puts its interpreter, which is not the same on both. The
+# Where a virtualenv keeps its interpreter, which is not the same on both. The
 # POSIX one is what CONTRIBUTING documents, because a document has to pick one.
-POSIX_VENV_PYTHON = VENV + '/bin/python'
+POSIX_VENV_PYTHON = DEFAULT_VENV + '/bin/python'
 
 
-def venv_python():
-    return os.path.join(VENV, 'Scripts' if os.name == 'nt' else 'bin', 'python')
+def release_venv():
+    """Asked each time rather than read once while this was being imported.
+
+    A module-level `os.environ.get` is a value frozen at import, which is both
+    surprising to change and awkward to test.
+
+    """
+    return os.environ.get('THEBLEEP_RELEASE_VENV') or DEFAULT_VENV
+
+
+def venv_python(venv=None):
+    return '{}/{}/python'.format(venv or release_venv(),
+                                 'Scripts' if os.name == 'nt' else 'bin')
 
 
 def bootstrap(version='<version>', python=None):
@@ -136,16 +161,21 @@ def bootstrap(version='<version>', python=None):
 
     `python` is which interpreter path to write into it, and it exists so that
     the test which holds CONTRIBUTING to this recipe can ask for the POSIX
-    spelling on any platform. Left alone it is this platform's.
+    spelling on any platform. Left alone it is this platform's, at `VENV`.
+
+    Forward slashes even on Windows: every line here is for a shell, and both
+    cmd and PowerShell take `/` in a path. `os.path.join` would put a backslash
+    in a line somebody is about to paste.
 
     """
     if python is None:
         python = venv_python()
-    return ('    python3 -m venv .release-venv\n'
+    return ('    python3 -m venv {venv}\n'
             '    {python} -m pip install -U pip\n'
             '    {python} -m pip install -r requirements.txt -e .\n'
             '    {python} ./release.py {version}\n'.format(
-                python=python, version=version))
+                venv=release_venv(), python=python,
+                version=version))
 
 
 def check_python(version='<version>'):

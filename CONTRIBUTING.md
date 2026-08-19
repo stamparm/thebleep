@@ -106,23 +106,33 @@ environment with the development requirements in it, and it will not make you
 one: the first time, do this, from the root of the checkout.
 
 ```bash
-python3 -m venv .release-venv
-.release-venv/bin/python -m pip install -U pip
-.release-venv/bin/python -m pip install -r requirements.txt -e .
-.release-venv/bin/python ./release.py 4.0.1
+python3 -m venv ~/.cache/thebleep/release-venv
+~/.cache/thebleep/release-venv/bin/python -m pip install -U pip
+~/.cache/thebleep/release-venv/bin/python -m pip install -r requirements.txt -e .
+~/.cache/thebleep/release-venv/bin/python ./release.py 4.0.1
 ```
 
-For the releases after that, the same `.release-venv` is fine — refresh what is
-in it first, in case the requirements have moved:
+For the releases after that, the same environment is fine — refresh what is in it
+first, in case the requirements have moved:
 
 ```bash
-.release-venv/bin/python -m pip install -r requirements.txt -e .
-.release-venv/bin/python ./release.py 4.0.2
+~/.cache/thebleep/release-venv/bin/python -m pip install -r requirements.txt -e .
+~/.cache/thebleep/release-venv/bin/python ./release.py 4.0.2
 ```
 
-It is ignored by git and excluded from flake8, so it can live in the checkout.
+It sits outside the checkout on purpose. A virtualenv in the working tree is
+somebody else's Python inside your project: git has to be told to ignore it,
+flake8 has to be told not to lint it, and `release.py` refuses to release past
+anything it was not told about. Put it wherever you like with
+`THEBLEEP_RELEASE_VENV`, and the recipe follows:
+
+```bash
+export THEBLEEP_RELEASE_VENV=~/Temp/thebleep-release-venv
+```
+
 Running `release.py` with an interpreter that cannot do the job stops before
-writing anything and prints that recipe back at you with the version filled in.
+writing anything and prints that recipe back at you, with the version and that
+path filled in.
 
 What it does, in order: checks this interpreter is Python 3.9 or newer and has
 `flake8`, `pytest`, `build`, `twine` and The Bleep's own dependencies; checks the

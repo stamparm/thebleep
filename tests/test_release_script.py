@@ -111,10 +111,32 @@ class TestTheBootstrapRecipe(object):
     def test_it_is_four_lines_and_installs_nothing_itself(self, release):
         lines = release.bootstrap('4.0.1').strip().splitlines()
         assert len(lines) == 4
-        assert lines[0].strip() == 'python3 -m venv .release-venv'
+        assert lines[0].strip() == ('python3 -m venv '
+                                    + release.release_venv())
         assert lines[1].strip().endswith('-m pip install -U pip')
         assert lines[2].strip().endswith(
             '-m pip install -r requirements.txt -e .')
+
+    def test_the_environment_is_not_in_the_checkout(self, release,
+                                                    source_root):
+        """The whole reason it moved.
+
+        A virtualenv in the working tree is somebody else's Python inside the
+        project: git has to be told to ignore it, flake8 has to be told not to
+        lint it, and `check_working_tree` then refuses to release past anything
+        it was not told about. It used to be `.release-venv` in the root, and
+        that is what it cost.
+
+        """
+        for line in release.bootstrap('4.0.1').strip().splitlines():
+            for word in line.split():
+                if 'release-venv' not in word:
+                    continue
+                assert word.startswith(('~', '/')) or ':' in word, word
+                inside = os.path.abspath(
+                    os.path.join(str(source_root),
+                                 os.path.expanduser(word)))
+                assert not inside.startswith(str(source_root) + os.sep), word
 
     @pytest.mark.parametrize('name, expected', [('posix', 'bin'),
                                                 ('nt', 'Scripts')])
@@ -122,17 +144,29 @@ class TestTheBootstrapRecipe(object):
             self, release, monkeypatch, name, expected):
         """Both, on whichever one the suite happens to be running on."""
         monkeypatch.setattr(release.os, 'name', name)
-        assert '.release-venv' + os.sep + expected + os.sep + 'python' in \
-            release.bootstrap()
+        assert '/{}/python'.format(expected) in release.bootstrap()
 
-    def test_git_ignores_the_environment_it_asks_for(self, source_root):
+    def test_the_lines_are_written_for_a_shell_not_for_os_path(self, release,
+                                                               monkeypatch):
+        """Forward slashes even on Windows: these get pasted into a shell."""
+        monkeypatch.setattr(release.os, 'name', 'nt')
+        assert '\\\\' not in release.bootstrap()
+
+    def test_the_location_can_be_said_outright(self, release, monkeypatch):
+        """`THEBLEEP_RELEASE_VENV`, and the whole recipe follows it."""
+        monkeypatch.setenv('THEBLEEP_RELEASE_VENV', '~/Temp/somewhere-else')
+        recipe = release.bootstrap('4.0.1')
+        assert 'python3 -m venv ~/Temp/somewhere-else' in recipe
+        assert '~/Temp/somewhere-else/bin/python ./release.py 4.0.1' in recipe
+        assert '.cache' not in recipe
+
+    def test_a_leftover_from_the_old_location_is_still_ignored(
+            self, source_root):
+        """Anybody who made one the old way should not see it in `git status`
+        or have flake8 walk into it."""
         with io.open(str(source_root.joinpath('.gitignore')),
                      encoding='utf-8') as handle:
             assert '.release-venv/' in handle.read()
-
-    def test_flake8_does_not_lint_the_environment_it_asks_for(
-            self, source_root):
-        """Following the advice must not break the gate the advice is for."""
         with io.open(str(source_root.joinpath('tox.ini')),
                      encoding='utf-8') as handle:
             excluded = [line for line in handle.read().splitlines()
@@ -173,7 +207,7 @@ class TestAnInterpreterThatCannot(object):
         said = str(raised.value)
         assert '3.9 or newer' in said
         assert '3.8.10' in said
-        assert 'python3 -m venv .release-venv' in said
+        assert 'python3 -m venv ' + release.release_venv() in said
         assert a_tree.untouched()
 
     def test_a_missing_gate_is_named_with_what_it_is_for(
