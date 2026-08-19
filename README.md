@@ -82,6 +82,9 @@ The rest of the reasons:
 - **Press tab to edit the correction instead of running it.** The suggestion
   lands in your own command line, with the cursor at the end of it, and nothing
   runs until you press return. [Edit before you run](#edit-before-you-run).
+- **Press `?` to be told why.** Which rule made the suggestion, what it saw,
+  and whether accepting it does anything besides run the command.
+  [Why am I being told this](#why-am-i-being-told-this).
 - **`thebleep --doctor`** answers the questions a bug report usually starts
   with, in one screen you can paste anywhere.
   [Diagnostics](#thebleep---doctor).
@@ -96,20 +99,21 @@ contributors; their work and history remain fully credited.
 
 1. [Safe by default](#safe-by-default)
 2. [Edit before you run](#edit-before-you-run)
-3. [thebleep --doctor](#thebleep---doctor)
-4. [Coming from The Fuck](#coming-from-the-fuck)
-5. [What's fixed](#whats-fixed)
-6. [Supported everything](#supported-everything)
-7. [Installation](#installation)
-8. [Updating](#updating)
-9. [How it works](#how-it-works)
-10. [Creating your own rules](#creating-your-own-rules)
-11. [Settings](#settings)
-12. [Third-party packages with rules](#third-party-packages-with-rules)
-13. [Experimental instant mode](#experimental-instant-mode)
-14. [Performance](#performance)
-15. [Developing](#developing)
-16. [License](#license-mit)
+3. [Why am I being told this](#why-am-i-being-told-this)
+4. [thebleep --doctor](#thebleep---doctor)
+5. [Coming from The Fuck](#coming-from-the-fuck)
+6. [What's fixed](#whats-fixed)
+7. [Supported everything](#supported-everything)
+8. [Installation](#installation)
+9. [Updating](#updating)
+10. [How it works](#how-it-works)
+11. [Creating your own rules](#creating-your-own-rules)
+12. [Settings](#settings)
+13. [Third-party packages with rules](#third-party-packages-with-rules)
+14. [Experimental instant mode](#experimental-instant-mode)
+15. [Performance](#performance)
+16. [Developing](#developing)
+17. [License](#license-mit)
 
 ## Safe by default
 
@@ -163,7 +167,7 @@ finish:
 $ git chekout featuer
 git: 'chekout' is not a git command. See 'git --help'.
 $ bleep
-git checkout feature [enter/↑/↓/tab=edit/ctrl+c/esc]
+git checkout feature [enter/↑/↓/tab=edit/?/ctrl+c/esc]
 ```
 
 <kbd>tab</kbd>, and the next thing you see is your own prompt, with the cursor
@@ -248,6 +252,44 @@ Nushell has no way to delete an entry; the corrected one is recorded normally
 when you submit it.
 
 Nushell 0.87 or newer, which is where `commandline edit` arrived.
+
+## Why am I being told this
+
+A correction is a command you are about to run, and "because a program said so"
+is a thin reason to run anything. Press <kbd>?</kbd> at the prompt:
+
+```bash
+$ git chekout featuer
+$ bleep
+git checkout feature [enter/↑/↓/tab=edit/?/ctrl+c/esc]
+  rule     git_not_command (bundled)
+  matched  git, and output containing "is not a git command. See 'git --help'."
+  read     what your command printed
+git checkout feature [enter/↑/↓/tab=edit/?/ctrl+c/esc]
+```
+
+Two more lines appear when they apply: `side effect`, when accepting the
+suggestion does something besides run the command, and `runs as`, when the
+correction begins with `sudo` or `doas`. Having asked once, the arrow keys
+explain each suggestion as you walk them. `bleep --explain` starts that way, and
+`explain = True` in your settings makes it permanent.
+
+Everything there is a fact about the rule rather than a description of it: its
+name, which of the three places its file came from, whether it declares that it
+needs your command's output, whether it has a side effect — and then the two
+that carry most of the meaning, the app it says it is about and the text it
+requires in the output, both read out of the rule's own `match` by the same
+extraction that decides which rules to load at all. Where several messages would
+have satisfied the rule, the one quoted is the one that is actually in your
+output.
+
+Nothing reads a rule's body and tries to say in English what it means, and no
+rule had to be given a hand-written description for this to work — so a rule of
+your own, or one from a package, explains itself exactly as well as a bundled
+one does. A rule that works its condition out in a way this cannot read says so:
+`matched  a condition this rule works out for itself`.
+
+##### [Back to Contents](#contents)
 
 ## thebleep --doctor
 
@@ -906,6 +948,7 @@ Several *The Bleep* parameters can be changed in the file `$XDG_CONFIG_HOME/theb
 * `instant_mode` — read what scrolled past instead of running your command again, by default `False`; see [Experimental instant mode](#experimental-instant-mode);
 * `repeat` — if the corrected command fails too, correct that as well, by default `False`; `--repeat` does it for one run;
 * `edit` — hand the correction to your command line to edit instead of running it, by default `False`; `--edit` does it for one run, and <kbd>tab</kbd> does it for one suggestion; see [Edit before you run](#edit-before-you-run);
+* `explain` — say which rule made each suggestion and what it matched, by default `False`; `--explain` does it for one run, and <kbd>?</kbd> does it at the prompt; see [Why am I being told this](#why-am-i-being-told-this);
 * `env` — environment variables to set for your previous command when it is run again to read its output, by default `{'LC_ALL': 'C', 'LANG': 'C'}`, which is there so that rules can look for English error messages. Git also gets `GIT_TRACE=1`, so that `git st` can be resolved to whatever alias it stands for; nothing else does.
 
 An example of `settings.py`:
@@ -926,6 +969,7 @@ num_close_matches = 5
 instant_mode = False
 repeat = False
 edit = False
+explain = False
 env = {'LC_ALL': 'C', 'LANG': 'C'}
 ```
 
@@ -946,6 +990,7 @@ rule with lower `priority` will be matched first;
 * `THEBLEEP_SLOW_COMMANDS` — list of slow commands, like `lein:gradle`;
 * `THEBLEEP_NUM_CLOSE_MATCHES` — the maximum number of close matches to suggest, like `5`.
 * `THEBLEEP_EDIT` — hand the correction to your command line to edit instead of running it, `true/false`.
+* `THEBLEEP_EXPLAIN` — say which rule made each suggestion and what it matched, `true/false`.
 * `THEBLEEP_EXCLUDED_SEARCH_PATH_PREFIXES` — path prefixes to ignore when searching for commands, by default `[]`.
 
 For example:

@@ -53,7 +53,7 @@ def fix_command(known_args):
             return
 
         corrected_commands = get_corrected_commands(command)
-        selected_command, action = select_command(corrected_commands)
+        selected_command, action = select_command(corrected_commands, command)
 
         if selected_command is None:
             sys.exit(1)

@@ -59,6 +59,16 @@ rather than restarting it, because this is the same codebase carried forward.
   that takes a value; and not through shell syntax, where the first word is not
   the only command anyway.
   (based on [#1101](https://github.com/nvbn/thefuck/pull/1101))
+- **`?` at the prompt says why a suggestion is being made**: which rule it came
+  from, whether that rule is bundled, one of yours or from a package, what it
+  matched, whether it needed your command's output, whether accepting it does
+  anything besides run the command, and whether it runs as another user. Every
+  line is a fact about the rule rather than a description of it — the app it
+  declares and the text it requires in the output are read out of its own
+  `match`, by the same extraction that decides which rules to load at all — so
+  a rule of your own explains itself as well as a bundled one does, and not one
+  of the 170 needed a hand-written description. `--explain` starts that way and
+  `explain = True` makes it permanent.
 
 ### It runs on current Python
 

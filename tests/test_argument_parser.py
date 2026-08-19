@@ -8,7 +8,7 @@ def _args(**override):
             'command': [], 'yes': False,
             'help': False, 'version': False, 'debug': False,
             'force_command': None, 'repeat': False, 'edit': False,
-            'doctor': False,
+            'doctor': False, 'explain': False,
             'enable_experimental_instant_mode': False,
             'shell': None, 'shell_logger': None}
     args.update(override)
@@ -42,7 +42,9 @@ def _args(**override):
     (['thebleep', '--shell', 'fish'], _args(shell='fish')),
     (['thebleep', 'git', 'branch', ARGUMENT_PLACEHOLDER, '--shell', 'fish'],
      _args(command=['git', 'branch'], shell='fish')),
-    (['thebleep', '--doctor'], _args(doctor=True))])
+    (['thebleep', '--doctor'], _args(doctor=True)),
+    (['thebleep', 'git', 'branch', ARGUMENT_PLACEHOLDER, '--explain'],
+     _args(command=['git', 'branch'], explain=True))])
 def test_parse(argv, result):
     assert vars(Parser().parse(argv)) == result
 
@@ -65,6 +67,7 @@ FAST_PATH_SHAPES = [
     ['thebleep', 'ls', ARGUMENT_PLACEHOLDER, '-y', '-d'],
     ['thebleep', 'ls', ARGUMENT_PLACEHOLDER, '-r', '-d'],
     ['thebleep', 'ls', ARGUMENT_PLACEHOLDER, '-e'],
+    ['thebleep', 'ls', ARGUMENT_PLACEHOLDER, '--explain'],
     ['thebleep', 'ls', ARGUMENT_PLACEHOLDER, '--edit'],
     ['thebleep', 'ls', ARGUMENT_PLACEHOLDER, '-e', '-y'],
     ['thebleep', 'git', 'commit', '-m', 'a message', ARGUMENT_PLACEHOLDER, '-y'],

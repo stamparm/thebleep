@@ -10,6 +10,7 @@ DEFAULTS = {'alias': None,
             'debug': False,
             'doctor': False,
             'edit': False,
+            'explain': False,
             'enable_experimental_instant_mode': False,
             'force_command': None,
             'help': False,
@@ -26,6 +27,7 @@ SIMPLE_FLAGS = {'-y': 'yes',
                 '-r': 'repeat',
                 '--repeat': 'repeat',
                 '-e': 'edit',
+                '--explain': 'explain',
                 '--edit': 'edit',
                 '-d': 'debug',
                 '--debug': 'debug'}
@@ -137,6 +139,10 @@ class Parser(object):
             action='store_true',
             help='put the correction in your command line to edit'
                  ' instead of running it')
+        self._parser.add_argument(
+            '--explain',
+            action='store_true',
+            help='say which rule made each suggestion and what it matched')
         self._add_conflicting_arguments()
         self._parser.add_argument(
             '-d', '--debug',

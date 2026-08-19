@@ -8,13 +8,15 @@ class Rule(types.Rule):
                  enabled_by_default=True,
                  side_effect=None,
                  priority=DEFAULT_PRIORITY,
-                 requires_output=True):
+                 requires_output=True,
+                 path=None):
         super(Rule, self).__init__(name, match, get_new_command,
                                    enabled_by_default, side_effect,
-                                   priority, requires_output)
+                                   priority, requires_output, path)
 
 
 class CorrectedCommand(types.CorrectedCommand):
-    def __init__(self, script='', side_effect=None, priority=DEFAULT_PRIORITY):
+    def __init__(self, script='', side_effect=None, priority=DEFAULT_PRIORITY,
+                 rule=None):
         super(CorrectedCommand, self).__init__(
-            script, side_effect, priority)
+            script, side_effect, priority, rule)

@@ -93,20 +93,20 @@ class TestSelectCommand(object):
         assert ui.select_command(iter(commands)) == (commands[0],
                                                      const.ACTION_SELECT)
         assert capsys.readouterr() == (
-            '', const.USER_COMMAND_MARK + u'\x1b[1K\rls [enter/↑/↓/ctrl+c/esc]\n')
+            '', const.USER_COMMAND_MARK + u'\x1b[1K\rls [enter/↑/↓/?/ctrl+c/esc]\n')
 
     def test_with_confirmation_abort(self, capsys, patch_get_key, commands):
         patch_get_key([const.KEY_CTRL_C])
         assert ui.select_command(iter(commands)) == (None, const.ACTION_ABORT)
         assert capsys.readouterr() == (
-            '', const.USER_COMMAND_MARK + u'\x1b[1K\rls [enter/↑/↓/ctrl+c/esc]\nAborted\n')
+            '', const.USER_COMMAND_MARK + u'\x1b[1K\rls [enter/↑/↓/?/ctrl+c/esc]\nAborted\n')
 
     def test_with_confirmation_abort_with_escape(self, capsys, patch_get_key,
                                                  commands):
         patch_get_key([const.KEY_ESCAPE])
         assert ui.select_command(iter(commands)) == (None, const.ACTION_ABORT)
         assert capsys.readouterr() == (
-            '', const.USER_COMMAND_MARK + u'\x1b[1K\rls [enter/↑/↓/ctrl+c/esc]\nAborted\n')
+            '', const.USER_COMMAND_MARK + u'\x1b[1K\rls [enter/↑/↓/?/ctrl+c/esc]\nAborted\n')
 
     def test_with_confirmation_with_side_effct(self, capsys, patch_get_key,
                                                commands_with_side_effect):
@@ -114,7 +114,7 @@ class TestSelectCommand(object):
         assert (ui.select_command(iter(commands_with_side_effect))
                 == (commands_with_side_effect[0], const.ACTION_SELECT))
         assert capsys.readouterr() == (
-            '', const.USER_COMMAND_MARK + u'\x1b[1K\rls (+side effect) [enter/↑/↓/ctrl+c/esc]\n')
+            '', const.USER_COMMAND_MARK + u'\x1b[1K\rls (+side effect) [enter/↑/↓/?/ctrl+c/esc]\n')
 
     def test_without_tty(self, capsys, commands, is_interactive):
         is_interactive.return_value = False
@@ -136,8 +136,8 @@ class TestSelectCommand(object):
         assert ui.select_command(iter(commands)) == (commands[1],
                                                      const.ACTION_SELECT)
         stderr = (
-            u'{mark}\x1b[1K\rls [enter/↑/↓/ctrl+c/esc]'
-            u'{mark}\x1b[1K\rcd [enter/↑/↓/ctrl+c/esc]\n'
+            u'{mark}\x1b[1K\rls [enter/↑/↓/?/ctrl+c/esc]'
+            u'{mark}\x1b[1K\rcd [enter/↑/↓/?/ctrl+c/esc]\n'
         ).format(mark=const.USER_COMMAND_MARK)
         assert capsys.readouterr() == ('', stderr)
 

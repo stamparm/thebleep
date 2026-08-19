@@ -31,8 +31,17 @@ def read_actions():
             yield const.ACTION_ABORT
         elif key == const.KEY_TAB:
             yield const.ACTION_EDIT
+        elif key == const.KEY_QUESTION:
+            yield const.ACTION_EXPLAIN
         elif key in ('\n', '\r'):
             yield const.ACTION_SELECT
+
+
+def _explain(corrected_command, command):
+    """Why this suggestion is being made. Imported here: only asking pays."""
+    from . import explain
+
+    logs.explanation(explain.describe(corrected_command, command))
 
 
 class CommandSelector(object):
@@ -67,7 +76,7 @@ class CommandSelector(object):
         return self._commands[self._index]
 
 
-def select_command(corrected_commands):
+def select_command(corrected_commands, command=None):
     """What to do with which correction.
 
     Returns a pair of the chosen command and what was asked of it:
@@ -78,6 +87,7 @@ def select_command(corrected_commands):
      - `(command, ACTION_EDIT)` to hand it to the shell's line editor instead.
 
     :type corrected_commands: Iterable[thebleep.types.CorrectedCommand]
+    :type command: thebleep.types.Command | None
     :rtype: (thebleep.types.CorrectedCommand | None, thebleep.const._GenConst)
 
     """
@@ -111,6 +121,8 @@ def select_command(corrected_commands):
 
     if not settings.require_confirmation:
         logs.show_corrected_command(selector.value)
+        if settings.explain:
+            _explain(selector.value, command)
         return selector.value, chosen
 
     if not is_interactive():
@@ -123,7 +135,15 @@ def select_command(corrected_commands):
     # With `--edit` the question is still which suggestion, only the answer
     # goes to the line editor rather than to the shell.
     offer_edit = editable and not wants_edit
-    logs.confirm_text(selector.value, offer_edit)
+    explaining = bool(settings.explain)
+
+    def show(value):
+        if explaining:
+            sys.stderr.write('\n')
+            _explain(value, command)
+        logs.confirm_text(value, offer_edit, offer_explain=True)
+
+    show(selector.value)
 
     for action in read_actions():
         if action == const.ACTION_SELECT:
@@ -136,14 +156,19 @@ def select_command(corrected_commands):
                 continue
             sys.stderr.write('\n')
             return selector.value, const.ACTION_EDIT
+        elif action == const.ACTION_EXPLAIN:
+            # Once asked, keep answering: walking the suggestions after asking
+            # why is asking why about each of them.
+            explaining = True
+            show(selector.value)
         elif action == const.ACTION_ABORT:
             logs.failed('\nAborted')
             return None, const.ACTION_ABORT
         elif action == const.ACTION_PREVIOUS:
             selector.previous()
-            logs.confirm_text(selector.value, offer_edit)
+            show(selector.value)
         elif action == const.ACTION_NEXT:
             selector.next()
-            logs.confirm_text(selector.value, offer_edit)
+            show(selector.value)
 
     return None, const.ACTION_ABORT

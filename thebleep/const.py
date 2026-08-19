@@ -45,12 +45,17 @@ ACTION_ABORT = _GenConst('abort')
 ACTION_PREVIOUS = _GenConst('previous')
 ACTION_NEXT = _GenConst('next')
 ACTION_EDIT = _GenConst('edit')
+ACTION_EXPLAIN = _GenConst('explain')
 
 # Tab, which is what asks for the suggestion to be handed to the line editor
 # rather than run. It is the one obvious free key: `e` is already the colemak
 # spelling of "previous", and the gesture matches what tab does everywhere else
 # in a shell -- put something on the line for me to finish.
 KEY_TAB = '\t'
+
+# `?`, which asks why a suggestion is being offered. Free everywhere else, and
+# the thing a shell user already presses when they want to be told something.
+KEY_QUESTION = '?'
 
 # The exit status that means "what is on stdout is to be edited, not run".
 # The shell alias reads it and puts the command in the line editor; every other
@@ -92,6 +97,7 @@ DEFAULT_SETTINGS = {'rules': DEFAULT_RULES,
                                       './gradlew', 'vagrant'],
                     'repeat': False,
                     'edit': False,
+                    'explain': False,
                     'instant_mode': False,
                     'num_close_matches': 3,
                     'confirm_replay': True,
@@ -111,6 +117,7 @@ ENV_TO_ATTR = {'THEBLEEP_RULES': 'rules',
                'THEBLEEP_SLOW_COMMANDS': 'slow_commands',
                'THEBLEEP_REPEAT': 'repeat',
                'THEBLEEP_EDIT': 'edit',
+               'THEBLEEP_EXPLAIN': 'explain',
                'THEBLEEP_INSTANT_MODE': 'instant_mode',
                'THEBLEEP_NUM_CLOSE_MATCHES': 'num_close_matches',
                'THEBLEEP_CONFIRM_REPLAY': 'confirm_replay',

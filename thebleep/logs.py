@@ -108,10 +108,10 @@ def show_corrected_command(corrected_command):
         reset=color(colorama.Style.RESET_ALL)))
 
 
-def confirm_text(corrected_command, offer_edit=False):
+def confirm_text(corrected_command, offer_edit=False, offer_explain=False):
     sys.stderr.write(
         (u'{prefix}{clear}{bold}{script}{reset}{side_effect} '
-         u'[{green}enter{reset}/{blue}↑{reset}/{blue}↓{reset}{edit}'
+         u'[{green}enter{reset}/{blue}↑{reset}/{blue}↓{reset}{edit}{explain}'
          u'/{red}ctrl+c{reset}/{red}esc{reset}]').format(
             prefix=const.USER_COMMAND_MARK,
             script=corrected_command.script,
@@ -120,6 +120,10 @@ def confirm_text(corrected_command, offer_edit=False):
             edit=u'/{blue}tab{reset}=edit'.format(
                 blue=color(colorama.Fore.BLUE),
                 reset=color(colorama.Style.RESET_ALL)) if offer_edit else u'',
+            explain=u'/{blue}?{reset}'.format(
+                blue=color(colorama.Fore.BLUE),
+                reset=color(colorama.Style.RESET_ALL))
+            if offer_explain else u'',
             bold=color(colorama.Style.BRIGHT),
             green=color(colorama.Fore.GREEN),
             red=color(colorama.Fore.RED),
@@ -134,6 +138,21 @@ def cannot_edit():
         u'Editing works in bash, zsh, fish, Nushell and PowerShell. If you are'
         u' using one of those, start a new shell so the alias is redefined by'
         u' this version, or re-run `thebleep --alias`.\n')
+
+
+def explanation(lines):
+    """Why a suggestion is being offered, indented under it.
+
+    On stderr with everything else the prompt writes, so that the correction
+    itself is still the only thing on stdout for the shell to run.
+
+    """
+    width = max([len(label) for label, _ in lines] or [0])
+    for label, value in lines:
+        sys.stderr.write(u'  {blue}{label}{pad}{reset}  {value}\n'.format(
+            label=label, pad=' ' * (width - len(label)), value=value,
+            blue=color(colorama.Fore.BLUE),
+            reset=color(colorama.Style.RESET_ALL)))
 
 
 def edit_hint(message):

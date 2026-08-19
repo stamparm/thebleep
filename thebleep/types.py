@@ -92,7 +92,7 @@ class Rule(object):
 
     def __init__(self, name, match, get_new_command,
                  enabled_by_default, side_effect,
-                 priority, requires_output):
+                 priority, requires_output, path=None):
         """Initializes rule with given fields.
 
         :type name: basestring
@@ -102,6 +102,7 @@ class Rule(object):
         :type side_effect: (Command, basestring) -> None
         :type priority: int
         :type requires_output: bool
+        :type path: basestring | None
 
         """
         self.name = name
@@ -111,6 +112,11 @@ class Rule(object):
         self.side_effect = side_effect
         self.priority = priority
         self.requires_output = requires_output
+        # Where the rule was loaded from. Only `--explain` reads it, to say
+        # whether a suggestion came from a bundled rule, one of the user's own
+        # or a third-party package -- so it is deliberately outside `__eq__`,
+        # which is about what a rule does rather than where it lives.
+        self.path = path
 
     def __eq__(self, other):
         if isinstance(other, Rule):
@@ -169,7 +175,8 @@ class Rule(object):
                    getattr(rule_module, 'enabled_by_default', True),
                    getattr(rule_module, 'side_effect', None),
                    settings.priority.get(name, priority),
-                   getattr(rule_module, 'requires_output', True))
+                   getattr(rule_module, 'requires_output', True),
+                   getattr(rule_module, '__file__', None))
 
     @property
     def is_enabled(self):
@@ -224,23 +231,29 @@ class Rule(object):
         for n, new_command in enumerate(new_commands):
             yield CorrectedCommand(script=new_command,
                                    side_effect=self.side_effect,
-                                   priority=(n + 1) * self.priority)
+                                   priority=(n + 1) * self.priority,
+                                   rule=self)
 
 
 class CorrectedCommand(object):
     """Corrected by rule command."""
 
-    def __init__(self, script, side_effect, priority):
+    def __init__(self, script, side_effect, priority, rule=None):
         """Initializes instance with given fields.
 
         :type script: basestring
         :type side_effect: (Command, basestring) -> None
         :type priority: int
+        :type rule: thebleep.types.Rule | None
 
         """
         self.script = script
         self.side_effect = side_effect
         self.priority = priority
+        # Which rule suggested this, for `--explain`. Outside `__eq__` and
+        # `__hash__` for the same reason `priority` is: two rules arriving at
+        # the same command are one suggestion, and it is offered once.
+        self.rule = rule
 
     def __eq__(self, other):
         """Ignores `priority` field."""
@@ -266,7 +279,8 @@ class CorrectedCommand(object):
         """
         return CorrectedCommand(script=prefix + self.script,
                                 side_effect=self.side_effect,
-                                priority=self.priority)
+                                priority=self.priority,
+                                rule=self.rule)
 
     def _get_script(self):
         """Returns fixed commands script.
