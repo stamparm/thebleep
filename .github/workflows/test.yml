@@ -1,6 +1,16 @@
 name: Tests
 
-on: [push, pull_request]
+# Branches, and not tags. A tag push is a `push` event too, and the concurrency
+# group below is keyed on the ref -- so `refs/heads/master` and `refs/tags/4.0.1`
+# did not cancel each other and the same commit was tested twice, once when it
+# landed and again when it was tagged. Naming `branches` and no `tags` is what
+# tells GitHub not to run this for a tag; the tag still gets `release.yml`, which
+# builds both artifacts and installs the wheel on all three systems before it
+# publishes anything.
+on:
+  push:
+    branches: ['**']
+  pull_request:
 
 # Read-only. Nothing here needs to write to the repository, and a pull request
 # from a fork must never run with anything more. Publishing is a separate
