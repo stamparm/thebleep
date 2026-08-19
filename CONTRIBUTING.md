@@ -101,16 +101,40 @@ checks walk the syntax tree, and both of those differ between interpreters.
 
 ## Releasing
 
-`release.py` prepares and checks a release. It does not publish one.
+`release.py` prepares and checks a release. It does not publish one. It needs an
+environment with the development requirements in it, and it will not make you
+one: the first time, do this, from the root of the checkout.
 
 ```bash
-./release.py 4.0.1
+python3 -m venv .release-venv
+.release-venv/bin/python -m pip install -U pip
+.release-venv/bin/python -m pip install -r requirements.txt -e .
+.release-venv/bin/python ./release.py 4.0.1
 ```
 
-That writes the version into `setup.py`, the README badge and the CHANGELOG
-heading, runs the gates, builds both artifacts, checks their metadata and
-contents, installs the wheel into a clean virtualenv and corrects a command with
-it. Then it prints the two git commands to run.
+For the releases after that, the same `.release-venv` is fine — refresh what is
+in it first, in case the requirements have moved:
+
+```bash
+.release-venv/bin/python -m pip install -r requirements.txt -e .
+.release-venv/bin/python ./release.py 4.0.2
+```
+
+It is ignored by git and excluded from flake8, so it can live in the checkout.
+Running `release.py` with an interpreter that cannot do the job stops before
+writing anything and prints that recipe back at you with the version filled in.
+
+What it does, in order: checks this interpreter is Python 3.9 or newer and has
+`flake8`, `pytest`, `build`, `twine` and The Bleep's own dependencies; checks the
+tree is clean, on master, and that the tag is free; runs flake8 and the suite
+**against the tree as it stands**; then writes the version into `setup.py`, the
+README badge and the CHANGELOG heading; builds both artifacts, checks their
+metadata and contents, installs the wheel into a clean virtualenv and corrects a
+command with it. Then it prints the two git commands to run.
+
+Nothing is written until every check that can be made against the unreleased tree
+has passed, and if a later step fails those three files are put back — so an
+attempt that did not finish leaves `git status` clean.
 
 Pushing the version tag is what publishes. `.github/workflows/release.yml` builds
 the artifacts again from the tag, checks that the tag, `setup.py`, the CHANGELOG

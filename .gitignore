@@ -83,3 +83,8 @@ bench/results/*
 .benchmarks/
 venv/
 .venv/
+
+# The environment `release.py` tells you to make when the interpreter you ran it
+# with cannot prepare a release. It is also named in tox.ini's flake8 exclude,
+# so following that advice does not make the style gate lint it.
+.release-venv/

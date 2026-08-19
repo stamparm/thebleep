@@ -1,13 +1,19 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Prepares a release and checks it. It does not publish one.
 
 Usage: ./release.py 4.0.1
 
-What it does: writes the version into the three places that say it, runs the
-gates, builds both artifacts, checks their metadata and contents, installs the
-wheel into a clean virtualenv and corrects a command with it. Then it stops and
-prints the two git commands that make the release happen.
+What it does: checks that this interpreter can do the job at all, runs the gates
+against the tree as it stands, writes the version into the three places that say
+it, builds both artifacts, checks their metadata and contents, installs the wheel
+into a clean virtualenv and corrects a command with it. Then it stops and prints
+the two git commands that make the release happen.
+
+The order matters. Nothing is written until every check that can be made against
+the unreleased tree has passed, and if a later step fails the three files are put
+back -- so a release attempt that did not finish leaves `git status` clean and
+there is nothing to remember to undo.
 
 What it deliberately does not do is commit, tag, push or upload. Publishing runs
 in CI, from the tag, over PyPI's trusted publishing -- see
@@ -91,6 +97,75 @@ def set_version(version, date):
                      'wanted 1'.format(path, count))
         write(path, new)
         print('  {} says {}'.format(path, version))
+
+
+MINIMUM_PYTHON = (3, 9)
+
+# What this script runs, and what it needs to be there to run it. Checked by
+# whether the module can be found rather than by importing it: `python -m pytest`
+# is how each of these is invoked, and finding it is the same question, without
+# executing anybody's `__init__`.
+NEEDS = (
+    ('flake8', 'the style gate'),
+    ('pytest', 'the test suite'),
+    ('build', 'building the wheel and the sdist'),
+    ('twine', 'checking the built metadata'),
+    ('psutil', 'the suite, which imports The Bleep'),
+    ('pyte', 'the suite, which imports The Bleep'),
+    ('thebleep', 'the suite; `pip install -e .` puts it here'),
+)
+
+
+def bootstrap(version='<version>'):
+    """The one recipe, for an interpreter that cannot do this.
+
+    Printed rather than run. Creating a virtualenv and installing into it is a
+    decision about somebody's machine, and a release script is the last place to
+    be making those on their behalf.
+
+    """
+    python = os.path.join('.release-venv',
+                          'Scripts' if os.name == 'nt' else 'bin',
+                          'python')
+    return ('    python3 -m venv .release-venv\n'
+            '    {python} -m pip install -U pip\n'
+            '    {python} -m pip install -r requirements.txt -e .\n'
+            '    {python} ./release.py {version}\n'.format(
+                python=python, version=version))
+
+
+def check_python(version='<version>'):
+    if sys.version_info[:2] < MINIMUM_PYTHON:
+        sys.exit('release.py: needs Python {}.{} or newer; this is {}.\n\n{}'
+                 .format(MINIMUM_PYTHON[0], MINIMUM_PYTHON[1],
+                         '.'.join(str(part) for part in sys.version_info[:3]),
+                         bootstrap(version)))
+
+
+def check_dependencies(version='<version>'):
+    """Everything the gates need, before anything has been written.
+
+    This used to be found out one gate at a time, after the version had already
+    been written into three files -- so an interpreter without pytest left a
+    half-prepared release behind and a `git checkout` to work out.
+
+    """
+    import importlib.util
+
+    missing = []
+    for name, why in NEEDS:
+        try:
+            found = importlib.util.find_spec(name) is not None
+        except (ImportError, ValueError):                # pragma: no cover
+            found = False
+        if not found:
+            missing.append('{} ({})'.format(name, why))
+
+    if missing:
+        sys.exit('release.py: {} cannot prepare a release.\n  missing: {}\n\n'
+                 'Make an environment that can, and use it:\n\n{}'
+                 .format(sys.executable, '\n           '.join(missing),
+                         bootstrap(version)))
 
 
 def check_working_tree():
@@ -196,27 +271,47 @@ def main(argv):
     version = argv[1]
     date = today()
 
+    print('== can this interpreter do it ==')
+    check_python(version)
+    check_dependencies(version)
+    print('  {}'.format(sys.executable))
+
     check_working_tree()
     check_tag_is_free(version)
 
-    print('\n== version ==')
-    set_version(version, date)
-
+    # Before anything is written, and against the tree as it is committed. A
+    # release that is going to fail its own gates should fail without having
+    # touched a file.
     print('\n== gates ==')
     run(sys.executable, '-m', 'flake8')
     run(sys.executable, '-m', 'pytest', '-q')
 
-    print('\n== build ==')
-    shutil.rmtree(os.path.join(HERE, 'dist'), ignore_errors=True)
-    run(sys.executable, '-m', 'build')
-    run(sys.executable, '-m', 'twine', 'check', '--strict',
-        os.path.join(HERE, 'dist', '*'))
+    print('\n== version ==')
+    before = {path: read(path) for path, _, _ in STATES_THE_VERSION}
+    set_version(version, date)
 
-    print('\n== artifacts ==')
-    check_artifacts(version)
+    try:
+        print('\n== build ==')
+        shutil.rmtree(os.path.join(HERE, 'dist'), ignore_errors=True)
+        run(sys.executable, '-m', 'build')
+        run(sys.executable, '-m', 'twine', 'check', '--strict',
+            os.path.join(HERE, 'dist', '*'))
 
-    print('\n== installed copy ==')
-    smoke_test(version)
+        print('\n== artifacts ==')
+        check_artifacts(version)
+
+        print('\n== installed copy ==')
+        smoke_test(version)
+    except BaseException:
+        # Put the three files back. Whatever went wrong, the tree is not left
+        # saying it is a version that was never released -- there is nothing to
+        # notice and nothing to undo, and the next attempt starts from a clean
+        # tree the way this one insists on.
+        for path, text in before.items():
+            write(path, text)
+        print('\nrelease.py: that did not finish. {} put back as they were.'
+              .format(', '.join(sorted(before))))
+        raise
 
     print("""
 Ready. Nothing has been committed, tagged, pushed or published.
