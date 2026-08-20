@@ -153,6 +153,30 @@
 - **`ls -la` in an empty directory no longer suggests `ls -A -la`.** `ls_all`
   only checked that the output was empty, so a command that had already asked
   for hidden files was told to ask again.
+- **A command that worked is no longer run again.** Nothing consulted the exit
+  status of the command being corrected, so `bleep` after a *success* offered to
+  re-run it -- and then corrected whatever the second run happened to say. The
+  clearest case: `git tag v9` succeeds silently; run it again and it says
+  `already exists`; the suggestion was `git tag --force v9`, moving a tag that
+  was already right, from output the user never saw. `git deploy` (an alias for
+  a deploy script), `echo x >> log` and every other non-idempotent command were
+  exposed the same way.
+
+  The alias now hands over `$?` as its very first act, before reading the
+  history or the alias list replaces it, and a command that exited 0 is not
+  re-run and not asked about -- there is nothing to gain by asking. This is
+  checked *after* the existing "can this have an effect" test, on purpose: `ls`
+  that printed nothing also exited 0, and is still re-read and still offered
+  `ls -A`.
+
+  Two statuses go the other way. 127 (`command not found`) and 126 (`cannot
+  execute`) mean the command never ran, so re-running it is certain to do
+  nothing -- and the shell's own answer covers an alias, a shell function and a
+  `PATH` that has changed since, none of which a name lookup sees.
+
+  bash, zsh and fish report it. tcsh, Nushell and PowerShell do not yet, and
+  there the behaviour is exactly what it was; so it is for anyone whose startup
+  file still has an alias from an earlier release.
 - **Answering the replay question `y` and then Enter no longer means "no".**
   A keypress was read as "up to six bytes, whatever is there", so a key with
   something behind it swallowed the lot: `y⏎` -- which is how everybody answers

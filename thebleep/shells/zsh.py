@@ -24,11 +24,12 @@ class Zsh(Generic):
         # the shell it ran in.
         return '''
             {name} () {{
+                TB_EXIT=$?;
                 TB_SHELL_ALIASES=$(alias);
                 TB_HISTORY="$(fc -ln -10)";
                 {fit_transport}
                 TB_CMD=$(
-                    TB_SHELL=zsh TB_ALIAS={name} TB_CAN_EDIT=1 TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" {command} {argument_placeholder} "$@"
+                    TB_SHELL=zsh TB_ALIAS={name} TB_EXIT="$TB_EXIT" TB_CAN_EDIT=1 TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" {command} {argument_placeholder} "$@"
                 );
                 TB_STATUS=$?;
                 if [ "$TB_STATUS" -eq {exit_edit} ]; then
@@ -37,7 +38,7 @@ class Zsh(Generic):
                     eval "$TB_CMD";
                     {alter_history}
                 fi;
-                unset TB_SHELL_ALIASES TB_HISTORY TB_CMD TB_STATUS;
+                unset TB_SHELL_ALIASES TB_HISTORY TB_CMD TB_STATUS TB_EXIT;
             }}
         '''.format(
             name=alias_name,

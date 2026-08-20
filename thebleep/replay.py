@@ -16,7 +16,22 @@ narrower, and fails towards asking rather than running:
     is there a reason to believe running this again does nothing?
 
 One answer is certain: there is no such program, so the shell will fail to find
-it a second time exactly as it did the first.
+it a second time exactly as it did the first. The shell says as much in the exit
+status -- 127 for a command it could not find, 126 for one it could not run --
+and that covers an alias or a function or a `PATH` that has changed underneath,
+which a name lookup does not.
+
+The other side of the same coin: a command that **succeeded** has nothing to
+correct. Re-running it can only repeat whatever it did, and the correction it
+produces is a correction to a problem the re-run created. `git tag v9` succeeds
+silently; running it again says `already exists`; the suggestion was
+`git tag --force v9`, offered for output the user never saw and moving a tag
+that was already right. So a successful command is not re-run -- and not asked
+about either, since there is nothing to gain by asking.
+
+That last rule applies only where a question was going to be asked. `ls` that
+printed nothing is inert whatever it exited with, so `ls` is still re-read and
+still offered `ls -A`.
 
 A second is the same certainty one level down. A program that dispatches on a
 subcommand does nothing at all until it has recognised one, so a subcommand it
@@ -255,6 +270,29 @@ def _dispatch_fails(program, args):
     return True
 
 
+# What the shell said about the command before this one, or `None` when the
+# shell did not say. Set by the alias, first thing, before anything else can
+# clobber `$?`. Older aliases -- somebody's `.bashrc` from a previous release --
+# do not set it, and then this is `None` and nothing below changes.
+EXIT_ENV = 'TB_EXIT'
+
+# The two statuses that mean the command never ran: `command not found` and
+# `cannot execute`. Both are the shell's, not the program's.
+DID_NOT_RUN = frozenset({126, 127})
+
+
+def previous_status():
+    """What the previous command exited with, or `None` if unknown."""
+    raw = os.environ.get(EXIT_ENV)
+    if not raw:
+        return None
+
+    try:
+        return int(raw)
+    except ValueError:
+        return None
+
+
 def is_inert(script):
     """Whether there is reason to believe running `script` again does nothing.
 
@@ -268,6 +306,16 @@ def is_inert(script):
       have, so it fails at dispatch a second time exactly as it did the first.
 
     """
+    status = previous_status()
+    if status in DID_NOT_RUN:
+        # The shell could not find it or could not run it, so nothing happened
+        # and nothing will happen the second time either. This is the same
+        # certainty as the `PATH` lookup below and a better one: it covers an
+        # alias, a shell function, and a `PATH` that has changed since.
+        logs.debug(u'Replay: the shell exited {}, so nothing ran'.format(
+            status))
+        return True
+
     words = _words(script)
     if words is None:
         return False
@@ -313,6 +361,16 @@ def is_allowed(script, expanded):
         logs.debug(u'Replay: {} cannot have an effect, running it'.format(
             expanded))
         return True
+
+    # It worked. There is nothing to read that would help, and running it again
+    # is how `git tag v9` came to be answered with `git tag --force v9` -- a
+    # correction to an error the re-run had just caused. Asked after `is_inert`
+    # on purpose: a command that cannot have an effect is still worth re-reading
+    # whatever it exited with.
+    if previous_status() == 0:
+        logs.debug(u'Replay: {} succeeded, so there is nothing to correct'
+                   .format(expanded))
+        return False
 
     if not settings.confirm_replay:
         logs.debug(u'Replay: not asking, confirm_replay is off')

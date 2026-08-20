@@ -41,7 +41,7 @@ def subcommands(mocker):
     """
     known = {
         'git': frozenset(['status', 'push', 'branch', 'checkout', 'log',
-                          'stash', 'st']),
+                          'stash', 'st', 'tag', 'commit']),
         # As `cargo --list` answers: the names, their aliases, and the words of
         # the descriptions printed beside them.
         'cargo': frozenset(['build', 'test', 'publish', 'b', 'zoom',
@@ -589,3 +589,100 @@ class TestTheQuestionOnARealTerminal(object):
 
     def test_yes_means_yes(self, ask_about):
         assert ask_about('y') == 1
+
+
+@pytest.mark.usefixtures('on_path', 'subcommands')
+class TestWhatTheShellSaidAboutIt(object):
+    """The exit status of the command being corrected, which the alias hands
+    over before anything else can clobber `$?`."""
+
+    @pytest.fixture
+    def exited(self, os_environ):
+        def _with(status):
+            if status is None:
+                os_environ.pop(replay.EXIT_ENV, None)
+            else:
+                os_environ[replay.EXIT_ENV] = str(status)
+
+        return _with
+
+    @pytest.mark.parametrize('status', [127, 126])
+    def test_nothing_ran_so_nothing_runs_again(self, exited, status):
+        """127 is `command not found` and 126 is `cannot execute`, and both are
+        the shell's own answer -- so they cover an alias, a shell function and a
+        `PATH` that has changed since, none of which a name lookup sees."""
+        exited(status)
+        assert replay.is_inert('somealias --with args')
+        assert replay.is_inert('deploy production')
+
+    def test_a_command_that_worked_is_not_run_again(self, exited, settings):
+        """`git tag v9` succeeds silently. Run it again and it says `already
+        exists`, and the suggestion was `git tag --force v9` -- a correction to
+        a problem the second run had just caused, from output the user never
+        saw."""
+        exited(0)
+        settings.confirm_replay = True
+        assert not replay.is_allowed('git tag v9', 'git tag v9')
+        assert not replay.is_allowed('echo hi >> log', 'echo hi >> log')
+
+    def test_and_is_not_even_asked_about(self, exited, settings, mocker):
+        """There is nothing to gain by asking, so the question goes too."""
+        exited(0)
+        settings.confirm_replay = True
+        ask = mocker.patch.object(replay, '_ask', return_value=True)
+        mocker.patch('thebleep.ui.is_interactive', return_value=True)
+        assert not replay.is_allowed('deploy production', 'deploy production')
+        assert not ask.called
+
+    def test_something_that_reads_is_still_read(self, exited, settings):
+        """Asked after `is_inert`, on purpose: `ls` that printed nothing exited
+        0 and is still worth re-reading, which is what keeps `ls -A` working."""
+        exited(0)
+        settings.confirm_replay = True
+        assert replay.is_allowed('ls', 'ls')
+        assert replay.is_allowed('cat f', 'cat f')
+
+    @pytest.mark.parametrize('status', [1, 2, 128, 130])
+    def test_a_failure_changes_nothing(self, exited, status):
+        exited(status)
+        assert replay.is_inert('git satus')
+        assert not replay.is_inert('git push')
+
+    def test_an_alias_that_does_not_say_changes_nothing(self, exited):
+        """Somebody's `.bashrc` from a previous release does not set it, and
+        then every answer is the one it was before."""
+        exited(None)
+        assert replay.previous_status() is None
+        assert not replay.is_inert('git push')
+        assert replay.is_inert('ls -l')
+
+    @pytest.mark.parametrize('raw', ['', 'nonsense', '12x'])
+    def test_something_that_is_not_a_number(self, os_environ, raw):
+        os_environ[replay.EXIT_ENV] = raw
+        assert replay.previous_status() is None
+
+
+def test_every_shell_that_can_report_the_status_does(set_shell):
+    """The alias has to capture `$?` as its very first act.
+
+    Anything before it -- reading the alias list, reading the history -- is a
+    command of its own and replaces the status being asked about.
+
+    """
+    from thebleep.shells import Bash, Fish, Zsh
+
+    for shell_class in (Bash, Zsh, Fish):
+        shell = set_shell(shell_class)
+        alias = shell.app_alias('bleep')
+        assert replay.EXIT_ENV in alias, shell_class.__name__
+
+        # The capture comes before anything else the function does.
+        body = alias.split('\n')
+        captures = [index for index, line in enumerate(body)
+                    if '$?' in line or '$status' in line]
+        assert captures, shell_class.__name__
+        others = [index for index, line in enumerate(body)
+                  if line.strip() and index < captures[0]
+                  and not line.strip().startswith(('function', 'bleep',
+                                                   '#'))]
+        assert not others, '{}: {}'.format(shell_class.__name__, others)

@@ -83,7 +83,7 @@ class TestFish(object):
         assert 'function BLEEP' in shell.app_alias('BLEEP')
         assert 'thebleep' in shell.app_alias('bleep')
         assert 'TB_SHELL=fish' in shell.app_alias('bleep')
-        assert 'TB_ALIAS=bleep TB_CAN_EDIT=1 thebleep' in shell.app_alias('bleep')
+        assert 'TB_ALIAS=bleep TB_CAN_EDIT=1 TB_EXIT=$tb_exit thebleep' in shell.app_alias('bleep')
         assert ARGUMENT_PLACEHOLDER in shell.app_alias('bleep')
 
     def test_app_alias_loader(self, shell):

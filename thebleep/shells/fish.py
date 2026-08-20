@@ -66,8 +66,12 @@ class Fish(Generic):
         # arrives through a pipe into `read`, so `$status` is the reader's and
         # says nothing about whether the user asked to edit.
         return ('function {0} -d "Correct your previous console command"\n'
+                # Before anything else, or it is the status of whatever this
+                # function did first rather than of the command being corrected.
+                '  set -l tb_exit $status\n'
                 '  set -l broken_command $history[1]\n'
                 '  env TB_SHELL=fish TB_ALIAS={0} TB_CAN_EDIT=1'
+                ' TB_EXIT=$tb_exit'
                 ' {5} $broken_command {2} $argv | read -l fixed_command\n'
                 '  set -l tb_status $pipestatus[1]\n'
                 '  if test $tb_status -eq {3}\n'
