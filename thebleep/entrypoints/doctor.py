@@ -337,6 +337,63 @@ def _rules(report):
     report.add('Rules', ', '.join(counts))
 
 
+def _rule_health(report):
+    """Whether every rule still loads and still answers.
+
+    Three rules were found dead against real output in one afternoon --
+    `git_add` matched a message with a full stop git had dropped, `hostscli`
+    read the whole error sentence instead of the name in it, and
+    `git_rebase_merge_dir` found its answer by counting lines from the end.
+    Each had been dead for releases, because `Rule.is_match` and
+    `Rule.get_corrected_commands` catch what a rule raises: the only symptom is
+    a rule that never fires, which is indistinguishable from a rule that had
+    nothing to say.
+
+    What is checkable from here is narrower than that, and worth having anyway:
+    a rule that will not import, and a rule that raises on the plainest input
+    there is. Neither can be seen any other way without reading the rule.
+
+    The probes are shapes a correction really produces. `Command('', '')` is
+    not one -- `Command.from_raw_script` refuses an empty script -- and using it
+    reported four rules as broken for indexing `script_parts[0]`, which is an
+    index they are entitled to.
+
+    """
+    from .. import corrector
+    from ..types import Command
+
+    try:
+        rules = corrector.get_rules()
+    except Exception as error:                               # pragma: no cover
+        report.add('Rule health', 'the rules could not be loaded', WARN,
+                   '{}: {}'.format(type(error).__name__, error))
+        return
+
+    probes = (Command('x', ''),
+              Command('git x', 'error: something'),
+              Command('x y z', 'not found'))
+
+    broken = []
+    for rule in rules:
+        for probe in probes:
+            try:
+                rule.match(probe)
+            except Exception as error:                       # noqa: BLE001
+                broken.append('{} ({})'.format(rule.name,
+                                               type(error).__name__))
+                break
+
+    if not broken:
+        report.add('Rule health', '{} rules, none raising'.format(len(rules)))
+        return
+
+    report.add('Rule health',
+               '{} of {} rules raise on a plain command'.format(
+                   len(broken), len(rules)),
+               WARN,
+               'These never fire, and nothing says so: ' + ', '.join(broken))
+
+
 def _rule_pack(report):
     from .. import cachefile, rulepack
 
@@ -466,7 +523,7 @@ def _environment(report):
 
 
 CHECKS = (_version, _platform, _shell, _integration, _executable, _config,
-          _rules, _rule_pack, _capture, _editing, _dependencies, _leftovers,
+          _rules, _rule_health, _rule_pack, _capture, _editing, _dependencies, _leftovers,
           _environment)
 
 

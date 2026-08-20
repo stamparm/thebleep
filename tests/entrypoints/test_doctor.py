@@ -388,3 +388,47 @@ def test_every_setting_name_it_reports_is_a_real_one():
     """The report names settings; the names have to come from one place."""
     assert 'rules' in const.DEFAULT_SETTINGS
     assert OK != WARN != NOTE
+
+
+class TestRuleHealth(object):
+    """A rule that raises never fires, and nothing anywhere says so.
+
+    `Rule.is_match` and `Rule.get_corrected_commands` catch what a rule raises,
+    which is the right failure model -- one rule's mistake is that rule's
+    problem -- and it is also why three rules were found dead against real
+    output in one afternoon. What can be seen from here is the narrow version:
+    a rule that raises on the plainest input there is.
+
+    """
+
+    def test_a_healthy_set_says_so(self, capsys, home):
+        doctor()
+        assert 'none raising' in capsys.readouterr()[0]
+
+    def test_a_rule_that_raises_is_named(self, capsys, home, mocker):
+        from thebleep import corrector
+
+        exploding = mocker.Mock()
+        exploding.name = 'exploding_rule'
+        exploding.match.side_effect = IndexError('list index out of range')
+        mocker.patch.object(corrector, 'get_rules', return_value=[exploding])
+
+        doctor()
+        # Whitespace-normalised: the advice is word-wrapped to the report's
+        # width, so the name and its exception can land on separate lines.
+        printed = ' '.join(capsys.readouterr()[0].split())
+        assert 'exploding_rule (IndexError)' in printed
+        assert 'never fire' in printed
+        assert '1 of 1 rules raise' in printed
+
+    def test_the_probes_are_shapes_a_correction_really_makes(self):
+        """`Command('', '')` is not one -- `from_raw_script` refuses an empty
+        script -- and probing with it reported four rules as broken for indexing
+        `script_parts[0]`, which is an index they are entitled to."""
+        from thebleep import corrector
+        from thebleep.types import Command
+
+        for rule in corrector.get_rules():
+            for probe in (Command('x', ''), Command('git x', 'error'),
+                          Command('x y z', 'not found')):
+                rule.match(probe)
