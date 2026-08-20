@@ -25,9 +25,29 @@ def init_output():
 ESCAPE_TIMEOUT = 0.05
 
 
+def _utf8_length(first):
+    """How many bytes the character starting with `first` takes."""
+    if first < 0x80:
+        return 1
+    for length, mask in ((2, 0xE0), (3, 0xF0), (4, 0xF8)):
+        if first & mask == (mask << 1) & 0xFF:
+            return length
+
+    return 1
+
+
 def _is_incomplete(sequence):
-    """Tells whether the terminal still owes us the rest of a key."""
-    return sequence in (b'\x1b', b'\x1b[')
+    """Tells whether the terminal still owes us the rest of a key.
+
+    Two ways a key arrives in pieces: an escape sequence, where the terminal
+    sends `\x1b`, then `[`, then the letter; and a character outside ASCII,
+    which is two to four bytes of UTF-8.
+
+    """
+    if sequence in (b'\x1b', b'\x1b['):
+        return True
+
+    return bool(sequence) and len(sequence) < _utf8_length(sequence[0])
 
 
 def read_key_sequence():
@@ -50,12 +70,24 @@ def read_key_sequence():
 
     try:
         tty.setraw(fd)
+        # One byte at a time, and only more when the key is genuinely
+        # unfinished. Reading six at once swallowed whatever came next: `y`
+        # followed by Enter arrived as `y\r`, which is not `y`, so answering
+        # the replay question the way everybody answers a `[y/N]` prompt was
+        # read as "no" -- silently reversing consent on the one prompt that
+        # guards re-running your command. A coalesced arrow key was dropped the
+        # same way, with no redraw and no beep.
+        #
+        # What is left in the buffer is not lost: the Enter after the `y` is
+        # read by the next prompt, which is where somebody typing `y⏎` wanted
+        # it to go anyway.
+        #
         # Read straight from the descriptor, `sys.stdin` would buffer the
         # rest of an escape sequence out of `select`'s reach.
-        sequence = os.read(fd, 6)
+        sequence = os.read(fd, 1)
         while (_is_incomplete(sequence)
                and select.select([fd], [], [], ESCAPE_TIMEOUT)[0]):
-            sequence += os.read(fd, 6 - len(sequence))
+            sequence += os.read(fd, 1)
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
 

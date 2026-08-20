@@ -153,6 +153,20 @@
 - **`ls -la` in an empty directory no longer suggests `ls -A -la`.** `ls_all`
   only checked that the output was empty, so a command that had already asked
   for hidden files was told to ask again.
+- **Answering the replay question `y` and then Enter no longer means "no".**
+  A keypress was read as "up to six bytes, whatever is there", so a key with
+  something behind it swallowed the lot: `y⏎` -- which is how everybody answers
+  a `[y/N]` prompt -- arrived as `y\r`, and `y\r` is not `y`. The prompt that
+  guards whether your previous command runs a second time was reading the
+  opposite of the answer given, and saying `no` back while it did it. An arrow
+  key with an Enter behind it was dropped the same way, with no redraw and
+  nothing to show it had happened.
+
+  A key is one byte now, and more only while the key is genuinely unfinished --
+  an escape sequence, or a character outside ASCII. What is left in the buffer
+  is not lost: the Enter after the `y` is read by the next prompt, which is
+  where somebody typing `y⏎` wanted it to go. Confirmed through a real terminal
+  in both directions.
 - **`git branch -d master` no longer deletes `main`.** One keypress, a branch
   nobody had named, gone. Two faults stacked. `git_branch_delete_checked_out`
   matched `error: Cannot delete branch 'x' checked out at`, which is what git
