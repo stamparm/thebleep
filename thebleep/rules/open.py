@@ -35,6 +35,9 @@ def get_new_command(command):
     if is_arg_url(command):
         yield command.script.replace('open ', 'open http://')
     elif output.startswith('The file ') and output.endswith(' does not exist.'):
+        # The argument as *typed*, quoting and all -- taken off the script
+        # rather than out of `script_parts`, so whatever quoting made it a
+        # single word for `open` still makes it a single word for `touch`.
         arg = command.script.split(' ', 1)[1]
         for option in ['touch', 'mkdir']:
             yield shell.and_(u'{} {}'.format(option, arg), command.script)

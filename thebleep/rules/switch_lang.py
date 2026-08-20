@@ -110,8 +110,17 @@ def match(command):
 
 
 def get_new_command(command):
+    # `command` is shared with every other rule in this correction, so
+    # assigning to `command.script` -- which this used to do -- changed what
+    # they were looking at. `man.py` has a comment about avoiding exactly this.
     if any(u'ㄱ' <= ch <= u'ㅎ' or u'ㅏ' <= ch <= u'ㅣ' or u'가' <= ch <= u'힣'
             for ch in command.script):
-        command.script = _decompose_korean(command)
+        command = command.update(script=_decompose_korean(command))
+
     matched_layout = _get_matched_layout(command)
+    if not matched_layout:
+        # `_switch_command` indexes into the layout, so `None` is a
+        # `TypeError`. `match` allows a Korean script through without one.
+        return []
+
     return _switch_command(command, matched_layout)

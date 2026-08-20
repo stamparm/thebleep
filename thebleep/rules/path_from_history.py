@@ -41,11 +41,31 @@ def _get_all_absolute_paths_from_history(command):
     return (path for path, _ in counter.most_common(None))
 
 
+def _quoted(path):
+    """`path` as a word the shell will read back as this path.
+
+    These come out of the user's own history, so they carry whatever a
+    filesystem allows: a space, a `$`, a backtick, a `;`. Unquoted, those went
+    back to the shell as syntax rather than as a name.
+
+    The leading `~` stays *outside* the quotes, because that is the one
+    character here whose meaning the shell is meant to change. `'~/work'` is a
+    literal directory called `~`, which is not where anybody keeps their work.
+
+    """
+    if path.startswith('~/'):
+        return '~/' + shell.quote(path[2:])
+    if path == '~':
+        return path
+
+    return shell.quote(path)
+
+
 def get_new_command(command):
     destination = _get_destination(command)
     paths = _get_all_absolute_paths_from_history(command)
 
-    return [replace_argument(command.script, destination, path)
+    return [replace_argument(command.script, destination, _quoted(path))
             for path in paths if path.endswith(destination)
             and expanduser(path).exists()]
 

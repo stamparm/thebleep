@@ -2,6 +2,7 @@ import pytest
 import json
 import os
 import stat
+import sys
 import time
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -156,6 +157,9 @@ class TestTheTracker(object):
         path = not_configured._get_not_configured_usage_tracker_path()
         assert str(path).startswith(str(tmpdir))
 
+    @pytest.mark.skipif(sys.platform == 'win32',
+                        reason='O_NOFOLLOW is POSIX, and so is the attack:'
+                               ' Windows needs a privilege to make a symlink')
     def test_a_symlink_in_its_place_is_refused(self, tracker, shell_pid, logs,
                                                tmpdir):
         from thebleep.entrypoints import not_configured
@@ -169,6 +173,9 @@ class TestTheTracker(object):
 
         assert victim.read_text() == 'do not lose this'
 
+    @pytest.mark.skipif(sys.platform == 'win32',
+                        reason='Windows does not carry a POSIX mode; the ACL'
+                               ' it inherits is the equivalent')
     def test_it_is_not_readable_by_anybody_else(self, tracker, shell_pid):
         from thebleep.entrypoints import not_configured
 

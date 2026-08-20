@@ -1,4 +1,5 @@
 import re
+from thebleep.shells import shell
 from thebleep.utils import for_app
 from thebleep.specific.brew import brew_available
 
@@ -31,5 +32,7 @@ def match(command):
 
 
 def get_new_command(command):
-    return ["brew install " + formula
+    # Quoted: the name is read out of brew's output, and this goes back to the
+    # shell to be evaluated. A formula name needs no quotes and gets none.
+    return ['brew install ' + shell.quote(formula)
             for formula in _suggested_formulae(command.output)]

@@ -1,3 +1,4 @@
+from thebleep.shells import shell
 from thebleep.utils import eager, get_closest, for_app
 
 
@@ -32,7 +33,14 @@ def get_new_command(command):
     script = command.script
     for not_found in not_found_commands:
         fix = get_closest(not_found, possible_commands)
+        if fix is None:
+            # Nothing close enough, and `' {}'.format(None)` put the word
+            # `None` into the command.
+            continue
+
+        # Quoted: a fabric task name comes out of the project's `fabfile.py`
+        # and the result goes back to the shell to be evaluated.
         script = script.replace(' {}'.format(not_found),
-                                ' {}'.format(fix))
+                                ' {}'.format(shell.quote(fix)))
 
     return script

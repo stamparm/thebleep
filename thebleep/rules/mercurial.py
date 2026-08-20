@@ -22,6 +22,15 @@ def match(command):
 
 def get_new_command(command):
     script = command.script_parts[:]
+    if len(script) < 2:
+        return []
+
     possibilities = extract_possibilities(command)
-    script[1] = get_closest(script[1], possibilities)
+    closest = get_closest(script[1], possibilities)
+    if closest is None:
+        # `' '.join` on a `None` is a `TypeError`, which is a rule that never
+        # fires rather than one that stands aside.
+        return []
+
+    script[1] = closest
     return ' '.join(script)

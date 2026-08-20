@@ -55,6 +55,7 @@ Wordings captured from GNU coreutils 9.x, tar 1.35, curl 8.x and git 2.47.3.
 
 import re
 from thebleep import matching
+from thebleep.shells import shell
 from thebleep.utils import memoize, replace_argument, which
 
 # Every way a program says it did not know a long option. The name is captured
@@ -189,7 +190,9 @@ def get_new_command(command):
     # The dashes come from what was typed, so `--colour` is answered with
     # `--color` and a short flag stays short.
     dashes = typed[:len(typed) - len(typed.lstrip('-'))]
-    return [replace_argument(command.script, typed, dashes + name)
+    # Quoted: the name was read out of a program's own usage text, and this
+    # goes back to the shell to be evaluated.
+    return [replace_argument(command.script, typed, shell.quote(dashes + name))
             for name in ranked]
 
 

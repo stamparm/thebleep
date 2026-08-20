@@ -4,6 +4,7 @@ from importlib.metadata import PackageNotFoundError, version
 import pickle
 import pytest
 import os
+import sys
 import warnings
 from unittest.mock import Mock, call, patch
 from thebleep import cachefile
@@ -502,6 +503,10 @@ class TestAnEmptyPathEntry(object):
         monkeypatch.setenv('PATH', path)
         assert which(a_program_here) == shutil.which(a_program_here)
 
+    @pytest.mark.skipif(sys.platform == 'win32',
+                        reason='an extensionless file is not runnable on'
+                               ' Windows, so `shutil.which` says no too --'
+                               ' which the parity test above already covers')
     def test_the_command_is_not_treated_as_absent(self, a_program_here,
                                                   monkeypatch):
         monkeypatch.setenv('PATH', ':/usr/bin')

@@ -2,6 +2,7 @@ import re
 from thebleep.specific.npm import npm_available
 from thebleep.utils import replace_argument, for_app, eager, get_closest
 from thebleep.specific.sudo import sudo_support
+from thebleep.shells import shell
 
 enabled_by_default = npm_available
 
@@ -72,7 +73,13 @@ def get_new_command(command):
 
     suggested = _suggested_commands(command.output)
     if suggested:
-        return [replace_argument(command.script, wrong_command, suggestion)
+        # Quoted, like every other value read out of a tool's output: the
+        # result of this is handed back to the shell to be evaluated, and
+        # `replace_argument` does not quote what it substitutes. A command name
+        # needs no quotes and gets none -- `shell.quote` adds them only where
+        # they change the meaning -- so this costs nothing and closes the path.
+        return [replace_argument(command.script, wrong_command,
+                                 shell.quote(suggestion))
                 for suggestion in suggested]
 
     npm_commands = _get_available_commands(command.output)
@@ -86,4 +93,4 @@ def get_new_command(command):
         # an answer and cannot run.
         return []
 
-    return replace_argument(command.script, wrong_command, fixed)
+    return replace_argument(command.script, wrong_command, shell.quote(fixed))

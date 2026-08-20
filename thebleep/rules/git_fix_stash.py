@@ -5,7 +5,9 @@ from thebleep.specific.git import git_support
 
 @git_support
 def match(command):
-    if command.script_parts and len(command.script_parts) > 1:
+    # Three words, not two: `git stash` on its own prints the usage this
+    # matches on, and there is no third word for `get_new_command` to read.
+    if len(command.script_parts) > 2:
         return (command.script_parts[1] == 'stash'
                 and 'usage:' in command.output)
     else:

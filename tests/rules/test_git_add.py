@@ -11,8 +11,12 @@ def path_exists(mocker):
 
 @pytest.fixture
 def output(target):
+    # No full stop. git 2.43 prints `... known to git` and stops, and matching
+    # the version with one had left this rule dead for however many releases
+    # ago that changed -- its sibling `git_checkout`, which matches the same
+    # message without it, had been answering alone.
     return ("error: pathspec '{}' did not match any "
-            'file(s) known to git.'.format(target))
+            'file(s) known to git'.format(target))
 
 
 @pytest.mark.parametrize('script, target', [
@@ -38,3 +42,15 @@ def test_not_match(path_exists, output, script, target, exists):
      'git add -- unknown && git commit unknown')])
 def test_get_new_command(output, script, target, new_command):
     assert get_new_command(Command(script, output)) == new_command
+
+
+@pytest.mark.parametrize('output', [
+    # git 2.43, `git checkout`/`git diff`/`git log`.
+    "error: pathspec 'notes.md' did not match any file(s) known to git",
+    # Older git, with the full stop this used to insist on.
+    "error: pathspec 'notes.md' did not match any file(s) known to git.",
+    # git 2.43, `git add -u`, `git stash push`, `git rm`.
+    "fatal: pathspec 'notes.md' did not match any files",
+])
+def test_every_wording_git_has_used(output):
+    assert match(Command('git checkout notes.md', output))
