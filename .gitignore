@@ -88,3 +88,11 @@ venv/
 # with cannot prepare a release. It is also named in tox.ini's flake8 exclude,
 # so following that advice does not make the style gate lint it.
 .release-venv/
+
+# Downloaded packages and built artifacts. Two of these got committed by a
+# `git add -A` that swept up what a `pip download` had left in the working
+# tree; `tests/test_packaging.py` now refuses to let it happen quietly.
+*.whl
+/*.tar.gz
+/*.tar.bz2
+/*.zip

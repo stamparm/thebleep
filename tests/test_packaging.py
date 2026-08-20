@@ -130,3 +130,47 @@ def test_no_tracked_name_is_unusable_on_windows(source_root):
     clashes = [name for name in names
                if name.rsplit('/', 1)[-1].split('.')[0].lower() in reserved]
     assert not clashes, clashes
+
+
+def test_nothing_tracked_looks_like_something_that_fell_out_of_a_build(
+        source_root):
+    """A repository is what somebody meant to put in it.
+
+    Twice now a `git add -A` has swept up what the working tree happened to
+    contain: three files named `<MagicMock ...>` that a test run created, which
+    Windows cannot check out and which therefore broke `actions/checkout` on
+    every Windows job before a test ran; and two packages a `pip download` had
+    left behind while checking a tool's real wording.
+
+    `.gitignore` covers both patterns now. This is the second line, because a
+    `git add -f` gets past `.gitignore` and because the next accident will be a
+    pattern nobody thought to add: it fails here in a second rather than on a
+    runner, or worse, in a release.
+
+    """
+    import re
+    import subprocess
+
+    tracked = subprocess.run(
+        ['git', 'ls-files', '-z'], cwd=str(source_root),
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    if tracked.returncode != 0:
+        pytest.skip('not a git checkout')
+
+    names = [name for name in
+             tracked.stdout.decode('utf-8', 'replace').split('\0') if name]
+    assert names, 'git tracks nothing, so this checked nothing'
+
+    # Anything a build, a download or a test run produces. `tests/corpus`
+    # deliberately holds recorded output, and `tests/rules` holds archives that
+    # `dirty_untar` and `dirty_unzip` are tested against, so the archive
+    # patterns are anchored to the top level where nothing of the sort belongs.
+    debris = re.compile(
+        r'(^[^/]+\.(tar\.(gz|bz2|xz)|zip|tgz)$'
+        r'|\.whl$'
+        r'|\.egg-info/'
+        r'|\.pyc$'
+        r'|^(build|dist)/'
+        r'|<MagicMock)')
+    found = [name for name in names if debris.search(name)]
+    assert not found, found
