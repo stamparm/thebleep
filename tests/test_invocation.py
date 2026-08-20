@@ -102,7 +102,11 @@ class TestRunFromAClone(object):
         assert written != invocation.ENTRY_POINT
         for text in (shell().app_alias('bleep'),
                      shell().app_alias_loader('bleep')):
-            assert written in text
+            # As written, or with its quotes escaped for a single-quoted alias
+            # body -- which is what a path needing quotes goes through, and on
+            # Windows a drive colon and backslashes are enough for that.
+            assert (written in text
+                    or written.replace("'", "'\\''") in text)
             assert 'thebleep --alias' not in text
 
     def test_tcsh_says_so_when_it_cannot_hold_the_path(self, set_shell):
@@ -165,6 +169,10 @@ class TestACheckoutAtAPathWithASpace(object):
             lambda: ['/opt/some python/bin/python3',
                      '/opt/My Projects/thebleep/__main__.py'])
 
+    @pytest.mark.skipif(sys.platform == 'win32',
+                        reason='a POSIX `alias` is not what Windows runs, and'
+                               ' the bash that happens to be installed there is'
+                               ' not the shell this alias is written for')
     def test_the_alias_still_parses(self, spaced, set_shell, tmpdir):
         """In a real shell, because that is the only thing that settles it."""
         import subprocess

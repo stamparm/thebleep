@@ -316,3 +316,20 @@ class TestWhichShellTheReplayRunsIn(object):
         mocker.patch.object(type(shell), 'replay_argv',
                             side_effect=RuntimeError)
         assert rerun._call('echo hi') == ('echo hi', True)
+
+
+def test_a_shell_that_is_not_installed_falls_back(mocker, settings):
+    """`TB_SHELL` says which shell the command was typed in, not that this
+    machine can start another one of it.
+
+    A Windows runner with `TB_SHELL=bash` and no bash on `PATH` got a `Popen`
+    that raised, so the correction had no output at all and answered
+    `No bleeps given` -- which is worse than the wrong shell, because the wrong
+    shell at least printed something a rule could read.
+
+    """
+    from thebleep.shells import shell
+
+    mocker.patch.object(type(shell), 'replay_argv',
+                        return_value=['no-such-shell', '-c', 'echo hi'])
+    assert rerun._call('echo hi') == ('echo hi', True)

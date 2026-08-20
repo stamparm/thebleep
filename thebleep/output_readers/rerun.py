@@ -249,13 +249,20 @@ def _call(expanded):
 
     """
     from ..shells import shell
+    from ..utils import which
 
     try:
         argv = shell.replay_argv(expanded)
     except Exception:                                        # noqa: BLE001
         argv = None
 
-    if argv:
+    # And the interpreter has to be there. `TB_SHELL` says which shell the
+    # command was typed in, not that this machine can start another one of it:
+    # a Windows runner with `TB_SHELL=bash` and no bash on `PATH` got a `Popen`
+    # that raised, so the correction had no output at all and answered
+    # `No bleeps given` -- worse than the wrong shell, which at least printed
+    # something a rule could read.
+    if argv and which(argv[0]):
         return argv, False
 
     return expanded, True

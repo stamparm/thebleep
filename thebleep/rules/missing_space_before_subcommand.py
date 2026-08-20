@@ -1,5 +1,42 @@
+# -*- encoding: utf-8 -*-
+
+"""`gitstatus` -> `git status`. A space that did not get typed.
+
+A guess, and one with a failure mode worth naming: it fires whenever the first
+word is not runnable but *some prefix of it* is. On a machine missing a command
+that begins with the name of one it has, that is nonsense offered with a
+straight face:
+
+    $ sudo apt-get updte              # in a container with no sudo
+    sudo: command not found
+    $ bleep
+    su do apt-get updte               <- `su do` is not a command either
+
+`su` is a prefix of `sudo`, so the rule split a real command name it had simply
+never heard of. `git k` for `gitk`, `pip x` for `pipx` and `comm and` for
+`command` are the same slip -- and the last of those is why builtins were added
+to `_is_a_command_already`.
+
+Two guards, and they are the reason this is worth keeping rather than deleting:
+
+- **the remainder has to be two characters or more.** `gitk` -> `git k` and
+  `pipx` -> `pip x` are the whole of the one-character case, and neither has
+  ever been what somebody meant.
+- **a name The Bleep already knows is never split.** `sudo`, `doas`, `env`,
+  `nice` and the rest are commands this tool has a model of; a machine without
+  one is missing a command, it has not gained a typo.
+
+What survives is what the rule is for: a subcommand (`gitstatus`, `npminstall`)
+or a flag (`ls-la`) that lost its space.
+
+"""
+
 from thebleep.shells import shell
 from thebleep.utils import get_all_executables, memoize
+
+# The shortest remainder worth splitting off. One character is `gitk`, `pipx`,
+# `lsd`, `duf` -- real programs, every one of them.
+SHORTEST_REMAINDER = 2
 
 
 @memoize
@@ -17,10 +54,26 @@ def _executables():
 
 
 @memoize
+def _known_name(word):
+    """Whether this is a command The Bleep itself has a model of.
+
+    The wrappers, which is where `sudo` is. Not installed is not the same as
+    misspelled, and for these names this tool is in a position to know.
+
+    """
+    from thebleep.wrappers import WRAPPERS
+
+    return word in WRAPPERS
+
+
+@memoize
 def _get_executable(script_part):
     for executable in get_all_executables():
-        if len(executable) > 1 and script_part.startswith(executable):
-            return executable
+        if len(executable) <= 1 or not script_part.startswith(executable):
+            continue
+        if len(script_part) - len(executable) < SHORTEST_REMAINDER:
+            continue
+        return executable
 
 
 def _is_a_command_already(word):
@@ -37,9 +90,13 @@ def _is_a_command_already(word):
 
 
 def match(command):
-    return (command.script_parts
-            and not _is_a_command_already(command.script_parts[0])
-            and _get_executable(command.script_parts[0]))
+    if not command.script_parts:
+        return False
+
+    word = command.script_parts[0]
+    return (not _is_a_command_already(word)
+            and not _known_name(word)
+            and bool(_get_executable(word)))
 
 
 def get_new_command(command):

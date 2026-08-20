@@ -43,3 +43,39 @@ def test_a_shell_builtin_is_a_command_already(mocker):
         return_value=['comm', 'git', 'ls'])
     assert not match(Command('command git status', ''))
     assert not match(Command('builtin cd /tmp', ''))
+
+
+class TestWhatItUsedToSplitThatItShouldNot(object):
+    """It fires whenever the first word is not runnable but a prefix of it is,
+    which on a machine missing one command is nonsense offered confidently."""
+
+    @pytest.fixture(autouse=True)
+    def installed(self, mocker):
+        """A machine with `su`, `git` and `pip` but no `sudo`, `gitk` or
+        `pipx` -- which is every container built from a slim base."""
+        return mocker.patch(
+            'thebleep.rules.missing_space_before_subcommand'
+            '.get_all_executables',
+            return_value=['su', 'git', 'pip', 'ls', 'npm', 'watch'])
+
+    def test_sudo_on_a_machine_without_sudo(self):
+        """`su do apt-get updte` is not a command either, and `sudo` is a name
+        this tool has a model of -- see `wrappers`."""
+        assert not match(Command('sudo apt-get updte', 'sudo: not found'))
+
+    @pytest.mark.parametrize('script', ['gitk', 'pipx', 'gitk --all'])
+    def test_a_one_character_remainder(self, script):
+        """`git k` and `pip x` have never been what anybody meant, and both
+        `gitk` and `pipx` are real programs."""
+        assert not match(Command(script, 'not found'))
+
+    @pytest.mark.parametrize('script, result', [
+        ('gitstatus', 'git status'),
+        ('npminstall webpack', 'npm install webpack'),
+        ('ls-la', 'ls -la'),
+        ('watchls', 'watch ls'),
+    ])
+    def test_and_what_the_rule_is_actually_for(self, script, result):
+        command = Command(script, 'not found')
+        assert match(command)
+        assert get_new_command(command) == result

@@ -60,6 +60,12 @@ world. What it is good for is stopping the tool getting worse:
 suggestion quality fails the build. Reproduce it with
 `python3 bench/hit_rate.py`, or add a case that it gets wrong and send it.
 
+It reproduces because the benchmark stubs out everything that would otherwise
+make the answer a fact about your machine — `PATH`, the shell history, and
+Debian's `command-not-found` database, which would have `sl` answered with
+`apt-get install sl` on a machine that has it and `ls` on one that does not.
+Both tools are given the identical question.
+
 Same machine, same Python 3.11, 30 runs each, medians:
 
 <!-- benchmark: written by bench/chart.py -->

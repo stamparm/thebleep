@@ -31,6 +31,7 @@ point of publishing it.
 from __future__ import print_function
 
 import json
+import contextlib
 import os
 import subprocess
 import sys
@@ -41,6 +42,41 @@ sys.path.insert(0, ROOT)
 
 
 GROUPS = ('an unknown program', 'the tool said so', 'nothing is right')
+
+
+@contextlib.contextmanager
+def _no_package_database(package):
+    """Nothing is installable, for as long as this is held.
+
+    `apt_get` answers an unknown command by asking Debian's
+    `command-not-found` database which package would provide it -- and that is
+    a fact about the machine, not about the correction engine. It is also a
+    fact that changes: `sl`, `duf`, `rmm` and `sssh` are all real packages, so
+    on a machine with `python3-commandnotfound` installed the answer to `sl` is
+    `sudo apt-get install sl` rather than `ls`.
+
+    Which made this number unreproducible, and it was published in the README.
+    The commit that recorded 80/80 scores 76/80 on a machine that has the
+    database, with no code between the two -- so the number was measuring the
+    machine.
+
+    So the database is hidden here. What is left is what the corrector itself
+    works out, which is the thing being compared: The Fuck has the same rule and
+    would have been given the same advantage.
+
+    Hidden by making the *import* fail rather than by patching the rule module,
+    because `rulepack` loads rules from source into fresh modules -- patching
+    the one `importlib` hands back leaves the one the corrector runs untouched.
+    A `None` in `sys.modules` is what makes an import raise `ImportError`, which
+    is the case the rule already handles by disabling itself.
+
+    """
+    from unittest import mock
+
+    hidden = {name: None for name in
+              ('CommandNotFound', 'CommandNotFound.CommandNotFound')}
+    with mock.patch.dict(sys.modules, hidden):
+        yield
 
 
 def _measure(package='thebleep'):
@@ -81,7 +117,8 @@ def _measure(package='thebleep'):
                        return_value=names), \
             mock.patch(package + '.utils.get_valid_history_without_current',
                        return_value=cases.HISTORY), \
-            mock.patch(package + '.utils.which', side_effect=which):
+            mock.patch(package + '.utils.which', side_effect=which), \
+            _no_package_database(package):
         for label, group in groups:
             hits = 0
             misses = []
