@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import pytest
 from thebleep.shells import Generic
 
@@ -205,3 +206,39 @@ class TestReadingTheHistory(object):
     def test_a_missing_file_is_no_history(self, shell, settings, tmpdir):
         settings.history_limit = 10
         assert shell.get_history() == []
+
+
+class TestReplayingInTheRightShell(object):
+    """`Popen(shell=True)` is the platform's shell, not the user's."""
+
+    @pytest.fixture
+    def shell(self):
+        return Generic()
+
+    def test_a_shell_it_does_not_recognise_says_nothing(self, shell):
+        """And then the replay goes through what it always went through."""
+        assert shell.replay_argv('echo hi') is None
+
+    @pytest.mark.parametrize('name, argv', [
+        ('Bash', ['bash', '-c', 'echo hi']),
+        ('Zsh', ['zsh', '-c', 'echo hi']),
+        ('Fish', ['fish', '-c', 'echo hi']),
+        ('Tcsh', ['tcsh', '-c', 'echo hi']),
+        ('Nushell', ['nu', '--commands', 'echo hi']),
+    ])
+    @pytest.mark.skipif(os.name == 'nt', reason='POSIX drivers stand aside there')
+    def test_each_shell_names_itself(self, name, argv):
+        from thebleep import shells
+
+        assert getattr(shells, name)().replay_argv('echo hi') == argv
+
+    @pytest.mark.parametrize('name', ['Bash', 'Zsh', 'Fish', 'Tcsh'])
+    def test_a_posix_shell_on_windows_stands_aside(self, name, monkeypatch):
+        """Git Bash, MSYS and WSL each have their own PATH and their own
+        /usr/bin, so starting one to reproduce a command typed in the other
+        reproduces a different machine."""
+        from thebleep import shells
+        from thebleep.shells import generic
+
+        monkeypatch.setattr(generic.os, 'name', 'nt')
+        assert getattr(shells, name)().replay_argv('echo hi') is None

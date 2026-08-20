@@ -11,7 +11,7 @@ class Tcsh(Generic):
 
     def replay_argv(self, script):
         """See `Generic.replay_argv`."""
-        return ['tcsh', '-c', script]
+        return self._posix_replay_argv(['tcsh', '-c', script])
 
     def _invocation(self):
         """What tcsh can be told to run, which is less than the others.

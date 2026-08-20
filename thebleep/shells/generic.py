@@ -223,6 +223,20 @@ class Generic(object):
         """
         return None
 
+    @staticmethod
+    def _posix_replay_argv(argv):
+        """`argv`, unless this is Windows, where it would be a different machine.
+
+        A POSIX shell on Windows is Git Bash, MSYS or WSL, and each of those has
+        its own `PATH`, its own `/usr/bin` and its own idea of what a path looks
+        like. Starting one to reproduce a command typed in the *other* one
+        reproduces a different machine -- so on Windows the POSIX drivers say
+        nothing and the replay goes through the platform's own shell, which is
+        what it always did there.
+
+        """
+        return None if os.name == 'nt' else argv
+
     def can_run_corrections(self):
         """Whether a correction can be handed back to this shell to be run.
 

@@ -12,7 +12,7 @@ class Zsh(Generic):
 
     def replay_argv(self, script):
         """See `Generic.replay_argv`."""
-        return ['zsh', '-c', script]
+        return self._posix_replay_argv(['zsh', '-c', script])
 
     def app_alias(self, alias_name):
         # It is VERY important to have the variables declared WITHIN the

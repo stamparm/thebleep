@@ -381,8 +381,8 @@ $ thebleep --doctor
   Executable          ~/.local/bin/thebleep
   On PATH             yes
   Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
-  Rules               177 bundled, 3 of your own
-  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (177 rules cached)
+  Rules               178 bundled, 3 of your own
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (178 rules cached)
 - Replayless capture  available, not switched on
                       See --enable-experimental-instant-mode.
   Editing             supported by this shell (tab at the prompt)
@@ -563,7 +563,7 @@ nothing.
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
-| **Rules** | 177 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+| **Rules** | 178 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
@@ -940,6 +940,7 @@ The following rules are enabled by default:
 * `man` — changes manual section;
 * `man_no_space` — fixes man commands without spaces, for example `mandiff`;
 * `mercurial` — fixes wrong `hg` commands;
+* `missing_space_before_known_subcommand` — fixes a missing space where the rest is a flag or a subcommand the tool listed, like `ls-la` or `gitstatus`;
 * `missing_space_before_subcommand` — fixes command with missing space like `npminstall`;
 * `mkdir_p` — adds `-p` when you try to create a directory without a parent;
 * `mvn_no_command` — adds `clean package` to `mvn`;
@@ -1338,7 +1339,7 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches about a fifth of the 177 rules, and
+  running it. A typical command now reaches about a fifth of the 178 rules, and
   one for a tool with many rules of its own — `git` — under a quarter, instead of
   all of them. Rules that don't say what they are about are always loaded, so
   this makes corrections faster, never fewer.

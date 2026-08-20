@@ -1,7 +1,40 @@
+# -*- encoding: utf-8 -*-
+
+"""`mkdir foo/bar/baz` -> `mkdir -p foo/bar/baz`.
+
+Two things it used to get wrong, and the first produced a suggestion that
+cannot run:
+
+    $ mkdir -p /tmp/q && rmdir /tmp/q/nope
+    rmdir: failed to remove '/tmp/q/nope': No such file or directory
+    $ bleep
+    mkdir -p -p /tmp/q && rmdir /tmp/q/nope
+
+The `mkdir` in that command *worked*. What failed was the `rmdir` after it, and
+`No such file or directory` is a message half the tools on the machine print --
+so the rule saw a command with `mkdir` in it and a message it recognised, and
+added a `-p` that was already there.
+
+So: the message has to be `mkdir`'s own, and the flag is not added twice. GNU
+`mkdir` says `mkdir: cannot create directory 'x': No such file or directory` and
+Hadoop's says ``mkdir: `x': No such file or directory``; both name themselves
+first, which is what makes them tellable from the rest of a pipeline.
+
+"""
+
 import re
 from thebleep.shells import shell
 from thebleep.specific.sudo import sudo_support
 from thebleep.utils import is_app
+
+# `-p`, however it was spelled. `mkdir -pv` counts too.
+PARENTS = re.compile(r'(?:^|\s)(?:--parents\b|-[a-zA-Z]*p[a-zA-Z]*(?=\s|$))')
+
+# A line that is mkdir's own complaint rather than something else's. Anchored to
+# the start of a line so that `rmdir: ... No such file or directory` -- which is
+# what `rmdir` prints, and which contains neither `mkdir:` at a line start nor
+# anything else this wants -- does not qualify.
+COMPLAINT = re.compile(r'(?m)^\s*mkdir:.*No such file or directory')
 
 
 def _makes_directories(command):
@@ -22,7 +55,8 @@ def _makes_directories(command):
 @sudo_support
 def match(command):
     return (_makes_directories(command)
-            and 'No such file or directory' in command.output)
+            and COMPLAINT.search(command.output) is not None
+            and PARENTS.search(command.script) is None)
 
 
 @sudo_support

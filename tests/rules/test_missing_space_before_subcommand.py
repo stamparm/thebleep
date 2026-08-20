@@ -11,10 +11,20 @@ def all_executables(mocker):
         return_value=['git', 'ls', 'npm', 'w', 'watch'])
 
 
-@pytest.mark.parametrize('script', [
-    'gitbranch', 'ls-la', 'npminstall', 'watchls'])
+@pytest.mark.parametrize('script', ['npminstall', 'watchls'])
 def test_match(script):
     assert match(Command(script, ''))
+
+
+@pytest.mark.parametrize('script', ['gitbranch', 'ls-la'])
+def test_the_certain_splits_are_the_other_rules(script):
+    """A flag, or a subcommand git itself listed: not a guess, so it is
+    answered by `missing_space_before_known_subcommand` in front of the
+    spelling correction rather than by this behind it."""
+    from thebleep.rules import missing_space_before_known_subcommand as known
+
+    assert not match(Command(script, ''))
+    assert known.match(Command(script, ''))
 
 
 @pytest.mark.parametrize('script', ['git branch', 'vimfile'])
@@ -70,12 +80,18 @@ class TestWhatItUsedToSplitThatItShouldNot(object):
         assert not match(Command(script, 'not found'))
 
     @pytest.mark.parametrize('script, result', [
-        ('gitstatus', 'git status'),
         ('npminstall webpack', 'npm install webpack'),
-        ('ls-la', 'ls -la'),
         ('watchls', 'watch ls'),
     ])
     def test_and_what_the_rule_is_actually_for(self, script, result):
         command = Command(script, 'not found')
         assert match(command)
         assert get_new_command(command) == result
+
+    @pytest.mark.parametrize('script', ['gitstatus', 'ls-la'])
+    def test_the_certain_ones_belong_to_the_other_rule(self, script):
+        """`ls -la` and `git status` are not guesses, so they are answered by
+        `missing_space_before_known_subcommand`, which sits in front of the
+        spelling correction rather than behind it. Both rules offering the same
+        suggestion would put it in the list twice."""
+        assert not match(Command(script, 'not found'))
