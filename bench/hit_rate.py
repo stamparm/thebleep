@@ -110,16 +110,33 @@ def _executables():
 
 
 def _commit():
+    """`(commit, is_clean)`, and `('', False)` when git could not be asked.
+
+    The returncode is what says whether git answered. Comparing its output to
+    the empty string is not enough: git that failed prints nothing, and
+    `'' == ''` reported a dirty tree as clean -- which is exactly the claim this
+    field exists to make. Caught by the test that reads the recorded file.
+
+    """
     def git(*arguments):
         try:
-            return subprocess.run(['git'] + list(arguments), cwd=ROOT,
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.DEVNULL).stdout \
-                .decode('utf-8', 'replace').strip()
+            finished = subprocess.run(['git'] + list(arguments), cwd=ROOT,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.DEVNULL)
         except OSError:
-            return ''
+            return None
 
-    return git('rev-parse', 'HEAD'), git('status', '--porcelain') == ''
+        if finished.returncode != 0:
+            return None
+
+        return finished.stdout.decode('utf-8', 'replace').strip()
+
+    commit = git('rev-parse', 'HEAD')
+    status = git('status', '--porcelain')
+    if commit is None or status is None:
+        return '', False
+
+    return commit, status == ''
 
 
 def _totals(results):
@@ -167,6 +184,12 @@ def main():
     commit, clean = _commit()
     if '--record' not in sys.argv:
         return 0 if total_hits == total else 1
+
+    if not commit:
+        print('Refusing to record: git could not be asked which commit this '
+              'is, and a result that cannot be traced to source is not '
+              'evidence.', file=sys.stderr)
+        return 2
 
     if not clean:
         print('Refusing to record a run from a tree with changes in it.',
