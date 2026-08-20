@@ -231,6 +231,36 @@ def _is_slow(words):
             or os.path.basename(program) in settings.slow_commands)
 
 
+def _call(expanded):
+    """`(argv, shell)` for running `expanded` again, in the right shell.
+
+    `Popen(expanded, shell=True)` runs through the *platform's* default shell,
+    which on POSIX is `/bin/sh` -- whatever shell the command actually failed
+    in. So a bash-ism came back as an `sh` error, and The Bleep corrected a
+    problem the user never had:
+
+        $ [[ -f /nope ]]                # bash: exits 1, prints nothing
+        $ bleep
+        /bin/sh: 1: [[: not found       # a different error entirely
+
+    Each shell says how to run one of its own command lines; see
+    `shells.Generic.replay_argv`. A shell that will not say, or a shell nothing
+    here recognises, falls back to what this always did.
+
+    """
+    from ..shells import shell
+
+    try:
+        argv = shell.replay_argv(expanded)
+    except Exception:                                        # noqa: BLE001
+        argv = None
+
+    if argv:
+        return argv, False
+
+    return expanded, True
+
+
 def get_output(script, expanded):
     """Runs the script and obtains stdin/stderr.
 
@@ -265,7 +295,8 @@ def get_output(script, expanded):
     is_slow = _is_slow(split_expand)
     with logs.debug_time(u'Call: {}; with env: {}; is slow: {}'.format(
             script, logged_env, is_slow)):
-        result = Popen(expanded, shell=True, stdin=PIPE,
+        argv, through_a_shell = _call(expanded)
+        result = Popen(argv, shell=through_a_shell, stdin=PIPE,
                        stdout=PIPE, stderr=STDOUT, env=env)
         output = _wait_output(result, is_slow)
         if output is None:

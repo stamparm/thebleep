@@ -10,6 +10,10 @@ from .generic import Generic, fit_transport, instant_log_path
 class Zsh(Generic):
     friendly_name = 'ZSH'
 
+    def replay_argv(self, script):
+        """See `Generic.replay_argv`."""
+        return ['zsh', '-c', script]
+
     def app_alias(self, alias_name):
         # It is VERY important to have the variables declared WITHIN the
         # function, and they are handed to `thebleep` in front of the command

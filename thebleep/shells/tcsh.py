@@ -9,6 +9,10 @@ from .generic import Generic
 class Tcsh(Generic):
     friendly_name = 'Tcsh'
 
+    def replay_argv(self, script):
+        """See `Generic.replay_argv`."""
+        return ['tcsh', '-c', script]
+
     def _invocation(self):
         """What tcsh can be told to run, which is less than the others.
 

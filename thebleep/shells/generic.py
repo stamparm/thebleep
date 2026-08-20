@@ -200,6 +200,29 @@ class Generic(object):
                 '}}').format(name=alias_name, shell=self._shell_name(),
                              command=self._invocation())
 
+    def replay_argv(self, script):
+        """How to run `script` a second time to read what it prints, or `None`.
+
+        `None` means "there is no telling", and then the replay goes through
+        `Popen(shell=True)` as it always did -- which is the platform's default
+        shell, `/bin/sh` on POSIX. That was the *only* way it went, whatever
+        shell the command had actually failed in, so The Bleep could be
+        correcting an error `sh` produced rather than the one the user saw:
+
+            $ [[ -f /nope ]]                # bash: exits 1, prints nothing
+            $ bleep
+            /bin/sh: 1: [[: not found       # a different error entirely
+
+        The same goes for `fish` and `zsh` syntax, and for PowerShell, where the
+        mismatch is total.
+
+        Non-interactive either way, so the user's functions and aliases are
+        still not loaded -- `replay._words` says as much. What this fixes is the
+        *syntax*, which is the half that made the tool answer the wrong question.
+
+        """
+        return None
+
     def can_run_corrections(self):
         """Whether a correction can be handed back to this shell to be run.
 

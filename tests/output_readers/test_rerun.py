@@ -262,3 +262,57 @@ class TestReplayedEnvironment(object):
 ])
 def test_child_environment_traces_git_only(os_environ, program, traced):
     assert ('GIT_TRACE' in rerun._child_environment(program)) is traced
+
+
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='needs a POSIX shell that is not /bin/sh')
+class TestWhichShellTheReplayRunsIn(object):
+    """`Popen(shell=True)` is the *platform's* shell, not the user's.
+
+    On POSIX that is `/bin/sh` -- dash on Debian and Ubuntu -- whatever shell
+    the command actually failed in. So a bash-ism came back as an `sh` error and
+    The Bleep corrected a problem the user never had:
+
+        $ [[ -f /nope ]]                # bash: exits 1, prints nothing
+        $ bleep
+        /bin/sh: 1: [[: not found       # a different error entirely
+
+    """
+
+    BASHISM = '[[ -f /definitely/not/here ]]'
+
+    def test_the_old_way_gets_somebody_elses_error(self):
+        """Guards the guard: without this, the test below proves nothing."""
+        import subprocess
+
+        done = subprocess.run(self.BASHISM, shell=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT, timeout=10)
+        if b'[[' not in done.stdout:
+            pytest.skip('/bin/sh on this machine understands `[[`')
+
+    def test_bash_gets_bash(self, os_environ, settings):
+        os_environ['TB_SHELL'] = 'bash'
+        settings.env = {}
+        from thebleep.shells import shell
+
+        if shell.friendly_name != 'Bash':
+            pytest.skip('the shell could not be forced to bash')
+
+        assert rerun._call(self.BASHISM) == (
+            ['bash', '-c', self.BASHISM], False)
+        assert rerun.get_output(self.BASHISM, self.BASHISM) == ''
+
+    def test_a_shell_that_will_not_say_falls_back(self, mocker, settings):
+        """Which is what this always did, so nothing is lost by not knowing."""
+        from thebleep.shells import shell
+
+        mocker.patch.object(type(shell), 'replay_argv', return_value=None)
+        assert rerun._call('echo hi') == ('echo hi', True)
+
+    def test_and_a_shell_that_raises_does_too(self, mocker):
+        from thebleep.shells import shell
+
+        mocker.patch.object(type(shell), 'replay_argv',
+                            side_effect=RuntimeError)
+        assert rerun._call('echo hi') == ('echo hi', True)

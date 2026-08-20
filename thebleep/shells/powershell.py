@@ -6,6 +6,23 @@ from .generic import Generic, ShellConfiguration
 class Powershell(Generic):
     friendly_name = 'PowerShell'
 
+    def replay_argv(self, script):
+        """See `Generic.replay_argv`.
+
+        The mismatch was total here: a PowerShell command line handed to
+        `Popen(shell=True)` on Windows goes through `cmd.exe`, which shares
+        neither its syntax nor its cmdlets. `pwsh` first, because a machine
+        that has PowerShell 7 is a machine that is using it.
+
+        """
+        from ..utils import which
+
+        for interpreter in ('pwsh', 'powershell.exe', 'powershell'):
+            if which(interpreter):
+                return [interpreter, '-NoProfile', '-Command', script]
+
+        return None
+
     def _invocation(self):
         """PowerShell needs `&` in front of a command it is given as a string.
 

@@ -104,6 +104,10 @@ def _read_only_uri(path):
 class Nushell(Generic):
     friendly_name = 'Nushell'
 
+    def replay_argv(self, script):
+        """See `Generic.replay_argv`."""
+        return ['nu', '--commands', script]
+
     def _shell_name(self):
         return 'nu'
 

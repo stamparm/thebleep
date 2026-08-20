@@ -43,6 +43,12 @@ def _get_aliases(overridden):
 class Fish(Generic):
     friendly_name = 'Fish Shell'
 
+    def replay_argv(self, script):
+        """See `Generic.replay_argv`. fish's syntax is its own throughout --
+        `set`, `and`, no `$?` -- so `sh` running a fish command line is not
+        running the same command at all."""
+        return ['fish', '-c', script]
+
     def _get_overridden_aliases(self):
         overridden = os.environ.get('THEBLEEP_OVERRIDDEN_ALIASES',
                                     os.environ.get('TB_OVERRIDDEN_ALIASES', ''))
