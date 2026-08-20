@@ -120,6 +120,12 @@ READ_ONLY = frozenset({
 # names its aliases too, including the ones a `config.toml` adds and the `!`
 # ones that shell out.
 #
+# `nohelpers` is *not* asked for, though it looks tidier: it subtracts the eight
+# `--`-suffixed commands -- `web--browse`, `submodule--helper`,
+# `credential-cache--daemon` and the rest -- and every one of them dispatches.
+# With them filtered out, `git web--browse http://x` looked like a typo and its
+# browser was launched a second time without a question.
+#
 # The bar for being here is that the answer is *complete*: every word the
 # program will dispatch on has to be in it, because one that is missing looks
 # like a typo and its command then runs again unasked. Over-inclusion is
@@ -127,17 +133,29 @@ READ_ONLY = frozenset({
 # why the answer is read as a bag of words rather than parsed. Under-inclusion
 # is the whole risk, and it is not a theoretical one:
 #
-#   npm    `npm help` and `npm -l` both leave the aliases out, so the list has
-#          no `i` in it -- and `npm i` installs. It is the single most typed
-#          npm command there is.
-#   uv     `uv --help` omits its hidden subcommands: `generate-shell-completion`
-#          is absent from the list and dispatches perfectly well.
+#   npm     `uninstal` is in neither `npm help` nor `npm -l`, dispatches, and
+#           takes the dependency out of your `package.json`. npm matches on any
+#           unambiguous abbreviation of a command or alias, so its dispatch set
+#           is far larger than anything it prints.
+#   uv      `uv build-backend` is absent from both `uv --help` and `uv help`,
+#           and runs.
+#   docker  the sharpest one, because the listing looks complete and is not: a
+#           CLI plugin is printed as `compose*`, with the asterisk. Split into
+#           words that gives `compose*`, so the word that actually dispatches --
+#           `compose` -- is missing, and `docker compose up -d` would have been
+#           taken for a typo and run again. A `--help` screen is a document laid
+#           out for a person, not a promise about what the program accepts.
+#   apt-get `full-upgrade`, `auto-remove` and `auto-clean` dispatch and are
+#           absent; the help calls itself "Most used commands" and points at the
+#           manual page, which is the program declining to claim completeness.
+#   yarn    no listing can ever be complete: an unrecognised word is looked up
+#           as a script in the local `package.json`, so the dispatch set is
+#           whatever the current directory says it is.
 #
-# `docker` and `kubectl` are not here for want of a listing that can be shown to
-# be complete rather than for want of trying; a `--help` screen is a document
-# for a person, and no promise about what the program will accept.
+# `kubectl` is the closest near miss -- its `--help` even lists plugins -- but
+# `kubectl alpha` dispatches and is absent, so it fails the same bar.
 DISPATCHERS = {
-    'git': ('--list-cmds=main,others,alias,nohelpers',),
+    'git': ('--list-cmds=main,others,alias',),
     'cargo': ('--list',),
 }
 

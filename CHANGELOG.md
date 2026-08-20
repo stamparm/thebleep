@@ -53,14 +53,23 @@
   options before the subcommand, such as `git -C /tmp satus`. An old git, a git
   that will not answer, or an answer that is empty all ask, as before.
 
-  `cargo` is in on the same terms, from `cargo --list`. `npm`, `docker`, `uv`
-  and `kubectl` are not, and the bar they failed is worth writing down: the list
-  has to be *complete*, because a word missing from it looks like a typo and its
-  command then runs again unasked. `npm help` and `npm -l` both omit the
-  aliases, so npm's own list has no `i` in it -- and `npm i` installs. `uv
-  --help` omits its hidden subcommands, `generate-shell-completion` among them.
-  A `--help` screen is a document for a person, not a promise about what the
-  program will accept.
+  `cargo` is in on the same terms, from `cargo --list`. `npm`, `docker`, `uv`,
+  `apt-get`, `kubectl` and `yarn` are not, and the bar they failed is worth
+  writing down: the list has to be *complete*, because a word missing from it
+  looks like a typo and its command then runs again unasked. `npm uninstal` is
+  in neither `npm help` nor `npm -l`, runs, and rewrites your `package.json`;
+  `uv build-backend` is in neither of uv's listings; `docker` prints a plugin as
+  `compose*`, so the word that dispatches is missing and `docker compose up -d`
+  would have been taken for a typo; `apt-get` calls its own list "Most used
+  commands"; and `yarn` resolves an unrecognised word against the scripts in
+  whatever `package.json` you are standing next to, so no listing can ever
+  cover it. A `--help` screen is a document for a person, not a promise about
+  what the program will accept.
+
+  git's list is asked for without `nohelpers`, which would have been tidier and
+  was wrong: it subtracts the eight `--`-suffixed commands, all of which
+  dispatch, so `git web--browse http://x` looked like a typo and relaunched a
+  browser unasked.
 
 ### Rules
 

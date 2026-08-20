@@ -217,6 +217,17 @@ class TestASubcommandTheProgramDoesNotHave(object):
         assert replay.is_inert('/usr/bin/git satus')
         assert not replay.is_inert('/usr/bin/git push')
 
+    def test_the_git_list_is_not_filtered(self):
+        """`nohelpers` looks tidier and is an under-inclusion.
+
+        It subtracts the eight `--`-suffixed commands, all of which dispatch, so
+        `git web--browse http://x` looked like a typo and relaunched a browser
+        without asking. A word missing from the list is the one direction this
+        module may not be wrong in.
+
+        """
+        assert 'nohelpers' not in ' '.join(replay.DISPATCHERS['git'])
+
     def test_nothing_on_the_read_only_list_is_a_dispatcher(self):
         """A program on both lists would be decided by the wrong one, and the
         answer for a dispatcher is the narrower of the two."""
@@ -259,6 +270,11 @@ class TestAskingTheProgramItself(object):
         assert 'status' in answer
         assert 'push' in answer
         assert 'satus' not in answer
+        # The `--`-suffixed helpers dispatch, so they have to be in the list.
+        # `--list-cmds=...,nohelpers` drops them, which is why it is not asked
+        # for; this is the assertion that would have caught that.
+        assert any('--' in name for name in answer), \
+            'the -- helpers are missing, so one of them would look like a typo'
 
     def test_a_git_alias_is_one_of_them(self, tmpdir, monkeypatch):
         """Which is why `git st` is asked about: an alias can stand for
