@@ -47,7 +47,7 @@ def canary(tmpdir):
     stub.chmod(0o755)
     for name in ('git', 'az', 'composer', 'grunt', 'npm', 'yarn', 'gradle',
                  'sh', 'env', 'rm', 'kill', 'ssh', 'ssh-keygen', 'vim',
-                 'rails', 'kubectl'):
+                 'rails', 'kubectl', 'uv'):
         shutil.copy(str(stub), str(stubs.join(name)))
 
     work = tmpdir.mkdir('work')
@@ -268,4 +268,16 @@ class TestNamesFromSomewhereElse(object):
         if not kubectl_unknown_command.match(command):
             return
         for suggestion in kubectl_unknown_command.get_new_command(command):
+            assert canary(suggestion) == []
+
+    def test_uv(self, name, payload, canary):
+        """uv lists what it thinks you meant, and we repeat one back."""
+        from thebleep.rules import uv_unknown_subcommand
+
+        output = (u"error: unrecognized subcommand 'piip'\n\n"
+                  u"  tip: a similar subcommand exists: '{}'\n\n".format(payload))
+        command = Command(u'uv piip install requests', output)
+        if not uv_unknown_subcommand.match(command):
+            return
+        for suggestion in uv_unknown_subcommand.get_new_command(command):
             assert canary(suggestion) == []
