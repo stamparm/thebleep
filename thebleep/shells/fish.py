@@ -4,32 +4,30 @@ import sys
 from .. import logs
 from ..conf import settings
 from ..const import ARGUMENT_PLACEHOLDER, EXIT_EDIT, get_alias
-from ..utils import DEVNULL, cache, load_subprocess
+from ..utils import cache, tool_lines, tool_output
 from .generic import Generic
-
-
-# Bound the first time a process is started here; see `utils.load_subprocess`.
-Popen = None
-PIPE = None
 
 
 @cache('~/.config/fish/config.fish', '~/.config/fish/functions')
 def _get_functions(overridden):
-    Popen, PIPE = load_subprocess(globals())
-    proc = Popen(['fish', '-ic', 'functions'], stdout=PIPE, stderr=DEVNULL)
-    functions = proc.stdout.read().decode('utf-8').strip().split('\n')
+    # Through `tool_lines`, which is where the timeout is. `fish -ic` starts
+    # an *interactive* fish, so it reads the user's `config.fish` -- and this is
+    # on the hot path of every fish correction. A config that waits for
+    # something (a prompt, a slow network mount, a version manager warming up)
+    # used to be a correction that never came back.
+    #
+    # It is also where the decoding is: a non-UTF-8 locale can put a byte in a
+    # function name that strict decoding raises on, uncaught.
+    functions = [line.strip()
+                 for line in tool_lines(['fish', '-ic', 'functions'])
+                 if line.strip()]
     return {func: func for func in functions if func not in overridden}
 
 
 @cache('~/.config/fish/config.fish')
 def _get_aliases(overridden):
     aliases = {}
-    Popen, PIPE = load_subprocess(globals())
-    proc = Popen(['fish', '-ic', 'alias'], stdout=PIPE, stderr=DEVNULL)
-    alias_out = proc.stdout.read().decode('utf-8').strip()
-    if not alias_out:
-        return aliases
-    for alias in alias_out.split('\n'):
+    for alias in tool_lines(['fish', '-ic', 'alias']):
         for separator in (' ', '='):
             split_alias = alias.replace('alias ', '', 1).split(separator, 1)
             if len(split_alias) == 2:
@@ -174,9 +172,8 @@ class Fish(Generic):
 
     def _get_version(self):
         """Returns the version of the current shell"""
-        Popen, PIPE = load_subprocess(globals())
-        proc = Popen(['fish', '--version'], stdout=PIPE, stderr=DEVNULL)
-        return proc.stdout.read().decode('utf-8').split()[-1]
+        words = tool_output(['fish', '--version']).split()
+        return words[-1] if words else ''
 
     def put_to_history(self, command):
         try:

@@ -29,8 +29,10 @@ class TestNushell(object):
         return Nushell()
 
     @pytest.fixture(autouse=True)
-    def Popen(self, mocker):
-        return mocker.patch('thebleep.shells.nushell.Popen')
+    def probe(self, mocker):
+        """What `nu --version` said. See `test_bash`."""
+        return mocker.patch('thebleep.shells.nushell.tool_output',
+                            return_value='')
 
     def test_the_correction_is_not_run_by_us(self, shell):
         """Nushell has no `eval`, so it is put in the line editor instead."""
@@ -212,9 +214,13 @@ class TestNushell(object):
         assert 'def bleep' in configuration.content
         assert not configuration.can_configure_automatically
 
-    def test_info(self, shell, Popen):
-        Popen.return_value.stdout.read.return_value = b'0.108.0\n'
+    def test_info(self, shell, probe):
+        probe.return_value = '0.108.0'
         assert shell.info() == 'Nushell 0.108.0'
+
+    def test_a_probe_that_answers_nothing(self, shell, probe):
+        probe.return_value = ''
+        assert shell.info() == 'Nushell'
 
 
 class TestWithNowhereToLook(object):

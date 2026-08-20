@@ -3,13 +3,8 @@ import os
 from ..conf import settings
 from ..const import (ARGUMENT_PLACEHOLDER, EXIT_EDIT, USER_COMMAND_MARK,
                      get_alias)
-from ..utils import DEVNULL, load_subprocess, memoize
+from ..utils import memoize, tool_output
 from .generic import Generic, fit_transport, instant_log_path
-
-
-# Bound the first time a process is started here; see `utils.load_subprocess`.
-Popen = None
-PIPE = None
 
 
 class Zsh(Generic):
@@ -128,7 +123,4 @@ class Zsh(Generic):
 
     def _get_version(self):
         """Returns the version of the current shell"""
-        Popen, PIPE = load_subprocess(globals())
-        proc = Popen(['zsh', '-c', 'echo $ZSH_VERSION'],
-                     stdout=PIPE, stderr=DEVNULL)
-        return proc.stdout.read().decode('utf-8').strip()
+        return tool_output(['zsh', '-c', 'echo $ZSH_VERSION']).strip()

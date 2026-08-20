@@ -13,12 +13,20 @@ class TestTcsh(object):
 
     @pytest.fixture(autouse=True)
     def Popen(self, mocker):
-        mock = mocker.patch('thebleep.shells.tcsh.Popen')
-        mock.return_value.stdout.read.return_value = (
-            b'bleep\teval $(thebleep $(fc -ln -1))\n'
-            b'l\tls -CF\n'
-            b'la\tls -A\n'
-            b'll\tls -alF')
+        """What `tcsh -ic alias` said, and what `tcsh --version` said.
+
+        Patched at `tool_lines`/`tool_output`: see `test_fish`. `tcsh -ic`
+        reads the user's `.cshrc` and this is the hot path of every tcsh
+        correction.
+
+        """
+        mocker.patch('thebleep.shells.tcsh.tool_lines', return_value=[
+            'bleep\teval $(thebleep $(fc -ln -1))',
+            'l\tls -CF',
+            'la\tls -A',
+            'll\tls -alF'])
+        mock = mocker.patch('thebleep.shells.tcsh.tool_output',
+                            return_value='')
         return mock
 
     @pytest.mark.parametrize('before, after', [
@@ -106,15 +114,13 @@ class TestTcsh(object):
         assert shell.how_to_configure().path == path
 
     def test_info(self, shell, Popen):
-        Popen.return_value.stdout.read.side_effect = [
-            b'tcsh 6.20.00 (Astron) 2016-11-24 (unknown-unknown-bsd44) \n']
+        Popen.return_value = (
+            'tcsh 6.20.00 (Astron) 2016-11-24 (unknown-unknown-bsd44)')
         assert shell.info() == 'Tcsh 6.20.00'
         assert Popen.call_args[0][0] == ['tcsh', '--version']
 
-    @pytest.mark.parametrize('side_effect, exception', [
-        ([b'\n'], IndexError), (OSError, OSError)])
-    def test_get_version_error(self, side_effect, exception, shell, Popen):
-        Popen.return_value.stdout.read.side_effect = side_effect
-        with pytest.raises(exception):
-            shell._get_version()
-        assert Popen.call_args[0][0] == ['tcsh', '--version']
+    def test_a_probe_that_answers_nothing(self, shell, Popen):
+        """An empty answer used to be an `IndexError` off the end of an empty
+        `split()`."""
+        Popen.return_value = ''
+        assert shell.info() == 'Tcsh'

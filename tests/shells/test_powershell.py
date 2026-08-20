@@ -11,9 +11,12 @@ class TestPowershell(object):
         return Powershell()
 
     @pytest.fixture(autouse=True)
-    def Popen(self, mocker):
-        mock = mocker.patch('thebleep.shells.powershell.Popen')
-        return mock
+    def probes(self, mocker):
+        """What the two version probes said. See `test_bash`."""
+        mocker.patch('thebleep.shells.powershell.tool_lines',
+                     return_value=[])
+        return mocker.patch('thebleep.shells.powershell.tool_output',
+                            return_value='')
 
     def test_and_(self, shell):
         """`(a) -and (b)` was not `a && b`.
@@ -68,19 +71,21 @@ class TestPowershell(object):
     def test_how_to_configure(self, shell):
         assert not shell.how_to_configure().can_configure_automatically
 
-    @pytest.mark.parametrize('side_effect, expected_version, call_args', [
-        ([b'''Major  Minor  Build  Revision
------  -----  -----  --------
-5      1      17763  316     \n'''], 'PowerShell 5.1.17763.316', ['powershell.exe']),
-        ([IOError, b'PowerShell 6.1.2\n'], 'PowerShell 6.1.2', ['powershell.exe', 'pwsh'])])
-    def test_info(self, side_effect, expected_version, call_args, shell, Popen):
-        Popen.return_value.stdout.read.side_effect = side_effect
-        assert shell.info() == expected_version
-        assert Popen.call_count == len(call_args)
-        assert all([Popen.call_args_list[i][0][0][0] == call_arg for i, call_arg in enumerate(call_args)])
+    def test_info_from_windows_powershell(self, shell, mocker):
+        mocker.patch('thebleep.shells.powershell.tool_lines', return_value=[
+            'Major  Minor  Build  Revision',
+            '-----  -----  -----  --------',
+            '5      1      17763  316     '])
+        assert shell.info() == 'PowerShell 5.1.17763.316'
 
-    def test_get_version_error(self, shell, Popen):
-        Popen.return_value.stdout.read.side_effect = RuntimeError
-        with pytest.raises(RuntimeError):
-            shell._get_version()
-        assert Popen.call_args[0][0] == ['powershell.exe', '$PSVersionTable.PSVersion']
+    def test_info_falls_back_to_pwsh(self, shell, probes):
+        """`powershell.exe` is not on a machine that only has PowerShell 7,
+        and `tool_lines` reports that as no answer rather than as an
+        `IOError` -- which is what this used to catch."""
+        probes.return_value = 'PowerShell 6.1.2'
+        assert shell.info() == 'PowerShell 6.1.2'
+        assert probes.call_args[0][0] == ['pwsh', '--version']
+
+    def test_neither_probe_answers(self, shell, probes):
+        probes.return_value = ''
+        assert shell.info() == 'PowerShell'

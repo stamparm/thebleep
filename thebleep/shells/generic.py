@@ -153,10 +153,36 @@ class Generic(object):
 
         return ' '.join(self.quote(word) for word in words)
 
+    def _single_quotable_invocation(self):
+        """`_invocation()`, or the installed command when it needs quoting.
+
+        For the aliases whose *body* is single-quoted, which is this one and
+        tcsh's. A quote in the invocation ends the body early, and what is left
+        fails with a message that names neither the path nor the reason -- so a
+        checkout under `~/My Projects/` produced a broken alias, silently.
+
+        tcsh already checked for this. `Generic` -- which is the fallback for
+        every shell nothing else recognises -- did not, so those users got the
+        broken alias and no warning with it.
+
+        """
+        from .. import invocation
+
+        written = self._invocation()
+        if "'" not in written:
+            return written
+
+        warn(
+            u'Your checkout is at a path this shell cannot put in an alias (the'
+            u' alias body is single-quoted and cannot contain a quote). The'
+            u' alias will call `{}` instead. Set THEBLEEP_COMMAND to the command'
+            u' you want it to run.'.format(invocation.ENTRY_POINT))
+        return invocation.ENTRY_POINT
+
     def app_alias(self, alias_name):
         return """alias {0}='eval "$(TB_ALIAS={0} """ \
-               """{1} "$(fc -ln -1)")"'""".format(alias_name,
-                                                  self._invocation())
+               """{1} "$(fc -ln -1)")"'""".format(
+                   alias_name, self._single_quotable_invocation())
 
     def app_alias_loader(self, alias_name):
         """Shell code defining `alias_name` as a stub that loads the real one.
@@ -273,12 +299,26 @@ class Generic(object):
     def how_to_configure(self):
         return
 
+    # A stand-in for `\ ` -- an escaped space -- while `shlex` does the
+    # splitting, because `shlex` would otherwise eat the backslash and the
+    # word would come back as a name the shell cannot find again.
+    #
+    # This used to be `??`, which is two characters anybody can type. A command
+    # containing one -- `curl 'https://x/?a=1??b=2'`, `grep '??' notes` -- came
+    # back out of here with an escaped space where its question marks had been,
+    # so `script_parts` was not the command any more and every rule that reads
+    # it was reading something the user never wrote. Replaced with a character
+    # from a Unicode private use area, which is not a character anything types.
+    ESCAPED_SPACE = u''
+
     def split_command(self, command):
         """Split the command using shell-like syntax."""
         encoded = self.encode_utf8(command)
 
         try:
-            splitted = [s.replace("??", "\\ ") for s in shlex.split(encoded.replace('\\ ', '??'))]
+            splitted = [part.replace(self.ESCAPED_SPACE, '\\ ') for part in
+                        shlex.split(encoded.replace('\\ ',
+                                                    self.ESCAPED_SPACE))]
         except ValueError:
             splitted = encoded.split(' ')
 
@@ -358,9 +398,18 @@ class Generic(object):
         """Returns the name and version of the current shell"""
         try:
             version = self._get_version()
-        except Exception as e:
+        except Exception as e:                               # noqa: BLE001
             warn(u'Could not determine shell version: {}'.format(e))
             version = ''
+
+        if not version:
+            # The probe answered with nothing, which since it went through
+            # `utils.tool_lines` is what a shell that is not there, will not
+            # start, or did not finish in time looks like. Worth saying, because
+            # this is what `--doctor` prints and somebody is reading it to find
+            # out why something is wrong.
+            warn(u'Could not determine {} version'.format(self.friendly_name))
+
         return u'{} {}'.format(self.friendly_name, version).rstrip()
 
     def _create_shell_configuration(self, content, path, reload):

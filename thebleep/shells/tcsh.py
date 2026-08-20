@@ -1,52 +1,18 @@
 from time import time
 import os
-from .. import logs
 from ..const import get_alias
-from ..utils import DEVNULL, load_subprocess, memoize
+from ..utils import memoize, tool_lines, tool_output
 from .generic import Generic
-
-
-# Bound the first time a process is started here; see `utils.load_subprocess`.
-Popen = None
-PIPE = None
 
 
 class Tcsh(Generic):
     friendly_name = 'Tcsh'
 
-    def _invocation(self):
-        """What tcsh can be told to run, which is less than the others.
-
-        A tcsh alias body is itself wrapped in single quotes, and there is no
-        way to put a single quote inside one -- no `'"'"'` escape, no
-        backslash. So an invocation that needs quoting cannot be written into a
-        tcsh alias at all: the quote ends the body early and what is left fails
-        with something that names neither the path nor the reason.
-
-        A checkout under `~/My Projects/` is exactly that case. Rather than
-        emit an alias that breaks, this says so and falls back to the installed
-        command -- and `THEBLEEP_COMMAND`, used as written, is the way to say
-        what tcsh should run instead.
-
-        """
-        from .. import invocation
-
-        written = super(Tcsh, self)._invocation()
-        if "'" not in written:
-            return written
-
-        logs.warn(
-            u'Your checkout is at a path tcsh cannot put in an alias (a tcsh'
-            u' alias is single-quoted and cannot contain a quote). The alias'
-            u' will call `{}` instead. Set THEBLEEP_COMMAND to the command you'
-            u' want it to run.'.format(invocation.ENTRY_POINT))
-        return invocation.ENTRY_POINT
-
     def app_alias(self, alias_name):
         return ("alias {0} 'setenv TB_SHELL tcsh && setenv TB_ALIAS {0} && "
                 "set bleeped_cmd=`history -h 2 | head -n 1` && "
                 "eval `{1} ${{bleeped_cmd}}`'").format(
-                    alias_name, self._invocation())
+                    alias_name, self._single_quotable_invocation())
 
     def app_alias_loader(self, alias_name):
         """The eager alias, because tcsh cannot have a loader.
@@ -80,11 +46,11 @@ class Tcsh(Generic):
 
     @memoize
     def get_aliases(self):
-        Popen, PIPE = load_subprocess(globals())
-        proc = Popen(['tcsh', '-ic', 'alias'], stdout=PIPE, stderr=DEVNULL)
+        # See the note in `fish._get_functions`: `tcsh -ic` reads the user's
+        # `.cshrc`, and this is the hot path of every tcsh correction.
         return dict(
             self._parse_alias(alias)
-            for alias in proc.stdout.read().decode('utf-8').split('\n')
+            for alias in tool_lines(['tcsh', '-ic', 'alias'])
             if alias and '\t' in alias)
 
     def _get_history_file_name(self):
@@ -113,6 +79,5 @@ class Tcsh(Generic):
 
     def _get_version(self):
         """Returns the version of the current shell"""
-        Popen, PIPE = load_subprocess(globals())
-        proc = Popen(['tcsh', '--version'], stdout=PIPE, stderr=DEVNULL)
-        return proc.stdout.read().decode('utf-8').split()[1]
+        words = tool_output(['tcsh', '--version']).split()
+        return words[1] if len(words) > 1 else ''

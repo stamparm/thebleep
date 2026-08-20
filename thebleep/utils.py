@@ -248,34 +248,6 @@ def which(program):
                 return candidate
 
 
-def load_subprocess(namespace):
-    """Binds `Popen` and `PIPE` in a shell module's globals, and returns them.
-
-    `subprocess` is not on the path a correction takes. Aliases arrive in the
-    environment and a shell's version is only asked for when something prints
-    diagnostics -- but importing it at the top of each shell module dragged
-    `threading`, `signal`, `selectors`, `contextlib` and `locale` into every
-    correction. On Windows, where finding and opening a module is the dearest
-    thing an interpreter does, that was five modules for nothing.
-
-    The two names stay module attributes rather than becoming local imports,
-    because starting a process is what the shell tests replace and a name
-    hidden inside a function body cannot be replaced. Each is bound separately
-    and only when still unbound, so a test that has replaced `Popen` keeps its
-    replacement and still gets a real `PIPE` to go with it.
-
-    """
-    if namespace.get('PIPE') is None:
-        from subprocess import PIPE
-
-        namespace['PIPE'] = PIPE
-    if namespace.get('Popen') is None:
-        from subprocess import Popen
-
-        namespace['Popen'] = Popen
-    return namespace['Popen'], namespace['PIPE']
-
-
 def default_settings(params):
     """Adds default values to settings if it not presented.
 

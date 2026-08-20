@@ -113,3 +113,34 @@ class TestMakingADirectory(object):
                 offenders.append('{}:{}'.format(name, node.lineno))
 
         assert not offenders, offenders
+
+
+class TestSplittingACommandThatContainsTheSentinel(object):
+    """`split_command` swaps `\\ ` for a marker while `shlex` does the work.
+
+    The marker used to be `??`, which is two characters anybody can type. A
+    command containing one came back out with an escaped space where its
+    question marks had been -- so `script_parts` was not the command any more,
+    and every rule that reads it was reading something the user never wrote.
+
+    """
+
+    @pytest.fixture
+    def shell(self):
+        return Generic()
+
+    @pytest.mark.parametrize('command, parts', [
+        ("grep '??' notes.txt", ['grep', '??', 'notes.txt']),
+        ("curl 'https://x/?a=1??b=2'", ['curl', 'https://x/?a=1??b=2']),
+        ('ls ??', ['ls', '??']),
+        # And the case the marker exists for still works.
+        ('ls a\\ b', ['ls', 'a\\ b']),
+        ('cp a\\ b c\\ d', ['cp', 'a\\ b', 'c\\ d']),
+    ])
+    def test_the_command_survives(self, shell, command, parts):
+        assert shell.split_command(command) == parts
+
+    def test_the_marker_is_not_something_anybody_types(self, shell):
+        from thebleep.shells.generic import Generic
+
+        assert Generic.ESCAPED_SPACE not in ' '.join(chr(c) for c in range(128))

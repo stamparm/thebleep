@@ -13,9 +13,10 @@ class TestZsh(object):
         return Zsh()
 
     @pytest.fixture(autouse=True)
-    def Popen(self, mocker):
-        mock = mocker.patch('thebleep.shells.zsh.Popen')
-        return mock
+    def probe(self, mocker):
+        """What `zsh -c 'echo $ZSH_VERSION'` said. See `test_bash`."""
+        return mocker.patch('thebleep.shells.zsh.tool_output',
+                            return_value='')
 
     @pytest.fixture(autouse=True)
     def shell_aliases(self):
@@ -92,12 +93,11 @@ class TestZsh(object):
         config_exists.return_value = False
         assert not shell.how_to_configure().can_configure_automatically
 
-    def test_info(self, shell, Popen):
-        Popen.return_value.stdout.read.side_effect = [b'3.5.9']
+    def test_info(self, shell, probe):
+        probe.return_value = '3.5.9'
         assert shell.info() == 'ZSH 3.5.9'
+        assert probe.call_args[0][0] == ['zsh', '-c', 'echo $ZSH_VERSION']
 
-    def test_get_version_error(self, shell, Popen):
-        Popen.return_value.stdout.read.side_effect = OSError
-        with pytest.raises(OSError):
-            shell._get_version()
-        assert Popen.call_args[0][0] == ['zsh', '-c', 'echo $ZSH_VERSION']
+    def test_a_probe_that_answers_nothing(self, shell, probe):
+        probe.return_value = ''
+        assert shell.info() == 'ZSH'

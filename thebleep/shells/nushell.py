@@ -24,13 +24,9 @@ import os
 import re
 import sys
 from ..const import ARGUMENT_PLACEHOLDER, get_alias
-from ..utils import DEVNULL, load_subprocess, memoize
+from ..utils import memoize, tool_output
 from .generic import Generic, ShellConfiguration
 
-
-# Bound the first time a process is started here; see `utils.load_subprocess`.
-Popen = None
-PIPE = None
 
 # What `commandline edit --replace` needs. It was `commandline --replace` until
 # Nushell 0.87 moved it under a subcommand.
@@ -376,9 +372,7 @@ class Nushell(Generic):
 
     def _get_version(self):
         """Returns the version of the current shell"""
-        Popen, PIPE = load_subprocess(globals())
-        proc = Popen(['nu', '--version'], stdout=PIPE, stderr=DEVNULL)
-        return proc.stdout.read().decode('utf-8').strip()
+        return tool_output(['nu', '--version']).strip()
 
     @memoize
     def _version_pair(self):

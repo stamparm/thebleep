@@ -13,9 +13,16 @@ class TestBash(object):
         return Bash()
 
     @pytest.fixture(autouse=True)
-    def Popen(self, mocker):
-        mock = mocker.patch('thebleep.shells.bash.Popen')
-        return mock
+    def probe(self, mocker):
+        """What `bash -c 'echo $BASH_VERSION'` said.
+
+        Patched at `tool_output`, which is where the timeout, the `/dev/null`
+        stderr and the `errors='replace'` decoding now live -- a raw `Popen`
+        here had none of them.
+
+        """
+        return mocker.patch('thebleep.shells.bash.tool_output',
+                            return_value='')
 
     @pytest.fixture(autouse=True)
     def shell_aliases(self):
@@ -138,12 +145,14 @@ class TestBash(object):
         assert shell.how_to_configure().path.startswith('~/'), \
             'the advice has to name a file, not describe one'
 
-    def test_info(self, shell, Popen):
-        Popen.return_value.stdout.read.side_effect = [b'3.5.9']
+    def test_info(self, shell, probe):
+        probe.return_value = '3.5.9'
         assert shell.info() == 'Bash 3.5.9'
+        assert probe.call_args[0][0] == ['bash', '-c', 'echo $BASH_VERSION']
 
-    def test_get_version_error(self, shell, Popen):
-        Popen.return_value.stdout.read.side_effect = OSError
-        with pytest.raises(OSError):
-            shell._get_version()
-        assert Popen.call_args[0][0] == ['bash', '-c', 'echo $BASH_VERSION']
+    def test_a_probe_that_answers_nothing(self, shell, probe):
+        """A shell that is not there, will not start, or did not finish in
+        time. All three used to come out of `info()` as a traceback or a
+        warning naming an exception; now the version is simply unknown."""
+        probe.return_value = ''
+        assert shell.info() == 'Bash'

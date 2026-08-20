@@ -1,11 +1,6 @@
 from ..const import EXIT_EDIT, get_alias
-from ..utils import DEVNULL, load_subprocess
+from ..utils import tool_lines, tool_output
 from .generic import Generic, ShellConfiguration
-
-
-# Bound the first time a process is started here; see `utils.load_subprocess`.
-Popen = None
-PIPE = None
 
 
 class Powershell(Generic):
@@ -158,14 +153,9 @@ class Powershell(Generic):
 
     def _get_version(self):
         """Returns the version of the current shell"""
-        Popen, PIPE = load_subprocess(globals())
-        try:
-            proc = Popen(
-                ['powershell.exe', '$PSVersionTable.PSVersion'],
-                stdout=PIPE,
-                stderr=DEVNULL)
-            version = proc.stdout.read().decode('utf-8').rstrip().split('\n')
+        version = tool_lines(['powershell.exe', '$PSVersionTable.PSVersion'])
+        if version:
             return '.'.join(version[-1].split())
-        except IOError:
-            proc = Popen(['pwsh', '--version'], stdout=PIPE, stderr=DEVNULL)
-            return proc.stdout.read().decode('utf-8').split()[-1]
+
+        words = tool_output(['pwsh', '--version']).split()
+        return words[-1] if words else ''

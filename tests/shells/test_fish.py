@@ -14,14 +14,33 @@ class TestFish(object):
         return Fish()
 
     @pytest.fixture(autouse=True)
-    def Popen(self, mocker):
-        mock = mocker.patch('thebleep.shells.fish.Popen')
-        mock.return_value.stdout.read.side_effect = [(
-            b'cd\nfish_config\nbleep\nfunced\nfuncsave\ngrep\nhistory\nll\nls\n'
-            b'man\nmath\npopd\npushd\nruby'),
-            (b'alias fish_key_reader /usr/bin/fish_key_reader\nalias g git\n'
-             b'alias alias_with_equal_sign=echo\ninvalid_alias'), b'func1\nfunc2', b'']
-        return mock
+    def probes(self, mocker):
+        """What each `fish` probe said, by the words it was asked with.
+
+        Patched at `tool_lines`/`tool_output` rather than at `Popen`, because
+        that is where the timeout now lives -- and `fish -ic` reads the user's
+        `config.fish`, so a config that waits for something was a correction
+        that never came back. It is also where the decoding lives: a non-UTF-8
+        locale could put a byte in a function name that strict decoding raised
+        on, uncaught, on the hot path of every fish correction.
+
+        """
+        self.answers = {
+            'functions': ['cd', 'fish_config', 'bleep', 'funced', 'funcsave',
+                          'grep', 'history', 'll', 'ls', 'man', 'math', 'popd',
+                          'pushd', 'ruby'],
+            'alias': ['alias fish_key_reader /usr/bin/fish_key_reader',
+                      'alias g git',
+                      'alias alias_with_equal_sign=echo',
+                      'invalid_alias'],
+        }
+
+        def _lines(arguments, *args, **kwargs):
+            return self.answers.get(arguments[-1], [])
+
+        mocker.patch('thebleep.shells.fish.tool_lines', side_effect=_lines)
+        return mocker.patch('thebleep.shells.fish.tool_output',
+                            return_value='')
 
     @pytest.mark.parametrize('key, value', [
         ('TB_OVERRIDDEN_ALIASES', 'cut,git,sed'),  # legacy
@@ -76,6 +95,10 @@ class TestFish(object):
                                        'g': 'git',
                                        'fish_key_reader': '/usr/bin/fish_key_reader',
                                        'alias_with_equal_sign': 'echo'}
+
+    def test_get_aliases_asks_again_when_fish_changes(self, shell):
+        """Two `functions` and no aliases, after the first answer."""
+        self.answers = {'functions': ['func1', 'func2'], 'alias': []}
         assert shell.get_aliases() == {'func1': 'func1', 'func2': 'func2'}
 
     def test_app_alias(self, shell):
@@ -142,17 +165,14 @@ class TestFish(object):
         config_exists.return_value = False
         assert not shell.how_to_configure().can_configure_automatically
 
-    def test_get_version(self, shell, Popen):
-        Popen.return_value.stdout.read.side_effect = [b'fish, version 3.5.9\n']
+    def test_get_version(self, shell, probes):
+        probes.return_value = 'fish, version 3.5.9'
         assert shell._get_version() == '3.5.9'
-        assert Popen.call_args[0][0] == ['fish', '--version']
+        assert probes.call_args[0][0] == ['fish', '--version']
 
-    @pytest.mark.parametrize('side_effect, exception', [
-        ([b'\n'], IndexError),
-        (OSError('file not found'), OSError),
-    ])
-    def test_get_version_error(self, side_effect, exception, shell, Popen):
-        Popen.return_value.stdout.read.side_effect = side_effect
-        with pytest.raises(exception):
-            shell._get_version()
-        assert Popen.call_args[0][0] == ['fish', '--version']
+    def test_a_probe_that_answers_nothing(self, shell, probes):
+        """An empty answer used to be an `IndexError` off the end of an empty
+        `split()`, and a fish that is not there an uncaught `OSError`."""
+        probes.return_value = ''
+        assert shell._get_version() == ''
+        assert shell.info() == 'Fish Shell'
