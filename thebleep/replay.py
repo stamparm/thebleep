@@ -339,12 +339,26 @@ def is_inert(script):
 
 
 def _ask(script):
-    """Asks whether the command may run again. Only `y` means yes."""
+    """Asks whether the command may run again. Only `y` means yes.
+
+    `get_key` does not always return a string. Ctrl+C, Escape and the arrows
+    come back as the sentinel objects in `const.KEY_MAPPING`, and `.lower()` on
+    one of those raised `AttributeError` -- so pressing Ctrl+C at this prompt,
+    which is the obvious way to say "no, leave it alone", answered with a
+    traceback instead.
+
+    The test for this mocked `get_key` and handed it the *string* `'\x03'`, so
+    it agreed with a contract the real function does not have. It now uses the
+    real values.
+
+    """
     from .system import get_key
 
     logs.confirm_replay(script)
     key = get_key()
-    answered_yes = key.lower() == 'y'
+    # Anything that is not the letter `y` is a no, and a key that is not a
+    # letter at all is certainly not `y`.
+    answered_yes = isinstance(key, str) and key.lower() == 'y'
     logs.replay_answer(answered_yes)
     return answered_yes
 

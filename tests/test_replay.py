@@ -14,7 +14,7 @@ import sys
 import pexpect
 import pytest
 import thebleep
-from thebleep import replay
+from thebleep import const, replay
 
 
 @pytest.fixture
@@ -428,15 +428,33 @@ class TestAsk(object):
         ('Y', True),
         ('n', False),
         ('N', False),
-        # Anything that is not yes is no, including a stray key and ctrl+c.
+        # Anything that is not yes is no, including a stray key.
         ('\n', False),
-        ('\x03', False),
         ('q', False),
         ('', False),
     ])
     def test_only_yes_means_yes(self, get_key, key, expected):
         get_key.return_value = key
         assert replay._ask('deploy') is expected
+
+    @pytest.mark.parametrize('key', [
+        const.KEY_CTRL_C, const.KEY_ESCAPE, const.KEY_UP, const.KEY_DOWN,
+        const.KEY_CTRL_N, const.KEY_CTRL_P,
+    ])
+    def test_a_key_that_is_not_a_letter(self, get_key, key):
+        """`get_key` does not always return a string.
+
+        Ctrl+C, Escape and the arrows come back as the sentinel objects in
+        `const.KEY_MAPPING`, and `.lower()` on one of those raised
+        `AttributeError` -- so pressing Ctrl+C at this prompt, the obvious way
+        to say "no, leave it alone", answered with a traceback.
+
+        This test used to pass the *string* `\'\\x03\'` and so agreed with a
+        contract the real function does not have. These are the real values.
+
+        """
+        get_key.return_value = key
+        assert replay._ask('deploy') is False
 
 
 class TestTheChokePoint(object):
@@ -660,6 +678,34 @@ class TestWhatTheShellSaidAboutIt(object):
     def test_something_that_is_not_a_number(self, os_environ, raw):
         os_environ[replay.EXIT_ENV] = raw
         assert replay.previous_status() is None
+
+
+def test_the_loader_hands_the_status_to_the_alias(set_shell):
+    """The stub's own `eval` is a command, so it replaces `$?`.
+
+    And the real alias reads `$?` as its first act -- so on the *first*
+    correction in a shell, the status it saw was the stub's zero and a command
+    that had just failed looked like one that had worked. `bleep` said
+    `No bleeps given` the first time and worked every time after, in the same
+    shell.
+
+    Reproduced in bash, zsh and fish through the loader, and fixed in all three.
+
+    """
+    from thebleep.shells import Bash, Fish, Zsh
+
+    for shell_class in (Bash, Zsh, Fish):
+        shell = set_shell(shell_class)
+        loader = shell.app_alias_loader('bleep')
+        alias = shell.app_alias('bleep')
+        name = shell_class.__name__
+
+        # The stub saves it...
+        assert ('$?' in loader or '$status' in loader), name
+        # ...and hands it over rather than leaving it to be re-read.
+        assert '{}='.format(replay.EXIT_ENV) in loader, name
+        # ...and the alias prefers what it was handed.
+        assert replay.EXIT_ENV in alias, name
 
 
 def test_every_shell_that_can_report_the_status_does(set_shell):

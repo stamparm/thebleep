@@ -67,8 +67,15 @@ class Fish(Generic):
         # says nothing about whether the user asked to edit.
         return ('function {0} -d "Correct your previous console command"\n'
                 # Before anything else, or it is the status of whatever this
-                # function did first rather than of the command being corrected.
+                # function did first rather than of the command being
+                # corrected. And `$TB_EXIT` wins when the loader stub set it:
+                # the stub's own `| source` replaces `$status`, so on the first
+                # correction in a shell this saw the stub's zero instead of the
+                # failing command's status.
                 '  set -l tb_exit $status\n'
+                '  if set -q TB_EXIT\n'
+                '    set tb_exit $TB_EXIT\n'
+                '  end\n'
                 '  set -l broken_command $history[1]\n'
                 '  env TB_SHELL=fish TB_ALIAS={0} TB_CAN_EDIT=1'
                 ' TB_EXIT=$tb_exit'
@@ -97,10 +104,15 @@ class Fish(Generic):
         return 'commandline --replace -- $fixed_command'
 
     def app_alias_loader(self, alias_name):
+        # `$status` first, and handed to the real function explicitly: the
+        # `| source` below is a command of its own and replaces it, so the real
+        # function's own `set -l tb_exit $status` saw a zero on the first
+        # correction in a shell and took a failed command for a successful one.
         return ('function {name} -d "Correct your previous console command"\n'
+                '  set -l tb_exit $status\n'
                 '  functions -e {name}\n'
                 '  env TB_SHELL=fish {command} --alias {name} | source\n'
-                '  {name} $argv\n'
+                '  TB_EXIT=$tb_exit {name} $argv\n'
                 'end').format(name=alias_name, command=self._invocation())
 
     def get_aliases(self):

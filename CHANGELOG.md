@@ -214,6 +214,35 @@
   themselves, so they got to watch it fail. Nushell's `mkdir` creates parents
   unconditionally, so the flag simply goes. There is a test that no rule
   hard-codes it again.
+- **Ctrl+C at the replay question no longer prints a traceback.** `get_key`
+  returns a sentinel object rather than a string for Ctrl+C, Escape and the
+  arrows, and the question called `.lower()` on it -- so the obvious way to say
+  "no, leave it alone" answered with `AttributeError: '_GenConst' object has no
+  attribute 'lower'`. The test for this handed it the *string* `'\x03'`, so it
+  agreed with a contract the real function does not have; it uses the real
+  values now.
+- **The first correction in a shell no longer thinks your command worked.**
+  Introduced by the exit-status check in this same release, and only through the
+  loader -- which is the documented way to install, so it is the way most people
+  would have met it. The stub is:
+
+  ```bash
+  bleep() {
+      eval "$(TB_SHELL=bash thebleep --alias bleep)";
+      bleep "$@";
+  }
+  ```
+
+  That `eval` is a command of its own, so it replaces `$?` before the real alias
+  -- whose first act is to read `$?` -- ever sees it. The status was therefore
+  the `eval`'s zero, a command that had just failed looked like one that had
+  succeeded, and `bleep` answered `No bleeps given`. The second time in the same
+  shell it worked, because by then the stub had replaced itself. A failure that
+  happens once per shell and never again is a maddening thing to report.
+
+  The stub saves `$?` first and hands it over, and the alias prefers what it was
+  handed. Reproduced in bash, zsh and fish through the loader, fixed in all
+  three, and there is a test that the stub passes it on.
 - **A command that worked is no longer run again.** Nothing consulted the exit
   status of the command being corrected, so `bleep` after a *success* offered to
   re-run it -- and then corrected whatever the second run happened to say. The

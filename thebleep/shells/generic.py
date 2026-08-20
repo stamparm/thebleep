@@ -166,9 +166,19 @@ class Generic(object):
         first correction.
 
         """
+        # `TB_EXIT` first, and handed to the real alias explicitly.
+        #
+        # The stub's own `eval` is a command, so it replaces `$?` -- and the
+        # real alias captures `$?` as its first act. So on the *first*
+        # correction in a shell, the status it saw was the `eval`'s zero rather
+        # than the failing command's, and a command that had just failed looked
+        # like one that had worked. The user got `No bleeps given` the first
+        # time and the right answer every time after, in the same shell, which
+        # is a maddening thing to report.
         return ('{name}() {{\n'
+                '    TB_EXIT=$?;\n'
                 '    eval "$(TB_SHELL={shell} {command} --alias {name})";\n'
-                '    {name} "$@";\n'
+                '    TB_EXIT="$TB_EXIT" {name} "$@";\n'
                 '}}').format(name=alias_name, shell=self._shell_name(),
                              command=self._invocation())
 

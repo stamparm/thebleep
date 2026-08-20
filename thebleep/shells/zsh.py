@@ -24,7 +24,7 @@ class Zsh(Generic):
         # the shell it ran in.
         return '''
             {name} () {{
-                TB_EXIT=$?;
+                TB_EXIT=${{TB_EXIT:-$?}};
                 TB_SHELL_ALIASES=$(alias);
                 TB_HISTORY="$(fc -ln -10)";
                 {fit_transport}
