@@ -34,11 +34,61 @@ def _group_by_calls(log):
         yield script_line, lines
 
 
+def _words(script):
+    """The words of the command, for looking it up in the recording.
+
+    `shlex.split` raises on an unbalanced quote, and an unbalanced quote is
+    exactly the sort of thing somebody asks to have fixed -- so it cannot be a
+    crash. `rerun.py` has had this guard for the same reason; this reader did
+    not, and a command with a `#` comment in it, or a stray `\'`, put a
+    traceback on the screen instead of a correction. Falling back to whitespace
+    is fine: these words are only being looked for in a line of the recording.
+
+    """
+    try:
+        return shlex.split(script)
+    except ValueError:
+        return script.split()
+
+
+def _wrapped_together(script_line, lines, width):
+    """`script_line` and the rows the terminal wrapped it onto.
+
+    A command longer than the terminal is wide is echoed across several rows,
+    and the recording keeps them as separate lines -- so looking for every word
+    of the command in one line found nothing, and instant mode gave up and asked
+    to re-run the command instead. At eighty columns that was every command over
+    about seventy-five characters, which is not an unusual thing to type.
+
+    A row the terminal filled completely is the signal: it holds exactly `width`
+    characters and the next row continues it, with no separator between them.
+    A row shorter than that ended because the text did.
+
+    """
+    # Two things in a recorded row are not columns on the screen, and both of
+    # them made a full row look like a short one so that nothing was ever
+    # rejoined: the mark instant mode puts in `PS1`, which is ten zero-width
+    # spaces the terminal gives no width to, and the carriage return the
+    # recording keeps at the end of every line.
+    def _columns(row):
+        return row.replace(const.USER_COMMAND_MARK, '').rstrip('\r')
+
+    text = _columns(script_line)
+    for line in lines[1:]:
+        if not text or len(text) % width:
+            break
+        text += _columns(line)
+
+    return text
+
+
 def _get_script_group_lines(grouped, script):
-    parts = shlex.split(script)
+    parts = _words(script)
+    width = max(get_terminal_size().columns, 1)
 
     for script_line, lines in reversed(grouped):
-        if all(part in script_line for part in parts):
+        joined = _wrapped_together(script_line, lines, width)
+        if all(part in joined for part in parts):
             return lines
 
     raise ScriptNotInLog

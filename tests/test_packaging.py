@@ -93,3 +93,40 @@ def test_the_obsolete_dependencies_are_gone(setup_py):
              'CPython speaks Unicode to the Windows console natively since '
              '3.6, and this requires 3.9')):
         assert gone not in declarations, why
+
+
+def test_no_tracked_name_is_unusable_on_windows(source_root):
+    """A filename Windows cannot create is a repository nobody can check out.
+
+    A stray `\\dev\\null` -- created by a script simulating Windows path
+    handling, and swept in by `git add -A` -- made `actions/checkout` fail with
+    `invalid path` before a single test ran. Every Windows job died in ten
+    seconds, which reads like broken infrastructure rather than a file that
+    should not be there.
+
+    Windows forbids `\\ : * ? " < > |` in a name, and reserves a handful of
+    device names. Checked against what git tracks, so it fails here in a second
+    instead of on a runner in ten.
+
+    """
+    import re
+    import subprocess
+
+    tracked = subprocess.run(
+        ['git', 'ls-files', '-z'], cwd=str(source_root),
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    if tracked.returncode != 0:
+        pytest.skip('not a git checkout')
+
+    names = [name for name in
+             tracked.stdout.decode('utf-8', 'replace').split('\0') if name]
+    assert names, 'git tracks nothing, so this checked nothing'
+
+    forbidden = re.compile(r'[\\:*?"<>|]')
+    bad = [name for name in names if forbidden.search(name)]
+    assert not bad, bad
+
+    reserved = {'con', 'prn', 'aux', 'nul', 'com1', 'com2', 'lpt1', 'lpt2'}
+    clashes = [name for name in names
+               if name.rsplit('/', 1)[-1].split('.')[0].lower() in reserved]
+    assert not clashes, clashes

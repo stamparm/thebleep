@@ -153,6 +153,21 @@
 - **`ls -la` in an empty directory no longer suggests `ls -A -la`.** `ls_all`
   only checked that the output was empty, so a command that had already asked
   for hidden files was told to ask again.
+- **Instant mode gave up on any command too long for the terminal.** A command
+  wider than the screen is echoed across several rows, and the recording keeps
+  those rows as separate lines -- so looking for every word of the command in
+  *one* line found nothing, and instant mode fell back to asking whether it
+  could re-run your command, which is the one thing it exists to avoid. At
+  eighty columns that was every command over about seventy-five characters, and
+  `pip install -r requirements-dev.txt --extra-index-url ...` is not an unusual
+  thing to type. The rows are rejoined now, recognised by the terminal having
+  filled one completely.
+- **Instant mode no longer tracebacks on a command it cannot parse.** The
+  reader called `shlex.split` unguarded, so an unbalanced quote -- or a `#`
+  comment, which bash allows by default -- put a `ValueError` traceback on the
+  screen in place of a correction. `rerun.py` has carried the guard for this
+  since 4.0.0, with a comment saying why: an unbalanced quote is exactly the
+  sort of thing somebody asks to have fixed. The other reader has it now too.
 - **Three rules that fired on whatever the output happened to be.** Each one
   answered a command it had no business answering, and between them they covered
   every failing `git commit`, `git diff` and `git push`.

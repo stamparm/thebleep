@@ -159,3 +159,66 @@ class TestWhenItCannotAnswer(object):
     def test_a_command_that_is_not_in_it(self, tmpdir, os_environ):
         _log(tmpdir, (u'ls', u'a'))
         assert read_log.get_output(u'ehco test') is None
+
+
+class TestACommandTooLongForTheTerminal(object):
+    """A command wider than the terminal is echoed across several rows.
+
+    The recording keeps those rows as separate lines, and looking for every word
+    of the command in *one* line found nothing -- so instant mode gave up and
+    asked to re-run the command instead, which is the one thing it exists to
+    avoid. At eighty columns that was every command over about seventy-five
+    characters.
+
+    """
+
+    def _wrapped(self, tmpdir, script, width=80):
+        """A recording where the echo of `script` is hard-wrapped at `width`."""
+        prompt = u'$ '
+        echoed = prompt + script
+        rows = [echoed[at:at + width] for at in range(0, len(echoed), width)]
+        text = MARK + rows[0] + u'\r\n'
+        for row in rows[1:]:
+            text += row + u'\r\n'
+        text += u'some output\r\n' + MARK + prompt
+        return _write(tmpdir, text.encode('utf-8'))
+
+    @pytest.mark.parametrize('length', [20, 76, 81, 120, 240])
+    def test_it_is_found_however_long_it_is(self, tmpdir, length):
+        script = 'pip instatl ' + 'x' * max(length - 12, 1)
+        self._wrapped(tmpdir, script)
+        assert read_log.get_output(script) is not None
+
+    def test_the_output_comes_back(self, tmpdir):
+        script = 'pip instatl ' + ' '.join('pkg%02d' % n for n in range(14))
+        assert len(script) > 80
+        self._wrapped(tmpdir, script)
+        assert 'some output' in read_log.get_output(script)
+
+
+class TestACommandThatDoesNotParse(object):
+    """`shlex.split` raises on an unbalanced quote, and an unbalanced quote is
+    exactly what somebody asks to have fixed.
+
+    `rerun.py` has carried this guard for the same reason. This reader did not,
+    so a command with a `#` comment in it -- which bash allows and oh-my-zsh
+    turns on -- put a traceback on the screen instead of a correction.
+
+    """
+
+    @pytest.mark.parametrize('script', [
+        'pip instatl requests # do not ask',
+        "pip instatl $'don\\'t'",
+        'echo "unbalanced',
+        "git commit -m 'unfinished",
+    ])
+    def test_it_does_not_raise(self, script):
+        assert read_log._words(script)
+
+    def test_it_falls_back_to_whitespace(self):
+        assert read_log._words('echo "unbalanced') == ['echo', '"unbalanced']
+
+    def test_and_the_correction_still_happens(self, tmpdir):
+        script = 'pip instatl requests # do not ask'
+        _log(tmpdir, (script, 'ERROR: unknown command "instatl"'))
+        assert 'instatl' in read_log.get_output(script)
