@@ -71,9 +71,55 @@ def machine(request, mocker, monkeypatch, settings):
     mocker.patch('thebleep.utils.which', side_effect=_which)
     mocker.patch('thebleep.rules.no_command.which', side_effect=_which)
 
+    _stub_the_tools(mocker, settings)
+
     monkeypatch.setattr(utils.memoize, 'disabled', True)
     settings.num_close_matches = 3
     return names
+
+
+# What the real tools answer when asked for their subcommands, captured from
+# apt 3.0.3 and pip 25.0.1.
+APT_OPERATIONS = ['list', 'search', 'show', 'install', 'reinstall', 'remove',
+                  'autoremove', 'update', 'upgrade', 'full-upgrade', 'edit-sources',
+                  'satisfy']
+PIP_COMMANDS = ['install', 'download', 'uninstall', 'freeze', 'inspect', 'list',
+                'show', 'check', 'config', 'search', 'cache', 'index', 'wheel',
+                'hash', 'completion', 'debug', 'help']
+NPM_SCRIPTS = ['build', 'test', 'start', 'watch']
+
+
+def _stub_the_tools(mocker, settings):
+    """Answer for the tools instead of running them.
+
+    Learned from CI rather than worked out: three cases here failed on macOS,
+    where `apt` does not exist -- so its rule was switched off and answered
+    nothing -- and where `pip_unknown_command` shelled out to a different pip and
+    got a different list. A corpus whose answers depend on what the runner has
+    installed is not a corpus, it is a survey of the runner.
+
+    Rules gated on a tool being present are named explicitly in `settings.rules`,
+    which `Rule.is_enabled` honours ahead of `enabled_by_default`.
+
+    """
+    from thebleep import const
+    from thebleep.rules import apt_invalid_operation, pip_unknown_command
+
+    settings.rules = [const.ALL_ENABLED, 'apt_invalid_operation',
+                      'npm_missing_script', 'npm_wrong_command']
+
+    mocker.patch.object(apt_invalid_operation, '_get_operations',
+                        return_value=APT_OPERATIONS)
+    mocker.patch.object(pip_unknown_command, '_interpreter',
+                        return_value='python3')
+    mocker.patch.object(pip_unknown_command, '_pip_commands',
+                        return_value=PIP_COMMANDS)
+    mocker.patch('thebleep.specific.npm.get_scripts',
+                 return_value=NPM_SCRIPTS)
+    mocker.patch('thebleep.specific.npm.get_all_scripts',
+                 return_value=NPM_SCRIPTS)
+    mocker.patch('thebleep.rules.npm_missing_script.get_all_scripts',
+                 return_value=NPM_SCRIPTS)
 
 
 def _first(script, output):
