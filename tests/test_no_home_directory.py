@@ -161,3 +161,76 @@ def test_home_is_found_when_there_is_one(monkeypatch, tmpdir):
     conf.settings.init()
     assert str(conf.settings.user_dir).startswith(str(home))
     assert str(cachefile.directory()).startswith(str(home))
+
+
+class TestTheFallbackDirectory(object):
+    """`/tmp/thebleep-cache-<user>` is a name anybody can work out.
+
+    What goes in it is `rulepack`'s pack file, which the next correction
+    `marshal.loads`es and `exec`s. So a local attacker who created that
+    directory first, with a pack of their own in it, ran their code as this
+    user -- and the directory was created with whatever the umask allowed.
+
+    """
+
+    @pytest.fixture
+    def elsewhere(self, monkeypatch, tmpdir):
+        """A temporary directory of our own to be the shared `/tmp`."""
+        shared = tmpdir.mkdir('shared')
+        monkeypatch.setattr(tempfile, 'gettempdir', lambda: str(shared))
+        from thebleep.system import paths
+
+        monkeypatch.setattr(paths, '_UNPREDICTABLE', {})
+        return shared
+
+    @pytest.mark.skipif(not hasattr(os, 'geteuid'),
+                        reason='Windows has no POSIX mode to check')
+    def test_it_is_created_private(self, nowhere_to_call_home, elsewhere):
+        import stat
+        from thebleep.system import paths
+
+        where = paths.writable('~/.cache/thebleep', 'cache')
+        assert stat.S_IMODE(os.stat(str(where)).st_mode) == 0o700
+
+    @pytest.mark.skipif(not hasattr(os, 'geteuid'),
+                        reason='Windows has no POSIX mode to check')
+    def test_one_left_group_writable_by_an_older_release_is_tightened(
+            self, nowhere_to_call_home, elsewhere):
+        """Refusing it outright would mean a rebuilt rule pack on every
+        correction forever; the owner is the part that cannot be repaired."""
+        import getpass
+        import stat
+        from thebleep.system import paths
+
+        existing = elsewhere.mkdir('thebleep-cache-{}'.format(
+            getpass.getuser()))
+        os.chmod(str(existing), 0o775)
+
+        where = paths.writable('~/.cache/thebleep', 'cache')
+        assert str(where) == str(existing)
+        assert stat.S_IMODE(os.stat(str(where)).st_mode) == 0o700
+
+    def test_somebody_elses_directory_is_not_used(self, nowhere_to_call_home,
+                                                  elsewhere, monkeypatch):
+        import getpass
+        from thebleep.system import paths
+
+        planted = elsewhere.mkdir('thebleep-cache-{}'.format(
+            getpass.getuser()))
+        # Owned by somebody else, which is the case that cannot be repaired.
+        monkeypatch.setattr(paths, '_is_ours',
+                            lambda path: False if str(path) == str(planted)
+                            else None)
+
+        where = paths.writable('~/.cache/thebleep', 'cache')
+        assert str(where) != str(planted)
+
+    def test_and_everything_still_agrees_where_that_is(
+            self, nowhere_to_call_home, elsewhere, monkeypatch):
+        """The pack lives under the cache directory and has to be found
+        again, so the unpredictable name is chosen once."""
+        from thebleep.system import paths
+
+        monkeypatch.setattr(paths, '_is_ours', lambda path: False)
+        assert (str(paths.writable('~/.cache/thebleep', 'cache'))
+                == str(paths.writable('~/.cache/thebleep', 'cache')))

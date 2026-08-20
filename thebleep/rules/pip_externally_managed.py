@@ -37,6 +37,7 @@ Refs: nvbn/thefuck#1553
 """
 
 import re
+from thebleep.shells import shell
 from thebleep.utils import which
 
 # The marker pip prints, and the marker of the operation. Both, because the
@@ -97,9 +98,20 @@ def get_new_command(command):
 
     # And the answer for everything else, which is also the message's: a
     # virtual environment, named the way every tool that makes one names it.
+    #
+    # The arguments are re-quoted rather than re-joined. `script_parts` is the
+    # command already split, so joining it with spaces hands the shell
+    # something different from what it was given: `pip install
+    # 'requests[security]'` came back with the brackets bare, which is a glob,
+    # and `pip install ./my package` came back as two arguments.
+    if 'install' in parts:
+        what = ' '.join(shell.quote(part)
+                        for part in parts[parts.index('install') + 1:])
+    else:
+        what = ''
+
     suggestions.append(
         u'python3 -m venv {venv} && {venv}/bin/pip install {what}'.format(
-            venv=VENV, what=' '.join(parts[parts.index('install') + 1:])
-            if 'install' in parts else ''))
+            venv=VENV, what=what).rstrip())
 
     return suggestions

@@ -45,9 +45,22 @@ init_colors.done = False
 
 
 def get_key():
-    ch = msvcrt.getwch()
-    if ch in ('\x00', '\xe0'):  # arrow or function key prefix?
-        ch = msvcrt.getwch()  # second call returns the actual key code
+    """The next keypress, the way the POSIX reader reports it.
+
+    `msvcrt.getwch` raises `KeyboardInterrupt` on Ctrl+C -- it is documented to,
+    and it is the only reader here that does -- so Ctrl+C at the suggestion list
+    or at the replay question came out as a traceback on Windows. `main` catches
+    `BrokenPipeError` and nothing else. The POSIX reader hands back the sentinel
+    and `ui.read_actions` turns it into an abort; this now does the same, so
+    Ctrl+C means the same thing on both.
+
+    """
+    try:
+        ch = msvcrt.getwch()
+        if ch in ('\x00', '\xe0'):  # arrow or function key prefix?
+            ch = msvcrt.getwch()  # second call returns the actual key code
+    except KeyboardInterrupt:
+        return const.KEY_CTRL_C
 
     if ch in const.KEY_MAPPING:
         return const.KEY_MAPPING[ch]

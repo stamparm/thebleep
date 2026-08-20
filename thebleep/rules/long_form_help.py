@@ -16,9 +16,15 @@ def match(command):
 
 
 def get_new_command(command):
-    if re.search(help_regex, command.output) is not None:
-        match_obj = re.search(help_regex, command.output, re.I)
-        return match_obj.group(1)
+    # `re.I` here too. `match` searched case-insensitively and this did not, so
+    # a program whose wording is `try 'x --help' for more information.` matched
+    # and then fell through to `replace_argument` -- which is a no-op on a
+    # script with no `-h` in it, and `corrector._worth_offering` then drops a
+    # suggestion identical to the command. Silently dead for every lowercase
+    # spelling, which is most of them.
+    found = re.search(help_regex, command.output, re.I)
+    if found is not None:
+        return found.group(1)
 
     return replace_argument(command.script, '-h', '--help')
 

@@ -138,7 +138,19 @@ def _key(word, candidate):
       read in. That arbitrary ordering is what decided `gti` before.
 
     """
-    edits = distance(word, candidate, limit=max_distance(word))
+    return _key_from(word, candidate,
+                     distance(word, candidate, limit=max_distance(word)))
+
+
+def _key_from(word, candidate, edits):
+    """`_key`, for a caller that has already worked out the distance.
+
+    Which both callers below have: `rank` computes it to decide whether to keep
+    the candidate at all, and then `sort` recomputed it -- on every comparison,
+    so O(n log n) times over a `PATH` of a few thousand names, for a value that
+    had already been worked out once. `_fold` and `sorted()` went the same way.
+
+    """
     anagram = sorted(word) != sorted(candidate)
     prefix = not (word.startswith(candidate) or candidate.startswith(word))
     return edits, anagram, prefix, -_shared_opening(word, candidate), candidate
@@ -155,6 +167,35 @@ def _shared_opening(word, candidate):
     return shared
 
 
+def rank_with_distance(word, candidates, limit=None):
+    """`rank`, with each candidate's edit distance beside it.
+
+    For a caller that wants to know which candidates are equally good -- which
+    `no_command` does, to break a tie on what the user has actually run. It
+    used to ask `distance` again for every ranked name to find that out, having
+    just been handed the answer.
+
+    """
+    folded = _fold(word)
+    allowed = max_distance(folded)
+
+    # `(key, candidate, edits)`: the distance and the fold are worked out once
+    # per candidate here, rather than once per *comparison* inside `sort`.
+    scored = []
+    for candidate in candidates:
+        if not candidate:
+            continue
+        folded_candidate = _fold(candidate)
+        edits = distance(folded, folded_candidate, limit=allowed)
+        if edits <= allowed:
+            scored.append(
+                (_key_from(folded, folded_candidate, edits), candidate, edits))
+
+    scored.sort(key=lambda triple: triple[0])
+    ordered = [(candidate, edits) for _, candidate, edits in scored]
+    return ordered[:limit] if limit else ordered
+
+
 def rank(word, candidates, limit=None):
     """The candidates worth offering for `word`, best first.
 
@@ -163,18 +204,8 @@ def rank(word, candidates, limit=None):
     where `getent` for `wgte` and `pinky` for `ping` came from.
 
     """
-    folded = _fold(word)
-    allowed = max_distance(folded)
-    scored = []
-
-    for candidate in candidates:
-        if not candidate:
-            continue
-        if distance(folded, _fold(candidate), limit=allowed) <= allowed:
-            scored.append(candidate)
-
-    scored.sort(key=lambda candidate: _key(folded, _fold(candidate)))
-    return scored[:limit] if limit else scored
+    return [candidate
+            for candidate, _ in rank_with_distance(word, candidates, limit)]
 
 
 def order(word, candidates, limit=None):
@@ -198,5 +229,8 @@ def order(word, candidates, limit=None):
             unique.append(candidate)
 
     folded = _fold(word)
-    unique.sort(key=lambda candidate: _key(folded, _fold(candidate)))
-    return unique[:limit] if limit else unique
+    keyed = [(_key(folded, _fold(candidate)), candidate)
+             for candidate in unique]
+    keyed.sort(key=lambda pair: pair[0])
+    ordered = [candidate for _, candidate in keyed]
+    return ordered[:limit] if limit else ordered

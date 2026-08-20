@@ -34,8 +34,26 @@ now `thebleep.matching`'s job; see the module for why `gti` used to suggest
 
 from thebleep import matching
 from thebleep.utils import get_all_executables, \
-    get_valid_history_without_current, which
+    get_valid_history_without_current, memoize, which
 from thebleep.specific.sudo import sudo_support
+
+
+@memoize
+def _ranked(word):
+    """`(name, distance)` for every plausible candidate, best first.
+
+    Memoized, because `match` and `get_new_command` both want it and this is
+    the busiest path in the tool: an unknown command is the commonest way a
+    command fails, and the scan is a Damerau-Levenshtein distance against every
+    name on `PATH` -- around seven thousand of them on this machine, at 25ms a
+    pass. It was done twice per correction, and then a third partial pass
+    recomputed the distances the second one had already worked out.
+
+    One process is one correction, so a cache that lives as long as the process
+    is exactly the right lifetime.
+
+    """
+    return matching.rank_with_distance(word, _candidates())
 
 
 def match(command):
@@ -47,7 +65,7 @@ def match(command):
                  # went uncorrected.
                  or 'unknown command' in command.output.lower()
                  or 'is not recognized as' in command.output)
-            and bool(matching.rank(command.script_parts[0], _candidates())))
+            and bool(_ranked(command.script_parts[0])))
 
 
 def _candidates():
@@ -77,22 +95,19 @@ def _used_executables(command):
 def get_new_command(command):
     old_command = command.script_parts[0]
 
-    ranked = matching.rank(old_command, _candidates())
-    if not ranked:
+    scored = _ranked(old_command)
+    if not scored:
         return []
 
+    ranked = [name for name, _ in scored]
     used = _used_executables(command)
 
-    # History breaks a tie and nothing more. `matching.rank` has already put the
-    # candidates in order, so anything sharing the best distance is equally good
-    # by the metric -- and among equals, prefer the one you have used. Anything
-    # worse stays where it is.
-    best = matching.distance(old_command, ranked[0],
-                             limit=matching.max_distance(old_command))
-    equal = [name for name in ranked
-             if matching.distance(old_command, name,
-                                  limit=matching.max_distance(old_command))
-             == best]
+    # History breaks a tie and nothing more. `rank_with_distance` has already
+    # put the candidates in order, so anything sharing the best distance is
+    # equally good by the metric -- and among equals, prefer the one you have
+    # used. Anything worse stays where it is.
+    best = scored[0][1]
+    equal = [name for name, edits in scored if edits == best]
     if len(equal) > 1:
         familiar = [name for name in equal if name in used]
         if familiar:

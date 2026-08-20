@@ -3,6 +3,20 @@ from thebleep.utils import get_all_executables, memoize
 
 
 @memoize
+def _executables():
+    """Everything runnable, as a set.
+
+    This rule has no app name and no output marker, so it is consulted for
+    every failed command there is -- and it asked `word in
+    get_all_executables()`, which is a scan of a list of some thousands of
+    names, before scanning the same list again to find one the word starts
+    with.
+
+    """
+    return set(get_all_executables())
+
+
+@memoize
 def _get_executable(script_part):
     for executable in get_all_executables():
         if len(executable) > 1 and script_part.startswith(executable):
@@ -18,7 +32,7 @@ def _is_a_command_already(word):
     helpfully offered to break `command git status` into `comm and git status`.
 
     """
-    return (word in get_all_executables()
+    return (word in _executables()
             or word in shell.get_builtin_commands())
 
 

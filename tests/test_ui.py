@@ -207,3 +207,24 @@ class TestEdit(object):
         settings.edit = True
         assert ui.select_command(iter(commands)) == (None, const.ACTION_ABORT)
         assert 'cannot put a command in the line editor' in capsys.readouterr()[1]
+
+
+class TestTheHistoryKeys(object):
+    """Ctrl+P and Ctrl+N, which were bound the wrong way round.
+
+    The letter keys follow the colemak argument in `const` -- `n` sits where a
+    qwerty `j` does -- but Ctrl+P and Ctrl+N are not a layout argument. They are
+    the readline bindings every shell's own history uses, and there Ctrl+P is
+    previous and Ctrl+N is next.
+
+    """
+
+    def test_ctrl_p_goes_back(self, mocker):
+        mocker.patch('thebleep.ui.get_key',
+                     side_effect=[const.KEY_CTRL_P, const.KEY_CTRL_C])
+        assert next(ui.read_actions()) == const.ACTION_PREVIOUS
+
+    def test_ctrl_n_goes_forward(self, mocker):
+        mocker.patch('thebleep.ui.get_key',
+                     side_effect=[const.KEY_CTRL_N, const.KEY_CTRL_C])
+        assert next(ui.read_actions()) == const.ACTION_NEXT
