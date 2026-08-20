@@ -100,3 +100,18 @@ def test_a_suggestion_is_quoted():
     suggestions = get_new_command(Command('helm instal mychart', hostile))
     assert "helm 'install;>PWNED' mychart" in suggestions
     assert 'helm install;>PWNED mychart' not in suggestions
+
+
+def test_kubectls_order_is_not_kept_when_it_is_the_wrong_way_round():
+    """From the `kubectl_unknown_command` rule this replaces: kubectl lists
+    `set` before `get` for `gat`, and `get` is what was meant. `replace_command`
+    reorders by closeness."""
+    assert get_new_command(Command('kubectl gat pods', KUBECTL))[0] == \
+        'kubectl get pods'
+
+
+def test_no_did_you_mean_block_means_no_suggestion():
+    """`kubectl zzzzzz` -- cobra offers nothing and guessing is worse."""
+    assert not match(Command(
+        'kubectl zzzzzz',
+        'error: unknown command "zzzzzz" for "kubectl"\n'))

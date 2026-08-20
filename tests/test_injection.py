@@ -47,7 +47,8 @@ def canary(tmpdir):
     stub.chmod(0o755)
     for name in ('git', 'az', 'composer', 'grunt', 'npm', 'yarn', 'gradle',
                  'sh', 'env', 'rm', 'kill', 'ssh', 'ssh-keygen', 'vim',
-                 'rails', 'kubectl', 'uv'):
+                 'rails', 'kubectl', 'uv', 'ruff', 'gh', 'helm',
+                 'black', 'cargo'):
         shutil.copy(str(stub), str(stubs.join(name)))
 
     work = tmpdir.mkdir('work')
@@ -258,34 +259,60 @@ class TestNamesFromSomewhereElse(object):
             return
         assert canary(fix_file.get_new_command(command)) == []
 
-    def test_kubectl(self, name, payload, canary):
-        """kubectl lists what it thinks you meant, and we repeat one back."""
-        from thebleep.rules import kubectl_unknown_command
+    def test_cobra_suggestion(self, name, payload, canary):
+        """Any cobra tool lists what it thinks you meant, and we repeat one
+        back. One rule for all of them, so one canary covers `kubectl`, `gh`,
+        `helm` and every other Go tool."""
+        from thebleep.rules import cobra_suggestion
 
         output = (u'error: unknown command "gat" for "kubectl"\n\n'
                   u'Did you mean this?\n\t{}\n\n'.format(payload))
         command = Command(u'kubectl gat pods', output)
-        if not kubectl_unknown_command.match(command):
+        if not cobra_suggestion.match(command):
             return
-        for suggestion in kubectl_unknown_command.get_new_command(command):
+        for suggestion in cobra_suggestion.get_new_command(command):
             assert canary(suggestion) == []
 
-    def test_uv(self, name, payload, canary):
-        """uv names what it thinks you meant, and we repeat one back.
+    def test_clap_suggestion(self, name, payload, canary):
+        """And any clap tool names the answer in its tip.
 
-        uv puts each name in single quotes, so the `QUOTE` payload cannot
+        clap puts each name in single quotes, so the `QUOTE` payload cannot
         arrive through this route whole -- what is read out of the tip is the
         two halves of it. Both still go to the shell, which is the thing being
         checked.
 
         """
-        from thebleep.rules import uv_unknown_subcommand
+        from thebleep.rules import clap_suggestion
 
         output = (u"error: unrecognized subcommand 'piip'\n\n"
                   u"  tip: a similar subcommand exists: '{}'\n\n"
                   u'Usage: uv [OPTIONS] <COMMAND>\n'.format(payload))
         command = Command(u'uv piip install requests', output)
-        if not uv_unknown_subcommand.match(command):
+        if not clap_suggestion.match(command):
             return
-        for suggestion in uv_unknown_subcommand.get_new_command(command):
+        for suggestion in clap_suggestion.get_new_command(command):
+            assert canary(suggestion) == []
+
+    def test_clap_suggestion_for_an_option(self, name, payload, canary):
+        """The same rule corrects mistyped flags, by the same route."""
+        from thebleep.rules import clap_suggestion
+
+        output = (u"error: unexpected argument '--fixx' found\n\n"
+                  u"  tip: a similar argument exists: '{}'\n".format(payload))
+        command = Command(u'ruff check --fixx .', output)
+        if not clap_suggestion.match(command):
+            return
+        for suggestion in clap_suggestion.get_new_command(command):
+            assert canary(suggestion) == []
+
+    def test_click_suggestion(self, name, payload, canary):
+        """Click names its guesses in one sentence, quoted."""
+        from thebleep.rules import click_suggestion
+
+        output = (u"Error: No such option '--chekc'. "
+                  u"(Did you mean one of: '{}', '--code'?)\n".format(payload))
+        command = Command(u'black --chekc .', output)
+        if not click_suggestion.match(command):
+            return
+        for suggestion in click_suggestion.get_new_command(command):
             assert canary(suggestion) == []

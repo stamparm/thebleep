@@ -60,6 +60,14 @@
 
   Each is gated on a literal from its parser's wording, so the rule pack skips
   all three for a correction that cannot involve them.
+
+  Three hand-written rules retire into them -- `cargo_no_command`,
+  `uv_unknown_subcommand` and `kubectl_unknown_command` -- so the count is
+  unchanged at 176 while the coverage is not. Their cases were added to the new
+  rules' tests before the old rules were deleted, and one bug went with them:
+  `cargo_no_command` took the mistyped word from the second position on the
+  command line rather than from cargo's message, so `cargo --offline instal`
+  was beyond it.
 - **Mistyped options are corrected, not just subcommands.** `ruff check --fixx`
   becomes `ruff check --fix`, `ruff check --lin` becomes
   `ruff check --line-length`, `black --chekc` becomes `black --check`. Nothing
@@ -240,18 +248,22 @@
 
 ### Rules
 
-- `kubectl_unknown_command` — fixes a mistyped `kubectl` subcommand from the
-  suggestions kubectl itself prints: `kubectl gat pods` becomes
-  `kubectl get pods`. Sorted by how close each suggestion is to what was typed,
-  because kubectl's own order offers `set` before `get` for `gat`.
+- `kubectl gat pods` becomes `kubectl get pods`, sorted by how close each
+  suggestion is to what was typed, because kubectl's own order offers `set`
+  before `get`. Arrived as a `kubectl_unknown_command` rule
   (by [@TrixSec](https://github.com/TrixSec) in
-  [#1](https://github.com/stamparm/thebleep/pull/1))
-- `uv_unknown_subcommand` — fixes a mistyped `uv` subcommand from the tip uv
-  itself prints: `uv piip install requests` becomes
-  `uv pip install requests`. Subcommands of a subcommand work the same way, so
-  `uv pip instll`, `uv tool runn` and `uv python instal` are all corrected.
+  [#1](https://github.com/stamparm/thebleep/pull/1)) and is now part of
+  `cobra_suggestion`, which does the same for every Go tool rather than for
+  kubectl alone. The rule was right; it turned out to be one instance of
+  something general.
+- `uv piip install requests` becomes `uv pip install requests`, and a
+  subcommand of a subcommand -- `uv pip instll`, `uv tool runn`,
+  `uv python instal` -- works the same way. Arrived as a
+  `uv_unknown_subcommand` rule
   (by [@TrixSec](https://github.com/TrixSec) in
-  [#3](https://github.com/stamparm/thebleep/pull/3))
+  [#3](https://github.com/stamparm/thebleep/pull/3)) and is now part of
+  `clap_suggestion`, which reads the same tip for every Rust tool. Writing it
+  is what made the shape obvious.
 
 ## 4.0.2 — 2026-08-19
 

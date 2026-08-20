@@ -54,6 +54,14 @@ CARGO = (
     'help: view all installed commands with `cargo --list`\n'
 )
 
+# cargo before 1.73, from the fixtures of the `cargo_no_command` rule this
+# replaces. Kept so that retiring it loses nothing.
+CARGO_OLD = (
+    'error: no such subcommand: `buid`\n'
+    '\n'
+    '\tDid you mean `build`?\n'
+)
+
 # Nothing close enough, so clap offers no tip and there is nothing to read.
 NO_TIP = (
     "error: unrecognized subcommand 'zzzzzz'\n"
@@ -68,6 +76,7 @@ class TestMatching(object):
         ('ruff check --fixx .', RUFF_OPTION),
         ('uv re', UV_MANY),
         ('cargo instal ripgrep', CARGO),
+        ('cargo buid', CARGO_OLD),
     ])
     def test_a_tip_is_there_to_read(self, script, output):
         assert match(Command(script, output))
@@ -86,6 +95,7 @@ class TestCorrecting(object):
     @pytest.mark.parametrize('script, output, expected', [
         ('ruff chekc .', RUFF_SUBCOMMAND, 'ruff check .'),
         ('cargo instal ripgrep', CARGO, 'cargo install ripgrep'),
+        ('cargo buid', CARGO_OLD, 'cargo build'),
     ])
     def test_a_subcommand(self, script, output, expected):
         assert get_new_command(Command(script, output))[0] == expected
@@ -115,3 +125,23 @@ class TestCorrecting(object):
         suggestions = get_new_command(Command('ruff chekc .', hostile))
         assert "ruff 'check;>PWNED' ." in suggestions
         assert 'ruff check;>PWNED .' not in suggestions
+
+
+def test_the_broken_word_comes_from_the_message_not_the_position():
+    """`cargo_no_command`, which this replaces, took `script_parts[1]` -- the
+    second word of the command rather than the word cargo complained about -- so
+    a global option in front of the subcommand defeated it."""
+    assert get_new_command(
+        Command('cargo --offline instal ripgrep', CARGO))[0] == \
+        'cargo --offline install ripgrep'
+
+
+def test_a_subcommand_of_a_subcommand():
+    """`uv pip instll`, from the `uv_unknown_subcommand` rule this replaces:
+    clap names only the word it choked on, so the same reading works."""
+    output = ("error: unrecognized subcommand 'instll'\n\n"
+              "  tip: some similar subcommands exist: 'list', 'uninstall', "
+              "'install'\n\n"
+              'Usage: uv pip [OPTIONS] <COMMAND>\n')
+    assert get_new_command(Command('uv pip instll requests', output))[0] == \
+        'uv pip install requests'

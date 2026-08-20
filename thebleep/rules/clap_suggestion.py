@@ -63,16 +63,23 @@ BROKEN = re.compile(r"error: (?:unrecognized subcommand|unexpected argument) "
 TIP = re.compile(r'tip: (?:a similar (?:subcommand|argument) exists'
                  r'|some similar (?:subcommands|arguments) exist):(.*)')
 
-# cargo's own wording for the same thing, in backticks.
-CARGO_BROKEN = re.compile(r'error: no such command: `([^`]+)`')
-CARGO_TIP = re.compile(r'help: a command with a similar name exists: '
-                       r'`([^`]+)`')
+# cargo's own wording for the same thing, in backticks -- and its older ones.
+# `no such subcommand` and `Did you mean \`x\`` are what cargo said before 1.73,
+# and are kept so that retiring the hand-written `cargo_no_command` loses
+# nothing. That rule also took the broken word from `script_parts[1]`, which is
+# the second word of the command rather than the word cargo complained about, so
+# `cargo --offline instal` was beyond it. Reading the name out of the message
+# works wherever it sits.
+CARGO_BROKEN = re.compile(r'error: no such (?:sub)?command:? `?([^`\s]+)`?')
+CARGO_TIP = re.compile(
+    r'(?:help: a command with a similar name exists|Did you mean):? '
+    r'`([^`]+)`')
 
 # Enough of the wording to tell the rule pack when this cannot possibly apply,
 # so it is not loaded for every correction. `for_app` is deliberately absent --
 # the whole point is that the program is not known in advance.
 MARKERS = ('tip: a similar', 'tip: some similar',
-           'a command with a similar name exists')
+           'a command with a similar name exists', 'Did you mean')
 
 
 def _broken(output):
@@ -93,7 +100,8 @@ def _suggestions(output):
 def match(command):
     return (('tip: a similar' in command.output
              or 'tip: some similar' in command.output
-             or 'a command with a similar name exists' in command.output)
+             or 'a command with a similar name exists' in command.output
+             or 'no such subcommand' in command.output)
             and bool(_broken(command.output))
             and bool(_suggestions(command.output)))
 

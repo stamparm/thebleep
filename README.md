@@ -351,8 +351,8 @@ $ thebleep --doctor
   Executable          ~/.local/bin/thebleep
   On PATH             yes
   Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
-  Rules               179 bundled, 3 of your own
-  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (179 rules cached)
+  Rules               176 bundled, 3 of your own
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (176 rules cached)
 - Replayless capture  available, not switched on
                       See --enable-experimental-instant-mode.
   Editing             supported by this shell (tab at the prompt)
@@ -533,7 +533,7 @@ nothing.
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
-| **Rules** | 179 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+| **Rules** | 176 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
@@ -813,17 +813,16 @@ The following rules are enabled by default:
 * `aws_cli` — fixes misspelled commands like `aws dynamdb scan`;
 * `az_cli` — fixes misspelled commands like `az providers`;
 * `cargo` — runs `cargo build` instead of `cargo`;
-* `cargo_no_command` — fixes wrong commands like `cargo buid`;
 * `cat_dir` — replaces `cat` with `ls` when you try to `cat` a directory;
 * `cd_correction` — spellchecks and corrects failed cd commands;
 * `cd_cs` — changes `cs` to `cd`;
 * `cd_mkdir` — creates directories before cd'ing into them;
 * `cd_parent` — changes `cd..` to `cd ..`;
 * `chmod_x` — adds execution bit;
-* `clap_suggestion` — corrects a mistyped subcommand **or option** in any tool built with [clap](https://docs.rs/clap/), from the tip clap itself prints — `ruff chekc .`, `uv syncc`, `cargo instal`, `ruff check --fixx`. Not one rule per tool: every clap program is covered, including ones released after this was written;
+* `clap_suggestion` — corrects a mistyped subcommand **or option** in any tool built with [clap](https://docs.rs/clap/), from the tip clap itself prints — `ruff chekc .`, `uv syncc`, `cargo instal`, `ruff check --fixx`. Not one rule per tool: every clap program is covered, including ones released after this was written. Replaces the hand-written `cargo_no_command` and `uv_unknown_subcommand`;
 * `click_suggestion` — the same for [Click](https://click.palletsprojects.com/), which most Python tools use — `black --chekc .`;
 * `choco_install` — appends common suffixes for chocolatey packages;
-* `cobra_suggestion` — the same for [cobra](https://cobra.dev/), which most Go tools use — `gh reop list`, `helm instal mychart`, `kubectl gat pods`;
+* `cobra_suggestion` — the same for [cobra](https://cobra.dev/), which most Go tools use — `gh reop list`, `helm instal mychart`, `kubectl gat pods`. Replaces the hand-written `kubectl_unknown_command`;
 * `composer_not_command` — fixes composer command name;
 * `conda_mistype` — fixes conda commands;
 * `cp_create_destination` — creates a new directory when you attempt to `cp` or `mv` to a non-existent one
@@ -902,7 +901,6 @@ The following rules are enabled by default:
 * `ifconfig_device_not_found` — fixes wrong device names like `wlan0` to `wlp2s0`;
 * `java` — removes `.java` extension when running Java programs;
 * `javac` — appends missing `.java` when compiling Java files;
-* `kubectl_unknown_command` — fixes mistyped `kubectl` subcommands like `kubectl gat pods`, from the suggestions kubectl itself prints;
 * `lein_not_task` — fixes wrong `lein` tasks like `lein rpl`;
 * `long_form_help` — changes `-h` to `--help` when the short form version is not supported
 * `ln_no_hard_link` — catches hard link creation on directories, suggest symbolic link;
@@ -956,7 +954,6 @@ The following rules are enabled by default:
 * `tmux` — fixes `tmux` commands;
 * `unknown_command` — fixes hadoop hdfs-style "unknown command", for example adds missing '-' to the command on `hdfs dfs ls`;
 * `unsudo` — removes `sudo` from previous command if a process refuses to run on superuser privilege.
-* `uv_unknown_subcommand` — fixes a mistyped `uv` subcommand, its own or one of a namespace's, like `uv piip install requests` or `uv pip instll requests`;
 * `vagrant_up` — starts up the vagrant instance;
 * `whois` — fixes `whois` command;
 * `workon_doesnt_exists` — fixes `virtualenvwrapper` env name os suggests to create new.
@@ -1310,7 +1307,7 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches about a fifth of the 179 rules, and
+  running it. A typical command now reaches about a fifth of the 176 rules, and
   one for a tool with many rules of its own — `git` — under a quarter, instead of
   all of them. Rules that don't say what they are about are always loaded, so
   this makes corrections faster, never fewer.
