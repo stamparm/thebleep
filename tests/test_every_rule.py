@@ -157,3 +157,61 @@ def test_a_rule_that_ignores_the_output_says_so(rule):
         '{} declares requires_output but never mentions output, so it is'
         ' switched off whenever the output is unavailable for nothing'
         .format(rule.name))
+
+
+# Suggestions that cannot be taken back. Every one of these is something a rule
+# in this package really offers, and each is right in its own place -- what must
+# never happen is one being offered on no evidence.
+DESTRUCTIVE = ('rm -rf', 'rm -r ', 'reset --hard', 'reset HEAD~', 'clean -f',
+               '--force', '--no-verify', 'git branch -D', 'git branch -d',
+               'checkout .', 'push -f', 'mkfs', 'chmod 777')
+
+# Ordinary commands, none of which is a request to undo anything.
+ORDINARY = ('git commit -m x', 'git status', 'git push', 'git pull', 'ls',
+            'cd /tmp', 'cp a b', 'mv a b', 'ln -s a b', 'mkdir x',
+            'tar -xf a', 'git tag v1', 'git checkout main', 'git stash',
+            'git rebase main', 'npm install', 'pip install x', 'docker ps',
+            'make', 'echo hi', 'git branch main', 'git merge main',
+            'git am patch')
+
+# Errors that say nothing about what went wrong, which is the common case for a
+# command whose output nobody has.
+VAGUE = (None, '', '\n', 'error: something went wrong\n', 'fatal: whatever\n',
+         'permission denied\n')
+
+
+@pytest.mark.usefixtures('no_memoize')
+def test_nothing_irreversible_is_offered_on_no_evidence(os_environ):
+    """The class that produced the two worst bugs this project has had.
+
+    `git_commit_reset` fired on any failed command containing `commit` and
+    answered `git reset HEAD~`, which throws a commit away -- and every failed
+    commit is a commit that has not happened, so what it offered to undo was the
+    one before it. `ln_s_order` took the first argument that existed and moved
+    it to the end, which for `ln -s /etc/hostname /tmp/link` -- both existing --
+    is a suggestion that puts a symlink on top of `/etc/hostname`.
+
+    Both had tests. Neither had a test for *this*: that a command which failed,
+    with output that explains nothing, is never answered with something
+    irreversible. A rule that wants to offer one has to have read a reason.
+
+    The previous command *failed* here, which is the whole point. `git commit`
+    that succeeded is exactly when `git reset HEAD~` is the right answer, and
+    that case is `tests/rules/test_git_commit_reset.py`.
+
+    """
+    from thebleep import corrector, replay
+
+    os_environ[replay.EXIT_ENV] = '1'
+
+    offered = set()
+    for script in ORDINARY:
+        for output in VAGUE:
+            for corrected in corrector.get_corrected_commands(
+                    types.Command(script, output)):
+                for marker in DESTRUCTIVE:
+                    if marker in corrected.script:
+                        offered.add((script, repr(output),
+                                     corrected.rule.name, corrected.script))
+
+    assert not offered, sorted(offered)
