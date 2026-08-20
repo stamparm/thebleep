@@ -186,3 +186,13 @@ class TestCaseFolding(object):
         folding(False)
         # Three edits: two of them the capitals.
         assert matching.rank('gti', ['GIT']) == []
+
+
+def test_rank_offers_no_candidate_twice():
+    """A name can arrive twice: `option_typo` reads a program's options out of
+    the printed usage *and* out of `--help`, and `--color` is in both -- so two
+    of the three suggestions were the same string. `order` deduplicated
+    already; `rank` did not."""
+    ranked = matching.rank('colour', ['color', 'color', 'column', 'color'])
+    assert ranked == sorted(set(ranked), key=ranked.index)
+    assert ranked.count('color') == 1

@@ -111,3 +111,39 @@ def test_nothing_close_enough_is_no_answer(installed):
         Command('ls --zzzzzzqqq',
                 "ls: unrecognized option '--zzzzzzqqq'\n"
                 "Try 'ls --help' for more information.\n")) == []
+
+
+class TestAnOptionWithAValue(object):
+    """`--colour=always` -- the value is part of the argument, not of the name.
+
+    `BROKEN` captures the option *name*, which stops at the `=`, so the value
+    was silently dropped and the suggestion was a different command:
+
+        $ diff --colour=alwys a b
+        diff: unrecognized option '--colour=alwys'
+        $ bleep
+        diff --color a b
+
+    Wordings captured from diffutils 3.10 and GNU coreutils 9.4.
+
+    """
+
+    @pytest.mark.parametrize('script, output, expected', [
+        ('diff --colour=alwys a b',
+         "diff: unrecognized option '--colour=alwys'\n"
+         "diff: Try 'diff --help' for more information.\n",
+         'diff --color=alwys a b'),
+        ('ls --colr=never /tmp',
+         "ls: unrecognized option '--colr=never'\n"
+         "Try 'ls --help' for more information.\n",
+         'ls --color=never /tmp'),
+        # And without a value, which is what always worked.
+        ('diff --colour a b',
+         "diff: unrecognized option '--colour'\n"
+         "diff: Try 'diff --help' for more information.\n",
+         'diff --color a b'),
+    ])
+    def test_the_value_survives(self, script, output, expected):
+        command = Command(script, output)
+        assert match(command)
+        assert get_new_command(command)[0] == expected

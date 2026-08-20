@@ -190,9 +190,22 @@ def get_new_command(command):
     # The dashes come from what was typed, so `--colour` is answered with
     # `--color` and a short flag stays short.
     dashes = typed[:len(typed) - len(typed.lstrip('-'))]
+
+    # And so does the value. `BROKEN` captures the option *name*, which stops
+    # at the `=`, so `--colour=alwys` was answered with a bare `--color` and
+    # the value silently disappeared:
+    #
+    #     $ diff --colour=alwys a b
+    #     diff: unrecognized option '--colour=alwys'
+    #     $ bleep
+    #     diff --color a b          <- a different command
+    _, equals, value = typed.partition('=')
+    suffix = equals + value
+
     # Quoted: the name was read out of a program's own usage text, and this
     # goes back to the shell to be evaluated.
-    return [replace_argument(command.script, typed, shell.quote(dashes + name))
+    return [replace_argument(command.script, typed,
+                             shell.quote(dashes + name + suffix))
             for name in ranked]
 
 

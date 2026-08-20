@@ -196,10 +196,18 @@ def rank_with_distance(word, candidates, limit=None):
 
     # `(key, candidate, edits)`: the distance and the fold are worked out once
     # per candidate here, rather than once per *comparison* inside `sort`.
+    #
+    # Deduplicated, as `order` below already was. A name can arrive twice --
+    # `option_typo` reads `diff`'s options out of the printed usage *and* out of
+    # `diff --help`, and `--color` is in both -- and then two of the three
+    # suggestions offered were the same string. The corrector drops the
+    # duplicate, so the cost was a wasted slot rather than a visible repeat.
     scored = []
+    seen = set()
     for candidate in candidates:
-        if not candidate:
+        if not candidate or candidate in seen:
             continue
+        seen.add(candidate)
         folded_candidate = _fold(candidate)
         edits = distance(folded, folded_candidate, limit=allowed)
         if edits <= allowed:
