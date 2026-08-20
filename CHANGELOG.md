@@ -31,6 +31,57 @@
   `PATH` for real. Installing a checkout without it copies the files once, and
   the copy is stale by the next commit.
 
+### Changed
+
+- **`whomi` no longer suggests `which`.** The question the whole tool exists to
+  answer -- what did you mean -- had no module and no test. It was three utility
+  functions inherited unexamined from The Fuck, and underneath them
+  `difflib.SequenceMatcher`, which measures how similar two sequences are and
+  was being asked how someone mistypes. Those are not the same thing:
+
+      difflib ratio    gti/git 0.667    gti/tic 0.667    gti/gtk 0.667
+
+  A four-way tie, decided by whichever order `PATH` happened to be read in --
+  which is how `gti status` came to suggest `tic status`, the terminfo compiler.
+  `git` earned no credit for being one *swap* away, because a common-subsequence
+  measure has no idea what a transposition is.
+
+  There is now a `thebleep.matching` module that owns the question, built on
+  Damerau-Levenshtein distance, where a transposition costs one edit. The same
+  comparison becomes `git` 1, `tic` 2, and the tie is gone. Anything further away
+  than roughly a quarter of the word is not offered at all, which is what stops
+  `wgte` reaching `getent` and `ping` reaching `pinky` -- a confident wrong
+  answer being worse than none.
+
+  Two further faults in the same path:
+
+  - **Your history was an override rather than a hint.** The nearest name from
+    your shell history went first with no comparison against the best answer
+    available. `whoami` is one edit from `whomi`; `which` is three, and won
+    because it was in the history -- put there by somebody running `which bleep`
+    while debugging this very tool. The idea is worth keeping, so it now breaks
+    a tie: a name you have used wins when it is *as good* a match, never when it
+    is worse.
+  - **Shell builtins were not candidates at all.** Only `PATH` was searched, so
+    `exti` could not reach `exit`, nor `cdd` reach `cd`, however obvious the
+    slip.
+
+  `pip nistall` is now decided by the same measure rather than by the margin
+  between two `difflib` ratios, so the destructive-subcommand list and the tuning
+  constant added earlier in this release are both gone: a transposition of
+  `install` is one edit away and `uninstall` is two, in both directions.
+- **`tests/corpus/`, and the reason it exists.** There were 3,713 tests and not
+  one asked *"given this typo, is the first suggestion sane?"* Every rule was
+  checked on its own against a hand-written fixture of its own tool's output,
+  which cannot catch what a user meets -- the answer they see comes out of the
+  shared matching helpers and the ordering across rules, and no rule owns
+  either. That is how the suite stayed green while `whomi` suggested `which`.
+
+  The corpus is ~80 real typos and the answer each should get first, with a real
+  `PATH` listing and a fixed history so it gives one answer on every machine and
+  on Windows. It runs with the suite, so a regression in suggestion quality now
+  fails the build.
+
 ### Fixed
 
 - **`git branch -d master` no longer deletes `main`.** One keypress, a branch

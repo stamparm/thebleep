@@ -254,11 +254,17 @@ class TestEquivalence(object):
         and it would also be a fine way to make the case answer nothing at all
         and compare nothing to nothing.
 
+        The names are pinned to prove the rule took part, not to pin an
+        ordering, but they do depend on how close a name is judged to be -- so
+        they changed when that stopped being `difflib`. `slp` leads because `sl`
+        is a prefix of it, and `sled` has gone because two edits is too far from
+        a two-letter word to be a typo. See `thebleep.matching`.
+
         """
         found = [corrections for script, _, corrections in expected
                  if script == 'sl -l']
         assert [correction[0] for correction in found[0]] == \
-            ['wsl -l', 'slp -l', 'sled -l'], found
+            ['slp -l', 'wsl -l'], found
 
     def test_a_contrib_package_is_found_either_way(self, tree):
         assert 'from-the-contrib-package' in json.dumps(

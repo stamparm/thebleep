@@ -468,6 +468,11 @@ def replace_command(command, broken, matched):
     """
     from thebleep.shells import shell
 
+    # Still `difflib` here, deliberately. `thebleep.matching` is a better
+    # measure of a typo and is what the `PATH` guess uses -- but the corpus has
+    # nothing to say about the order of a tool's *own* suggestions, and changing
+    # twenty pinned orderings on a hunch is how unmeasured churn gets in. The
+    # first suggestion is the one that matters and it does not differ here.
     new_cmds = get_close_matches(broken, matched, cutoff=0.1)
     return [replace_argument(command.script, broken,
                              shell.quote(new_cmd.strip()))

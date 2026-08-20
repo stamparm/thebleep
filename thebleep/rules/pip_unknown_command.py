@@ -16,41 +16,33 @@ reached another, and pressing enter removed the package -- the opposite of what
 was typed. Only pip's own confirmation prompt stood in the way, and `-y` removes
 that.
 
-Ordering by closeness does not fix it, which was the surprise: `difflib` scores
-`nistall` against `uninstall` at 0.875 and against `install` at 0.857, so
-sorting keeps the wrong answer in front. What the numbers do show is that every
-*genuine* typo is decided by a wide margin and only the truly ambiguous one is
-close, so the margin is the thing to read. Measured:
+`difflib` cannot fix this, which is why the first version of it here did not
+try: it scores `nistall` against `uninstall` at 0.875 and against `install` at
+0.857, so sorting keeps the wrong answer in front. That version measured the
+*margin* between those two ratios and demoted a destructive candidate on a near
+tie -- it worked, and it was the wrong layer. Counting how someone mistypes
+instead makes the whole thing fall out:
 
     typo        install   uninstall
-    instal      0.9231    0.8000    <- install, by 0.123
-    isntall     0.8571    0.7500    <- install, by 0.107
-    nistall     0.8571    0.8750    <- uninstall, by 0.018   ambiguous
-    unistall    0.8000    0.9412    <- uninstall, by 0.141
-    uninstal    0.8000    0.9412    <- uninstall, by 0.141
+    nistall     1 edit    2 edits    <- a transposition of `install`
+    instal      1 edit    2 edits
+    isntall     1 edit    2 edits
+    unistall    2 edits   1 edit     <- and this really does mean `uninstall`
+    uninstal    2 edits   1 edit
 
-So `pip unistall` still means `uninstall` and is left alone, and only in a near
-tie does the reading that removes your packages give up first place.
+No margin, no list of which subcommands are dangerous, no tuning constant.
+Both directions come out right because the measure finally matches the mistake.
+See `thebleep.matching`.
 
 """
 
 import re
-from difflib import SequenceMatcher, get_close_matches
+from thebleep import matching
 from thebleep.utils import for_app, memoize, replace_argument
 from thebleep.specific.sudo import sudo_support
 
 BROKEN = re.compile(r'unknown command "([^"]+)"')
 MEANT = re.compile(r'maybe you meant "([^"]+)"')
-
-# pip subcommands that take something away. `install` can overwrite a version,
-# which is a change but a recoverable one; `uninstall` is the one whose result
-# cannot be got back by running it again.
-REMOVES = frozenset({'uninstall'})
-
-# How close two readings have to be before the destructive one stops being the
-# answer enter runs. Every genuine typo above is decided by more than twice
-# this.
-NEAR = 0.05
 
 
 @memoize
@@ -107,32 +99,20 @@ def _interpreter(command):
 
 
 def _ordered(broken, guess, others):
-    """Candidates by closeness, with a near-tied destructive one demoted.
+    """Candidates by how near they are to what was typed, best first.
 
-    pip's own guess is never dropped, whatever `difflib` makes of it: it came
-    out of pip's matcher rather than ours, and `get_close_matches` has a cutoff
-    that would otherwise throw away the one answer this rule has always had.
+    pip's own guess is kept whatever the measure makes of it -- it came out of
+    pip's matcher rather than ours -- but it no longer leads simply for having
+    been pip's.
 
     """
     candidates = ([guess] if guess else [])
     candidates += [name for name in others if name != guess]
 
-    close = get_close_matches(broken, candidates,
-                              n=max(len(candidates), 1), cutoff=0.1)
-    if guess and guess not in close:
-        close = [guess] + close
+    from thebleep.conf import settings
 
-    if len(close) < 2 or close[0] not in REMOVES:
-        return close
-
-    def ratio(name):
-        return SequenceMatcher(None, broken, name).ratio()
-
-    for other in close[1:]:
-        if other not in REMOVES and ratio(close[0]) - ratio(other) < NEAR:
-            return [other] + [name for name in close if name != other]
-
-    return close
+    return matching.order(broken, candidates,
+                          limit=settings.num_close_matches)
 
 
 @sudo_support
@@ -156,8 +136,8 @@ def get_new_command(command):
     others = _pip_commands(interpreter) if interpreter else []
 
     # Quoted, as `replace_command` would: a subcommand name read out of output
-    # goes back to a shell that evaluates it. The ordering is the reason this
-    # does not simply call `replace_command` -- that sorts by closeness alone,
-    # which is what puts `uninstall` in front of `install`.
+    # goes back to a shell that evaluates it. `replace_command` is not called
+    # because it still orders by `difflib`, which is what put `uninstall` in
+    # front of `install`.
     return [replace_argument(command.script, broken, shell.quote(name))
             for name in _ordered(broken, guess, others)]
