@@ -212,18 +212,28 @@ class TestTheFallbackDirectory(object):
 
     def test_somebody_elses_directory_is_not_used(self, nowhere_to_call_home,
                                                   elsewhere, monkeypatch):
-        import getpass
+        """The predictable name is refused, whatever it works out to be.
+
+        Not `getpass.getuser()` to work it out: with the environment cleared,
+        that falls through to the `pwd` module, which Windows does not have.
+        `writable` wraps it in a try/except for exactly that reason, and a test
+        calling it directly does not get that.
+
+        """
         from thebleep.system import paths
 
-        planted = elsewhere.mkdir('thebleep-cache-{}'.format(
-            getpass.getuser()))
-        # Owned by somebody else, which is the case that cannot be repaired.
-        monkeypatch.setattr(paths, '_is_ours',
-                            lambda path: False if str(path) == str(planted)
-                            else None)
+        # Where it goes when the predictable name is free, which is the
+        # predictable name itself.
+        monkeypatch.setattr(paths, '_is_ours', lambda path: True)
+        predictable = str(paths.writable('~/.cache/thebleep', 'cache'))
 
-        where = paths.writable('~/.cache/thebleep', 'cache')
-        assert str(where) != str(planted)
+        # And where it goes when that name is somebody else's, which is the
+        # case that cannot be repaired.
+        monkeypatch.setattr(paths, '_is_ours', lambda path: False)
+        refused = str(paths.writable('~/.cache/thebleep', 'cache'))
+
+        assert refused != predictable
+        assert refused.startswith(str(elsewhere))
 
     def test_and_everything_still_agrees_where_that_is(
             self, nowhere_to_call_home, elsewhere, monkeypatch):
