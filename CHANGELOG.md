@@ -153,6 +153,32 @@
 - **`ls -la` in an empty directory no longer suggests `ls -A -la`.** `ls_all`
   only checked that the output was empty, so a command that had already asked
   for hidden files was told to ask again.
+- **Three rules that fired on whatever the output happened to be.** Each one
+  answered a command it had no business answering, and between them they covered
+  every failing `git commit`, `git diff` and `git push`.
+  - `git_hook_bypass` matched any `git am`, `commit` or `push` and did not even
+    need to see what went wrong, so **declining to re-run your command was
+    answered with `--no-verify`** -- it was the only rule left that could match.
+    The suggestion is a lie (no hook ran, none failed) and it is the one with
+    consequences: somebody who said "no, do not re-run my command" and then
+    pressed enter had skipped their own pre-commit checks. It now needs the
+    output, needs an executable hook for that subcommand to actually exist --
+    wherever `core.hooksPath` puts them -- and sits after the rules that know
+    what the error really was, because git prints nothing of its own when a hook
+    fails and there is no marker to be sure of.
+  - `git_commit_amend` matched `'commit' in script_parts` and nothing else, so a
+    commit that failed inside an unresolved merge was answered with
+    `git commit --amend` -- where `git add` is the answer -- and the typed
+    message was thrown away. It now wants the commit to have *succeeded*, which
+    is the moment it is actually for, and puts `--amend` into the command rather
+    than replacing it, so `git commit -m "wip"` keeps its message.
+  - `git_diff_staged` matched any `git diff` without `--staged`, so
+    `git diff README.md --cached` -- which fails because the flag is in the
+    wrong place -- was answered with `git diff --staged README.md --cached`,
+    failing identically and leaving `git_flag_after_filename`, which gets it
+    right, behind it. It too now wants the previous command to have succeeded,
+    which is the case it is for: a `git diff` that printed nothing because
+    everything is staged.
 - **tcsh's `--alias-loader` has never worked, and now does.** It printed a stub
   that calls itself once it has replaced itself -- which is what a loader is
   everywhere else. tcsh expands an alias when it *parses* the line, so the
