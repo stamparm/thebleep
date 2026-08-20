@@ -157,6 +157,24 @@ NO_SUCH_PROGRAM = [
 # answered for through the corrector, for the reason set out in
 # `tests/test_corpus.py::_stub_the_tools`, and is covered by its own tests.
 THE_TOOL_SAID_SO = [
+    # GNU coreutils 9.4, which prints the value it refused and every value it
+    # accepts. The Bleep used to answer this with `ls --help` -- the last line
+    # of the message matched by `long_form_help`, the rest of the command
+    # thrown away, and a help screen offered as a correction.
+    ('ls -l --sort=nmae',
+     "ls: invalid argument 'nmae' for '--sort'\n"
+     'Valid arguments are:\n'
+     "  - 'none'\n  - 'time'\n  - 'size'\n  - 'extension'\n"
+     "  - 'version'\n  - 'width'\n"
+     "Try 'ls --help' for more information.\n",
+     'ls -l --sort=none'),
+    # git 2.43 prints no usage block for this any more, and names the token it
+    # could not read instead -- so the rule that looked for `usage:` had been
+    # dead for however many releases that has been.
+    ('git stash pp',
+     "fatal: subcommand wasn't specified; 'push' can't be assumed due to"
+     " unexpected token 'pp'\n",
+     'git stash pop'),
     ('git satus',
      "git: 'satus' is not a git command. See 'git --help'.\n\n"
      'The most similar command is\n\tstatus\n',

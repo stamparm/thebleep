@@ -36,16 +36,16 @@ issues are open on it, and a good number of its rules quietly stopped matching
 when the tools they correct changed what they print. *The Bleep* is the same
 tool, maintained — and several times quicker about it.
 
-And it is right more often, which matters more than being quick. The same 80
+And it is right more often, which matters more than being quick. The same 82
 typos — real commands, with the output the real tool printed — put to both:
 
 <!-- hit-rate: written by bench/hit_rate.py --compare -->
 | what is being asked | The Bleep | The Fuck 3.32 |
 | --- | --- | --- |
 | an unknown program | **56/56** | 46/56 |
-| the tool said so | **15/15** | 6/15 |
+| the tool said so | **17/17** | 6/17 |
 | nothing is right | **9/9** | 3/9 |
-| **all of it** | **80/80 (100%)** | 55/80 (69%) |
+| **all of it** | **82/82 (100%)** | 55/82 (67%) |
 <!-- end hit-rate -->
 
 Only the *first* suggestion counts, because that is the one <kbd>enter</kbd>
@@ -381,8 +381,8 @@ $ thebleep --doctor
   Executable          ~/.local/bin/thebleep
   On PATH             yes
   Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
-  Rules               178 bundled, 3 of your own
-  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (178 rules cached)
+  Rules               179 bundled, 3 of your own
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (179 rules cached)
 - Replayless capture  available, not switched on
                       See --enable-experimental-instant-mode.
   Editing             supported by this shell (tab at the prompt)
@@ -563,7 +563,7 @@ nothing.
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
-| **Rules** | 178 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+| **Rules** | 179 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
@@ -929,6 +929,7 @@ The following rules are enabled by default:
 * `history` — tries to replace command with the most similar command from history;
 * `hostscli` — tries to fix `hostscli` usage;
 * `ifconfig_device_not_found` — fixes wrong device names like `wlan0` to `wlp2s0`;
+* `invalid_argument_for_option` — offers the values a tool listed after refusing one, like `ls --sort=nmae`;
 * `java` — removes `.java` extension when running Java programs;
 * `javac` — appends missing `.java` when compiling Java files;
 * `lein_not_task` — fixes wrong `lein` tasks like `lein rpl`;
@@ -1339,7 +1340,7 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches about a fifth of the 178 rules, and
+  running it. A typical command now reaches about a fifth of the 179 rules, and
   one for a tool with many rules of its own — `git` — under a quarter, instead of
   all of them. Rules that don't say what they are about are always loaded, so
   this makes corrections faster, never fewer.
