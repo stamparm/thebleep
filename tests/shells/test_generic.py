@@ -144,3 +144,64 @@ class TestSplittingACommandThatContainsTheSentinel(object):
         from thebleep.shells.generic import Generic
 
         assert Generic.ESCAPED_SPACE not in ' '.join(chr(c) for c in range(128))
+
+
+class TestReadingTheHistory(object):
+    """`no_command` asks for history on the busiest path there is.
+
+    It used to `readlines()` the whole file and then slice off the last ten
+    entries. Fifty thousand lines is nothing; somebody with `HISTSIZE` unset and
+    years of shell has a file measured in megabytes, and all of it was read and
+    decoded to look at ten commands.
+
+    """
+
+    @pytest.fixture
+    def shell(self, tmpdir):
+        history = tmpdir.join('history')
+
+        class Recorded(Generic):
+            def _get_history_file_name(self):
+                return str(history)
+
+            def _script_from_history(self, line):
+                return line
+
+        Recorded.history = history
+        return Recorded()
+
+    def _write(self, shell, count):
+        shell.history.write('\n'.join(
+            'command number {}'.format(n) for n in range(count)) + '\n')
+
+    def test_it_reads_the_end(self, shell, settings):
+        settings.history_limit = 10
+        self._write(shell, 50000)
+        got = shell.get_history()
+        assert len(got) == 10
+        assert got[-1].strip() == 'command number 49999'
+        assert got[0].strip() == 'command number 49990'
+
+    def test_a_file_smaller_than_the_tail(self, shell, settings):
+        settings.history_limit = 10
+        self._write(shell, 3)
+        assert [line.strip() for line in shell.get_history()] == [
+            'command number 0', 'command number 1', 'command number 2']
+
+    def test_no_limit_reads_everything(self, shell, settings):
+        settings.history_limit = None
+        self._write(shell, 100)
+        assert len(shell.get_history()) == 100
+
+    def test_lines_long_enough_to_empty_the_tail(
+            self, shell, settings, monkeypatch):
+        """More entries asked for than the tail held: pay for the whole file
+        rather than answer short."""
+        monkeypatch.setattr(Generic, 'HISTORY_TAIL', 64)
+        settings.history_limit = 5
+        shell.history.write('\n'.join('x' * 100 for _ in range(20)) + '\n')
+        assert len(shell.get_history()) == 5
+
+    def test_a_missing_file_is_no_history(self, shell, settings, tmpdir):
+        settings.history_limit = 10
+        assert shell.get_history() == []

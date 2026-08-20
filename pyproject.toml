@@ -1,3 +1,8 @@
 [build-system]
+# A floor, not a pin. This is a pure-Python package with no build step of its
+# own, so the setuptools version does not change the artifact -- and an upper
+# bound here would stop anybody building from source the day setuptools bumps
+# its major. What the release workflow *does* pin is `build` and `twine`, which
+# are the tools that run.
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"

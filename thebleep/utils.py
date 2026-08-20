@@ -487,7 +487,24 @@ def quote_words(line):
 
 
 def replace_argument(script, from_, to):
-    """Replaces command line argument."""
+    """Replaces command line argument.
+
+    An *argument*, so both patterns require a space in front of `from_` and it
+    is deliberately unable to touch the first word: `replace_argument('ls -la',
+    'ls', 'll')` hands back `ls -la` unchanged. A rule that wants the program
+    name replaced wants `script.replace(name, other, 1)`, which is what
+    `no_command` does.
+
+    Nothing hits that today. It is written down because the failure is silent:
+    `corrector._worth_offering` drops a suggestion identical to the command, so
+    a rule that reached for this to change a program name would simply never
+    fire, with nothing anywhere saying why.
+
+    It also does not quote `to`. Every caller that puts a value from a tool's
+    output or the user's history through here has to quote it first -- the
+    result is handed to the shell to be evaluated.
+
+    """
     replaced_in_the_end = re.sub(u' {}$'.format(re.escape(from_)), u' {}'.format(to),
                                  script, count=1)
     if replaced_in_the_end != script:
@@ -566,7 +583,9 @@ def is_app(command, *app_names, **kwargs):
 
     at_least = kwargs.pop('at_least', 0)
     if kwargs:
-        raise TypeError("got an unexpected keyword argument '{}'".format(kwargs.keys()))
+        # By name. `format(kwargs.keys())` printed `dict_keys(['typo'])`.
+        raise TypeError("got an unexpected keyword argument '{}'".format(
+            "', '".join(sorted(kwargs))))
 
     parts = command.script_parts
     start = command_word_index(parts)

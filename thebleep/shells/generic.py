@@ -153,36 +153,28 @@ class Generic(object):
 
         return ' '.join(self.quote(word) for word in words)
 
-    def _single_quotable_invocation(self):
-        """`_invocation()`, or the installed command when it needs quoting.
+    @staticmethod
+    def _in_single_quotes(body):
+        """`body` as a single-quoted shell word, quotes and all.
 
-        For the aliases whose *body* is single-quoted, which is this one and
-        tcsh's. A quote in the invocation ends the body early, and what is left
-        fails with a message that names neither the path nor the reason -- so a
-        checkout under `~/My Projects/` produced a broken alias, silently.
+        The alias below wraps its body in single quotes, and a checkout under
+        `~/My Projects/` puts quotes *in* that body -- `self.quote` adds them
+        around the path. The body was interpolated as it stood, so the first of
+        those quotes closed the alias early and the rest of it failed with
+        something that named neither the path nor the reason. Silently, and only
+        for people whose checkout is somewhere with a space in the name.
 
-        tcsh already checked for this. `Generic` -- which is the fallback for
-        every shell nothing else recognises -- did not, so those users got the
-        broken alias and no warning with it.
+        `'\''` is how POSIX embeds a quote in a single-quoted string: end the
+        string, an escaped quote, start another. tcsh has no equivalent, which
+        is why `Tcsh` warns and falls back instead of using this.
 
         """
-        from .. import invocation
-
-        written = self._invocation()
-        if "'" not in written:
-            return written
-
-        warn(
-            u'Your checkout is at a path this shell cannot put in an alias (the'
-            u' alias body is single-quoted and cannot contain a quote). The'
-            u' alias will call `{}` instead. Set THEBLEEP_COMMAND to the command'
-            u' you want it to run.'.format(invocation.ENTRY_POINT))
-        return invocation.ENTRY_POINT
+        return "'{}'".format(body.replace("'", "'\\''"))
 
     def app_alias(self, alias_name):
-        return """alias {0}='eval "$(TB_ALIAS={0} """ \
-               """{1} "$(fc -ln -1)")"'""".format(
-                   alias_name, self._single_quotable_invocation())
+        return 'alias {0}={1}'.format(alias_name, self._in_single_quotes(
+            'eval "$(TB_ALIAS={0} {1} "$(fc -ln -1)")"'.format(
+                alias_name, self._invocation())))
 
     def app_alias_loader(self, alias_name):
         """Shell code defining `alias_name` as a stub that loads the real one.
@@ -273,22 +265,62 @@ class Generic(object):
     def get_history(self):
         return list(self._get_history_lines())
 
+    # How much of the end of a history file to read when a limit is set. A
+    # history entry is a command line, so a few hundred bytes at the outside;
+    # this is comfortably more than `history_limit` entries and is read in one
+    # go. Falls back to the whole file when the tail turns out to hold fewer
+    # entries than were asked for.
+    HISTORY_TAIL = 1024 * 1024
+
     def _get_history_lines(self):
         """Returns list of history entries."""
         history_file_name = self._get_history_file_name()
         if os.path.isfile(history_file_name):
-            with io.open(history_file_name, 'r',
-                         encoding='utf-8', errors='ignore') as history_file:
+            for line in self._history_tail(history_file_name):
+                prepared = self._script_from_history(line).strip()
+                if prepared:
+                    yield prepared
 
-                lines = history_file.readlines()
-                if settings.history_limit:
-                    lines = lines[-settings.history_limit:]
+    def _history_tail(self, path):
+        """The last `history_limit` raw lines of the history file.
 
-                for line in lines:
-                    prepared = self._script_from_history(line) \
-                        .strip()
-                    if prepared:
-                        yield prepared
+        `readlines()` on the whole file, then a slice, is what this was -- and
+        `no_command` asks for history on the busiest path there is, to break a
+        tie on what the user has actually run. Fifty thousand lines is nothing;
+        somebody with `HISTSIZE` unset and years of shell has a file measured in
+        megabytes, and all of it was read and decoded to look at the last ten
+        entries.
+
+        Reading a tail means seeking, so the first line read is usually half a
+        command -- it is dropped. That costs one entry of the window and is why
+        the block read is generous.
+
+        """
+        limit = settings.history_limit
+
+        with io.open(path, 'r', encoding='utf-8', errors='ignore') as handle:
+            if not limit:
+                return handle.readlines()
+
+            try:
+                size = os.path.getsize(path)
+            except OSError:
+                return handle.readlines()[-limit:]
+
+            if size <= self.HISTORY_TAIL:
+                return handle.readlines()[-limit:]
+
+            handle.seek(size - self.HISTORY_TAIL)
+            lines = handle.readlines()
+            # The first is whatever the seek landed in the middle of.
+            lines = lines[1:]
+            if len(lines) >= limit:
+                return lines[-limit:]
+
+            # More entries were asked for than the tail held, which means very
+            # long lines. Pay for the whole file rather than answer short.
+            handle.seek(0)
+            return handle.readlines()[-limit:]
 
     def and_(self, *commands):
         return u' && '.join(commands)

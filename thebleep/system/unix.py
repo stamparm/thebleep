@@ -94,10 +94,6 @@ def read_key_sequence():
     return sequence.decode('utf-8', 'replace')
 
 
-def getch():
-    return read_key_sequence()[:1]
-
-
 def get_key():
     sequence = read_key_sequence()
 

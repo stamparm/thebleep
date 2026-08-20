@@ -140,9 +140,13 @@ def test_a_rule_that_ignores_the_output_says_so(rule):
     # module name is `thebleep.rules.test.py` and there is no importing that.
     import os
 
+    # `encoding='utf-8'`, because a rule's source is UTF-8 and Windows
+    # defaults to cp1252 -- `switch_lang` has Cyrillic and Korean in it, and
+    # this failed there and nowhere else.
     with open(os.path.join(os.path.dirname(
             os.path.dirname(os.path.abspath(__file__))),
-            'thebleep', 'rules', rule.name + '.py')) as handle:
+            'thebleep', 'rules', rule.name + '.py'),
+            encoding='utf-8') as handle:
         source = handle.read()
 
     # The decorators can read it on the rule's behalf, and two of them do.

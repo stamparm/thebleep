@@ -61,6 +61,21 @@ class TestSelectCommand(object):
     def is_interactive(self, mocker):
         return mocker.patch('thebleep.ui.is_interactive', return_value=True)
 
+    @pytest.fixture(autouse=True)
+    def a_terminal_that_renders_escapes(self, mocker):
+        """Which is what `\x1b[1K` -- erase the line -- needs to be worth
+        writing.
+
+        It used to be hard-coded, so it went out whether or not anything would
+        render it: `no_colors`, a pipe, a log file. It goes through `color` now,
+        like every other escape code here, and `color` asks `sys.stderr`. Under
+        `capsys` the answer is no, so the terminal is stood in for.
+
+        """
+        from thebleep import logs
+
+        mocker.patch.object(logs._ansi_supported, 'cached', True)
+
     @pytest.fixture
     def commands_with_side_effect(self):
         return [CorrectedCommand('ls', lambda *_: None, 100),

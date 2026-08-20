@@ -58,11 +58,31 @@ def color(color_):
     to import it.
 
     """
-    if settings.no_colors or not _ansi_supported():
+    if settings.no_colors:
+        return ''
+
+    return escape(color_)
+
+
+def escape(sequence):
+    """An escape sequence that is not a colour, for a console that renders it.
+
+    `no_colors` says do not colour; it does not say do not move the cursor.
+    Erasing the line before reprinting a suggestion is layout, and dropping it
+    would leave the previous suggestion on screen -- so this is the same gate
+    without that setting in it.
+
+    Everything still goes through one of these two, which is the point: the
+    erase used to be a hard-coded `\\033[1K` and was therefore the one sequence
+    nothing checked, so a console that renders no escapes rendered `^[[1K` in
+    front of every suggestion.
+
+    """
+    if not _ansi_supported():
         return ''
 
     init_colors()
-    return color_
+    return sequence
 
 
 def warn(title):
@@ -116,7 +136,11 @@ def confirm_text(corrected_command, offer_edit=False, offer_explain=False):
             prefix=const.USER_COMMAND_MARK,
             script=corrected_command.script,
             side_effect=' (+side effect)' if corrected_command.side_effect else '',
-            clear='\033[1K\r',
+            # Through `escape`, not `color`: erasing the line is layout, not
+            # colour, so `no_colors` does not switch it off -- but a console
+            # that renders no escapes does, and hard-coded it used to render
+            # `^[[1K` in front of every suggestion there.
+            clear=escape(u'\033[1K') + '\r',
             edit=u'/{blue}tab{reset}=edit'.format(
                 blue=color(colorama.Fore.BLUE),
                 reset=color(colorama.Style.RESET_ALL)) if offer_edit else u'',

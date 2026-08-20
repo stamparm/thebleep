@@ -23,6 +23,8 @@ The output of The Bleep with `THEBLEEP_DEBUG=true` exported (typically execute `
 
     FILL THIS IN
 
+**Please read what you paste.** Debug output includes the failing command, everything it printed, and any `env` values from your settings file — which is where people keep tokens. `bleep --doctor` is written to be safe to paste; debug output is not, because it is a copy of what happened. Redact anything you would not put in a public issue.
+
 If the bug only appears with a specific application, the output of that application and its version:
 
     FILL THIS IN

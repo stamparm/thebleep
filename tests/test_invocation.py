@@ -14,6 +14,7 @@ nothing else guesses.
 """
 
 import os
+import shutil
 import sys
 import pytest
 from thebleep import invocation
@@ -145,3 +146,46 @@ class TestTheCheckout(object):
         monkeypatch.setattr(invocation, '__file__',
                             str(package.join('invocation.py')))
         assert invocation._checkout_root() is None
+
+
+class TestACheckoutAtAPathWithASpace(object):
+    """`~/My Projects/thebleep` -- which used to produce a broken alias.
+
+    `Generic.app_alias` wraps its body in single quotes, and the quoting
+    `self.quote` puts around a path with a space in it puts quotes *inside* that
+    body. Interpolated as it stood, the first of those closed the alias early
+    and the rest failed with a message naming neither the path nor the reason.
+
+    """
+
+    @pytest.fixture
+    def spaced(self, monkeypatch):
+        monkeypatch.setattr(
+            invocation, 'parts',
+            lambda: ['/opt/some python/bin/python3',
+                     '/opt/My Projects/thebleep/__main__.py'])
+
+    def test_the_alias_still_parses(self, spaced, set_shell, tmpdir):
+        """In a real shell, because that is the only thing that settles it."""
+        import subprocess
+
+        set_shell(Generic)
+        alias = Generic().app_alias('bleep')
+        script = tmpdir.join('alias.sh')
+        script.write(alias + '\nalias bleep\n')
+
+        for interpreter in ('bash', 'dash', 'sh'):
+            if not shutil.which(interpreter):
+                continue
+            done = subprocess.run([interpreter, '-c',
+                                   '. {}'.format(str(script))],
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT, timeout=10)
+            assert done.returncode == 0, done.stdout
+            # And the path survived, quotes and all.
+            assert b'/opt/My Projects/thebleep/__main__.py' in done.stdout
+
+    def test_tcsh_says_so_instead(self, spaced, set_shell):
+        """tcsh has no way to spell an embedded quote, so it falls back."""
+        set_shell(Tcsh)
+        assert Tcsh()._invocation() == invocation.ENTRY_POINT

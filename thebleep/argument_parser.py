@@ -38,6 +38,11 @@ class Arguments(object):
 
     def __init__(self, **values):
         self.__dict__.update(DEFAULTS)
+        # `DEFAULTS['command']` is a list, so every `Arguments` built without
+        # one shared the *same* list -- and anything appending to
+        # `arguments.command` would have been appending to the default. Nothing
+        # does today; a copy costs nothing and settles it.
+        self.command = list(DEFAULTS['command'])
         self.__dict__.update(values)
 
 
