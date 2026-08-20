@@ -4,9 +4,18 @@ from thebleep.rules.git_branch_delete_checked_out import match, get_new_command
 from thebleep.types import Command
 
 
-@pytest.fixture
-def output():
-    return "error: Cannot delete branch 'foo' checked out at '/bar/foo'"
+# git 2.45 and older said "Cannot delete branch 'x' checked out at";
+# 2.46 and newer say "cannot delete branch 'x' used by worktree at". Only the
+# first was matched, so the rule went dead on current git -- and with it dead,
+# `git_main_master` answered instead and `git branch -d master` became
+# `git branch -d main`, deleting a branch nobody had named. Captured from git
+# 2.30.2 and 2.39.5 (old) and 2.47.3 (new).
+@pytest.fixture(params=[
+    "error: Cannot delete branch 'foo' checked out at '/bar/foo'",
+    "error: cannot delete branch 'foo' used by worktree at '/bar/foo'",
+])
+def output(request):
+    return request.param
 
 
 @pytest.fixture(autouse=True)

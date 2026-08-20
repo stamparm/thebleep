@@ -1,3 +1,4 @@
+import re
 from subprocess import CalledProcessError, check_output
 from thebleep.shells import shell
 from thebleep.specific.git import git_support
@@ -33,13 +34,22 @@ def _default_branch():
     return FALLBACK_BRANCH
 
 
+# git 2.45 and older:  error: Cannot delete branch 'x' checked out at '/path'
+# git 2.46 and newer:  error: cannot delete branch 'x' used by worktree at '/path'
+#
+# Both the capital and the phrase changed, and this matched only the old form --
+# so on any current git the rule went dead, `git_main_master` answered the error
+# instead, and `git branch -d master` became `git branch -d main`. Captured from
+# git 2.30.2, 2.39.5 and 2.47.3.
+CHECKED_OUT = re.compile(
+    r"error: cannot delete branch '.+' "
+    r"(?:checked out|used by worktree) at '", re.IGNORECASE)
+
+
 @git_support
 def match(command):
-    return (
-        ("branch -d" in command.script or "branch -D" in command.script)
-        and "error: Cannot delete branch '" in command.output
-        and "' checked out at '" in command.output
-    )
+    return (("branch -d" in command.script or "branch -D" in command.script)
+            and bool(CHECKED_OUT.search(command.output)))
 
 
 @git_support

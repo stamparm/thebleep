@@ -4,17 +4,26 @@ from thebleep.specific.git import git_support
 from thebleep.utils import eager
 
 
+# git 2.38 and older:  fatal: A branch named 'x' already exists.
+# git 2.39 and newer:  fatal: a branch named 'x' already exists
+#
+# The capital and the full stop both went, and this wanted both -- so the rule
+# was dead on every git in current use while its test stayed green, because the
+# fixture was written by hand from the old wording. Captured from git 2.30.2,
+# 2.39.5 and 2.47.3.
+ALREADY_EXISTS = re.compile(r"fatal: a branch named '(.+)' already exists\.?",
+                            re.IGNORECASE)
+
+
 @git_support
 def match(command):
-    return ("fatal: A branch named '" in command.output
-            and "' already exists." in command.output)
+    return bool(ALREADY_EXISTS.search(command.output))
 
 
 @git_support
 @eager
 def get_new_command(command):
-    branch_name = re.findall(
-        r"fatal: A branch named '(.+)' already exists.", command.output)[0]
+    branch_name = ALREADY_EXISTS.search(command.output).group(1)
     # `shell.quote`, not a hand-rolled `\'`: a backslash does not escape
     # anything inside single quotes, and the name was not inside quotes at all.
     # git accepts a branch called `feature;rm -rf ~`, so this went to the shell

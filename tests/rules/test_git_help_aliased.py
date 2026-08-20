@@ -3,7 +3,13 @@ from thebleep.rules.git_help_aliased import match, get_new_command
 from thebleep.types import Command
 
 
+# Both quotings. git 2.30.2, 2.39.5 and 2.47.3 all print the plain-quote form;
+# the backtick form is what git used to print and what the rule read by
+# splitting on the backtick -- which on a current git raised IndexError and put
+# a traceback in the user's terminal.
 @pytest.mark.parametrize('script, output', [
+    ('git help st', "'st' is aliased to 'status'"),
+    ('git help ds', "'ds' is aliased to 'diff --staged'"),
     ('git help st', "`git st' is aliased to `status'"),
     ('git help ds', "`git ds' is aliased to `diff --staged'")])
 def test_match(script, output):

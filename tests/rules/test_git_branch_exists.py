@@ -3,9 +3,15 @@ from thebleep.rules.git_branch_exists import match, get_new_command
 from thebleep.types import Command
 
 
-@pytest.fixture
-def output(src_branch_name):
-    return "fatal: A branch named '{}' already exists.".format(src_branch_name)
+# git 2.38 and older: "fatal: A branch named 'x' already exists." -- capital,
+# full stop. git 2.39 and newer: "fatal: a branch named 'x' already exists".
+# The rule required both the capital and the stop, so it was dead on every git
+# in current use while this fixture, hand-written from the old wording, stayed
+# green. Captured from git 2.30.2 (old) and 2.39.5 / 2.47.3 (new).
+@pytest.fixture(params=["fatal: A branch named '{}' already exists.",
+                        "fatal: a branch named '{}' already exists"])
+def output(request, src_branch_name):
+    return request.param.format(src_branch_name)
 
 
 @pytest.fixture

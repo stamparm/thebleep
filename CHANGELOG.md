@@ -33,6 +33,37 @@
 
 ### Fixed
 
+- **`git branch -d master` no longer deletes `main`.** One keypress, a branch
+  nobody had named, gone. Two faults stacked. `git_branch_delete_checked_out`
+  matched `error: Cannot delete branch 'x' checked out at`, which is what git
+  2.45 and older printed; 2.46 renamed it to `cannot delete branch 'x' used by
+  worktree at`, so on any current git the rule went dead. With it dead
+  `git_main_master` answered the error instead -- and that rule fired on any git
+  output containing `'master'` and rewrote the command by plain string
+  substitution, so the suggestion was `git branch -d main`.
+
+  Both are fixed: the first accepts either wording, and the second now requires
+  git to have said the name is one it does *not* have (`did not match any
+  file(s)`, `branch 'x' not found`, `not something we can merge`, `invalid
+  upstream`). An error about a branch that exists is no longer a reason to
+  rename it, and the substitution is by word rather than by substring, so
+  `release/master-fix` is left alone.
+- **Four more rules had gone dead against current git, and two of them
+  crashed.** All four had green tests, because every fixture was written by hand
+  from the wording of the day. They are now parametrised over what git 2.30.2,
+  2.39.5 and 2.47.3 actually print, captured from each.
+  - `git_branch_exists` wanted `fatal: A branch named 'x' already exists.` --
+    capital, full stop. git 2.39 dropped both.
+  - `git_two_dashes` wanted `` `--all` (with two dashes ?)``. Every git tested
+    prints `(with two dashes)?`, with the question mark outside the bracket, so
+    this had never matched any of them.
+  - `git_help_aliased` read the alias by splitting the output on a backtick.
+    git prints `'st' is aliased to 'status'` and has for years, so the split
+    raised `IndexError` -- a traceback in the terminal of anybody who ran
+    `git help <alias>`.
+  - `git_bisect_usage` took the subcommand from a regex without checking it had
+    matched, so a bare `git bisect` -- which is how you discover you forgot the
+    subcommand -- raised `IndexError` instead of politely offering nothing.
 - **A mistyped subcommand is no longer a question.** 4.0.0 stopped running your
   previous command a second time without asking, and skipped asking only when
   there was no such program or the program was one that only ever reads. `git`
