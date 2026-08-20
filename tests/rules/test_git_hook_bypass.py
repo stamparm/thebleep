@@ -23,10 +23,17 @@ from thebleep.types import Command
 def hooks(mocker):
     """Which hooks this repository has, without one on disk."""
     def _installed(*names):
+        # `os.path.basename`, not `path.split('/')`: the rule builds the path
+        # with `os.path.join`, which uses a backslash on Windows -- so splitting
+        # on a forward slash found nothing there and this test failed on every
+        # Windows job while passing here. The third time that assumption has
+        # been made in this suite.
+        import os
+
         mocker.patch.object(git_hook_bypass, '_hooks_directory',
-                            return_value='/repo/.git/hooks')
+                            return_value=os.path.join('repo', '.git', 'hooks'))
         mocker.patch('os.path.isfile',
-                     side_effect=lambda path: path.split('/')[-1] in names)
+                     side_effect=lambda path: os.path.basename(path) in names)
         mocker.patch('os.access', return_value=True)
 
     return _installed
