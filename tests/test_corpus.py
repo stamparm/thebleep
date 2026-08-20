@@ -31,9 +31,22 @@ def _executables():
         return [line.strip() for line in handle if line.strip()]
 
 
-@pytest.fixture(autouse=True)
-def machine(mocker, monkeypatch, settings):
-    """One machine, the same everywhere: a fixed PATH and a fixed history."""
+@pytest.fixture(autouse=True, params=[False, True],
+                ids=['case-sensitive', 'case-folded'])
+def machine(request, mocker, monkeypatch, settings):
+    """One machine, the same everywhere: a fixed PATH and a fixed history.
+
+    Run twice, once for each answer to "does this filesystem tell `Git` from
+    `git`". Linux says no and Windows and macOS say yes, and the matcher behaves
+    differently for each -- so both are exercised on whichever platform the suite
+    happens to be running on. A case-folding mistake found by Windows CI twenty
+    minutes after a push is the slowest way there is to find one.
+
+    """
+    from thebleep import matching
+
+    monkeypatch.setattr(matching, 'FOLD_CASE', request.param)
+
     names = _executables()
 
     mocker.patch('thebleep.utils.get_all_executables', return_value=names)
@@ -47,10 +60,16 @@ def machine(mocker, monkeypatch, settings):
     # `which` decides whether a program exists at all, and the corpus says what
     # exists: the list above, and nothing else.
     installed = set(names)
-    mocker.patch('thebleep.utils.which',
-                 side_effect=lambda name: ('/usr/bin/' + name
-                                           if os.path.basename(name)
-                                           in installed else None))
+    # Patched in both places it is reached from: `no_command` imported the name
+    # at module load, so patching only `thebleep.utils` would leave the rule
+    # asking the real machine.
+
+    def _which(name):
+        return ('/usr/bin/' + name
+                if os.path.basename(name) in installed else None)
+
+    mocker.patch('thebleep.utils.which', side_effect=_which)
+    mocker.patch('thebleep.rules.no_command.which', side_effect=_which)
 
     monkeypatch.setattr(utils.memoize, 'disabled', True)
     settings.num_close_matches = 3
