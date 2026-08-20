@@ -1,5 +1,4 @@
 import pytest
-from io import BytesIO
 from thebleep.rules.npm_run_script import match, get_new_command
 from thebleep.types import Command
 
@@ -49,9 +48,10 @@ available via `npm run-script`:
 
 @pytest.fixture(autouse=True)
 def run_script(mocker):
-    patch = mocker.patch('thebleep.specific.npm.Popen')
-    patch.return_value.stdout = BytesIO(run_script_stdout)
-    return patch.return_value
+    patch = mocker.patch(
+        'thebleep.specific.npm.tool_lines',
+        return_value=run_script_stdout.decode('utf-8').splitlines())
+    return patch
 
 
 @pytest.mark.usefixtures('no_memoize')
@@ -69,7 +69,7 @@ def test_match(script):
     (Command('npm test', output), run_script_stdout),
     (Command('vim watch-test', output), run_script_stdout)])
 def test_not_match(run_script, command, run_script_out):
-    run_script.stdout = BytesIO(run_script_out)
+    run_script.return_value = run_script_out.decode('utf-8').splitlines()
     assert not match(command)
 
 

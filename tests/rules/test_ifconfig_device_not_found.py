@@ -1,5 +1,3 @@
-from io import BytesIO
-
 import pytest
 
 from thebleep.rules.ifconfig_device_not_found import match, get_new_command
@@ -23,8 +21,8 @@ wlp2s0    Link encap:Ethernet  HWaddr 5c:51:4f:7c:58:5d
 @pytest.fixture(autouse=True)
 def ifconfig(mocker):
     mock = mocker.patch(
-        'thebleep.rules.ifconfig_device_not_found.subprocess.Popen')
-    mock.return_value.stdout = BytesIO(stdout)
+        'thebleep.rules.ifconfig_device_not_found.tool_lines',
+        return_value=stdout.decode('utf-8').splitlines())
     return mock
 
 

@@ -1,6 +1,5 @@
 import re
-from subprocess import Popen, PIPE
-from thebleep.utils import memoize, which
+from thebleep.utils import memoize, which, tool_lines
 from thebleep.shells import shell
 
 enabled_by_default = bool(which('lsof'))
@@ -13,8 +12,10 @@ patterns = [r"bind on address \('.*', (?P<port>\d+)\)",
 
 @memoize
 def _get_pid_by_port(port):
-    proc = Popen(['lsof', '-i', ':{}'.format(port)], stdout=PIPE)
-    lines = proc.stdout.read().decode().split('\n')
+    # `lsof` against a wedged NFS mount or an unresponsive filesystem is the
+    # textbook hang, and this one runs from `match` -- so on the hot path of
+    # every failed command whose output mentions a port.
+    lines = tool_lines(['lsof', '-i', ':{}'.format(port)])
     if len(lines) > 1:
         columns = lines[1].split()
         # A pid, or nothing. `kill {}` is built from this and handed to the

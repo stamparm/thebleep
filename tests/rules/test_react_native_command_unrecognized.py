@@ -1,5 +1,4 @@
 import pytest
-from io import BytesIO
 from thebleep.rules.react_native_command_unrecognized import match, \
     get_new_command
 from thebleep.types import Command
@@ -57,7 +56,7 @@ def test_not_match(command):
     (Command('react-native logsandroid -f', output('logsandroid')),
      'react-native log-android -f')])
 def test_get_new_command(mocker, command, result):
-    patch = mocker.patch(
-        'thebleep.rules.react_native_command_unrecognized.Popen')
-    patch.return_value.stdout = BytesIO(stdout)
+    mocker.patch(
+        'thebleep.rules.react_native_command_unrecognized.tool_lines',
+        return_value=stdout.decode('utf-8').splitlines())
     assert get_new_command(command)[0] == result

@@ -1,6 +1,5 @@
 import re
-from subprocess import Popen, PIPE
-from thebleep.utils import memoize, eager, which
+from thebleep.utils import memoize, eager, which, tool_lines
 
 npm_available = bool(which('npm'))
 
@@ -34,12 +33,14 @@ NAME = re.compile(r'^ {2}(\S+)\s*$')
 @memoize
 def _sections():
     """`(lifecycle, run_script)`, as `npm run-script` lists them."""
-    proc = Popen(['npm', 'run-script'], stdout=PIPE)
     found = {LIFECYCLE_HEADING: [], RUN_SCRIPT_HEADING: []}
     heading = None
 
-    for raw in proc.stdout.readlines():
-        line = raw.decode('utf-8', 'replace').rstrip('\r\n')
+    # Through `tool_lines`, which means a timeout and a stderr that goes to
+    # `/dev/null` rather than into the user's terminal: `npm run-script` in a
+    # directory with no `package.json` printed its complaint over the
+    # suggestions.
+    for line in tool_lines(['npm', 'run-script']):
 
         for candidate in (LIFECYCLE_HEADING, RUN_SCRIPT_HEADING):
             if candidate in line:

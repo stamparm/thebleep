@@ -1,7 +1,6 @@
-import subprocess
 import re
 from thebleep.specific.sudo import sudo_support
-from thebleep.utils import for_app, replace_command
+from thebleep.utils import for_app, replace_command, tool_output
 from thebleep.specific.dnf import dnf_available
 
 
@@ -20,12 +19,7 @@ def _parse_operations(help_text_lines):
 
 
 def _get_operations():
-    proc = subprocess.Popen(["dnf", '--help'],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-    lines = proc.stdout.read().decode("utf-8")
-
-    return _parse_operations(lines)
+    return _parse_operations(tool_output(['dnf', '--help']))
 
 
 @sudo_support

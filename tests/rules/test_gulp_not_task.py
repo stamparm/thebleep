@@ -1,5 +1,4 @@
 import pytest
-from io import BytesIO
 from thebleep.types import Command
 from thebleep.rules.gulp_not_task import match, get_new_command
 
@@ -23,7 +22,7 @@ def test_not_march(script, stdout):
 
 
 def test_get_new_command(mocker):
-    mock = mocker.patch('subprocess.Popen')
-    mock.return_value.stdout = BytesIO(b'serve \nbuild \ndefault \n')
+    mocker.patch('thebleep.rules.gulp_not_task.tool_lines',
+                 return_value=['serve ', 'build ', 'default '])
     command = Command('gulp srve', output('srve'))
     assert get_new_command(command) == ['gulp serve', 'gulp default']

@@ -1,5 +1,3 @@
-from io import BytesIO
-
 import pytest
 from thebleep.specific.npm import get_scripts
 
@@ -21,6 +19,7 @@ available via `npm run-script`:
 
 @pytest.mark.usefixtures('no_memoize')
 def test_get_scripts(mocker):
-    patch = mocker.patch('thebleep.specific.npm.Popen')
-    patch.return_value.stdout = BytesIO(run_script_stdout)
+    mocker.patch(
+        'thebleep.specific.npm.tool_lines',
+        return_value=run_script_stdout.decode('utf-8').splitlines())
     assert get_scripts() == ['build', 'develop', 'watch-test']

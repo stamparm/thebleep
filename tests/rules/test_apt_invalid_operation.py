@@ -1,4 +1,3 @@
-from io import BytesIO
 import pytest
 from thebleep.types import Command
 from thebleep.rules.apt_invalid_operation import match, get_new_command, \
@@ -138,10 +137,11 @@ def test_not_match(script, output):
 
 @pytest.fixture
 def set_help(mocker):
-    mock = mocker.patch('subprocess.Popen')
+    mock = mocker.patch(
+        'thebleep.rules.apt_invalid_operation.tool_lines')
 
     def _set_text(text):
-        mock.return_value.stdout = BytesIO(text)
+        mock.return_value = text.decode('utf-8').splitlines()
 
     return _set_text
 

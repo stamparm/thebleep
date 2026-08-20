@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
 
-from io import BytesIO
 import pytest
 from thebleep.types import Command
 from thebleep.rules.yarn_command_not_found import match, get_new_command
@@ -87,9 +86,9 @@ yarn_help_stdout = b'''
 
 @pytest.fixture(autouse=True)
 def yarn_help(mocker):
-    patch = mocker.patch('thebleep.rules.yarn_command_not_found.Popen')
-    patch.return_value.stdout = BytesIO(yarn_help_stdout)
-    return patch
+    return mocker.patch(
+        'thebleep.rules.yarn_command_not_found.tool_lines',
+        return_value=yarn_help_stdout.decode('utf-8').splitlines())
 
 
 @pytest.mark.parametrize('command', [

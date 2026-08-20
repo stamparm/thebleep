@@ -1,7 +1,6 @@
 import re
 from thebleep.utils import (cache, for_app, replace_argument, replace_command,
-                            which)
-from subprocess import PIPE, Popen
+                            which, tool_lines)
 
 
 # Spelled out in the decorator below rather than starred from this tuple: the
@@ -23,8 +22,7 @@ def match(command):
 
 
 def get_app_commands(app):
-    proc = Popen([app, 'commands'], stdout=PIPE)
-    return [line.decode('utf-8').strip() for line in proc.stdout.readlines()]
+    return [line.strip() for line in tool_lines([app, 'commands'])]
 
 
 def get_new_command(command):

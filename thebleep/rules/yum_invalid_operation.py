@@ -1,9 +1,9 @@
-import subprocess
 from itertools import dropwhile, islice, takewhile
 
 from thebleep.specific.sudo import sudo_support
 from thebleep.specific.yum import yum_available
-from thebleep.utils import for_app, replace_command, which, cache
+from thebleep.utils import (for_app, replace_command, which, cache,
+                            tool_lines)
 
 enabled_by_default = yum_available
 
@@ -15,10 +15,7 @@ def match(command):
 
 
 def _get_operations():
-    proc = subprocess.Popen('yum', stdout=subprocess.PIPE)
-
-    lines = proc.stdout.readlines()
-    lines = [line.decode('utf-8') for line in lines]
+    lines = tool_lines(('yum',))
     lines = dropwhile(lambda line: not line.startswith("List of Commands:"), lines)
     lines = islice(lines, 2, None)
     lines = list(takewhile(lambda line: line.strip(), lines))

@@ -1,5 +1,4 @@
 import pytest
-from io import BytesIO
 from thebleep.types import Command
 from thebleep.rules.npm_missing_script import match, get_new_command
 
@@ -54,8 +53,9 @@ available via `npm run-script`:
 
 @pytest.fixture(autouse=True)
 def run_script(mocker):
-    patch = mocker.patch('thebleep.specific.npm.Popen')
-    patch.return_value.stdout = BytesIO(run_script_stdout)
+    patch = mocker.patch(
+        'thebleep.specific.npm.tool_lines',
+        return_value=run_script_stdout.decode('utf-8').splitlines())
     return patch.return_value
 
 

@@ -1,12 +1,12 @@
 from itertools import dropwhile, islice, takewhile
-import subprocess
 
-from thebleep.utils import get_closest, replace_argument, for_app, which, cache
+from thebleep.utils import (get_closest, replace_argument, for_app, which,
+                            cache, tool_lines)
 
 
 def get_golang_commands():
-    proc = subprocess.Popen('go', stderr=subprocess.PIPE)
-    lines = [line.decode('utf-8').strip() for line in proc.stderr.readlines()]
+    # `go` with no arguments prints its usage on stderr.
+    lines = [line.strip() for line in tool_lines(('go',), merge_stderr=True)]
     lines = dropwhile(lambda line: line != 'The commands are:', lines)
     lines = islice(lines, 2, None)
     lines = takewhile(lambda line: line, lines)

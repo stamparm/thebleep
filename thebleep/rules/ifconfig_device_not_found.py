@@ -1,5 +1,4 @@
-import subprocess
-from thebleep.utils import for_app, replace_command, eager
+from thebleep.utils import for_app, replace_command, eager, tool_lines
 
 
 @for_app('ifconfig')
@@ -10,10 +9,8 @@ def match(command):
 
 @eager
 def _get_possible_interfaces():
-    proc = subprocess.Popen(['ifconfig', '-a'], stdout=subprocess.PIPE)
-    for line in proc.stdout.readlines():
-        line = line.decode()
-        if line and line != '\n' and not line.startswith(' '):
+    for line in tool_lines(['ifconfig', '-a']):
+        if line and not line.startswith(' '):
             yield line.split(' ')[0]
 
 

@@ -35,6 +35,79 @@ def _load_difflib():
 DEVNULL = open(os.devnull, 'wb')
 
 
+# How long a rule may wait for a program to tell it something. Every one of
+# these is the same shape of question -- "what subcommands do you have?", "what
+# tasks are there?" -- asked of a program that answers from a list it already
+# has, so anything approaching this is a program that is not going to answer.
+TOOL_TIMEOUT = 5
+
+# And how much of the answer to keep. `gradle tasks` on a large build prints a
+# few hundred lines; nothing this is asked prints a megabyte on purpose.
+TOOL_OUTPUT = 4 * 1024 * 1024
+
+
+def tool_lines(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False):
+    """The lines `arguments` printed on stdout, or `[]`.
+
+    `merge_stderr` for the programs that print their help to stderr, or that
+    changed their mind about which one between versions -- `go` has always used
+    stderr, `docker` used stdout and now uses stderr. Reading one pipe and
+    merely *opening* the other is the deadlock: a program chatty enough to fill
+    the pipe nobody is reading blocks forever.
+
+    One place, because there were twenty of these and not one of them had a
+    timeout. A rule that asks a program what it can do is a rule that hangs for
+    as long as the program does -- `lsof` against a wedged NFS mount, `docker`
+    against a dead daemon, `gradle` waiting on a daemon of its own -- and the
+    correction hangs with it. `types.Rule.get_corrected_commands` catches a rule
+    that *raises*; there is nothing to catch when a rule simply never returns,
+    which from the outside is The Bleep having frozen at the prompt.
+
+    Several of them also piped stderr and then read only stdout, which is a
+    deadlock waiting for a program chatty enough to fill that pipe.
+
+    Everything is swallowed and comes back as `[]`: not installed, not
+    executable, not finished in time, a version that does not have the
+    subcommand being asked about. A rule that cannot get a list has nothing to
+    suggest, which is a rule that does not fire.
+
+    """
+    from subprocess import PIPE, Popen, STDOUT, TimeoutExpired
+
+    try:
+        process = Popen(arguments, stdin=DEVNULL, stdout=PIPE,
+                        stderr=STDOUT if merge_stderr else DEVNULL)
+    except Exception:                                        # noqa: BLE001
+        return []
+
+    try:
+        try:
+            output = process.communicate(timeout=timeout)[0]
+        except TimeoutExpired:
+            process.kill()
+            try:
+                process.communicate(timeout=1)
+            except Exception:                                # noqa: BLE001
+                pass
+            from . import logs
+
+            logs.debug(u'{} did not answer in {}s'.format(
+                arguments[0] if arguments else '?', timeout))
+            return []
+    except Exception:                                        # noqa: BLE001
+        return []
+
+    if len(output) > TOOL_OUTPUT:
+        output = output[:TOOL_OUTPUT]
+
+    return output.decode('utf-8', errors='replace').splitlines()
+
+
+def tool_output(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False):
+    """What `arguments` printed as one string, or `''`."""
+    return '\n'.join(tool_lines(arguments, timeout, merge_stderr))
+
+
 def decorator(caller):
     """Turns a `caller(fn, *args, **kwargs)` function into a decorator.
 

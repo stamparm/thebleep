@@ -1,5 +1,4 @@
 import pytest
-from io import BytesIO
 from thebleep.rules.go_unknown_command import match, get_new_command
 from thebleep.types import Command
 
@@ -64,8 +63,8 @@ Additional help topics:
 Use "go help <topic>" for more information about that topic.
 
 '''
-    mock = mocker.patch('subprocess.Popen')
-    mock.return_value.stderr = BytesIO(stderr)
+    mock = mocker.patch('thebleep.rules.go_unknown_command.tool_lines',
+                        return_value=stderr.decode('utf-8').splitlines())
     return mock
 
 

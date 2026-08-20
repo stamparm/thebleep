@@ -1,5 +1,4 @@
 import pytest
-from io import BytesIO
 from thebleep.rules.gradle_no_task import match, get_new_command, _get_all_tasks
 from thebleep.types import Command
 
@@ -151,9 +150,9 @@ Run gradlew tasks to get a list of available tasks. Run with --stacktrace option
 
 @pytest.fixture(autouse=True)
 def tasks(mocker):
-    patch = mocker.patch('thebleep.rules.gradle_no_task.Popen')
-    patch.return_value.stdout = BytesIO(gradle_tasks)
-    return patch
+    return mocker.patch(
+        'thebleep.rules.gradle_no_task.tool_lines',
+        return_value=gradle_tasks.decode('utf-8').splitlines())
 
 
 @pytest.mark.parametrize('command', [
@@ -179,9 +178,9 @@ class TestTheTaskListItself(object):
 
     @pytest.fixture
     def tasks(self, mocker):
-        patch = mocker.patch('thebleep.rules.gradle_no_task.Popen')
-        patch.return_value.stdout = BytesIO(gradle_8_tasks)
-        return patch
+        return mocker.patch(
+            'thebleep.rules.gradle_no_task.tool_lines',
+            return_value=gradle_8_tasks.decode('utf-8').splitlines())
 
     def test_the_title_is_not_offered_as_a_task(self, tasks):
         assert 'Tasks' not in _get_all_tasks('gradle')

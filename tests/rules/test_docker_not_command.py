@@ -1,5 +1,4 @@
 import pytest
-from io import BytesIO
 from thebleep.types import Command
 from thebleep.rules.docker_not_command import get_new_command, match
 
@@ -139,9 +138,8 @@ Commands:
 
 Run 'docker COMMAND --help' for more information on a command.
 '''
-    mock = mocker.patch('subprocess.Popen')
-    mock.return_value.stdout = BytesIO(help)
-    return mock
+    return mocker.patch('thebleep.rules.docker_not_command.tool_lines',
+                        return_value=help.decode('utf-8').splitlines())
 
 
 @pytest.fixture
@@ -226,10 +224,12 @@ Commands:
 
 Run 'docker COMMAND --help' for more information on a command.
 '''
-    mock = mocker.patch('subprocess.Popen')
-    mock.return_value.stdout = BytesIO(b'')
-    mock.return_value.stderr = BytesIO(helptext_new)
-    return mock
+    # Newer docker writes its help to stderr, which `tool_lines` is asked to
+    # merge into stdout -- reading one pipe and merely opening the other is a
+    # deadlock waiting for a chatty program.
+    return mocker.patch(
+        'thebleep.rules.docker_not_command.tool_lines',
+        return_value=helptext_new.decode('utf-8').splitlines())
 
 
 def output(cmd):
@@ -325,16 +325,17 @@ def test_get_new_command_modern_docker(wrong, fixed):
 @pytest.mark.usefixtures('no_memoize', 'docker_help_new')
 def test_a_management_subcommand_is_looked_up_under_its_command(mocker):
     """The error no longer lists the subcommands, so docker gets asked."""
-    popen = mocker.patch('subprocess.Popen')
-    popen.return_value.stdout = BytesIO(b'')
-    popen.return_value.stderr = BytesIO(
-        b'Usage:  docker image COMMAND\n\nCommands:\n'
-        b'  load        Load an image\n  ls          List images\n')
+    listed = mocker.patch(
+        'thebleep.rules.docker_not_command.tool_lines',
+        return_value=(
+            'Usage:  docker image COMMAND\n\nCommands:\n'
+            '  load        Load an image\n  ls          List images\n'
+        ).splitlines())
 
     command = Command('docker image la',
                       unknown_subcommand('image la', 'image'))
     assert get_new_command(command) == ['docker image load', 'docker image ls']
-    assert popen.call_args[0][0] == ('docker', 'image', '--help')
+    assert listed.call_args[0][0] == ('docker', 'image', '--help')
 
 
 @pytest.mark.usefixtures('no_memoize')

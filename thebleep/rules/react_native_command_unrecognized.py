@@ -1,6 +1,6 @@
 import re
-from subprocess import Popen, PIPE
-from thebleep.utils import for_app, replace_command, cache, eager
+from thebleep.utils import (for_app, replace_command, cache, eager,
+                            tool_lines)
 
 
 @for_app('react-native')
@@ -11,10 +11,9 @@ def match(command):
 @cache('package.json')
 @eager
 def _get_commands():
-    proc = Popen(['react-native', '--help'], stdout=PIPE)
     should_yield = False
-    for line in proc.stdout.readlines():
-        line = line.decode().strip()
+    for line in tool_lines(['react-native', '--help']):
+        line = line.strip()
 
         if not line:
             continue

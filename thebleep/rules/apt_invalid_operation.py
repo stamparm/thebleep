@@ -1,7 +1,6 @@
-import subprocess
 from thebleep.specific.apt import apt_available
 from thebleep.specific.sudo import sudo_support
-from thebleep.utils import for_app, eager, replace_command
+from thebleep.utils import for_app, eager, replace_command, tool_lines
 
 enabled_by_default = apt_available
 
@@ -23,7 +22,7 @@ def match(command):
 def _parse_apt_operations(help_text_lines):
     is_commands_list = False
     for line in help_text_lines:
-        line = line.decode().strip()
+        line = line.strip()
         if is_commands_list and line:
             yield line.split()[0]
         elif line.startswith('Basic commands:') \
@@ -35,7 +34,7 @@ def _parse_apt_operations(help_text_lines):
 def _parse_apt_get_and_cache_operations(help_text_lines):
     is_commands_list = False
     for line in help_text_lines:
-        line = line.decode().strip()
+        line = line.strip()
         if is_commands_list:
             if not line:
                 return
@@ -47,10 +46,7 @@ def _parse_apt_get_and_cache_operations(help_text_lines):
 
 
 def _get_operations(app):
-    proc = subprocess.Popen([app, '--help'],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-    lines = proc.stdout.readlines()
+    lines = tool_lines([app, '--help'])
 
     if app == 'apt':
         return _parse_apt_operations(lines)

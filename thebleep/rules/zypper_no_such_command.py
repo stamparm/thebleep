@@ -23,10 +23,10 @@ zypper did not recognise.
 """
 
 import re
-import subprocess
 from thebleep.specific.sudo import sudo_support
 from thebleep.specific.zypper import zypper_available
-from thebleep.utils import cache, for_app, replace_command, which
+from thebleep.utils import (cache, for_app, replace_command, which,
+                            tool_output)
 
 # `Unknown command 'isntall'`, and nothing else in that message is wanted.
 UNKNOWN = re.compile(r"Unknown command '([^']+)'")
@@ -62,10 +62,7 @@ def _parse_operations(help_text):
 
 
 def _get_operations():
-    proc = subprocess.Popen(['zypper', '--help'],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-    return _parse_operations(proc.stdout.read().decode('utf-8', 'replace'))
+    return _parse_operations(tool_output(['zypper', '--help']))
 
 
 if which('zypper'):

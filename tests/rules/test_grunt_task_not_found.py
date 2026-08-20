@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
 
-from io import BytesIO
 import pytest
 from thebleep.types import Command
 from thebleep.rules.grunt_task_not_found import match, get_new_command
@@ -101,9 +100,9 @@ For more information, see http://gruntjs.com/
 
 @pytest.fixture(autouse=True)
 def grunt_help(mocker):
-    patch = mocker.patch('thebleep.rules.grunt_task_not_found.Popen')
-    patch.return_value.stdout = BytesIO(grunt_help_stdout)
-    return patch
+    return mocker.patch(
+        'thebleep.rules.grunt_task_not_found.tool_lines',
+        return_value=grunt_help_stdout.decode('utf-8').splitlines())
 
 
 @pytest.mark.parametrize('command', [

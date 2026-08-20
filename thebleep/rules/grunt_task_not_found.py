@@ -1,7 +1,7 @@
 import re
-from subprocess import Popen, PIPE
 from thebleep.shells import shell
-from thebleep.utils import for_app, eager, get_closest, cache
+from thebleep.utils import (for_app, eager, get_closest, cache,
+                            tool_lines)
 
 regex = re.compile(r'Warning: Task "(.*)" not found.')
 
@@ -14,10 +14,9 @@ def match(command):
 @cache('Gruntfile.js')
 @eager
 def _get_all_tasks():
-    proc = Popen(['grunt', '--help'], stdout=PIPE)
     should_yield = False
-    for line in proc.stdout.readlines():
-        line = line.decode().strip()
+    for line in tool_lines(['grunt', '--help']):
+        line = line.strip()
 
         if 'Available tasks' in line:
             should_yield = True

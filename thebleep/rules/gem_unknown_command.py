@@ -1,6 +1,6 @@
 import re
-import subprocess
-from thebleep.utils import for_app, eager, replace_command, cache, which
+from thebleep.utils import (for_app, eager, replace_command, cache, which,
+                            tool_lines)
 
 
 @for_app('gem')
@@ -17,12 +17,7 @@ def _get_unknown_command(command):
 
 @eager
 def _get_all_commands():
-    proc = subprocess.Popen(['gem', 'help', 'commands'],
-                            stdout=subprocess.PIPE)
-
-    for line in proc.stdout.readlines():
-        line = line.decode()
-
+    for line in tool_lines(['gem', 'help', 'commands']):
         # A command is indented by four spaces. A description that wrapped is
         # indented much further, and was being taken for a command of its own:
         # `gem help commands` on RubyGems 3.4 wraps four of them, which is

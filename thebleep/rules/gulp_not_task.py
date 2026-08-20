@@ -1,6 +1,5 @@
 import re
-import subprocess
-from thebleep.utils import replace_command, for_app, cache
+from thebleep.utils import replace_command, for_app, cache, tool_lines
 
 
 @for_app('gulp')
@@ -10,10 +9,7 @@ def match(command):
 
 @cache('gulpfile.js')
 def get_gulp_tasks():
-    proc = subprocess.Popen(['gulp', '--tasks-simple'],
-                            stdout=subprocess.PIPE)
-    return [line.decode('utf-8')[:-1]
-            for line in proc.stdout.readlines()]
+    return tool_lines(['gulp', '--tasks-simple'])
 
 
 def get_new_command(command):

@@ -1,5 +1,3 @@
-from io import BytesIO
-
 import pytest
 
 from thebleep.rules.yum_invalid_operation import match, get_new_command, _get_operations
@@ -153,8 +151,8 @@ def test_not_match(command, output):
 
 @pytest.fixture
 def yum_help(mocker):
-    mock = mocker.patch('subprocess.Popen')
-    mock.return_value.stdout = BytesIO(bytes(yum_help_text.encode('utf-8')))
+    mock = mocker.patch('thebleep.rules.yum_invalid_operation.tool_lines',
+                        return_value=yum_help_text.splitlines(True))
     return mock
 
 

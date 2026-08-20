@@ -1,7 +1,6 @@
 import re
-from subprocess import Popen, PIPE
 from thebleep.utils import (for_app, eager, replace_command, replace_argument,
-                            cache, which)
+                            cache, which, tool_lines)
 
 regex = re.compile(r'error Command "(.*)" not found.')
 
@@ -16,10 +15,9 @@ npm_commands = {'require': 'add'}
 
 @eager
 def _get_all_tasks():
-    proc = Popen(['yarn', '--help'], stdout=PIPE)
     should_yield = False
-    for line in proc.stdout.readlines():
-        line = line.decode().strip()
+    for line in tool_lines(['yarn', '--help']):
+        line = line.strip()
 
         if 'Commands:' in line:
             should_yield = True

@@ -1,5 +1,4 @@
 import pytest
-from io import BytesIO
 from thebleep.rules.git_checkout import match, get_branches, get_new_command
 from thebleep.types import Command
 
@@ -14,9 +13,8 @@ def did_not_match(target, did_you_forget=False):
 
 @pytest.fixture
 def git_branch(mocker, branches):
-    mock = mocker.patch('subprocess.Popen')
-    mock.return_value.stdout = BytesIO(branches)
-    return mock
+    return mocker.patch('thebleep.rules.git_checkout.tool_lines',
+                        return_value=branches.decode('utf-8').splitlines())
 
 
 @pytest.mark.parametrize('command', [

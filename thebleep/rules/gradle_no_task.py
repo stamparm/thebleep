@@ -1,6 +1,5 @@
 import re
-from subprocess import Popen, PIPE
-from thebleep.utils import for_app, eager, replace_command
+from thebleep.utils import for_app, eager, replace_command, tool_lines
 
 regex = re.compile(r"Task '(.*)' (is ambiguous|not found)")
 
@@ -17,10 +16,11 @@ def match(command):
 
 @eager
 def _get_all_tasks(gradle):
-    proc = Popen([gradle, 'tasks'], stdout=PIPE)
     should_yield = False
-    for line in proc.stdout.readlines():
-        line = line.decode().strip()
+    # `gradle tasks` starts a daemon of its own and can take a while over it,
+    # so it gets longer than the rest.
+    for line in tool_lines([gradle, 'tasks'], timeout=20):
+        line = line.strip()
         if line.startswith('----'):
             should_yield = True
             continue

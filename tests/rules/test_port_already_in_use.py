@@ -1,5 +1,3 @@
-from io import BytesIO
-
 import pytest
 from thebleep.rules.port_already_in_use import match, get_new_command
 from thebleep.types import Command
@@ -68,9 +66,9 @@ node    18233 nvbn   16u  IPv4 557134      0t0  TCP localhost:http-alt (LISTEN)
 
 @pytest.fixture(autouse=True)
 def lsof(mocker):
-    patch = mocker.patch('thebleep.rules.port_already_in_use.Popen')
-    patch.return_value.stdout = BytesIO(lsof_stdout)
-    return patch
+    return mocker.patch(
+        'thebleep.rules.port_already_in_use.tool_lines',
+        return_value=lsof_stdout.decode('utf-8').splitlines())
 
 
 @pytest.mark.usefixtures('no_memoize')
@@ -88,7 +86,7 @@ def test_match(command):
     (Command('./app', outputs[1]), b''),
     (Command('./app', outputs[2]), b'')])
 def test_not_match(lsof, command, lsof_output):
-    lsof.return_value.stdout = BytesIO(lsof_output)
+    lsof.return_value = lsof_output.decode('utf-8').splitlines()
 
     assert not match(command)
 

@@ -10,9 +10,8 @@ def output(pyenv_cmd):
 
 
 @pytest.fixture(autouse=True)
-def Popen(mocker):
-    mock = mocker.patch('thebleep.rules.omnienv_no_such_command.Popen')
-    mock.return_value.stdout.readlines.return_value = (
+def commands(mocker):
+    listed = (
         b'--version\nactivate\ncommands\ncompletions\ndeactivate\nexec_\n'
         b'global\nhelp\nhooks\ninit\ninstall\nlocal\nprefix_\n'
         b'realpath.dylib\nrehash\nroot\nshell\nshims\nuninstall\nversion_\n'
@@ -20,8 +19,10 @@ def Popen(mocker):
         b'version-origin\nversions\nvirtualenv\nvirtualenv-delete_\n'
         b'virtualenv-init\nvirtualenv-prefix\nvirtualenvs_\n'
         b'virtualenvwrapper\nvirtualenvwrapper_lazy\nwhence\nwhich_\n'
-    ).split()
-    return mock
+    ).decode('utf-8').split()
+    return mocker.patch(
+        'thebleep.rules.omnienv_no_such_command.tool_lines',
+        return_value=listed)
 
 
 @pytest.mark.parametrize('script, pyenv_cmd', [

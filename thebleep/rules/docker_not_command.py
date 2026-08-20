@@ -1,6 +1,6 @@
 import re
-import subprocess
-from thebleep.utils import replace_command, for_app, which, cache
+from thebleep.utils import (replace_command, for_app, which, cache,
+                            tool_lines)
 from thebleep.specific.sudo import sudo_support
 
 # Docker up to 19 said `docker: 'imge' is not a docker command.`; it now says
@@ -41,12 +41,12 @@ def _parse_commands(lines):
 
 def get_docker_commands(prefix=()):
     """What `docker <prefix>` accepts next, according to docker."""
-    proc = subprocess.Popen(('docker',) + tuple(prefix) + ('--help',),
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    # Old versions of docker write their help to stdout, newer ones to stderr.
-    lines = proc.stdout.readlines() or proc.stderr.readlines()
-    return _parse_commands(line.decode('utf-8', 'replace') for line in lines)
+    # Old versions of docker write their help to stdout, newer ones to
+    # stderr, so both are read. Reading one and merely opening the other is
+    # the deadlock: whichever docker did not choose fills up and blocks.
+    return _parse_commands(
+        tool_lines(('docker',) + tuple(prefix) + ('--help',),
+                   merge_stderr=True))
 
 
 if which('docker'):

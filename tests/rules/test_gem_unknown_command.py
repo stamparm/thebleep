@@ -1,5 +1,3 @@
-from io import BytesIO
-
 import pytest
 
 from thebleep.rules.gem_unknown_command import match, get_new_command, \
@@ -70,9 +68,9 @@ e.g. 'gem i rake' is short for 'gem install rake'.
 
 @pytest.fixture(autouse=True)
 def gem_help_commands(mocker):
-    patch = mocker.patch('subprocess.Popen')
-    patch.return_value.stdout = BytesIO(gem_help_commands_stdout)
-    return patch
+    return mocker.patch(
+        'thebleep.rules.gem_unknown_command.tool_lines',
+        return_value=gem_help_commands_stdout.decode('utf-8').splitlines())
 
 
 @pytest.mark.parametrize('script, command', [

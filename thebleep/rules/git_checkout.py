@@ -1,7 +1,6 @@
 import re
-import subprocess
 from thebleep import utils
-from thebleep.utils import replace_argument
+from thebleep.utils import replace_argument, tool_lines
 from thebleep.specific.git import git_support
 from thebleep.shells import shell
 
@@ -21,11 +20,8 @@ def match(command):
 
 
 def get_branches():
-    proc = subprocess.Popen(
-        ['git', 'branch', '-a', '--no-color', '--no-column'],
-        stdout=subprocess.PIPE)
-    for line in proc.stdout.readlines():
-        line = line.decode('utf-8')
+    for line in tool_lines(
+            ['git', 'branch', '-a', '--no-color', '--no-column']):
         if '->' in line:    # Remote HEAD like b'  remotes/origin/HEAD -> origin/master'
             continue
         if line.startswith('*'):

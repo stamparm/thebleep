@@ -1,4 +1,3 @@
-from io import BytesIO
 import pytest
 from thebleep.types import Command
 from thebleep.rules.dnf_no_such_command import match, get_new_command, _get_operations
@@ -166,10 +165,10 @@ def test_not_match(script, output):
 
 @pytest.fixture
 def set_help(mocker):
-    mock = mocker.patch('subprocess.Popen')
+    mock = mocker.patch('thebleep.rules.dnf_no_such_command.tool_output')
 
     def _set_text(text):
-        mock.return_value.stdout = BytesIO(text)
+        mock.return_value = text.decode('utf-8')
 
     return _set_text
 
