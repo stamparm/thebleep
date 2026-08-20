@@ -280,6 +280,26 @@ class Generic(object):
     def decode_utf8(self, command_parts):
         return command_parts
 
+    def mkdir_command(self):
+        """How this shell spells "make a directory and its parents".
+
+        Every POSIX shell runs the same `/bin/mkdir`, so `mkdir -p` is the
+        answer almost everywhere. Nushell has a `mkdir` of its own with no such
+        flag, which makes parents unconditionally -- so a suggestion containing
+        `-p` did not parse there, and three of the commonest corrections
+        (`cd` into a directory that does not exist, `touch` a file in one, `cp`
+        into one) all produced code Nushell refused to run.
+
+        Separate from `mkdir_p` because two rules build a template with a
+        backreference in it rather than a path.
+
+        """
+        return u'mkdir -p'
+
+    def mkdir_p(self, path):
+        """`mkdir` for `path` and its parents, quoted."""
+        return u'{} {}'.format(self.mkdir_command(), self.quote(path))
+
     def quote(self, s):
         """Return a shell-escaped version of the string s."""
         from shlex import quote

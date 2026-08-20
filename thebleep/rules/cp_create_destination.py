@@ -89,5 +89,4 @@ def get_new_command(command):
     directory = (destination.rstrip('/') if destination.endswith('/')
                  else os.path.dirname(destination))
 
-    return shell.and_(u'mkdir -p {}'.format(shell.quote(directory)),
-                      command.script)
+    return shell.and_(shell.mkdir_p(directory), command.script)

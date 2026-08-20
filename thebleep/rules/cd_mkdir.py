@@ -20,5 +20,8 @@ def match(command):
 
 @sudo_support
 def get_new_command(command):
-    repl = shell.and_('mkdir -p \\1', 'cd \\1')
+    # The backreference goes in unquoted, so the shell supplies only the
+    # command word. Nushell's `mkdir` has no `-p`; see
+    # `shells.generic.mkdir_command`.
+    repl = shell.and_('{} \\1'.format(shell.mkdir_command()), 'cd \\1')
     return re.sub(r'^cd (.*)', repl, command.script)

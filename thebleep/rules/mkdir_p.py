@@ -1,4 +1,5 @@
 import re
+from thebleep.shells import shell
 from thebleep.specific.sudo import sudo_support
 from thebleep.utils import is_app
 
@@ -26,4 +27,6 @@ def match(command):
 
 @sudo_support
 def get_new_command(command):
-    return re.sub('\\bmkdir (.*)', 'mkdir -p \\1', command.script)
+    return re.sub('\\bmkdir (.*)',
+                  '{} \\1'.format(shell.mkdir_command()),
+                  command.script)

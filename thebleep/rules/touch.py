@@ -18,5 +18,5 @@ def match(command):
 
 def get_new_command(command):
     path = MISSING_DIRECTORY.search(command.output).group(1)
-    return shell.and_(u'mkdir -p {}'.format(shell.quote(path)),
+    return shell.and_(shell.mkdir_p(path),
                       command.script)

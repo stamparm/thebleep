@@ -153,6 +153,14 @@
 - **`ls -la` in an empty directory no longer suggests `ls -A -la`.** `ls_all`
   only checked that the output was empty, so a command that had already asked
   for hidden files was told to ask again.
+- **Nushell can run the corrections it is given.** Three of the commonest --
+  `cd` into a directory that does not exist, `touch` a file in one, `cp` into
+  one -- all emitted `mkdir -p`, and Nushell's `mkdir` is its own command with
+  no such flag: `The \`mkdir\` command doesn't have flag \`-p\``. The suggestion
+  did not parse, and in the one shell where the user has to press return
+  themselves, so they got to watch it fail. Nushell's `mkdir` creates parents
+  unconditionally, so the flag simply goes. There is a test that no rule
+  hard-codes it again.
 - **A command that worked is no longer run again.** Nothing consulted the exit
   status of the command being corrected, so `bleep` after a *success* offered to
   re-run it -- and then corrected whatever the second run happened to say. The

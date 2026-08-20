@@ -180,6 +180,16 @@ class Nushell(Generic):
         first, rest = commands[0], commands[1:]
         return u'try {{ {} }} catch {{ {} }}'.format(first, self.or_(*rest))
 
+    def mkdir_command(self):
+        """Nushell's `mkdir` makes parents already and has no `-p`.
+
+        Verified against nu 0.108: `mkdir -p x` is a parse error, "the mkdir
+        command doesn't have flag -p", and `mkdir a/b/c` creates `a` and `b` on
+        its own.
+
+        """
+        return u'mkdir'
+
     def quote(self, s):
         """A Nushell string literal for `s`.
 
