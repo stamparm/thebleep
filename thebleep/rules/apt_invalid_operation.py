@@ -6,10 +6,17 @@ from thebleep.utils import for_app, eager, replace_command
 enabled_by_default = apt_available
 
 
+# apt-get says `E: Invalid operation instal`; apt 3.0 -- Debian trixie, Ubuntu
+# 25.04 and newer -- says `Error: Invalid operation instal`. Only the first was
+# matched, so `apt instal vim` got nothing while `apt-get instal vim` worked,
+# and `apt` is the one people type. Both captured from the real programs.
+INVALID_OPERATION = 'Invalid operation'
+
+
 @sudo_support
 @for_app('apt', 'apt-get', 'apt-cache')
 def match(command):
-    return 'E: Invalid operation' in command.output
+    return INVALID_OPERATION in command.output
 
 
 @eager

@@ -1,6 +1,18 @@
 import pytest
+from thebleep.rules import man
 from thebleep.rules.man import match, get_new_command
 from thebleep.types import Command
+
+
+@pytest.fixture(autouse=True)
+def installed(mocker):
+    """A fixed machine, so `<name> --help` is not offered or withheld by
+    accident of whose box the suite runs on -- or of Windows, where `which`
+    answers differently again."""
+    return mocker.patch.object(
+        man, 'which',
+        side_effect=lambda name: '/usr/bin/' + name if name in (
+            'ls', 'git', 'python3') else None)
 
 
 @pytest.mark.parametrize('command', [
@@ -23,8 +35,11 @@ def test_not_match(command):
 
 
 @pytest.mark.parametrize('command, new_command', [
+    # `read` is a shell builtin, so `read --help` is a real place to look.
     (Command('man read', ''), ['man 3 read', 'man 2 read', 'read --help']),
-    (Command('man missing', "No manual entry for missing\n"), ['missing --help']),
+    # `missing` is neither a program nor a builtin, so `missing --help` is not a
+    # command and offering it is worse than offering nothing.
+    (Command('man missing', "No manual entry for missing\n"), []),
     (Command('man 2 read', ''), 'man 3 read'),
     (Command('man 3 read', ''), 'man 2 read'),
     (Command('man -s2 read', ''), 'man -s3 read'),
@@ -35,9 +50,9 @@ def test_not_match(command):
     # and turned every one of these into a page nobody has.
     (Command('man python3', ''),
      ['man 3 python3', 'man 2 python3', 'python3 --help']),
-    (Command('man ls3', ''), ['man 3 ls3', 'man 2 ls3', 'ls3 --help']),
+    (Command('man ls3', ''), ['man 3 ls3', 'man 2 ls3']),
     (Command('man git-log2', ''),
-     ['man 3 git-log2', 'man 2 git-log2', 'git-log2 --help']),
+     ['man 3 git-log2', 'man 2 git-log2']),
     (Command('man 3 python3', ''), 'man 2 python3')])
 def test_get_new_command(command, new_command):
     assert get_new_command(command) == new_command

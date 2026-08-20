@@ -192,6 +192,11 @@ THE_TOOL_SAID_SO = [
     ('apt-get instal vim',
      'E: Invalid operation instal\n',
      'apt-get install vim'),
+    # apt 3.0 -- Debian trixie, Ubuntu 25.04 -- says `Error:` where apt-get
+    # says `E:`, and only `E:` was matched. `apt` is the one people type.
+    ('apt instal vim',
+     'Error: Invalid operation instal\n',
+     'apt install vim'),
 ]
 
 # Group 3: nothing is the right answer. A confident wrong suggestion is worse
@@ -216,6 +221,9 @@ NOTHING_IS_RIGHT = [
     ('npm urgrade',
      'Unknown command: "urgrade"\n\n'
      'To see a list of supported npm commands, run:\n  npm help\n', None),
+    # `<name> --help` is not a command when `<name>` is not one. This was
+    # answered with `nosuchpage --help`.
+    ('man nosuchpage', 'No manual entry for nosuchpage\n', None),
     # A subcommand git does not have and nothing close enough to name.
     ('git zzzzzz',
      "git: 'zzzzzz' is not a git command. See 'git --help'.\n", None),

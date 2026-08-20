@@ -84,6 +84,19 @@
 
 ### Fixed
 
+- **`apt instal vim` gets a correction again.** apt 3.0 -- Debian trixie,
+  Ubuntu 25.04 and newer -- prints `Error: Invalid operation instal` where
+  apt-get prints `E: Invalid operation instal`, and only apt-get's wording was
+  matched. So `apt-get instal vim` worked and `apt` -- the one everybody
+  actually types -- got nothing at all.
+- **`man nosuchpage` no longer suggests `nosuchpage --help`.** With no manual
+  page the rule offered `<last argument> --help`, which is a good answer for
+  `man ls` on a machine with no man pages and not a command at all for a name
+  that does not exist. Shell builtins still count, so `man read` is still
+  answered with `read --help`.
+- **`ls -la` in an empty directory no longer suggests `ls -A -la`.** `ls_all`
+  only checked that the output was empty, so a command that had already asked
+  for hidden files was told to ask again.
 - **`git branch -d master` no longer deletes `main`.** One keypress, a branch
   nobody had named, gone. Two faults stacked. `git_branch_delete_checked_out`
   matched `error: Cannot delete branch 'x' checked out at`, which is what git
