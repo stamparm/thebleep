@@ -427,3 +427,53 @@ def test_the_shell_names_shell_takes_are_the_ones_it_documents(readme):
     assert listed, "the --shell wording changed shape"
     named = set(re.findall(r'`([a-z]+)`', listed.group(1)))
     assert named == set(const.SHELLS), sorted(named ^ set(const.SHELLS))
+
+
+def test_the_hit_rate_in_the_readme_is_the_recorded_one(readme, source_root):
+    """A number in the README that nothing checks is a number that drifts.
+
+    The benchmark above it is held to a recorded run against a named commit; so
+    is this. `bench/hit_rate.py --record` writes the file, and refuses to when
+    the tree has uncommitted changes in it -- a measurement of code that is not
+    in the history is not evidence.
+
+    """
+    import json
+
+    recorded_path = source_root.joinpath('bench', 'results', 'hit-rate.json')
+    if not recorded_path.exists():
+        pytest.skip('no hit rate has been recorded yet')
+
+    with io.open(str(recorded_path), encoding='utf-8') as handle:
+        recorded = json.load(handle)
+
+    table = readme.split('<!-- hit-rate:')[1].split('<!-- end hit-rate -->')[0]
+
+    total = recorded['total']
+    assert '{}/{}'.format(total['hits'], total['of']) in table, \
+        'the README total is not the recorded one'
+
+    for group in recorded['groups']:
+        assert group['what'] in table, group['what']
+        assert '{}/{}'.format(group['hits'], group['of']) in table
+
+    theirs = recorded.get('thefuck_3_32')
+    if theirs:
+        assert '{}/{}'.format(theirs['total']['hits'],
+                              theirs['total']['of']) in table
+
+
+def test_the_hit_rate_names_a_commit_that_exists(source_root):
+    """The same requirement the benchmark has, for the same reason."""
+    import json
+
+    recorded_path = source_root.joinpath('bench', 'results', 'hit-rate.json')
+    if not recorded_path.exists():
+        pytest.skip('no hit rate has been recorded yet')
+
+    with io.open(str(recorded_path), encoding='utf-8') as handle:
+        environment = json.load(handle)['environment']
+
+    assert environment.get('commit'), 'it does not say what it measured'
+    assert environment.get('working_tree_clean') is True, \
+        'recorded from a tree with uncommitted changes in it'
