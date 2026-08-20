@@ -351,8 +351,8 @@ $ thebleep --doctor
   Executable          ~/.local/bin/thebleep
   On PATH             yes
   Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
-  Rules               176 bundled, 3 of your own
-  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (176 rules cached)
+  Rules               177 bundled, 3 of your own
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (177 rules cached)
 - Replayless capture  available, not switched on
                       See --enable-experimental-instant-mode.
   Editing             supported by this shell (tab at the prompt)
@@ -533,7 +533,7 @@ nothing.
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
-| **Rules** | 176 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+| **Rules** | 177 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
@@ -982,6 +982,7 @@ The following rules are enabled by default on specific platforms only:
 * `dnf_no_such_command` — fixes mistyped DNF commands;
 * `nixos_cmd_not_found` — installs apps on NixOS;
 * `pacman` — installs app with `pacman` if it is not installed (uses `paru`, `yay`, `pikaur` or `yaourt` if available, in that order);
+* `option_typo` — fixes a mistyped long option in **any** program: `ls --colour` → `ls --color`, `git status --shrot` → `git status --short`, `curl --verbse` → `curl --verbose`, `tar --extrat` → `tar --extract`. Reads the options out of the program's own usage when it printed them, and asks `<program> --help` only when the program itself invited it (`Try 'ls --help'`);
 * `pacman_invalid_option` — replaces lowercase `pacman` options with uppercase.
 * `pacman_not_found` — fixes package name with `pacman`, `paru`, `yay`, `pikaur` or `yaourt`.
 * `yum_invalid_operation` — fixes invalid `yum` calls, like `yum isntall vim`;
@@ -1307,7 +1308,7 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches about a fifth of the 176 rules, and
+  running it. A typical command now reaches about a fifth of the 177 rules, and
   one for a tool with many rules of its own — `git` — under a quarter, instead of
   all of them. Rules that don't say what they are about are always loaded, so
   this makes corrections faster, never fewer.

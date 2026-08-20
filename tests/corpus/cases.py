@@ -220,6 +220,16 @@ THE_TOOL_SAID_SO = [
      "Error: No such option '--chekc'. (Did you mean one of: '--check', "
      "'--code', '--help'?)\n",
      'black --check .'),
+    # A mistyped long option, which nothing corrected before. Only git's case
+    # is here: it prints its own options, so nothing has to be run. `ls
+    # --colour` needs a real `ls --help`, which Windows has no answer for, and
+    # a corpus case that depends on the runner is a red CI run waiting to
+    # happen -- it lives in `tests/rules/test_option_typo.py` instead.
+    ('git status --shrot',
+     "error: unknown option `shrot'\n"
+     'usage: git status [<options>] [--] [<pathspec>...]\n\n'
+     '    -s, --[no-]short      show status concisely\n',
+     'git status --short'),
     ('kubectl gat pods',
      'error: unknown command "gat" for "kubectl"\n\n'
      'Did you mean this?\n\tget\n\tset\n',

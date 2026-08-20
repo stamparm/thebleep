@@ -68,12 +68,24 @@
   `cargo_no_command` took the mistyped word from the second position on the
   command line rather than from cargo's message, so `cargo --offline instal`
   was beyond it.
-- **Mistyped options are corrected, not just subcommands.** `ruff check --fixx`
-  becomes `ruff check --fix`, `ruff check --lin` becomes
-  `ruff check --line-length`, `black --chekc` becomes `black --check`. Nothing
-  did this before, and a mistyped flag is at least as common as a mistyped
-  subcommand -- clap and Click both name the answer for one exactly as they do
-  for the other.
+- **Mistyped options are corrected, not just subcommands** -- and for every
+  program, not only the ones with a parser this recognises. `ls --colour`
+  becomes `ls --color`, `git status --shrot` becomes `git status --short`,
+  `tar --extrat` becomes `tar --extract`, `curl --verbse` becomes
+  `curl --verbose`, `du --humn-readable` becomes `du --human-readable`,
+  `ruff check --fixx` becomes `ruff check --fix`.
+
+  Nothing did any of this before. The only rule that fired on a mistyped flag
+  was `long_form_help`, which answered `ls --help` -- a help screen dressed as a
+  correction, with the rest of your command discarded.
+
+  `option_typo` reads the options out of the program's own usage when it printed
+  them, which is what git does, so nothing is run. When the program printed only
+  an invitation -- `Try 'ls --help' for more information.` -- it accepts the
+  invitation and reads that. Without one, nothing is run: taking a program up on
+  its own suggestion is a different thing from assuming some unknown program's
+  `--help` is harmless. `long_form_help` still answers when there is no option
+  close enough to offer, so `ls --zzzzzzqqq` is unchanged.
 
 ### Changed
 
