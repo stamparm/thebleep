@@ -4,7 +4,12 @@ from thebleep.types import Command
 from thebleep.rules.apt_invalid_operation import match, get_new_command, \
     _get_operations
 
+# apt-get says `E:`; apt 3.0 -- Debian trixie, Ubuntu 25.04 and newer -- says
+# `Error:`. Only the first was matched, so `apt instal vim` got nothing at all
+# while `apt-get instal vim` worked, and `apt` is the one people type. Both
+# captured from the real programs.
 invalid_operation = 'E: Invalid operation {}'.format
+invalid_operation_apt3 = 'Error: Invalid operation {}'.format
 apt_help = b'''apt 1.0.10.2ubuntu1 for amd64 compiled on Oct  5 2015 15:55:05
 Usage: apt [options] command
 
@@ -162,3 +167,21 @@ def test_get_operations(set_help, app, help_text, operations):
 def test_get_new_command(set_help, output, script, help_text, result):
     set_help(help_text)
     assert get_new_command(Command(script, output))[0] == result
+
+
+@pytest.mark.parametrize('script, output', [
+    ('apt instal vim', invalid_operation_apt3('instal')),
+    ('apt serach vim', invalid_operation_apt3('serach')),
+    ('apt-get instal vim', invalid_operation('instal')),
+])
+def test_either_wording_matches(script, output):
+    """The one that was dead is the one everybody types."""
+    assert match(Command(script, output))
+
+
+def test_apt_3_gets_a_correction(mocker):
+    mocker.patch('thebleep.rules.apt_invalid_operation._get_operations',
+                 return_value=apt_operations)
+    assert get_new_command(
+        Command('apt instal vim',
+                invalid_operation_apt3('instal')))[0] == 'apt install vim'

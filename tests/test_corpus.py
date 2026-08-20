@@ -78,47 +78,41 @@ def machine(request, mocker, monkeypatch, settings):
     return names
 
 
-# What the real tools answer when asked for their subcommands, captured from
-# apt 3.0.3 and pip 25.0.1.
-APT_OPERATIONS = ['list', 'search', 'show', 'install', 'reinstall', 'remove',
-                  'autoremove', 'update', 'upgrade', 'full-upgrade', 'edit-sources',
-                  'satisfy']
-PIP_COMMANDS = ['install', 'download', 'uninstall', 'freeze', 'inspect', 'list',
-                'show', 'check', 'config', 'search', 'cache', 'index', 'wheel',
-                'hash', 'completion', 'debug', 'help']
+# What `npm run-script` lists. Captured from npm 10.8.2.
 NPM_SCRIPTS = ['build', 'test', 'start', 'watch']
 
 
 def _stub_the_tools(mocker, settings):
-    """Answer for the tools instead of running them.
+    """Answer for the tools instead of running them -- where that is possible.
 
-    Learned from CI rather than worked out: three cases here failed on macOS,
-    where `apt` does not exist -- so its rule was switched off and answered
-    nothing -- and where `pip_unknown_command` shelled out to a different pip and
-    got a different list. A corpus whose answers depend on what the runner has
-    installed is not a corpus, it is a survey of the runner.
+    There is a trap here that cost two red CI runs, and it is worth knowing
+    before adding a case. The corrector does not use the rule modules you can
+    `import`: `thebleep.rulepack` loads each rule from its source file, so the
+    module object it runs is a different one. Patching a helper *defined inside
+    a rule* therefore does nothing, while patching one in a module the rule
+    imports works perfectly -- because the freshly loaded rule does its import
+    after the patch is in place.
 
-    Rules gated on a tool being present are named explicitly in `settings.rules`,
-    which `Rule.is_enabled` honours ahead of `enabled_by_default`.
+    So `thebleep.utils.get_all_executables` and `thebleep.specific.npm` can be
+    answered for, and `apt_invalid_operation._get_operations` cannot. Cases that
+    need the second kind are not in the corpus at all; they live in that rule's
+    own tests, which call `get_new_command` directly and can patch it. What is
+    here is the path that matters most anyway -- the guess with no tool to ask --
+    plus the rules that read the answer out of output and run nothing.
+
+    Rules gated on a tool being installed are named explicitly in
+    `settings.rules`, which `Rule.is_enabled` honours ahead of
+    `enabled_by_default`. Without that, npm's rules are simply off on a runner
+    with no npm and answer nothing.
 
     """
     from thebleep import const
-    from thebleep.rules import apt_invalid_operation, pip_unknown_command
 
-    settings.rules = [const.ALL_ENABLED, 'apt_invalid_operation',
-                      'npm_missing_script', 'npm_wrong_command']
+    settings.rules = [const.ALL_ENABLED, 'npm_missing_script',
+                      'npm_wrong_command']
 
-    mocker.patch.object(apt_invalid_operation, '_get_operations',
-                        return_value=APT_OPERATIONS)
-    mocker.patch.object(pip_unknown_command, '_interpreter',
-                        return_value='python3')
-    mocker.patch.object(pip_unknown_command, '_pip_commands',
-                        return_value=PIP_COMMANDS)
-    mocker.patch('thebleep.specific.npm.get_scripts',
-                 return_value=NPM_SCRIPTS)
+    mocker.patch('thebleep.specific.npm.get_scripts', return_value=NPM_SCRIPTS)
     mocker.patch('thebleep.specific.npm.get_all_scripts',
-                 return_value=NPM_SCRIPTS)
-    mocker.patch('thebleep.rules.npm_missing_script.get_all_scripts',
                  return_value=NPM_SCRIPTS)
 
 

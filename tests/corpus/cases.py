@@ -150,6 +150,12 @@ NO_SUCH_PROGRAM = [
 # Group 2: the tool is there and says what it meant. These are the cases that
 # work, and they work because the answer is *read* rather than guessed -- which
 # is the pattern worth keeping.
+#
+# Only rules that read the answer out of output belong here. A rule that has to
+# *run* the tool to get its list -- `apt_invalid_operation`, and
+# `pip_unknown_command` when pip's own guess is the wrong one -- cannot be
+# answered for through the corrector, for the reason set out in
+# `tests/test_corpus.py::_stub_the_tools`, and is covered by its own tests.
 THE_TOOL_SAID_SO = [
     ('git satus',
      "git: 'satus' is not a git command. See 'git --help'.\n\n"
@@ -171,11 +177,6 @@ THE_TOOL_SAID_SO = [
     ('pip instatl requests',
      'ERROR: unknown command "instatl" - maybe you meant "install"\n',
      'pip install requests'),
-    # pip's own guess is the destructive sibling, and it is wrong: `nistall` is
-    # a transposition of `install`.
-    ('pip nistall requests',
-     'ERROR: unknown command "nistall" - maybe you meant "uninstall"\n',
-     'pip install requests'),
     # ...and a real `uninstall` typo still means uninstall.
     ('pip unistall requests',
      'ERROR: unknown command "unistall" - maybe you meant "uninstall"\n',
@@ -189,14 +190,6 @@ THE_TOOL_SAID_SO = [
      'error: unknown command "gat" for "kubectl"\n\n'
      'Did you mean this?\n\tget\n\tset\n',
      'kubectl get pods'),
-    ('apt-get instal vim',
-     'E: Invalid operation instal\n',
-     'apt-get install vim'),
-    # apt 3.0 -- Debian trixie, Ubuntu 25.04 -- says `Error:` where apt-get
-    # says `E:`, and only `E:` was matched. `apt` is the one people type.
-    ('apt instal vim',
-     'Error: Invalid operation instal\n',
-     'apt install vim'),
 ]
 
 # Group 3: nothing is the right answer. A confident wrong suggestion is worse
