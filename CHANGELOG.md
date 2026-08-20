@@ -153,6 +153,18 @@
 - **`ls -la` in an empty directory no longer suggests `ls -A -la`.** `ls_all`
   only checked that the output was empty, so a command that had already asked
   for hidden files was told to ask again.
+- **tcsh's `--alias-loader` has never worked, and now does.** It printed a stub
+  that calls itself once it has replaced itself -- which is what a loader is
+  everywhere else. tcsh expands an alias when it *parses* the line, so the
+  self-reference was expanded before the `eval` meant to redefine it had run,
+  and tcsh answered `Alias loop.` Every time, for as long as that line was in
+  the `.cshrc`, and it was the documented way to install for tcsh.
+
+  There is no way to write the stub that avoids it, because the loop *is* the
+  self-reference and the self-reference is the point. So the flag gives tcsh the
+  real alias, which works. What tcsh gives up is the loader's one advantage: the
+  body goes into the startup file rather than being generated fresh, so after an
+  upgrade that changes the body the line has to be regenerated.
 - **Nushell can run the corrections it is given.** Three of the commonest --
   `cd` into a directory that does not exist, `touch` a file in one, `cp` into
   one -- all emitted `mkdir -p`, and Nushell's `mkdir` is its own command with

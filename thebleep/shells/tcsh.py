@@ -49,9 +49,30 @@ class Tcsh(Generic):
                     alias_name, self._invocation())
 
     def app_alias_loader(self, alias_name):
-        return ("alias {name} 'setenv TB_SHELL tcsh && "
-                "eval `{command} --alias {name}` && {name} \\!*'").format(
-                    name=alias_name, command=self._invocation())
+        """The eager alias, because tcsh cannot have a loader.
+
+        Everywhere else the loader is a stub that replaces itself with the real
+        alias on first use and then hands the arguments over. tcsh expands an
+        alias when it *parses* the line, so the stub's call to itself is
+        expanded before the `eval` that was meant to redefine it has run --
+        and tcsh sees the alias referring to itself and says:
+
+            RDY> bleep
+            Alias loop.
+
+        Every time, for as long as that line was in the `.cshrc`. It was the
+        documented way to install for tcsh and it had never worked. Verified
+        against tcsh 6.24.
+
+        There is no way to write the stub that avoids this: the loop is the
+        self-reference, and the point of a loader is the self-reference. So the
+        flag gives tcsh the real alias instead, which works. What tcsh gives up
+        is the loader\'s one advantage -- the body is written into the startup
+        file rather than generated fresh, so after an upgrade that changes the
+        body the line has to be regenerated.
+
+        """
+        return self.app_alias(alias_name)
 
     def _parse_alias(self, alias):
         name, value = alias.split("\t", 1)

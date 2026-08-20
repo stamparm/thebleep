@@ -51,9 +51,22 @@ class TestTcsh(object):
         assert 'thebleep' in shell.app_alias('bleep')
 
     def test_app_alias_loader(self, shell):
+        """tcsh cannot have a loader, so the flag gives it the real alias.
+
+        A loader is a stub that calls itself once it has replaced itself. tcsh
+        expands an alias when it *parses* the line, so the self-reference is
+        expanded before the `eval` meant to redefine it runs, and tcsh answers
+        `Alias loop.` -- every time, for as long as that line is in the
+        `.cshrc`. It was the documented way to install for tcsh and it had
+        never worked once. Verified against tcsh 6.24.
+
+        """
         loader = shell.app_alias_loader('bleep')
         assert loader.startswith('alias bleep ')
-        assert 'thebleep --alias bleep' in loader
+        assert loader == shell.app_alias('bleep')
+
+        # The self-reference is the loop, so its absence is the fix.
+        assert '&& bleep \\!*' not in loader
 
     def test_get_history(self, history_lines, shell):
         history_lines(['ls', 'rm'])
