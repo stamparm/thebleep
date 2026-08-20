@@ -48,6 +48,42 @@
   upstream`). An error about a branch that exists is no longer a reason to
   rename it, and the substitution is by word rather than by substring, so
   `release/master-fix` is left alone.
+- **`cp a.txt dir/a.txt` no longer makes a *directory* called `a.txt`.**
+  `cp_create_destination` ran `mkdir -p` on the whole destination, filename
+  included, so the copy landed inside a directory named after the file it should
+  have been -- and the command exited 0, so nothing said otherwise. It also
+  fired when the missing thing was the *source*, where there is nothing to make:
+  `mv typoo.txt newname.txt` suggested `mkdir -p newname.txt && mv ...`, which
+  failed and left the directory behind. It now reads which path the message
+  names -- `cannot create` and `cannot move ... to` name the destination,
+  `cannot stat` names the source -- and makes the directory holding it. GNU and
+  busybox wordings both captured; busybox `mv` is left alone because it says the
+  same thing whichever path is missing.
+- **`pip nistall requests` no longer offers only `pip uninstall requests`.**
+  pip names one candidate and that was taken on trust, so a transposed
+  `install` was answered with the command that removes the package -- the only
+  suggestion, with nothing to arrow down to, and only pip's own prompt in the
+  way. Sorting by closeness does not help: `difflib` scores `nistall` nearer to
+  `uninstall` (0.875) than to `install` (0.857). What it does show is that every
+  genuine typo is decided by a tenth or more and only the ambiguous one is
+  close, so a near tie is now enough to demote the reading that removes things.
+  `pip unistall` still means `uninstall`. The other candidates come from pip
+  itself, read out of the table pip dispatches on.
+- **`npm` suggestions that could not run, and one that ran the wrong thing.**
+  `npm urgrade` produced the literal suggestion `npm None` -- npm 7 and later
+  print no command list, so there was nothing to match against and `None` was
+  pasted into the command. `npm build` produced `npm run`, because only the
+  first word of npm's own multi-word suggestion was read. And `npm run strat`
+  produced `npm run watch`: the script list left out every lifecycle script, so
+  `start` was never a candidate, and the 0.1 closeness floor accepted whatever
+  remained. npm's suggestion and the project's scripts now go into one pool
+  ordered by closeness, and the lifecycle scripts are in it.
+- **`sudo make install` no longer suggests `sudo sudo make install`.** Rules are
+  offered the command with its wrapper peeled off as well as whole, which is how
+  `ls` behind a `sudo` gets `sudo ls -lah`. But the `sudo` rule itself was
+  offered the peeled command too, answered `sudo make install`, and then had the
+  peeled `sudo` put back in front. A rule named after the wrapper no longer runs
+  on the command that wrapper came off.
 - **Four more rules had gone dead against current git, and two of them
   crashed.** All four had green tests, because every fixture was written by hand
   from the wording of the day. They are now parametrised over what git 2.30.2,

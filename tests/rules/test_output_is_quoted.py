@@ -89,10 +89,15 @@ def test_no_such_file(payload, arguments_reaching):
         == ['-p', '/tmp/' + payload]
 
 
-@pytest.mark.parametrize('payload', HOSTILE)
+@pytest.mark.parametrize('payload', NO_QUOTE)
 def test_cp_create_destination(payload, arguments_reaching):
-    command = Command('cp x {!r}'.format(payload),
-                      'cp: cannot create regular file: No such file or directory')
+    """The destination now comes out of cp's own message rather than off the end
+    of the command line, and cp wraps it in `'...'` -- so this joins the rules
+    that cannot be handed a name containing a quote. What is quoted is the
+    directory holding the destination, which is the part that gets made."""
+    output = ("cp: cannot create regular file '{}/f.txt': "
+              'No such file or directory'.format(payload))
+    command = Command('cp x {}/f.txt'.format(payload), output)
     new_command = cp_create_destination.get_new_command(command)
     assert arguments_reaching(new_command, 'mkdir') == ['-p', payload]
 

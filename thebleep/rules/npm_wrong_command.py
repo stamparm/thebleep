@@ -7,7 +7,13 @@ enabled_by_default = npm_available
 
 # npm 6 and earlier answered an unknown command by listing every command they
 # knew; npm 7 and later name the one they think you meant.
-SUGGESTION = re.compile(r'^\s+npm ([^\s#]+)')
+#
+# The whole suggestion, not its first word. npm's answers are routinely more
+# than one word -- `npm build` is answered with `npm run build # run the
+# "build" package script` -- and taking one word out of that produced the
+# suggestion `npm run`, which does not build anything. The trailing `# ...` is
+# npm's own commentary and is dropped.
+SUGGESTION = re.compile(r'^\s+npm\s+(.+?)(?:\s+#.*)?$')
 
 
 def _get_wrong_command(script_parts):
@@ -71,4 +77,13 @@ def get_new_command(command):
 
     npm_commands = _get_available_commands(command.output)
     fixed = get_closest(wrong_command, npm_commands)
+    if fixed is None:
+        # npm 7 and later print no command listing, and when they have nothing
+        # to suggest they print no suggestion either -- so there is nothing to
+        # go on. `get_closest` returning `None` instead of raising was the fix
+        # for a crash here; passing it on produced the literal suggestion
+        # `npm None`, which is worse than saying nothing, because it looks like
+        # an answer and cannot run.
+        return []
+
     return replace_argument(command.script, wrong_command, fixed)

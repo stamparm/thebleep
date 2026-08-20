@@ -196,11 +196,24 @@ def _corrections_behind_the_wrapper(rules, command, prefix, inner_script):
 
     """
     inner = command.update(script=inner_script)
+    wrapper_name = prefix.split()[0] if prefix.split() else ''
 
     for rule in rules:
         if rule.is_match(command):
             for corrected in rule.get_corrected_commands(command):
                 yield corrected
+
+        # A rule whose whole job is to *add* a wrapper has nothing useful to say
+        # about a command that wrapper was just peeled off. `sudo`, asked about
+        # the `make install` behind a `sudo`, answers `sudo make install` -- and
+        # then the peeled `sudo` goes back in front of it, giving
+        # `sudo sudo make install`. `sudo make install` printing a nested
+        # "Permission denied" is an entirely ordinary thing, so this was easy to
+        # meet. The rule still runs against the whole command above, which is
+        # where it belongs.
+        if rule.name == wrapper_name:
+            continue
+
         if rule.is_match(inner):
             for corrected in rule.get_corrected_commands(inner):
                 yield corrected.with_prefix(prefix)

@@ -57,9 +57,17 @@ class TestTheOrdinaryAnswer(object):
 @pytest.mark.usefixtures('started_as_the_package')
 class TestRunFromAClone(object):
     def test_it_names_the_interpreter_and_the_file(self):
-        command = invocation.command()
-        assert sys.executable in command
-        assert command.endswith(os.path.join('thebleep', '__main__.py'))
+        """Asked of the words, not of the quoted line.
+
+        A Windows path holds a colon and backslashes, so `shlex.quote` wraps it
+        -- and this asserted on the end of the quoted string, which is a quote.
+        The words are what the function is about; the quoting belongs to
+        whichever shell is asking.
+
+        """
+        words = invocation.parts()
+        assert words[0] == sys.executable
+        assert words[1].endswith(os.path.join('thebleep', '__main__.py'))
 
     def test_the_file_it_names_can_be_run(self):
         """The point of naming a file rather than `-m thebleep`: no
@@ -78,19 +86,39 @@ class TestRunFromAClone(object):
         monkeypatch.setattr(sys, 'executable', '/opt/some python/bin/python3')
         assert "'/opt/some python/bin/python3'" in invocation.command()
 
-    @pytest.mark.parametrize('shell', [Bash, Zsh, Generic, Tcsh])
+    @pytest.mark.parametrize('shell', [Bash, Zsh, Generic, Fish])
     def test_the_alias_it_writes_runs_the_clone(self, shell, set_shell):
-        """Not `thebleep`, which would be whatever is installed."""
+        """Not `thebleep`, which would be whatever is installed.
+
+        Compared against the shell's own `_invocation`, because that is where
+        the quoting is decided -- `invocation.command()` only ever speaks POSIX.
+        Fish is in the list because its alias is built positionally and is
+        therefore worth its own look.
+
+        """
         set_shell(shell)
+        written = shell()._invocation()
+        assert written != invocation.ENTRY_POINT
         for text in (shell().app_alias('bleep'),
                      shell().app_alias_loader('bleep')):
-            assert invocation.command() in text
+            assert written in text
             assert 'thebleep --alias' not in text
 
-    def test_fish_too(self, set_shell):
-        """Its alias is built positionally, so it is worth its own look."""
-        set_shell(Fish)
-        assert invocation.command() in Fish().app_alias_loader('bleep')
+    def test_tcsh_says_so_when_it_cannot_hold_the_path(self, set_shell):
+        """A tcsh alias body is single-quoted and cannot contain a quote, so a
+        path needing quotes cannot go in one at all.
+
+        On Windows that is every path -- a drive colon and backslashes are
+        enough for `shlex.quote` -- which is how this turned up: a test that
+        asserted the clone was named passed on Linux and failed on Windows.
+
+        """
+        set_shell(Tcsh)
+        written = Tcsh()._invocation()
+        if "'" in invocation.command():
+            assert written == invocation.ENTRY_POINT
+        else:
+            assert written in Tcsh().app_alias('bleep')
 
 
 class TestTheOverride(object):
