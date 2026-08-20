@@ -18,7 +18,7 @@ happens to contain the right thing. See `tests/corpus/README.md`.
 
 import os
 import pytest
-from thebleep import corrector, utils
+from thebleep import corrector, matching, utils
 from thebleep.types import Command
 from tests.corpus import cases
 
@@ -115,3 +115,59 @@ def test_the_corpus_is_worth_running():
     """
     assert len(cases.ALL) >= 70
     assert len(_executables()) >= 500
+
+
+# The commands a developer types most, restricted to ones the snapshot has.
+COMMONEST = [
+    'git', 'ls', 'cd', 'grep', 'cat', 'python3', 'pip', 'npm', 'node',
+    'docker', 'kubectl', 'ssh', 'curl', 'tar', 'mkdir', 'touch', 'chmod',
+    'sudo', 'apt', 'vim', 'cargo', 'rm', 'mv', 'cp', 'find', 'sort', 'head',
+    'tail', 'echo', 'kill', 'ps', 'df', 'du',
+]
+
+
+def _single_edit_typos(word, known):
+    """Every one-slip misspelling of `word` that is not itself a command."""
+    out = set()
+    for index in range(len(word) - 1):
+        out.add(word[:index] + word[index + 1] + word[index]
+                + word[index + 2:])                      # transposition
+    for index in range(len(word)):
+        out.add(word[:index] + word[index + 1:])          # omission
+        out.add(word[:index] + word[index] + word[index:])  # doubling
+
+    return {typo for typo in out
+            if len(typo) > 1 and typo not in known}
+
+
+def test_every_single_slip_in_a_common_command_is_corrected(machine):
+    """Generated rather than imagined, which is the point.
+
+    A hand-written list of typos is a list of the ones somebody thought of. This
+    makes every transposition, omission and doubled letter of the commands a
+    developer types most -- a few hundred cases -- and requires that the answer
+    is the command they came from, or something no further away.
+
+    Nothing absurd and nothing silent: the two ways this used to fail were
+    offering `tic` for `gti` (further away, and it won on a tie) and offering
+    nothing at all because the metric could not see a transposition.
+
+    """
+    known = set(machine)
+    absurd = []
+    silent = []
+
+    for command in COMMONEST:
+        if command not in known:
+            continue
+        for typo in sorted(_single_edit_typos(command, known)):
+            ranked = matching.rank(typo, machine, limit=1)
+            if not ranked:
+                silent.append((typo, command))
+            elif ranked[0] != command and (
+                    matching.distance(typo, ranked[0])
+                    > matching.distance(typo, command)):
+                absurd.append((typo, command, ranked[0]))
+
+    assert not absurd, 'a further-away command won: {}'.format(absurd[:10])
+    assert not silent, 'no suggestion at all for: {}'.format(silent[:10])
