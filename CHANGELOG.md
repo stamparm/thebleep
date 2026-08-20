@@ -10,6 +10,12 @@
   because kubectl's own order offers `set` before `get` for `gat`.
   (by [@TrixSec](https://github.com/TrixSec) in
   [#1](https://github.com/stamparm/thebleep/pull/1))
+- `uv_unknown_subcommand` — fixes a mistyped `uv` subcommand from the tip uv
+  itself prints: `uv piip install requests` becomes
+  `uv pip install requests`. Subcommands of a subcommand work the same way, so
+  `uv pip instll`, `uv tool runn` and `uv python instal` are all corrected.
+  (by [@TrixSec](https://github.com/TrixSec) in
+  [#3](https://github.com/stamparm/thebleep/pull/3))
 
 ## 4.0.2 — 2026-08-19
 

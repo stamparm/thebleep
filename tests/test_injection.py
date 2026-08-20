@@ -271,11 +271,19 @@ class TestNamesFromSomewhereElse(object):
             assert canary(suggestion) == []
 
     def test_uv(self, name, payload, canary):
-        """uv lists what it thinks you meant, and we repeat one back."""
+        """uv names what it thinks you meant, and we repeat one back.
+
+        uv puts each name in single quotes, so the `QUOTE` payload cannot
+        arrive through this route whole -- what is read out of the tip is the
+        two halves of it. Both still go to the shell, which is the thing being
+        checked.
+
+        """
         from thebleep.rules import uv_unknown_subcommand
 
         output = (u"error: unrecognized subcommand 'piip'\n\n"
-                  u"  tip: a similar subcommand exists: '{}'\n\n".format(payload))
+                  u"  tip: a similar subcommand exists: '{}'\n\n"
+                  u'Usage: uv [OPTIONS] <COMMAND>\n'.format(payload))
         command = Command(u'uv piip install requests', output)
         if not uv_unknown_subcommand.match(command):
             return
