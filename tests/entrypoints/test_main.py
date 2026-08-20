@@ -14,12 +14,15 @@ def test_broken_pipe_is_not_an_error(main_module, mocker):
     # The stdout pytest captures has no descriptor to redirect, a real one has.
     mocker.patch('sys.stdout', new=mocker.Mock(fileno=lambda: 1))
     dup2 = mocker.patch('os.dup2')
+    close = mocker.patch('os.close')
 
     with pytest.raises(SystemExit) as exc_info:
         main_module.main()
 
     assert exc_info.value.code == 0
     assert dup2.call_args[0] == (42, 1)
+    # And the descriptor it duplicated from is not left open.
+    assert close.call_args[0] == (42,)
 
 
 class TestShellOverride(object):

@@ -129,7 +129,15 @@ def _reap(pid, master_fd):
             except OSError:                                  # pragma: no cover
                 return 0
             if finished:
-                return status
+                # `waitpid` reports an encoded wait status, not an exit code:
+                # a child that exited 1 gives 256, and `sys.exit(256)` exits
+                # *zero*. So a shell session that ended in failure was reported
+                # as a success, and one killed by a signal exited with the
+                # signal number.
+                code = os.waitstatus_to_exitcode(status)
+                # Negative means killed by that signal; report it the way a
+                # shell reports it.
+                return code if code >= 0 else 128 - code
             time.sleep(0.02)
     return 0                                                 # pragma: no cover
 

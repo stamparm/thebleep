@@ -52,7 +52,16 @@ def get_output(script, expanded):
     """
     if _shell_logger_available():
         from . import shell_logger
-        return shell_logger.get_output(script)
+
+        output = shell_logger.get_output(script)
+        if output is not None:
+            return output
+        # The logger is an optimisation, and one that answers over a socket to
+        # a separate process: a daemon that died and left its socket file
+        # behind, one that accepts and then says nothing, a reply that is not
+        # the JSON expected. Returning its answer directly made every one of
+        # those the end of the correction. It is now a reader like the others,
+        # and a reader with no answer is fallen through.
     if settings.instant_mode:
         from . import read_log
 

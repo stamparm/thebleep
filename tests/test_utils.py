@@ -472,3 +472,37 @@ class TestInstallationVersion(object):
         mocker.patch('importlib.metadata.version',
                      side_effect=PackageNotFoundError('thebleep'))
         assert utils.get_installation_version() == 'unknown'
+
+
+@pytest.mark.usefixtures("no_memoize")
+class TestAnEmptyPathEntry(object):
+    """`PATH=:/usr/bin` -- an empty entry means the current directory.
+
+    `shutil.which` honours that and this did not, which was not a cosmetic
+    disagreement: `replay.is_inert` reads "not on `PATH`" as "there is nothing
+    there to run, so running it again is free", so a local `./deploy` that the
+    shell had just found and run was run a second time without being asked
+    about.
+
+    """
+
+    @pytest.fixture
+    def a_program_here(self, tmpdir, monkeypatch):
+        program = tmpdir.join('localcmd')
+        program.write('#!/bin/sh\n')
+        os.chmod(str(program), 0o755)
+        monkeypatch.chdir(str(tmpdir))
+        return 'localcmd'
+
+    @pytest.mark.parametrize('path', [':/usr/bin', '/usr/bin:',
+                                      '/usr/bin::/bin', ':', ''])
+    def test_it_agrees_with_shutil(self, a_program_here, path, monkeypatch):
+        import shutil
+
+        monkeypatch.setenv('PATH', path)
+        assert which(a_program_here) == shutil.which(a_program_here)
+
+    def test_the_command_is_not_treated_as_absent(self, a_program_here,
+                                                  monkeypatch):
+        monkeypatch.setenv('PATH', ':/usr/bin')
+        assert which(a_program_here) is not None

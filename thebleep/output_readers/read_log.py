@@ -175,8 +175,21 @@ def get_output(script):
             # recording is a file somebody else is still writing to.
             fd = os.open(os.environ['THEBLEEP_OUTPUT_LOG'], os.O_RDONLY)
             try:
-                with mmap.mmap(fd, const.LOG_SIZE_IN_BYTES,
-                               access=mmap.ACCESS_READ) as buffer:
+                # As much of the recording as there is, not as much as there
+                # should be. The logger pre-writes the file to its full size
+                # before using it, so a logger killed in between -- or a
+                # recording from a version that sized it differently -- leaves
+                # a file shorter than `LOG_SIZE_IN_BYTES`. Asking `mmap` for
+                # more than the file holds raises `ValueError`, which nothing
+                # here catches; asking for a region the file has not actually
+                # been extended to is worse than that, because touching it
+                # raises `SIGBUS` and kills the process outright.
+                size = min(os.fstat(fd).st_size, const.LOG_SIZE_IN_BYTES)
+                if size <= 0:
+                    logs.warn("Output log is empty")
+                    return None
+
+                with mmap.mmap(fd, size, access=mmap.ACCESS_READ) as buffer:
                     _skip_old_lines(buffer)
                     lines = _get_output_lines(script, buffer)
             finally:

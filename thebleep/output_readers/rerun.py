@@ -12,14 +12,20 @@ def _kill_process(proc):
     :type proc: Process
 
     """
-    from psutil import AccessDenied
+    from psutil import AccessDenied, NoSuchProcess
 
     try:
         proc.kill()
+    except NoSuchProcess:
+        # It exited between being listed and being killed, which is the
+        # ordinary way a process tree comes apart under a timeout -- the work
+        # is done, not failed. Catching only `AccessDenied` here turned a
+        # timeout into a traceback whenever the race went this way.
+        return
     except AccessDenied:
         try:
             executable = proc.exe()
-        except AccessDenied:
+        except Exception:                                    # noqa: BLE001
             executable = 'unknown executable'
 
         logs.debug(u'Rerun: process PID {} ({}) could not be terminated'.format(
@@ -32,13 +38,69 @@ def _kill_tree(popen):
 
     try:
         proc = Process(popen.pid)
-    except Exception:
-        popen.kill()
+        children = proc.children(recursive=True)
+    except Exception:                                        # noqa: BLE001
+        # No tree to walk -- it has already gone, or this system will not say.
+        # `Popen.kill` on a pid that has exited is a no-op, so this is safe
+        # either way.
+        try:
+            popen.kill()
+        except Exception:                                    # noqa: BLE001
+            pass
         return
 
-    for child in proc.children(recursive=True):
+    for child in children:
         _kill_process(child)
     _kill_process(proc)
+
+
+# How much of a command's output is kept. `communicate()` returns everything the
+# command printed, and `settings.wait_command` bounds the *time* it has to print
+# it, not the number of bytes -- a failed build or a test suite in a loop can
+# put hundreds of megabytes through a pipe in three seconds, and all of it was
+# being accumulated in memory and then decoded into a second copy. A rule reads
+# an error message, so what is kept is the end of the output; the recording
+# reader has always worked to a fixed size for the same reason.
+MAX_OUTPUT = 8 * 1024 * 1024
+
+_CHUNK = 64 * 1024
+
+
+class _Tail(object):
+    """The last `limit` bytes of everything appended to it."""
+
+    def __init__(self, limit):
+        self._limit = limit
+        self._chunks = []
+        self._size = 0
+        self.truncated = False
+
+    def append(self, chunk):
+        self._chunks.append(chunk)
+        self._size += len(chunk)
+        while self._size - len(self._chunks[0]) >= self._limit:
+            self._size -= len(self._chunks.pop(0))
+            self.truncated = True
+
+    def value(self):
+        joined = b''.join(self._chunks)
+        if len(joined) > self._limit:
+            self.truncated = True
+            joined = joined[-self._limit:]
+        return joined
+
+
+def _drain(stream, sink):
+    """Reads `stream` to its end, keeping only what `sink` will keep."""
+    try:
+        while True:
+            chunk = stream.read(_CHUNK)
+            if not chunk:
+                break
+            sink.append(chunk)
+    except (OSError, ValueError):
+        # The pipe was closed under us, which is what killing the tree does.
+        pass
 
 
 def _wait_output(popen, is_slow):
@@ -51,30 +113,69 @@ def _wait_output(popen, is_slow):
     hit the timeout and produced no output at all, leaving nothing to correct
     from.
 
+    The reading is done by a thread rather than by `communicate`, which is what
+    puts a ceiling on how much is held: `communicate` hands back every byte the
+    command printed, and there is no way to ask it for less.
+
     :type popen: Popen
     :rtype: bytes | None
 
     """
+    import threading
+
     timeout = settings.wait_slow_command if is_slow else settings.wait_command
+
+    # `communicate` used to do this: an unclosed stdin is a command that waits
+    # for input nobody is going to send, until the timeout.
+    if popen.stdin is not None:
+        try:
+            popen.stdin.close()
+        except Exception:                                    # noqa: BLE001
+            pass
+
+    sink = _Tail(MAX_OUTPUT)
+    reader = threading.Thread(target=_drain, args=(popen.stdout, sink))
+    reader.daemon = True
+    reader.start()
+
     try:
-        return popen.communicate(timeout=timeout)[0]
+        popen.wait(timeout=timeout)
     except TimeoutExpired:
         _kill_tree(popen)
         try:
-            popen.communicate(timeout=1)
-        except Exception:
+            popen.wait(timeout=1)
+        except Exception:                                    # noqa: BLE001
             pass
         return None
+
+    # The command has exited; anything still in the pipe arrives now. A
+    # grandchild that inherited the pipe and outlived its parent can hold it
+    # open, so this waits a moment rather than forever and settles for what
+    # arrived -- `communicate` would have blocked there indefinitely.
+    reader.join(1)
+    if sink.truncated:
+        logs.debug(u'Rerun: kept the last {} bytes of the output'.format(
+            MAX_OUTPUT))
+    return sink.value()
 
 
 # What the shell alias sets on its way in to hand us the shell's own state.
 # None of it was in the environment when the command originally ran, and
 # `TB_SHELL_ALIASES` and `TB_HISTORY` hold the user's aliases and their last ten
 # commands -- so a command being run a second time to read its output must not
-# inherit any of it. Matched by prefix rather than by name: a variable added to
-# the transport later is scrubbed without anyone having to remember to add it
-# here too.
-TRANSPORT_PREFIX = 'TB_'
+# inherit any of it.
+#
+# By name, and not by `TB_` prefix as this once did. `TB_` is short and generic
+# enough to belong to somebody else -- a build system, an in-house tool, a
+# company's own convention -- and deleting a stranger's variable makes the
+# command behave differently the second time for a reason nobody could find.
+# Adding a name to the transport means adding it here, which is a line in the
+# same commit.
+TRANSPORT = frozenset((
+    'TB_ALIAS', 'TB_CAN_EDIT', 'TB_CMD', 'TB_EDIT', 'TB_EXIT', 'TB_HISTORY',
+    'TB_OVERRIDDEN_ALIASES', 'TB_PROMPT', 'TB_SHELL', 'TB_SHELL_ALIASES',
+    'TB_STATUS',
+))
 
 # `GIT_TRACE=1` makes git report the alias it expanded, which is the only way
 # to learn that `git st` meant `git status`; `specific.git.git_support` reads it
@@ -90,11 +191,44 @@ def _child_environment(program):
 
     """
     env = {key: value for key, value in os.environ.items()
-           if not key.startswith(TRANSPORT_PREFIX)}
-    env.update(settings.env)
+           if key not in TRANSPORT}
+
+    # A settings file is Python, so `env` can be anything at all -- and
+    # `env = None` in somebody's `settings.py` used to come back here as a
+    # `TypeError` from the middle of a correction.
+    if isinstance(settings.env, dict):
+        env.update({str(key): str(value)
+                    for key, value in settings.env.items()})
+    elif settings.env is not None:
+        logs.warn(u'The `env` setting should be a dict, not {}; ignoring it'
+                  .format(type(settings.env).__name__))
+
     if program and os.path.basename(program) in GIT_APPS:
         env.update(GIT_ENV)
     return env
+
+
+def _is_slow(words):
+    """Whether `words` runs one of the commands allowed the longer timeout.
+
+    Asked of the command itself rather than of the first word, which is not the
+    same thing often enough to matter: `FOO=1 gradle test`, `sudo gradle test`
+    and `/usr/bin/gradle test` all used to be handed the three-second timeout
+    meant for something quick, so they timed out and produced nothing to correct
+    from -- the exact case `slow_commands` exists for.
+
+    """
+    from ..utils import command_word_index
+    from ..wrappers import wrapped_app
+
+    # `FOO=1 gradle test`: the assignments are not the command.
+    words = words[command_word_index(words):]
+    if not words:
+        return False
+
+    program = wrapped_app(words) or words[0]
+    return (program in settings.slow_commands
+            or os.path.basename(program) in settings.slow_commands)
 
 
 def get_output(script, expanded):
@@ -116,14 +250,19 @@ def get_output(script, expanded):
     from ..utils import command_word_index
 
     words = split_expand[command_word_index(split_expand):]
-    env = _child_environment(words[0] if words else None)
+    program = words[0] if words else None
+    env = _child_environment(program)
 
-    # The rest of the environment is none of the log's business, it tends to
-    # carry tokens and keys that end up pasted into bug reports.
-    logged_env = {key: value for key, value in env.items()
-                  if key in settings.env or key in GIT_ENV}
+    # The rest of the environment is none of the log's business, and neither are
+    # the *values* of what is left: `env` in a settings file is where people put
+    # tokens, and the issue template asks for debug output to be pasted into a
+    # bug report. Names only.
+    logged_env = sorted(key for key in env
+                        if key in GIT_ENV
+                        or (isinstance(settings.env, dict)
+                            and key in settings.env))
 
-    is_slow = split_expand[0] in settings.slow_commands if split_expand else False
+    is_slow = _is_slow(split_expand)
     with logs.debug_time(u'Call: {}; with env: {}; is slow: {}'.format(
             script, logged_env, is_slow)):
         result = Popen(expanded, shell=True, stdin=PIPE,

@@ -12,18 +12,36 @@ def _get_socket_path():
 def is_available():
     """Returns `True` if shell logger socket available.
 
-    :rtype: book
+    A socket, not merely something at that path: `os.path.exists` was happy
+    with an ordinary file, and then connecting to it raised. Existing is still
+    not the same as answering -- a daemon can be gone and its socket file left
+    behind -- which is what `get_output` handles.
+
+    :rtype: bool
 
     """
     path = _get_socket_path()
     if not path:
         return False
 
-    return os.path.exists(path)
+    import stat
+
+    try:
+        return stat.S_ISSOCK(os.stat(path).st_mode)
+    except OSError:
+        return False
+
+
+# A local socket that a listening daemon answers from memory. A second of it is
+# already a long time; anything longer is a daemon that is not going to answer,
+# and waiting for it is worse than not asking. `readline()` with no timeout at
+# all was a correction that never came back.
+TIMEOUT = 1.0
 
 
 def _get_last_n(n):
     with socket.socket(socket.AF_UNIX) as client:
+        client.settimeout(TIMEOUT)
         client.connect(_get_socket_path())
         request = json.dumps({
             "type": "list",
@@ -46,14 +64,43 @@ def _get_output_lines(output):
 
 
 def get_output(script):
-    """Gets command output from shell logger."""
+    """Gets command output from shell logger, or `None`.
+
+    `None` for every way this can fail to answer, because the caller falls
+    through to the other readers on `None` and there is nothing here worth
+    ending a correction over. Reaching a separate process over a socket has
+    plenty of ways to fail: a daemon that exited and left its socket file
+    behind (`ConnectionRefusedError`), one that accepts and then says nothing
+    (a timeout), a reply that is not the JSON expected. Each of those used to
+    come out of the middle of a correction as a traceback.
+
+    """
     with logs.debug_time(u'Read output from external shell logger'):
-        commands = _get_last_n(const.SHELL_LOGGER_LIMIT)
+        try:
+            commands = _get_last_n(const.SHELL_LOGGER_LIMIT)
+        except Exception:                                    # noqa: BLE001
+            logs.debug(u'Shell logger did not answer; using another reader')
+            return None
+
+        if not isinstance(commands, list):
+            return None
+
         for command in commands:
-            if command['command'] == script:
-                lines = _get_output_lines(command['output'])
-                output = '\n'.join(lines).strip()
-                return output
-            else:
-                logs.warn("Output isn't available in shell logger")
+            # The loop used to `return None` from its `else` branch, so only
+            # the *newest* logged command was ever considered -- correcting
+            # anything else silently reported that no output was available,
+            # which switches off every rule that needs it.
+            if not isinstance(command, dict):
+                continue
+            if command.get('command') != script:
+                continue
+
+            try:
+                lines = _get_output_lines(command.get('output') or '')
+            except Exception:                                # noqa: BLE001
+                logs.debug(u'Shell logger output could not be rendered')
                 return None
+            return '\n'.join(lines).strip()
+
+        logs.warn("Output isn't available in shell logger")
+        return None

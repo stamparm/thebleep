@@ -4,6 +4,7 @@ import os
 import pytest
 import sys
 from subprocess import TimeoutExpired
+from tempfile import TemporaryFile
 from unittest.mock import Mock, patch
 from psutil import AccessDenied
 
@@ -11,12 +12,29 @@ from thebleep.output_readers import rerun
 
 
 def _popen(output=b'', timeout=False):
-    """A stand-in for a command that is running."""
+    """A stand-in for a command that is running.
+
+    Its stdout is something really readable rather than a mock, because that is
+    what the reader thread reads: `_wait_output` drains it while the command
+    runs and keeps only the tail, which is not something `communicate` can be
+    asked for.
+
+    A temporary file rather than a pipe, so that a test can hand over more than
+    a pipe would hold -- writing 64KB into a pipe nobody is reading yet blocks
+    the test itself.
+
+    """
+    stdout = TemporaryFile()
+    stdout.write(output)
+    stdout.seek(0)
+
     popen = Mock(pid=1234)
+    popen.stdout = stdout
+    popen.stdin = None
     if timeout:
-        popen.communicate.side_effect = [TimeoutExpired('cmd', 3), (b'', None)]
+        popen.wait.side_effect = [TimeoutExpired('cmd', 3), 0]
     else:
-        popen.communicate.return_value = (output, None)
+        popen.wait.return_value = 0
     return popen
 
 
@@ -70,22 +88,44 @@ class TestRerun(object):
     def test_wait_output_is_slow(self, settings):
         popen = _popen(b'output')
         assert rerun._wait_output(popen, True) == b'output'
-        assert popen.communicate.call_args[1]['timeout'] \
+        assert popen.wait.call_args[1]['timeout'] \
             == settings.wait_slow_command
 
     def test_wait_output_is_not_slow(self, settings):
         popen = _popen(b'output')
         assert rerun._wait_output(popen, False) == b'output'
-        assert popen.communicate.call_args[1]['timeout'] \
-            == settings.wait_command
+        assert popen.wait.call_args[1]['timeout'] == settings.wait_command
 
     def test_wait_output_reads_while_the_command_runs(self):
         """A command that fills the pipe buffer blocks until someone reads it,
-        so waiting for it to exit before reading is a deadlock."""
-        popen = _popen(b'a lot of output')
+        so waiting for it to exit before reading is a deadlock.
+
+        Which is why the reading happens in a thread that starts before the
+        wait, rather than after it.
+
+        """
+        popen = _popen(b'a lot of output' * 100000)
+        assert rerun._wait_output(popen, False).endswith(b'output')
+
+    def test_wait_output_keeps_the_end_of_a_huge_output(self):
+        """The timeout bounds the *time* a command has to print, not the number
+        of bytes -- a test suite in a loop can put hundreds of megabytes through
+        the pipe in three seconds, and all of it used to be accumulated in
+        memory and then decoded into a second copy of itself."""
+        limit = 4096
+        with patch.object(rerun, 'MAX_OUTPUT', limit):
+            popen = _popen(b'x' * 100000 + b'the error is here')
+            output = rerun._wait_output(popen, False)
+        assert len(output) == limit
+        assert output.endswith(b'the error is here')
+
+    def test_wait_output_closes_stdin(self):
+        """`communicate` used to do this. A command left waiting for input
+        nobody is going to send waits for the whole timeout."""
+        popen = _popen(b'output')
+        popen.stdin = Mock()
         rerun._wait_output(popen, False)
-        assert popen.communicate.called
-        assert not popen.stdout.read.called
+        popen.stdin.close.assert_called_once_with()
 
     @patch('thebleep.output_readers.rerun._kill_process')
     def test_wait_output_timeout(self, kill_process_mock):
@@ -110,6 +150,27 @@ class TestRerun(object):
         rerun._kill_process(proc)
         proc.kill.assert_called_once_with()
         logs_mock.debug.assert_called_once()
+
+    @patch('thebleep.output_readers.rerun.logs')
+    def test_kill_process_that_has_already_gone(self, logs_mock):
+        """The ordinary way a process tree comes apart under a timeout: a child
+        exits between being listed and being killed. Only `AccessDenied` was
+        caught, so that race came out of a timeout as a traceback."""
+        from psutil import NoSuchProcess
+
+        proc = Mock(pid=123)
+        proc.kill.side_effect = NoSuchProcess(123)
+        rerun._kill_process(proc)
+        assert not logs_mock.debug.called
+
+    def test_kill_tree_when_the_tree_has_already_gone(self):
+        """`children()` walks a tree that is moving, and can raise too."""
+        from psutil import NoSuchProcess
+
+        self.proc_mock.children.side_effect = NoSuchProcess(1234)
+        popen = _popen()
+        rerun._kill_tree(popen)
+        popen.kill.assert_called_once_with()
 
     @patch('thebleep.output_readers.rerun.logs')
     def test_kill_process_access_denied_when_exe_is_denied(self, logs_mock):
@@ -162,6 +223,15 @@ class TestReplayedEnvironment(object):
         """Only the transport goes; what the command originally had stays."""
         child = self._child_env(MY_TOKEN='keep-me')
         assert child['MY_TOKEN'] == 'keep-me'
+
+    def test_somebody_elses_tb_variable_survives(self, os_environ):
+        """This was scrubbed by `TB_` prefix, and `TB_` is short enough to
+        belong to somebody else -- a build system, an in-house tool. Deleting a
+        stranger's variable makes the command behave differently the second time
+        for a reason nobody could find, so the transport is scrubbed by name."""
+        child = self._child_env(TB_APP_ENDPOINT='prod')
+        assert child['TB_APP_ENDPOINT'] == 'prod'
+        assert 'TB_HISTORY' not in child
 
     def test_git_tracing_reaches_git(self, os_environ, tmpdir):
         """Through a `git` on PATH that reports what it was given."""

@@ -123,7 +123,13 @@ def which(program):
     if os.path.dirname(program):
         return program if _is_runnable(program) else None
 
-    search = os.environ.get('PATH', os.defpath).split(os.pathsep)
+    path = os.environ.get('PATH', os.defpath)
+    if not path:
+        # An empty `PATH` is not the same as one empty *entry*: `shutil.which`
+        # looks nowhere at all, and this is held to agreeing with it.
+        return None
+
+    search = path.split(os.pathsep)
     if os.name == 'nt':
         # The current directory really is searched first on Windows, and a
         # rule that asks about a program in it would otherwise be told no.
@@ -152,8 +158,15 @@ def which(program):
 
     seen = set()
     for directory in search:
+        # Empty entries are *kept*, exactly as `shutil.which` keeps them: an
+        # empty `PATH` component means the current directory, so `PATH=:/usr/bin`
+        # looks here first and `os.path.join('', name)` is the relative name
+        # that finds it. Skipping them was not a cosmetic disagreement --
+        # `replay.is_inert` reads "not on `PATH`" as "there is nothing there to
+        # run, so running it again is free", so a local `./deploy` the shell had
+        # just found and run was re-run without being asked about.
         normalised = os.path.normcase(directory)
-        if not directory or normalised in seen:
+        if normalised in seen:
             continue
         seen.add(normalised)
         for name in names:
@@ -257,8 +270,13 @@ def include_path_in_search(path):
 
 
 def _search_path():
-    return [path for path in os.environ.get('PATH', '').split(os.pathsep)
-            if include_path_in_search(path)]
+    # An empty entry means the current directory, and this list gets handed to
+    # `os.scandir`, which wants a name it can open -- so here, unlike in
+    # `which`, the empty string becomes `os.curdir`. Without it the names in
+    # the directory the shell searches first were not offered as corrections.
+    entries = (path or os.curdir
+               for path in os.environ.get('PATH', '').split(os.pathsep))
+    return [path for path in entries if include_path_in_search(path)]
 
 
 def _path_fingerprint(paths):

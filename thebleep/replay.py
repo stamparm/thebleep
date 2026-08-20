@@ -276,9 +276,23 @@ def _dispatch_fails(program, args):
 # do not set it, and then this is `None` and nothing below changes.
 EXIT_ENV = 'TB_EXIT'
 
-# The two statuses that mean the command never ran: `command not found` and
-# `cannot execute`. Both are the shell's, not the program's.
-DID_NOT_RUN = frozenset({126, 127})
+# There used to be a shortcut here: exit status 126 or 127 meant `command not
+# found` or `cannot execute`, so nothing had run and the command could be run
+# again without asking. It was wrong, and dangerously so. Those statuses are a
+# *convention* the shell follows for its own failures -- nothing stops a program
+# from exiting with either, and plenty do it on purpose:
+#
+#     $ make install            # a recipe's command was missing, four recipes
+#     make: cc: No such file    # already having run
+#     make: *** [install] Error 127
+#     $ bleep
+#     make install              # run again, unasked
+#
+# `npm run`, `sh -c`, and any wrapper that reports its child's status do the
+# same. `previous_status() == 127` says only that *something* could not be
+# found, not that nothing happened -- and the difference between those two is
+# the whole question this module exists to answer. The `PATH` lookup below is
+# the sound version of the same idea, and it stands on its own.
 
 
 def previous_status():
@@ -306,16 +320,6 @@ def is_inert(script):
       have, so it fails at dispatch a second time exactly as it did the first.
 
     """
-    status = previous_status()
-    if status in DID_NOT_RUN:
-        # The shell could not find it or could not run it, so nothing happened
-        # and nothing will happen the second time either. This is the same
-        # certainty as the `PATH` lookup below and a better one: it covers an
-        # alias, a shell function, and a `PATH` that has changed since.
-        logs.debug(u'Replay: the shell exited {}, so nothing ran'.format(
-            status))
-        return True
-
     words = _words(script)
     if words is None:
         return False

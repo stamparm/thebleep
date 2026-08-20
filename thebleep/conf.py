@@ -17,6 +17,18 @@ def load_source(name, pathname, _file=None):
     return module
 
 
+# Which settings are yes-or-no questions, read off the defaults rather than
+# listed by hand. The hand-written list left `repeat` out, and a setting missing
+# from it kept the environment variable's *string* -- so `THEBLEEP_REPEAT=false`,
+# a non-empty string and therefore true, turned repeat mode on and appended
+# `bleep --repeat --force-command ...` to every accepted suggestion. Anything
+# whose default is a bool is now a bool, and a setting added later cannot be
+# forgotten here.
+BOOLEANS_BY_DEFAULT = frozenset(
+    name for name, value in const.DEFAULT_SETTINGS.items()
+    if isinstance(value, bool))
+
+
 class Settings(dict):
     def __getattr__(self, item):
         return self.get(item)
@@ -28,11 +40,33 @@ class Settings(dict):
         """Fills `settings` with values from `settings.py` and env."""
         from .logs import exception
 
+        # Both of these *create* things, and neither is needed to correct a
+        # command. They used to be outside the error handling, so a config
+        # location that could not be written to -- a read-only home, a
+        # container mount, an `XDG_CONFIG_HOME` pointing at a file -- was not a
+        # missing settings file, it was a `NotADirectoryError` out of the
+        # middle of every correction and every `--alias`, which is to say a
+        # shell that could not start. Defaults are a complete answer; writing
+        # them down is a convenience.
         self._setup_user_dir()
-        self._init_settings_file()
+
+        try:
+            self._init_settings_file()
+        except Exception:
+            from .logs import debug
+
+            debug("Can't create a settings file; using defaults")
 
         try:
             self.update(self._settings_from_file())
+        except OSError:
+            # No settings file, or nowhere it could have been: not a problem
+            # worth a traceback for, because everything in it has a default. A
+            # settings file that exists and *raises* still gets one, below --
+            # that is a mistake in it, and the user wants to know.
+            from .logs import debug
+
+            debug("No settings file to read; using defaults")
         except Exception:
             exception("Can't load settings from file", sys.exc_info())
 
@@ -70,13 +104,25 @@ class Settings(dict):
             return user_dir
 
     def _setup_user_dir(self):
-        """Returns user config dir, create it when it doesn't exist."""
+        """Settles on the user config dir, and creates it if it can.
+
+        Creating it is best-effort. `self.user_dir` is set either way, so a
+        settings file that is there gets read and one that is not gets
+        defaults -- what does not happen is a failure to make a directory
+        ending a correction.
+
+        """
         user_dir = self._get_user_dir_path()
+        self.user_dir = user_dir
 
         rules_dir = user_dir.joinpath('rules')
-        if not rules_dir.is_dir():
-            rules_dir.mkdir(parents=True)
-        self.user_dir = user_dir
+        try:
+            if not rules_dir.is_dir():
+                rules_dir.mkdir(parents=True)
+        except OSError:
+            from .logs import debug
+
+            debug(u'Could not create {}; using defaults'.format(rules_dir))
 
     def _settings_from_file(self):
         """Loads settings from file.
@@ -175,9 +221,7 @@ class Settings(dict):
             return dict(self._priority_from_env(val))
         elif attr in self.COUNTS:
             return self._number_from_env(attr, val)
-        elif attr in ('require_confirmation', 'no_colors', 'debug',
-                      'alter_history', 'instant_mode', 'confirm_replay',
-                      'edit', 'explain'):
+        elif attr in BOOLEANS_BY_DEFAULT:
             return self._bool_from_env(val)
         elif attr in ('slow_commands', 'excluded_search_path_prefixes'):
             return val.split(':')

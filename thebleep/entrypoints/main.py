@@ -66,10 +66,12 @@ def _main():
         from .alias import print_alias
 
         print_alias(known_args)
-    elif known_args.command or 'TB_HISTORY' in os.environ:
-        from .fix_command import fix_command
-
-        fix_command(known_args)
+    # Before the correction branch, like `--doctor` and `--alias`, and for the
+    # same reason: the alias exports `TB_HISTORY`, so from any shell that has
+    # the alias loaded -- which is every shell anybody would start a logging
+    # session from -- `bleep --shell-logger session.log` fell through to the
+    # correction branch instead, and with `require_confirmation` off that
+    # *executed* a suggestion.
     elif known_args.shell_logger:
         try:
             from .shell_logger import shell_logger  # noqa: E402
@@ -77,6 +79,10 @@ def _main():
             logs.warn('Shell logger supports only Linux and macOS')
         else:
             shell_logger(known_args.shell_logger)
+    elif known_args.command or 'TB_HISTORY' in os.environ:
+        from .fix_command import fix_command
+
+        fix_command(known_args)
     else:
         parser.print_usage()
 
@@ -88,5 +94,8 @@ def main():
         # Handle broken pipe gracefully (e.g., when terminal is closed)
         # Redirect remaining output to devnull to avoid additional errors
         devnull = os.open(os.devnull, os.O_WRONLY)
-        os.dup2(devnull, sys.stdout.fileno())
+        try:
+            os.dup2(devnull, sys.stdout.fileno())
+        finally:
+            os.close(devnull)
         sys.exit(0)

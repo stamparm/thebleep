@@ -229,6 +229,20 @@ class Rule(object):
         if not isinstance(new_commands, list):
             new_commands = (new_commands,)
         for n, new_command in enumerate(new_commands):
+            # What a rule *returns* is as much its own business as what it
+            # raises, and this is the boundary for both. Custom and third-party
+            # rules are an advertised extension, and a rule with a path through
+            # it that returns `None` -- a regex that matched in `match` and did
+            # not match here, the commonest mistake there is -- used to reach
+            # the display as `None.strip()` and take the whole CLI with it. A
+            # broken rule should cost that rule.
+            if not isinstance(new_command, str):
+                if new_command is not None:
+                    logs.debug(
+                        u'Rule {} returned {}, which is not a command'.format(
+                            self.name, type(new_command).__name__))
+                continue
+
             yield CorrectedCommand(script=new_command,
                                    side_effect=self.side_effect,
                                    priority=(n + 1) * self.priority,

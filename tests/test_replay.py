@@ -625,13 +625,36 @@ class TestWhatTheShellSaidAboutIt(object):
         return _with
 
     @pytest.mark.parametrize('status', [127, 126])
-    def test_nothing_ran_so_nothing_runs_again(self, exited, status):
-        """127 is `command not found` and 126 is `cannot execute`, and both are
-        the shell's own answer -- so they cover an alias, a shell function and a
-        `PATH` that has changed since, none of which a name lookup sees."""
+    def test_the_shells_own_statuses_prove_nothing(self, exited, on_path,
+                                                   status):
+        """This used to be the other way round, and it was a real hole.
+
+        127 is `command not found` and 126 is `cannot execute` *by convention*,
+        when the shell is the one reporting them. Nothing stops a program from
+        exiting with either, and the ones that do are exactly the ones that had
+        already done something first:
+
+            $ make install            # a recipe's command was missing, four
+            make: cc: not found       # recipes having already run
+            make: *** [install] Error 127
+            $ bleep
+            make install              # run again, unasked
+
+        `npm run`, `sh -c`, and anything else that reports its child's status do
+        the same. So the status is no longer consulted here at all -- the `PATH`
+        lookup is the sound version of the same idea.
+
+        """
         exited(status)
-        assert replay.is_inert('somealias --with args')
-        assert replay.is_inert('deploy production')
+        assert not replay.is_inert('deploy production')
+        assert not replay.is_inert('docker compose up')
+
+    @pytest.mark.parametrize('status', [126, 127])
+    def test_and_a_command_that_is_not_there_is_still_inert(self, exited,
+                                                            on_path, status):
+        """Which is the case the shortcut was there for, reached soundly."""
+        exited(status)
+        assert replay.is_inert('no-such-program-anywhere --with args')
 
     def test_a_command_that_worked_is_not_run_again(self, exited, settings):
         """`git tag v9` succeeds silently. Run it again and it says `already
