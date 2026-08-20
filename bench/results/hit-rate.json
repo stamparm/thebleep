@@ -1,6 +1,6 @@
 {
   "environment": {
-    "commit": "f94d55f5bed51246a516ba92e7b122d53c67e74c",
+    "commit": "318a97d99f23d037030bffe630e338f7cf957d03",
     "working_tree_clean": true
   },
   "groups": [
@@ -10,8 +10,8 @@
       "what": "an unknown program"
     },
     {
-      "hits": 17,
-      "of": 17,
+      "hits": 18,
+      "of": 18,
       "what": "the tool said so"
     },
     {
@@ -29,7 +29,7 @@
       },
       {
         "hits": 6,
-        "of": 17,
+        "of": 18,
         "what": "the tool said so"
       },
       {
@@ -40,11 +40,11 @@
     ],
     "total": {
       "hits": 55,
-      "of": 82
+      "of": 83
     }
   },
   "total": {
-    "hits": 82,
-    "of": 82
+    "hits": 83,
+    "of": 83
   }
 }

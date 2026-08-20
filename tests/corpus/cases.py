@@ -175,6 +175,18 @@ THE_TOOL_SAID_SO = [
      "fatal: subcommand wasn't specified; 'push' can't be assumed due to"
      " unexpected token 'pp'\n",
      'git stash pop'),
+    # A mistyped *second* word. git makes no "most similar command" suggestion
+    # for these -- it prints its usage, which is a list of the answers, and for
+    # a dozen commands that dispatch twice nothing was reading it.
+    ('git remote ad origin git@example.com:x.git',
+     "error: unknown subcommand: `ad'\n"
+     'usage: git remote [-v | --verbose]\n'
+     '   or: git remote add [-t <branch>] [-f] <name> <url>\n'
+     '   or: git remote rename [--[no-]progress] <old> <new>\n'
+     '   or: git remote remove <name>\n'
+     '   or: git remote prune [-n | --dry-run] <name>\n'
+     '   or: git remote get-url [--push] [--all] <name>\n',
+     'git remote add origin git@example.com:x.git'),
     ('git satus',
      "git: 'satus' is not a git command. See 'git --help'.\n\n"
      'The most similar command is\n\tstatus\n',
