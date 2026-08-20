@@ -29,6 +29,19 @@ is what this module is for. See `tests/corpus/`.
 
 """
 
+import os
+
+# Windows and macOS do not distinguish `Git` from `git`, so neither may this:
+# comparing case-sensitively there makes a capitalised name on `PATH` look two
+# edits further away than it is. Compared folded, offered as spelled -- which is
+# what the `difflib` wrapper this replaces did, and dropping it would have been a
+# Windows-only regression nothing else would catch.
+FOLD_CASE = os.path.normcase('A') == os.path.normcase('a')
+
+
+def _fold(name):
+    return name.lower() if FOLD_CASE else name
+
 
 def max_distance(word):
     """The furthest a candidate may be and still be worth offering.
@@ -150,17 +163,17 @@ def rank(word, candidates, limit=None):
     where `getent` for `wgte` and `pinky` for `ping` came from.
 
     """
-    allowed = max_distance(word)
+    folded = _fold(word)
+    allowed = max_distance(folded)
     scored = []
 
     for candidate in candidates:
         if not candidate:
             continue
-        edits = distance(word, candidate, limit=allowed)
-        if edits <= allowed:
+        if distance(folded, _fold(candidate), limit=allowed) <= allowed:
             scored.append(candidate)
 
-    scored.sort(key=lambda candidate: _key(word, candidate))
+    scored.sort(key=lambda candidate: _key(folded, _fold(candidate)))
     return scored[:limit] if limit else scored
 
 
@@ -184,5 +197,6 @@ def order(word, candidates, limit=None):
             seen.add(candidate)
             unique.append(candidate)
 
-    unique.sort(key=lambda candidate: _key(word, candidate))
+    folded = _fold(word)
+    unique.sort(key=lambda candidate: _key(folded, _fold(candidate)))
     return unique[:limit] if limit else unique
