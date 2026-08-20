@@ -166,10 +166,15 @@ def test_the_environment_variables_it_documents_exist(readme):
     from thebleep import const
 
     documented = set(re.findall(r'`(THEBLEEP_[A-Z_]+)`', readme))
+    from thebleep import invocation
+
     real = set(const.ENV_TO_ATTR) | {'THEBLEEP_OVERRIDDEN_ALIASES',
                                      'THEBLEEP_ARGUMENT_PLACEHOLDER',
                                      'THEBLEEP_OUTPUT_LOG',
-                                     'THEBLEEP_NO_RULE_PACK'}
+                                     'THEBLEEP_NO_RULE_PACK',
+                                     # Not a setting: what the alias is told to
+                                     # run, which is shell code and not a value.
+                                     invocation.OVERRIDE_ENV}
     assert documented <= real, sorted(documented - real)
 
 

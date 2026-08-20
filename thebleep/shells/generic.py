@@ -129,9 +129,22 @@ class Generic(object):
         """Prepares command for running in shell."""
         return command_script
 
+    def _invocation(self):
+        """The shell code an alias runs to reach The Bleep again.
+
+        `thebleep` for an installed copy, and the interpreter and file of a
+        checkout when this is one, so that a clone needs no install. See
+        `thebleep.invocation`.
+
+        """
+        from ..invocation import command
+
+        return command()
+
     def app_alias(self, alias_name):
         return """alias {0}='eval "$(TB_ALIAS={0} """ \
-               """thebleep "$(fc -ln -1)")"'""".format(alias_name)
+               """{1} "$(fc -ln -1)")"'""".format(alias_name,
+                                                  self._invocation())
 
     def app_alias_loader(self, alias_name):
         """Shell code defining `alias_name` as a stub that loads the real one.
@@ -142,9 +155,10 @@ class Generic(object):
 
         """
         return ('{name}() {{\n'
-                '    eval "$(TB_SHELL={shell} thebleep --alias {name})";\n'
+                '    eval "$(TB_SHELL={shell} {command} --alias {name})";\n'
                 '    {name} "$@";\n'
-                '}}').format(name=alias_name, shell=self._shell_name())
+                '}}').format(name=alias_name, shell=self._shell_name(),
+                             command=self._invocation())
 
     def can_run_corrections(self):
         """Whether a correction can be handed back to this shell to be run.

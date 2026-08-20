@@ -2,6 +2,34 @@
 
 ## 4.0.3 — unreleased
 
+### Added
+
+- **A clone runs itself, with nothing installed.** The alias is shell code that
+  calls The Bleep again, and it called it by the one name an installed copy has:
+  `thebleep`, whatever that turns out to be on your `PATH`. A checkout had no
+  way to say otherwise, so `python -m thebleep --alias` from a clone printed an
+  alias pointing at the release you installed months ago -- you could work on
+  4.0.3 all day and have 4.0.0 correcting your commands, with nothing anywhere
+  to tell you. That is not a thing an installer should have to fix.
+
+  Run it as the package and the alias names the interpreter and the checkout it
+  came from, so the clone is the whole installation:
+
+  ```bash
+  eval "$(python3 ~/src/thebleep/thebleep/__main__.py --alias-loader)"
+  ```
+
+  One line in a startup file, works from any directory, no `PYTHONPATH`, and
+  `git pull` is the upgrade. `thebleep --alias` still says `thebleep`, so
+  nothing about an installed copy changed. `THEBLEEP_COMMAND` overrides what
+  goes into the alias, for a wrapper of your own or a shell whose quoting is not
+  the quoting used here. `python -m thebleep` against a copy in `site-packages`
+  keeps the ordinary answer -- there is no clone there to prefer.
+- **`install.sh --dev`** installs a checkout *editable*, with whichever of `uv`,
+  `pipx` or `pip` it finds, for when you would rather have `thebleep` on your
+  `PATH` for real. Installing a checkout without it copies the files once, and
+  the copy is stale by the next commit.
+
 ### Fixed
 
 - **A mistyped subcommand is no longer a question.** 4.0.0 stopped running your

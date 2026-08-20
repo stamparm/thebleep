@@ -29,7 +29,7 @@ class Bash(Generic):
                 {fit_transport}
                 TB_CAN_EDIT=; [ "${{BASH_VERSINFO[0]:-0}}" -ge 4 ] && TB_CAN_EDIT=1;
                 TB_CMD=$(
-                    TB_SHELL=bash TB_ALIAS={name} TB_CAN_EDIT="$TB_CAN_EDIT" TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" thebleep {argument_placeholder} "$@"
+                    TB_SHELL=bash TB_ALIAS={name} TB_CAN_EDIT="$TB_CAN_EDIT" TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" {command} {argument_placeholder} "$@"
                 );
                 TB_STATUS=$?;
                 if [ "$TB_STATUS" -eq {exit_edit} ]; then
@@ -42,6 +42,7 @@ class Bash(Generic):
             }}
         '''.format(
             name=alias_name,
+            command=self._invocation(),
             argument_placeholder=ARGUMENT_PLACEHOLDER,
             fit_transport=fit_transport(),
             exit_edit=EXIT_EDIT,
@@ -103,9 +104,9 @@ class Bash(Generic):
                 export THEBLEEP_INSTANT_MODE=True;
                 export THEBLEEP_OUTPUT_LOG={log};
                 trap 'rm -f {log}' EXIT HUP INT TERM;
-                thebleep --shell-logger {log};
+                {command} --shell-logger {log};
                 exit
-            '''.format(log=log_path)
+            '''.format(log=log_path, command=self._invocation())
 
     def _parse_alias(self, alias):
         name, value = alias.replace('alias ', '', 1).split('=', 1)

@@ -58,6 +58,30 @@ Run code style checks:
 flake8
 ```
 
+## Use the clone you are working on
+
+Testing a change by hand means your shell has to run *this* checkout, and by
+default it does not: `thebleep --alias` writes an alias that says `thebleep`,
+which is whatever is on your `PATH`. If that is a release you installed once,
+you will be developing one version and being corrected by another, and nothing
+will tell you.
+
+Run it as the package instead, and the alias names the clone:
+
+```bash
+eval "$(python3 /path/to/thebleep/thebleep/__main__.py --alias-loader)"
+```
+
+Put that in your startup file and the clone is your *The Bleep* for good — no
+install, and `git pull` is the whole upgrade. `THEBLEEP_COMMAND` overrides what
+goes into the alias if you need something else in there.
+
+If you would rather have `thebleep` on your `PATH` for real, `sh install.sh
+--dev` installs the clone editable with whichever of `uv`, `pipx` or `pip` you
+have. Either way, `thebleep --doctor` says which copy is answering — check it
+after setting this up, and again whenever a correction behaves like an older
+version, because that is usually exactly what has happened.
+
 Run unit tests:
 
 ```bash

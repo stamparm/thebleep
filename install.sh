@@ -20,6 +20,11 @@
 #   THEBLEEP_SHELL=name              the shell to write the last line for,
 #                                    when $SHELL is not the one you use: bash,
 #                                    zsh, fish, tcsh, csh, nu, pwsh
+#   --dev                            install a clone you are working on, so
+#                                    that what your shell runs is the working
+#                                    tree and `git pull` is the whole upgrade.
+#                                    Run it from the clone, or point
+#                                    THEBLEEP_INSTALL_FROM at one.
 #   --dry-run                        print the command instead of running it
 
 set -eu
@@ -28,6 +33,7 @@ REPO="https://github.com/stamparm/thebleep"
 PACKAGE="thebleep"
 ALIAS="${THEBLEEP_ALIAS:-bleep}"
 DRY_RUN=""
+DEV=""
 
 # Arguments first, and `--help` before anything is validated: help has to print
 # whatever else is wrong, which it did not -- an alias name this script would
@@ -36,6 +42,7 @@ DRY_RUN=""
 for argument in "$@"; do
     case "$argument" in
         --dry-run) DRY_RUN="yes" ;;
+        --dev) DEV="yes" ;;
         -h|--help)
             awk 'NR > 2 && /^#/ { sub(/^# ?/, ""); print; next }
                  NR > 2 { exit }' "$0"
@@ -114,6 +121,24 @@ esac
 # there for anyone who means it.
 source_of="${THEBLEEP_INSTALL_FROM:-pypi}"
 
+# `--dev` is for the person working on the clone rather than using the release,
+# and the difference that matters is not where the package comes from but that
+# it is installed *editable*: the entry point on your PATH runs the working tree
+# itself, so a `git pull` or a rule you just wrote is live with nothing to
+# reinstall. Installing a checkout without it copies the files once, and the
+# copy is stale by the next commit -- which is how you end up running 4.0.0
+# while developing 4.0.3.
+if [ -n "$DEV" ]; then
+    [ "$source_of" = "pypi" ] && source_of="."
+    case "$source_of" in
+        git) fail "--dev installs a clone you can edit, and git+URL is not \
+one. Clone it, or point THEBLEEP_INSTALL_FROM at a checkout." ;;
+    esac
+    [ -f "$source_of/setup.py" ] || fail "$source_of is not a checkout of \
+The Bleep -- there is no setup.py in it. Run this from the clone, or set \
+THEBLEEP_INSTALL_FROM to one."
+fi
+
 case "$source_of" in
     pypi) target="$PACKAGE" ;;
     git) target="git+$REPO" ;;
@@ -122,18 +147,24 @@ esac
 
 # -- do it --------------------------------------------------------------------
 
+# All three spell it `--editable`, and all three mean the same thing by it.
+editable=""
+[ -n "$DEV" ] && editable="--editable"
+
 case "$installer" in
-    uv) set -- uv tool install --force "$target" ;;
-    pipx) set -- pipx install --force "$target" ;;
+    uv) set -- uv tool install --force ${editable:+"$editable"} "$target" ;;
+    pipx) set -- pipx install --force ${editable:+"$editable"} "$target" ;;
     pip)
         # `--user` is what you want, except inside a virtual environment,
         # where pip refuses it and installing into the environment is the
         # point of being in one.
         if "$python" -c 'import sys; sys.exit(sys.prefix != sys.base_prefix)' \
                 2>/dev/null; then
-            set -- "$python" -m pip install --user --upgrade "$target"
+            set -- "$python" -m pip install --user --upgrade \
+                ${editable:+"$editable"} "$target"
         else
-            set -- "$python" -m pip install --upgrade "$target"
+            set -- "$python" -m pip install --upgrade \
+                ${editable:+"$editable"} "$target"
         fi
         ;;
 esac
@@ -144,6 +175,7 @@ if [ -n "$python" ]; then
 fi
 say "  installer  $installer"
 say "  package    $target"
+[ -n "$DEV" ] && say "  editable   yes -- your shell will run this working tree"
 say ""
 
 # `--dry-run` prints the whole plan, including the line at the end, rather than

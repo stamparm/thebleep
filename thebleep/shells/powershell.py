@@ -34,7 +34,7 @@ class Powershell(Generic):
                 '        $env:TB_CAN_EDIT = $(if (Get-Module PSReadLine)'
                 ' {{ "1" }} else {{ $null }});\n'
                 '        try {{\n'
-                '            $bleep = $(thebleep $args $history);\n'
+                '            $bleep = $({command} $args $history);\n'
                 '            $code = $LASTEXITCODE;\n'
                 '        }} finally {{\n'
                 '            $env:TB_SHELL = $shell;\n'
@@ -51,7 +51,8 @@ class Powershell(Generic):
                 '        }}\n'
                 '    }}\n'
                 '    [Console]::ResetColor()\n'
-                '}}\n').format(name=alias_name, exit_edit=EXIT_EDIT)
+                '}}\n').format(name=alias_name, exit_edit=EXIT_EDIT,
+                               command=self._invocation())
 
     def can_edit_buffer(self):
         """As far as PSReadLine will go, which is not all the way.
@@ -78,10 +79,11 @@ class Powershell(Generic):
         return ('function {name} {{\n'
                 '    $shell = $env:TB_SHELL;\n'
                 '    $env:TB_SHELL = "powershell";\n'
-                '    try {{ iex "$(thebleep --alias {name})"; }}\n'
+                '    try {{ iex "$({command} --alias {name})"; }}\n'
                 '    finally {{ $env:TB_SHELL = $shell; }}\n'
                 '    {name} @args;\n'
-                '}}\n').format(name=alias_name)
+                '}}\n').format(name=alias_name,
+                               command=self._invocation())
 
     def quote(self, s):
         """A PowerShell string literal for `s`.

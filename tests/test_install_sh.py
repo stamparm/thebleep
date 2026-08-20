@@ -12,6 +12,7 @@ not have.
 """
 
 import os
+import shutil
 import subprocess
 import sys
 import pytest
@@ -121,3 +122,58 @@ class TestWhichFileItNames(object):
                                     THEBLEEP_SHELL='fish')
         assert code == 0, err
         assert '>> ~/.config/fish/config.fish' in out
+
+
+class TestDev(object):
+    """`--dev` installs a checkout editable, so that the entry point on your
+    PATH runs the working tree and a `git pull` is the whole upgrade."""
+
+    def test_it_installs_the_checkout_editable(self, install_sh, source_root):
+        code, out, err = install_sh('--dry-run', '--dev',
+                                    THEBLEEP_INSTALL_FROM=str(source_root))
+        assert code == 0, err
+        assert '--editable' in out
+        assert str(source_root) in out
+
+    def test_it_says_that_is_what_it_did(self, install_sh, source_root):
+        """The one thing worth reading back: this is not a copy."""
+        code, out, _ = install_sh('--dry-run', '--dev',
+                                  THEBLEEP_INSTALL_FROM=str(source_root))
+        assert 'editable' in out
+        assert 'working tree' in out
+
+    def test_without_it_nothing_is_editable(self, install_sh, source_root):
+        code, out, err = install_sh('--dry-run',
+                                    THEBLEEP_INSTALL_FROM=str(source_root))
+        assert code == 0, err
+        assert '--editable' not in out
+
+    def test_a_directory_that_is_not_a_checkout_is_refused(self, install_sh,
+                                                           tmpdir):
+        """Installing an empty directory editable succeeds at doing nothing,
+        which is worse than saying so."""
+        code, _, err = install_sh('--dry-run', '--dev',
+                                  THEBLEEP_INSTALL_FROM=str(tmpdir))
+        assert code == 1
+        assert 'setup.py' in err
+
+    def test_git_is_not_a_checkout_you_can_edit(self, install_sh):
+        code, _, err = install_sh('--dry-run', '--dev',
+                                  THEBLEEP_INSTALL_FROM='git')
+        assert code == 1
+        assert 'clone' in err.lower()
+
+    @pytest.mark.parametrize('installer, expected', [
+        ('uv', 'uv tool install --force --editable'),
+        ('pipx', 'pipx install --force --editable'),
+    ])
+    def test_each_installer_spells_it_the_same_way(
+            self, install_sh, source_root, installer, expected):
+        if not shutil.which(installer):
+            pytest.skip('{} is not installed'.format(installer))
+
+        code, out, err = install_sh('--dry-run', '--dev',
+                                    THEBLEEP_INSTALLER=installer,
+                                    THEBLEEP_INSTALL_FROM=str(source_root))
+        assert code == 0, err
+        assert expected in out

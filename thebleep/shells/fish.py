@@ -68,7 +68,7 @@ class Fish(Generic):
         return ('function {0} -d "Correct your previous console command"\n'
                 '  set -l broken_command $history[1]\n'
                 '  env TB_SHELL=fish TB_ALIAS={0} TB_CAN_EDIT=1'
-                ' thebleep $broken_command {2} $argv | read -l fixed_command\n'
+                ' {5} $broken_command {2} $argv | read -l fixed_command\n'
                 '  set -l tb_status $pipestatus[1]\n'
                 '  if test $tb_status -eq {3}\n'
                 '    {4}\n'
@@ -76,7 +76,8 @@ class Fish(Generic):
                 '    eval $fixed_command\n{1}'
                 '  end\n'
                 'end').format(alias_name, alter_history, ARGUMENT_PLACEHOLDER,
-                              EXIT_EDIT, self._edit_line())
+                              EXIT_EDIT, self._edit_line(),
+                              self._invocation())
 
     def can_edit_buffer(self):
         return True
@@ -94,9 +95,9 @@ class Fish(Generic):
     def app_alias_loader(self, alias_name):
         return ('function {name} -d "Correct your previous console command"\n'
                 '  functions -e {name}\n'
-                '  env TB_SHELL=fish thebleep --alias {name} | source\n'
+                '  env TB_SHELL=fish {command} --alias {name} | source\n'
                 '  {name} $argv\n'
-                'end').format(name=alias_name)
+                'end').format(name=alias_name, command=self._invocation())
 
     def get_aliases(self):
         overridden = self._get_overridden_aliases()

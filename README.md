@@ -555,6 +555,38 @@ want for a tool rather than a library: nothing you `pip install` later can break
 it. On Debian, Ubuntu and Fedora, `pip install --user` is refused outright
 ([PEP 668](https://peps.python.org/pep-0668/)) — use `uv` or `pipx` there.
 
+### Running a clone, with nothing installed
+
+If you have the repository, you have everything: there is nothing to build and
+no install step. One line in your startup file, and the clone *is* your
+*The Bleep* — a `git pull` is the whole upgrade.
+
+```bash
+eval "$(python3 ~/src/thebleep/thebleep/__main__.py --alias-loader)"
+```
+
+That path is the only thing to change. It works from any directory, needs no
+`PYTHONPATH`, and does not care what else is installed — the alias it writes
+names that interpreter and that checkout, so what your shell runs is the working
+tree in front of you.
+
+Worth knowing if you develop it: run `thebleep --alias` and you get an alias
+that says `thebleep`, which is whatever is on your `PATH` — quite possibly a
+release you installed months ago. Run it *as the package*, the way above, and
+the alias points back at the clone. `thebleep --doctor` prints which copy is
+answering, and is the fastest way to catch the mix-up.
+
+`THEBLEEP_COMMAND` overrides what goes into the alias, for a wrapper of your own
+or a shell whose quoting is not the quoting used here:
+
+```bash
+export THEBLEEP_COMMAND="/opt/py/bin/python3 /opt/thebleep/thebleep/__main__.py"
+```
+
+Prefer a command on your `PATH`? `sh install.sh --dev`, run from the clone,
+installs it editable with `uv`, `pipx` or `pip` — same effect, and `thebleep`
+becomes a real command.
+
 ### The alias, and why it costs nothing
 
 Append the *loader* to your `.bashrc`, `.zshrc` or other startup script, once:

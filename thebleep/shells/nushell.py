@@ -127,14 +127,15 @@ class Nushell(Generic):
             ' history | last 1 | get command | get 0 }} catch {{ "" }})\n'
             '    let fixed_command = (with-env {{TB_SHELL: "nu",'
             ' TB_ALIAS: "{name}"}} {{\n'
-            '        do --ignore-errors {{ ^thebleep $broken_command'
+            '        do --ignore-errors {{ ^{command} $broken_command'
             ' {placeholder} ...$args }}\n'
             '    }} | default "")\n'
             '    if not ($fixed_command | is-empty) {{\n'
             '        commandline edit --replace $fixed_command\n'
             '    }}\n'
             '}}\n'
-        ).format(name=alias_name, placeholder=ARGUMENT_PLACEHOLDER)
+        ).format(name=alias_name, placeholder=ARGUMENT_PLACEHOLDER,
+                 command=self._invocation())
 
     def app_alias_loader(self, alias_name):
         """The same thing, for the same reason there is no `eval`.
