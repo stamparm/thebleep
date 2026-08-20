@@ -20,7 +20,8 @@
   ```
 
   One line in a startup file, works from any directory, no `PYTHONPATH`, and
-  `git pull` is the upgrade. `thebleep --alias` still says `thebleep`, so
+  `git pull` is the upgrade. The interpreter named there needs `psutil` and
+  `pyte`, which is the whole of the setup. `thebleep --alias` still says `thebleep`, so
   nothing about an installed copy changed. `THEBLEEP_COMMAND` overrides what
   goes into the alias, for a wrapper of your own or a shell whose quoting is not
   the quoting used here. `python -m thebleep` against a copy in `site-packages`

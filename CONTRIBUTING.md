@@ -72,6 +72,11 @@ Run it as the package instead, and the alias names the clone:
 eval "$(python3 /path/to/thebleep/thebleep/__main__.py --alias-loader)"
 ```
 
+The interpreter you name there needs the two runtime dependencies —
+`pip install psutil pyte`, or point the line at the virtual environment you
+already installed them into. `requirements.txt` is the *development* set and does
+not include them; `pip install -e .` is what normally brings them in.
+
 Put that in your startup file and the clone is your *The Bleep* for good — no
 install, and `git pull` is the whole upgrade. `THEBLEEP_COMMAND` overrides what
 goes into the alias if you need something else in there.

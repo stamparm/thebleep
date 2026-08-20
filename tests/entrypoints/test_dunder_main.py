@@ -44,3 +44,53 @@ def test_it_corrects_a_command():
     assert suggestion, 'no suggestion came back'
     assert suggestion.endswith('hello')
     assert 'ehco' not in suggestion
+
+
+def test_a_path_to_it_runs_too(tmpdir):
+    """`python path/to/thebleep/__main__.py`, which is how a clone is run.
+
+    The alias of a checkout names this file by path, so it has to work as a
+    plain script and not only as `-m thebleep`.
+
+    """
+    main_py = os.path.join(os.path.dirname(os.path.abspath(
+        thebleep.__main__.__file__)), '__main__.py')
+    environment = dict(REAL_ENVIRONMENT, TB_SHELL='bash')
+    environment.pop('PYTHONPATH', None)
+    result = subprocess.run(
+        [sys.executable, main_py, '--version'],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=environment,
+        cwd=str(tmpdir))
+
+    printed = (result.stdout + result.stderr).decode('utf-8', 'replace')
+    assert result.returncode == 0, printed
+    assert 'The Bleep' in printed
+
+
+def test_running_it_by_path_does_not_shadow_the_standard_library():
+    """The bug this is named after, which cost an afternoon.
+
+    Running a file puts *that file's own directory* on `sys.path`, and for this
+    file that is the package directory -- so `thebleep/types.py` answered for
+    the standard library's `types`, and the next thing to want `enum` died on an
+    import that had nothing to do with it. Whether it bit at all depended on
+    which modules the interpreter had already loaded, so it worked on the
+    machine it was written on and failed in a container.
+
+    `-S` is what makes this deterministic: without `site` the interpreter has
+    imported far less by the time `__main__.py` runs, which is the state the
+    shadowing needs to show itself. `-S` also hides `site-packages`, so the
+    dependencies are put back by hand.
+
+    """
+    main_py = os.path.join(os.path.dirname(os.path.abspath(
+        thebleep.__main__.__file__)), '__main__.py')
+    environment = dict(REAL_ENVIRONMENT, TB_SHELL='bash',
+                       PYTHONPATH=os.pathsep.join(sys.path))
+    result = subprocess.run(
+        [sys.executable, '-S', main_py, '--version'],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=environment)
+
+    errors = result.stderr.decode('utf-8', 'replace')
+    assert 'attempted relative import' not in errors, errors
+    assert result.returncode == 0, errors

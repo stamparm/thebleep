@@ -557,9 +557,15 @@ it. On Debian, Ubuntu and Fedora, `pip install --user` is refused outright
 
 ### Running a clone, with nothing installed
 
-If you have the repository, you have everything: there is nothing to build and
-no install step. One line in your startup file, and the clone *is* your
-*The Bleep* — a `git pull` is the whole upgrade.
+There is nothing to build and no install step — but there are two dependencies,
+and the interpreter you point at has to have them:
+
+```bash
+python3 -m pip install --user psutil pyte
+```
+
+Then one line in your startup file, and the clone *is* your *The Bleep* — a
+`git pull` is the whole upgrade.
 
 ```bash
 eval "$(python3 ~/src/thebleep/thebleep/__main__.py --alias-loader)"
@@ -568,7 +574,10 @@ eval "$(python3 ~/src/thebleep/thebleep/__main__.py --alias-loader)"
 That path is the only thing to change. It works from any directory, needs no
 `PYTHONPATH`, and does not care what else is installed — the alias it writes
 names that interpreter and that checkout, so what your shell runs is the working
-tree in front of you.
+tree in front of you. If `pip install --user` is refused on your system
+([PEP 668](https://peps.python.org/pep-0668/)), point the line at a virtual
+environment's `python3` instead; it is the interpreter in the alias that has to
+find `psutil`, and nothing says it must be the system one.
 
 Worth knowing if you develop it: run `thebleep --alias` and you get an alias
 that says `thebleep`, which is whatever is on your `PATH` — quite possibly a
