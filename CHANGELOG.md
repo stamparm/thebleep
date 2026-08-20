@@ -24,6 +24,15 @@
   options before the subcommand, such as `git -C /tmp satus`. An old git, a git
   that will not answer, or an answer that is empty all ask, as before.
 
+  `cargo` is in on the same terms, from `cargo --list`. `npm`, `docker`, `uv`
+  and `kubectl` are not, and the bar they failed is worth writing down: the list
+  has to be *complete*, because a word missing from it looks like a typo and its
+  command then runs again unasked. `npm help` and `npm -l` both omit the
+  aliases, so npm's own list has no `i` in it -- and `npm i` installs. `uv
+  --help` omits its hidden subcommands, `generate-shell-completion` among them.
+  A `--help` screen is a document for a person, not a promise about what the
+  program will accept.
+
 ### Rules
 
 - `kubectl_unknown_command` — fixes a mistyped `kubectl` subcommand from the

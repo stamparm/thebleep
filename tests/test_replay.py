@@ -21,7 +21,8 @@ from thebleep import replay
 def on_path(mocker):
     """A machine where these programs exist and nothing else does."""
     installed = {'ls', 'cat', 'grep', 'git', 'apt-get', 'reboot', 'deploy',
-                 'sort', 'find', 'sed', 'awk', 'tree', 'docker', 'npm', 'env'}
+                 'sort', 'find', 'sed', 'awk', 'tree', 'docker', 'npm', 'env',
+                 'cargo', 'kubectl', 'uv'}
 
     def which(name):
         return '/usr/bin/' + name if name.split('/')[-1] in installed else None
@@ -38,8 +39,14 @@ def subcommands(mocker):
     repository it runs from. `TestAskingTheProgramItself` uses the real one.
 
     """
-    known = {'git': frozenset(['status', 'push', 'branch', 'checkout', 'log',
-                               'stash', 'st'])}
+    known = {
+        'git': frozenset(['status', 'push', 'branch', 'checkout', 'log',
+                          'stash', 'st']),
+        # As `cargo --list` answers: the names, their aliases, and the words of
+        # the descriptions printed beside them.
+        'cargo': frozenset(['build', 'test', 'publish', 'b', 'zoom',
+                            'Compile', 'a', 'local', 'package']),
+    }
 
     def answer(program, question):
         return known.get(os.path.basename(program))
@@ -71,6 +78,8 @@ class TestIsInert(object):
         'git stauts',
         'git chekout featuer',
         'git puhs origin main',
+        'cargo buld --release',
+        'cargo tset',
         # Variables set for a command that only reads.
         'LC_ALL=C ls -l',
         'GIT_TRACE=1 LANG=C grep x f',
@@ -101,9 +110,19 @@ class TestIsInert(object):
         # is the subcommand and `git -C /tmp push` runs again unasked.
         'git -C /tmp satus',
         'git --git-dir /elsewhere/.git satus',
+        'cargo build --release',
+        'cargo publish',
+        # An alias `cargo --list` named, which can be `!anything`.
+        'cargo b',
+        'cargo zoom',
+        # A word out of a description rather than a name. Being over-inclusive
+        # only costs a question, which is the direction to be wrong in.
+        'cargo Compile',
         # Not a dispatcher this knows how to ask, so it is asked about.
         'npm instal',
         'docker pss',
+        'kubectl gat pods',
+        'uv piip install requests',
         'apt-get install vim',
         'docker run -d nginx',
         'npm install',
@@ -204,6 +223,28 @@ class TestASubcommandTheProgramDoesNotHave(object):
         assert not (replay.READ_ONLY & set(replay.DISPATCHERS))
 
 
+@pytest.mark.parametrize('program, why', [
+    ('npm', 'neither `npm help` nor `npm -l` lists the aliases, so `i` is '
+            'missing from the list -- and `npm i` installs'),
+    ('uv', '`uv --help` leaves its hidden subcommands out; '
+           '`generate-shell-completion` is absent and dispatches anyway'),
+    ('docker', 'a --help screen is a document for a person, not a promise '
+               'about what the program accepts'),
+    ('kubectl', 'the same, and neither has a listing that can be shown to be '
+                'complete'),
+])
+def test_dispatchers_without_a_complete_listing(program, why):
+    """These would be worth having and are not, for one reason.
+
+    The list a program gives has to contain every word it will dispatch on. One
+    that is missing looks like a typo, and its command then runs a second time
+    unasked -- which is the one thing this module may not do. Over-inclusion is
+    free; under-inclusion is the whole risk.
+
+    """
+    assert program not in replay.DISPATCHERS, why
+
+
 class TestAskingTheProgramItself(object):
     """`_subcommands` runs a real program, so these do too."""
 
@@ -237,6 +278,18 @@ class TestAskingTheProgramItself(object):
             pytest.skip('git is older than 2.18, which has no --list-cmds')
 
         assert 'deploy' in answer, 'an alias would be taken for a typo'
+
+    def test_cargo_lists_its_own_subcommands(self):
+        if not shutil.which('cargo'):
+            pytest.skip('cargo is not installed')
+
+        answer = replay._subcommands('cargo', replay.DISPATCHERS['cargo'])
+        if answer is None:
+            pytest.skip('this cargo would not answer --list')
+
+        assert 'build' in answer
+        assert 'b' in answer, 'an alias would be taken for a typo'
+        assert 'buld' not in answer
 
     def test_a_program_that_is_not_there_says_nothing(self):
         assert replay._subcommands('nosuchprogram-9c4f', ('--list',)) is None

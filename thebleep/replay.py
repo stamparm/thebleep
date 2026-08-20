@@ -116,9 +116,29 @@ READ_ONLY = frozenset({
 #
 # `--list-cmds` arrived in git 2.18; an older git answers nothing, which asks.
 # `alias` is in the list deliberately -- an alias is a subcommand git does have,
-# and it can stand for anything at all, including `!deploy.sh`.
+# and it can stand for anything at all, including `!deploy.sh`. `cargo --list`
+# names its aliases too, including the ones a `config.toml` adds and the `!`
+# ones that shell out.
+#
+# The bar for being here is that the answer is *complete*: every word the
+# program will dispatch on has to be in it, because one that is missing looks
+# like a typo and its command then runs again unasked. Over-inclusion is
+# harmless -- a word taken for a subcommand it is not merely asks -- which is
+# why the answer is read as a bag of words rather than parsed. Under-inclusion
+# is the whole risk, and it is not a theoretical one:
+#
+#   npm    `npm help` and `npm -l` both leave the aliases out, so the list has
+#          no `i` in it -- and `npm i` installs. It is the single most typed
+#          npm command there is.
+#   uv     `uv --help` omits its hidden subcommands: `generate-shell-completion`
+#          is absent from the list and dispatches perfectly well.
+#
+# `docker` and `kubectl` are not here for want of a listing that can be shown to
+# be complete rather than for want of trying; a `--help` screen is a document
+# for a person, and no promise about what the program will accept.
 DISPATCHERS = {
     'git': ('--list-cmds=main,others,alias,nohelpers',),
+    'cargo': ('--list',),
 }
 
 # Long enough for a program to print a list it already knows, short enough that
@@ -161,6 +181,13 @@ def _words(script):
 
 def _subcommands(program, question):
     """The subcommands `program` says it has, or `None` if it would not say.
+
+    The answer is read as a bag of words, which for `git --list-cmds` is exactly
+    the list and for `cargo --list` is the list plus the descriptions beside it.
+    Taking a description's words for subcommands costs nothing: a word wrongly
+    in the set only means the question gets asked. A word wrongly *out* of it is
+    the dangerous direction, and no parsing can put back what the program did
+    not print.
 
     Only a clean answer counts. A program that is not there, fails, times out,
     prints nothing or cannot be run at all returns `None`, and `None` asks.

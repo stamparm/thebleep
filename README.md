@@ -155,6 +155,14 @@ take a value, and which of the remaining words is therefore the subcommand
 rather than a path, is the kind of nearly-right that would run `git -C /tmp
 push` again unasked.
 
+`cargo` works the same way, from `cargo --list`. `npm`, `docker`, `uv` and
+`kubectl` do not, and the reason is worth knowing: the list a program gives has
+to contain *every* word it will dispatch on, or a missing one looks like a typo
+and its command runs again unasked. `npm help` omits the aliases, so `i` is not
+in npm's own list — and `npm i` installs. `uv --help` omits its hidden
+subcommands. A `--help` screen is a document for a person, not a promise about
+what the program accepts.
+
 **The program only ever reads**, whatever it is asked to do — `ls`, `cat`,
 `grep`. That last one is a judgement about the *name*, and a name is not a proof
 about the program a `PATH` lookup will find; what makes it a reasonable one is
