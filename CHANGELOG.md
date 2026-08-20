@@ -31,6 +31,42 @@
   `PATH` for real. Installing a checkout without it copies the files once, and
   the copy is stale by the next commit.
 
+### Added
+
+- **It corrects tools it has never heard of.** Until now the model was one rule
+  per program, written after somebody noticed the program existed, and then left
+  to rot when its wording changed -- seven such rules were found dead in a single
+  afternoon. But the tools do not each invent their own way of saying it. They
+  use a handful of argument parsers, and those print what they think you meant in
+  shapes that do not vary:
+
+  ```
+  ruff chekc .          error: unrecognized subcommand 'chekc'
+                          tip: a similar subcommand exists: 'check'
+
+  gh reop list          unknown command "reop" for "gh"
+                        Did you mean this?  repo
+
+  black --chekc .       Error: No such option '--chekc'. (Did you mean one of:
+                        '--check', ...)
+  ```
+
+  So there are now three rules that read the *parser* rather than the program --
+  `clap_suggestion` for Rust tools, `cobra_suggestion` for Go tools and
+  `click_suggestion` for Python ones -- and every program built with one is
+  corrected without a line being written for it. `ruff`, `gh`, `helm` and `black`
+  have no rules of their own and all four are corrected; so will whatever is
+  released next year.
+
+  Each is gated on a literal from its parser's wording, so the rule pack skips
+  all three for a correction that cannot involve them.
+- **Mistyped options are corrected, not just subcommands.** `ruff check --fixx`
+  becomes `ruff check --fix`, `ruff check --lin` becomes
+  `ruff check --line-length`, `black --chekc` becomes `black --check`. Nothing
+  did this before, and a mistyped flag is at least as common as a mistyped
+  subcommand -- clap and Click both name the answer for one exactly as they do
+  for the other.
+
 ### Changed
 
 - **`whomi` no longer suggests `which`.** The question the whole tool exists to

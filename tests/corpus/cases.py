@@ -186,6 +186,40 @@ THE_TOOL_SAID_SO = [
      "  tip: a similar subcommand exists: 'pip'\n\n"
      'Usage: uv [OPTIONS] <COMMAND>\n',
      'uv pip install requests'),
+    # Tools with NO rule of their own anywhere in this project. They are
+    # corrected because `clap_suggestion`, `cobra_suggestion` and
+    # `click_suggestion` read the framework rather than the tool -- which is the
+    # claim, so it is gated here. Captured from ruff 0.14.5, gh 2.63.2,
+    # helm 3.16.3 and black 25.9.0.
+    ('ruff chekc .',
+     "error: unrecognized subcommand 'chekc'\n\n"
+     "  tip: a similar subcommand exists: 'check'\n\n"
+     'Usage: ruff [OPTIONS] <COMMAND>\n',
+     'ruff check .'),
+    # A mistyped *option*, which nothing corrected before.
+    ('ruff check --fixx .',
+     "error: unexpected argument '--fixx' found\n\n"
+     "  tip: a similar argument exists: '--fix'\n",
+     'ruff check --fix .'),
+    ('cargo instal ripgrep',
+     'error: no such command: `instal`\n\n'
+     'help: a command with a similar name exists: `install`\n',
+     'cargo install ripgrep'),
+    ('gh reop list',
+     'unknown command "reop" for "gh"\n\nDid you mean this?\n\trepo\n\n'
+     'Usage:  gh <command> <subcommand> [flags]\n',
+     'gh repo list'),
+    ('helm instal mychart',
+     'Error: unknown command "instal" for "helm"\n\n'
+     'Did you mean this?\n\tinstall\n\n'
+     "Run 'helm --help' for usage.\n",
+     'helm install mychart'),
+    ('black --chekc .',
+     'Usage: black [OPTIONS] SRC ...\n'
+     "Try 'black --help' for help.\n\n"
+     "Error: No such option '--chekc'. (Did you mean one of: '--check', "
+     "'--code', '--help'?)\n",
+     'black --check .'),
     ('kubectl gat pods',
      'error: unknown command "gat" for "kubectl"\n\n'
      'Did you mean this?\n\tget\n\tset\n',
