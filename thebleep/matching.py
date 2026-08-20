@@ -47,22 +47,37 @@ def max_distance(word):
     """The furthest a candidate may be and still be worth offering.
 
     Roughly a quarter of the word, measured against the corpus rather than
-    picked. The boundaries all earn their place: `gti` must not reach `tic` (two
-    edits), `whomi` must not reach `which` (three), and `mkae` must not reach
-    `man` -- two edits in a four-letter word is not a slip, it is a different
-    word, and on a machine without `make` installed the honest answer is
-    nothing at all.
+    picked. The boundaries all earn their place: `gti` must not reach `tic` (two edits), `whomi` must not reach
+    `which` (three), and `mkae` must not reach `man` -- two edits in a
+    four-letter word is not a slip, it is a different word, and on a machine
+    without `make` installed the honest answer is nothing at all.
 
-    The cost is that a doubly-mangled short name cannot be reached either:
-    `ndeo` is two edits from `node` and gets no suggestion. That is the trade,
-    and it is the right way round -- a wrong answer offered confidently is worse
-    than none, and single-slip typos are the overwhelming majority.
+    This used to be written out as three cases, and the last of them said 3 for
+    everything longer than eight characters -- which for a nine-letter word is a
+    third of it, not a quarter, and it showed:
+
+        $ systemctl statu ssh        # in a container with no systemd
+        $ bleep
+        sysctl statu ssh             <- three edits, and nonsense
+
+    A quarter of nine is two, which excludes it -- so the tier that said 3 now
+    starts where a third really is a quarter.
+
+    The arithmetic is not written as `len(word) // 4` because that also tightens
+    the middle: `kubectl` is seven characters, a quarter of which is one, and
+    two edits in a seven-letter name is a slip somebody really makes. The tiers
+    are what the corpus was measured against; only the top one moved.
+
+    The cost is that a doubly-mangled short name cannot be reached: `ndeo` is
+    two edits from `node` and gets no suggestion. That is the trade, and it is
+    the right way round -- a wrong answer offered confidently is worse than
+    none, and single-slip typos are the overwhelming majority.
 
     """
     length = len(word)
     if length <= 4:
         return 1
-    if length <= 8:
+    if length <= 12:
         return 2
     return 3
 

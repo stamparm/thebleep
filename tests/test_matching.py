@@ -75,7 +75,11 @@ class TestHowFarIsTooFar(object):
     @pytest.mark.parametrize('word, expected', [
         ('ls', 1), ('gti', 1), ('sudp', 1),
         ('whomi', 2), ('docker', 2), ('kubectl', 2), ('apt-get1', 2),
-        ('ssh-keygne', 3),
+        # Nine to twelve characters used to get 3, which is a third of a
+        # nine-letter word rather than a quarter -- and it showed:
+        # `systemctl statu ssh` was answered with `sysctl statu ssh`.
+        ('systemctl', 2), ('ssh-keygne', 2), ('docker-compo', 2),
+        ('docker-compose', 3),
     ])
     def test_roughly_a_quarter_of_the_word(self, word, expected):
         assert matching.max_distance(word) == expected
@@ -88,6 +92,8 @@ class TestHowFarIsTooFar(object):
         ('ping', 'pinky'),
         ('yarn', 'acorn'),
         ('mkae', 'man'),
+        # A container without systemd. Three edits in a nine-letter name.
+        ('systemctl', 'sysctl'),
     ])
     def test_the_absurd_answers_are_out_of_reach(self, typo, unreachable):
         assert matching.rank(typo, [unreachable]) == []
