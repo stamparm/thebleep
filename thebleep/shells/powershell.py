@@ -11,6 +11,18 @@ PIPE = None
 class Powershell(Generic):
     friendly_name = 'PowerShell'
 
+    def _invocation(self):
+        """PowerShell needs `&` in front of a command it is given as a string.
+
+        A statement that begins with a quoted string is a string *expression*
+        there, not a command -- `'C:\\My Tools\\python.exe' x` evaluates the path
+        and throws the rest away. The call operator is what makes it a command,
+        and it is harmless in front of a bare name too.
+
+        """
+        written = super(Powershell, self)._invocation()
+        return u'& ' + written if written.startswith(u"'") else written
+
     def app_alias(self, alias_name):
         # `TB_SHELL` and `TB_ALIAS` are set for the call and put back
         # afterwards. They used to be set once by the loader and left in the

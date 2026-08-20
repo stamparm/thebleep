@@ -136,10 +136,22 @@ class Generic(object):
         checkout when this is one, so that a clone needs no install. See
         `thebleep.invocation`.
 
-        """
-        from ..invocation import command
+        The words are quoted by `self.quote`, so each shell applies its own
+        rules -- a path with a space in it reaches PowerShell and Nushell as one
+        word rather than as POSIX quoting they do not share.
 
-        return command()
+        """
+        from .. import invocation
+
+        written = invocation.override()
+        if written:
+            return written
+
+        words = invocation.parts()
+        if words is None:
+            return invocation.ENTRY_POINT
+
+        return ' '.join(self.quote(word) for word in words)
 
     def app_alias(self, alias_name):
         return """alias {0}='eval "$(TB_ALIAS={0} """ \

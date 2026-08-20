@@ -79,36 +79,27 @@ def _checkout_root():
     return root if os.path.isfile(os.path.join(root, 'setup.py')) else None
 
 
-def _quote(word):
-    """`word` as one word of shell code.
-
-    `shlex.quote` for POSIX shells, which is what the alias is for every shell
-    here bar two; PowerShell and Nushell take single quotes the same way for
-    the paths this ever produces. A path that needs more than that is what
-    `THEBLEEP_COMMAND` is for.
-
-    """
-    from shlex import quote
-
-    return quote(word)
+def override():
+    """`THEBLEEP_COMMAND`, or `None`. Used as written, quoting included."""
+    return os.environ.get(OVERRIDE_ENV) or None
 
 
-def command():
-    """The shell code the alias should run to reach The Bleep.
+def parts():
+    """The words the alias should run, or `None` for the installed command.
 
-    :rtype: str
+    Words, not shell code: quoting is the shell's own business and each shell
+    class has a `quote` that knows its rules. Quoting here with `shlex.quote`
+    instead -- as this did at first -- puts POSIX single quotes into PowerShell,
+    where `'a'"'"'b'` is three arguments rather than one, and into a tcsh alias
+    body, which is itself single-quoted and simply ends early.
 
     """
-    override = os.environ.get(OVERRIDE_ENV)
-    if override:
-        return override
-
     if not _started_from_the_package():
-        return ENTRY_POINT
+        return None
 
     root = _checkout_root()
     if root is None or not sys.executable:
-        return ENTRY_POINT
+        return None
 
     # `-m thebleep` would need the checkout on `sys.path`, which means an
     # environment variable in front of the command and a cwd that cannot be
@@ -116,6 +107,19 @@ def command():
     # its own checkout on `sys.path` when it is run that way.
     main = _main_path()
     if not os.path.isfile(main):
-        return ENTRY_POINT
+        return None
 
-    return '{} {}'.format(_quote(sys.executable), _quote(main))
+    return [sys.executable, main]
+
+
+def command():
+    """The shell code the alias should run, quoted for POSIX shells.
+
+    Kept for a shell that has no opinion of its own; `Generic._invocation`
+    quotes with the shell's own `quote` and is what the aliases use.
+
+    """
+    from shlex import quote
+
+    return override() or ' '.join(quote(word) for word in parts() or
+                                  [ENTRY_POINT])

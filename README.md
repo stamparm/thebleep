@@ -579,13 +579,39 @@ python3 -m pip install --user psutil pyte
 ```
 
 Then one line in your startup file, and the clone *is* your *The Bleep* — a
-`git pull` is the whole upgrade.
+`git pull` is the whole upgrade. It is one line per shell, because the way a
+shell reads code from a command is the one thing they never agree on:
 
 ```bash
+# bash, zsh — and fish, which has understood $(…) since 3.4
 eval "$(python3 ~/src/thebleep/thebleep/__main__.py --alias-loader)"
 ```
 
-That path is the only thing to change. It works from any directory, needs no
+```fish
+# fish, the native form
+python3 ~/src/thebleep/thebleep/__main__.py --alias-loader | source
+```
+
+Nushell has no `eval` (see [Nushell](#nushell) for why), and `source` is
+resolved when a script is parsed rather than as it runs — so it cannot be one
+line. Write the loader out once, and `source` the file from your `config.nu`:
+
+```nu
+python3 ~/src/thebleep/thebleep/__main__.py --alias-loader | save -f ~/.thebleep.nu
+# then, in config.nu:  source ~/.thebleep.nu
+```
+
+```tcsh
+# tcsh
+eval `python3 ~/src/thebleep/thebleep/__main__.py --alias-loader`
+```
+
+A tcsh alias is itself single-quoted and cannot contain a quote, so a checkout
+at a path with a space in it cannot be written into one; it says so and falls
+back, and `THEBLEEP_COMMAND` is how you tell it what to run instead. Every other
+shell handles such a path.
+
+Otherwise the path is the only thing to change. It works from any directory, needs no
 `PYTHONPATH`, and does not care what else is installed — the alias it writes
 names that interpreter and that checkout, so what your shell runs is the working
 tree in front of you. If `pip install --user` is refused on your system

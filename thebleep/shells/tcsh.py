@@ -1,5 +1,6 @@
 from time import time
 import os
+from .. import logs
 from ..const import get_alias
 from ..utils import DEVNULL, load_subprocess, memoize
 from .generic import Generic
@@ -12,6 +13,34 @@ PIPE = None
 
 class Tcsh(Generic):
     friendly_name = 'Tcsh'
+
+    def _invocation(self):
+        """What tcsh can be told to run, which is less than the others.
+
+        A tcsh alias body is itself wrapped in single quotes, and there is no
+        way to put a single quote inside one -- no `'"'"'` escape, no
+        backslash. So an invocation that needs quoting cannot be written into a
+        tcsh alias at all: the quote ends the body early and what is left fails
+        with something that names neither the path nor the reason.
+
+        A checkout under `~/My Projects/` is exactly that case. Rather than
+        emit an alias that breaks, this says so and falls back to the installed
+        command -- and `THEBLEEP_COMMAND`, used as written, is the way to say
+        what tcsh should run instead.
+
+        """
+        from .. import invocation
+
+        written = super(Tcsh, self)._invocation()
+        if "'" not in written:
+            return written
+
+        logs.warn(
+            u'Your checkout is at a path tcsh cannot put in an alias (a tcsh'
+            u' alias is single-quoted and cannot contain a quote). The alias'
+            u' will call `{}` instead. Set THEBLEEP_COMMAND to the command you'
+            u' want it to run.'.format(invocation.ENTRY_POINT))
+        return invocation.ENTRY_POINT
 
     def app_alias(self, alias_name):
         return ("alias {0} 'setenv TB_SHELL tcsh && setenv TB_ALIAS {0} && "

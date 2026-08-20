@@ -151,9 +151,13 @@ def _integration(report):
 
     # What is looked for, and all that is looked for. The file is somebody's
     # shell configuration and none of the rest of it is reported.
-    if 'thebleep --alias-loader' in content:
+    # A clone's alias names an interpreter and a file rather than `thebleep`,
+    # so the flag is what identifies the line, not the program in front of it.
+    # Matching `thebleep --alias-loader` reported a working zero-install setup
+    # as "named, but not as an alias".
+    if '--alias-loader' in content:
         report.add('Integration', 'alias loader in {}'.format(tidy(path)))
-    elif 'thebleep --alias' in content or 'thebleep -a' in content:
+    elif '--alias' in content or 'thebleep -a' in content:
         report.add('Integration', 'alias in {}'.format(tidy(path)), NOTE,
                    'The loader defines the alias on first use instead, so'
                    ' opening a shell runs no Python: `thebleep'
@@ -174,7 +178,19 @@ def _executable(report):
     found = which('thebleep')
     report.add('Executable', tidy(running or 'unknown'))
 
-    if found is None:
+    from .. import invocation
+
+    # An alias that names a file does not go through `PATH`, so `thebleep` not
+    # being on it is the arrangement working rather than a fault. Warning
+    # anyway put "add the directory above to PATH" under a zero-install clone,
+    # two lines below the path it was already running.
+    reached_by_name = invocation.command() == invocation.ENTRY_POINT
+
+    if not reached_by_name:
+        report.add('Reached by', invocation.command(), NOTE,
+                   'A checkout, so the alias names it directly and does not'
+                   ' need `thebleep` on PATH. `git pull` is the upgrade.')
+    elif found is None:
         report.add('On PATH', 'thebleep is not on PATH', WARN,
                    'The alias calls `thebleep` by name, so it has to be'
                    ' findable. Add the directory above to PATH.')
