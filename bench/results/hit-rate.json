@@ -1,0 +1,50 @@
+{
+  "environment": {
+    "commit": "f94d55f5bed51246a516ba92e7b122d53c67e74c",
+    "working_tree_clean": true
+  },
+  "groups": [
+    {
+      "hits": 56,
+      "of": 56,
+      "what": "an unknown program"
+    },
+    {
+      "hits": 17,
+      "of": 17,
+      "what": "the tool said so"
+    },
+    {
+      "hits": 9,
+      "of": 9,
+      "what": "nothing is right"
+    }
+  ],
+  "thefuck_3_32": {
+    "groups": [
+      {
+        "hits": 46,
+        "of": 56,
+        "what": "an unknown program"
+      },
+      {
+        "hits": 6,
+        "of": 17,
+        "what": "the tool said so"
+      },
+      {
+        "hits": 3,
+        "of": 9,
+        "what": "nothing is right"
+      }
+    ],
+    "total": {
+      "hits": 55,
+      "of": 82
+    }
+  },
+  "total": {
+    "hits": 82,
+    "of": 82
+  }
+}

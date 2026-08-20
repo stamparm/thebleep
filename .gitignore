@@ -69,6 +69,12 @@ target/
 bench/.venvs/
 bench/results/*
 !bench/results/final.json
+# And the hit rate, for the same reason: the README publishes that number, and
+# `tests/test_readme_claims.py` holds the README to it -- which it can only do
+# if the recording is in the clone. It was ignored, so that test skipped
+# everywhere but the machine the recording was made on, and the one number this
+# project publishes about its own quality went unchecked in CI.
+!bench/results/hit-rate.json
 
 # CodeGraph's local index of this checkout
 .codegraph/
