@@ -29,7 +29,25 @@ def on_path(mocker):
     return mocker.patch('thebleep.utils.which', side_effect=which)
 
 
-@pytest.mark.usefixtures('on_path')
+@pytest.fixture
+def subcommands(mocker):
+    """What the dispatchers on this machine would say they can do.
+
+    Stood in for wherever `is_inert` is the subject, so that no test depends on
+    the git that happens to be installed or on the aliases in whatever
+    repository it runs from. `TestAskingTheProgramItself` uses the real one.
+
+    """
+    known = {'git': frozenset(['status', 'push', 'branch', 'checkout', 'log',
+                               'stash', 'st'])}
+
+    def answer(program, question):
+        return known.get(os.path.basename(program))
+
+    return mocker.patch('thebleep.replay._subcommands', side_effect=answer)
+
+
+@pytest.mark.usefixtures('on_path', 'subcommands')
 class TestIsInert(object):
     """`is_inert` is the only thing allowed to skip the question, so it has to
     be right in the direction of saying no."""
@@ -47,9 +65,16 @@ class TestIsInert(object):
         'grep -r pattern .',
         '/bin/ls -l',
         '/usr/bin/grep x f',
+        # A subcommand git does not have, so it fails at dispatch again and
+        # does nothing on the way -- which is the whole of the typo case.
+        'git satus',
+        'git stauts',
+        'git chekout featuer',
+        'git puhs origin main',
         # Variables set for a command that only reads.
         'LC_ALL=C ls -l',
         'GIT_TRACE=1 LANG=C grep x f',
+        'GIT_TRACE=1 git satus',
         # Assignments and nothing else: a subshell throws them away.
         'FOO=bar',
     ])
@@ -62,6 +87,23 @@ class TestIsInert(object):
         'deploy production',
         'git push',
         'git branch -d topic',
+        # A subcommand git does have. Whether it writes depends on the flags,
+        # which is why the subcommand existing is as far as this goes.
+        'git status',
+        'git stash',
+        # An alias is a subcommand git has, and it can stand for anything at
+        # all, including `!deploy.sh`.
+        'git st',
+        # Nothing dispatched yet, so nothing is known about what would run.
+        'git',
+        # git's own options come before the subcommand, and which of them take
+        # a value is not something this tries to work out: read wrong, `/tmp`
+        # is the subcommand and `git -C /tmp push` runs again unasked.
+        'git -C /tmp satus',
+        'git --git-dir /elsewhere/.git satus',
+        # Not a dispatcher this knows how to ask, so it is asked about.
+        'npm instal',
+        'docker pss',
         'apt-get install vim',
         'docker run -d nginx',
         'npm install',
@@ -122,6 +164,91 @@ class TestIsInert(object):
         variable in an argument cannot turn `ls` into something else."""
         assert replay.is_inert('ls $HOME')
         assert replay.is_inert('grep -r "$PATTERN" .')
+
+
+@pytest.mark.usefixtures('on_path', 'subcommands')
+class TestASubcommandTheProgramDoesNotHave(object):
+    """The one thing that may not go wrong here is claiming a command is inert
+    when it is not, so every unclear answer has to come back as "ask"."""
+
+    @pytest.mark.parametrize('answer, why', [
+        (None, 'the program would not say, so nothing is known'),
+        (frozenset(), 'an empty list is not an answer either'),
+    ])
+    def test_no_answer_asks(self, mocker, answer, why):
+        mocker.patch('thebleep.replay._subcommands', return_value=answer)
+        assert not replay.is_inert('git satus'), why
+
+    def test_the_program_is_asked_once_and_only_when_it_is_needed(
+            self, subcommands):
+        """A program that only reads is decided without running anything."""
+        replay.is_inert('ls -l')
+        replay.is_inert('deploy production')
+        assert not subcommands.called
+
+        replay.is_inert('git satus')
+        assert subcommands.call_count == 1
+
+    def test_it_is_asked_the_question_the_list_names(self, subcommands):
+        replay.is_inert('git satus')
+        subcommands.assert_called_once_with('git', replay.DISPATCHERS['git'])
+
+    def test_a_path_to_the_program_is_still_the_program(self, subcommands):
+        """`/usr/bin/git satus` dispatches exactly as `git satus` does."""
+        assert replay.is_inert('/usr/bin/git satus')
+        assert not replay.is_inert('/usr/bin/git push')
+
+    def test_nothing_on_the_read_only_list_is_a_dispatcher(self):
+        """A program on both lists would be decided by the wrong one, and the
+        answer for a dispatcher is the narrower of the two."""
+        assert not (replay.READ_ONLY & set(replay.DISPATCHERS))
+
+
+class TestAskingTheProgramItself(object):
+    """`_subcommands` runs a real program, so these do too."""
+
+    def test_git_lists_its_own_subcommands(self):
+        if not shutil.which('git'):
+            pytest.skip('git is not installed')
+
+        answer = replay._subcommands('git', replay.DISPATCHERS['git'])
+        if answer is None:
+            pytest.skip('git is older than 2.18, which has no --list-cmds')
+
+        assert 'status' in answer
+        assert 'push' in answer
+        assert 'satus' not in answer
+
+    def test_a_git_alias_is_one_of_them(self, tmpdir, monkeypatch):
+        """Which is why `git st` is asked about: an alias can stand for
+        anything, `!deploy.sh` included."""
+        if not shutil.which('git'):
+            pytest.skip('git is not installed')
+
+        repo = tmpdir.mkdir('repo')
+        monkeypatch.chdir(repo)
+        subprocess.call(['git', 'init', '-q', '.'],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.call(['git', 'config', 'alias.deploy', '!echo would-run'],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        answer = replay._subcommands('git', replay.DISPATCHERS['git'])
+        if answer is None:
+            pytest.skip('git is older than 2.18, which has no --list-cmds')
+
+        assert 'deploy' in answer, 'an alias would be taken for a typo'
+
+    def test_a_program_that_is_not_there_says_nothing(self):
+        assert replay._subcommands('nosuchprogram-9c4f', ('--list',)) is None
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason='needs a POSIX shell')
+    def test_a_program_that_fails_says_nothing(self):
+        assert replay._subcommands('false', ('--list',)) is None
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason='needs sleep')
+    def test_a_program_that_hangs_is_not_waited_for(self, monkeypatch):
+        monkeypatch.setattr(replay, 'PROBE_TIMEOUT', 1)
+        assert replay._subcommands('sleep', ('30',)) is None
 
 
 @pytest.mark.parametrize('program, effect', [

@@ -2,6 +2,28 @@
 
 ## 4.0.3 — unreleased
 
+### Fixed
+
+- **A mistyped subcommand is no longer a question.** 4.0.0 stopped running your
+  previous command a second time without asking, and skipped asking only when
+  there was no such program or the program was one that only ever reads. `git`
+  could be neither -- `git push` is not a read -- so the single most common
+  correction there is, a mistyped git subcommand, wanted a keypress before it
+  would even look: `git satus` was treated exactly like `git push`.
+
+  It no longer is. A program that dispatches on a subcommand does nothing
+  whatever until it has recognised one, so a subcommand it does not have fails
+  at dispatch the second time exactly as it did the first -- the same certainty
+  as a program the shell cannot find, one level down. Nothing about the
+  judgement widened: git is asked for its own list of subcommands rather than
+  being matched against one written down here, so a subcommand added to git
+  later is not mistaken for a typo. A subcommand git does have is still asked
+  about, `git status` as much as `git push`, since whether it writes depends on
+  the flags; so is an alias, which git lists among its subcommands and which can
+  stand for anything including `!deploy.sh`; and so is anything with git's own
+  options before the subcommand, such as `git -C /tmp satus`. An old git, a git
+  that will not answer, or an answer that is empty all ask, as before.
+
 ### Rules
 
 - `kubectl_unknown_command` — fixes a mistyped `kubectl` subcommand from the

@@ -18,6 +18,13 @@ narrower, and fails towards asking rather than running:
 One answer is certain: there is no such program, so the shell will fail to find
 it a second time exactly as it did the first.
 
+A second is the same certainty one level down. A program that dispatches on a
+subcommand does nothing at all until it has recognised one, so a subcommand it
+does not have fails at dispatch the second time exactly as it did the first --
+and that is the whole of the typo case, which is what a correction is usually
+for. What makes this certain rather than a judgement is that the subcommand is
+not guessed at here: the program is asked for its own list. See `DISPATCHERS`.
+
 The other is a judgement, and worth stating as one. `READ_ONLY` below is a list
 of programs that only read, whatever they are asked to do -- and it is a
 judgement about the name, which is not a proof about the program that will run.
@@ -97,14 +104,39 @@ READ_ONLY = frozenset({
     'whoami', 'xxd', 'zcat', 'zgrep',
 })
 
+# Programs that do nothing whatever until they have recognised a subcommand,
+# and the read-only question that makes each one list the subcommands it has.
+#
+# `git` cannot go on `READ_ONLY` -- `git push` is not a read -- but `git satus`
+# is not a `git push` either, and until 4.0.3 the two were treated alike, so
+# every mistyped subcommand was a question. The list is asked of git rather
+# than written down here on purpose: a hard-coded one would go stale in the
+# dangerous direction, a subcommand added later looking unrecognised and its
+# command running again unasked.
+#
+# `--list-cmds` arrived in git 2.18; an older git answers nothing, which asks.
+# `alias` is in the list deliberately -- an alias is a subcommand git does have,
+# and it can stand for anything at all, including `!deploy.sh`.
+DISPATCHERS = {
+    'git': ('--list-cmds=main,others,alias,nohelpers',),
+}
 
-def _program(script):
-    """The one program `script` would run, or `None` if it isn't that simple.
+# Long enough for a program to print a list it already knows, short enough that
+# nobody waits on it. Whatever does not answer in the time is treated as not
+# having answered, which asks.
+PROBE_TIMEOUT = 5
+
+
+def _words(script):
+    """The words `sh` would run, or `None` if it isn't that simple.
 
     The script is the expanded one, so a shell alias has already been resolved
     into whatever it stands for. Shell *functions* are not expanded, but the
     rerun goes through a non-interactive `sh` that never loads them, so the
     program named here really is the one that would run.
+
+    An empty list means assignments and nothing else, which a subshell throws
+    away.
 
     """
     if any(syntax in script for syntax in EFFECTIVE_SYNTAX):
@@ -119,32 +151,86 @@ def _program(script):
 
     words = words[command_word_index(words):]
     if not words:
-        # Assignments and nothing else, which a subshell throws away.
-        return ''
+        return []
 
     if not LITERAL_PROGRAM.match(words[0]):
         return None
 
-    return words[0]
+    return words
+
+
+def _subcommands(program, question):
+    """The subcommands `program` says it has, or `None` if it would not say.
+
+    Only a clean answer counts. A program that is not there, fails, times out,
+    prints nothing or cannot be run at all returns `None`, and `None` asks.
+
+    """
+    import subprocess
+
+    try:
+        answer = subprocess.check_output(
+            (program,) + question, stderr=subprocess.DEVNULL,
+            stdin=subprocess.DEVNULL, timeout=PROBE_TIMEOUT)
+    except Exception:
+        logs.debug(u'Replay: {} would not list its subcommands'.format(
+            program))
+        return None
+
+    names = answer.decode('utf-8', 'replace').split()
+    return frozenset(names) if names else None
+
+
+def _dispatch_fails(program, args):
+    """Whether `program` would refuse the subcommand it was given, again.
+
+    Only the plainest form is answered: the subcommand has to be the very next
+    word. `git -C /tmp satus` is left to the question, because working out
+    which of a program's own options take a value -- and which of the remaining
+    words is therefore the subcommand rather than a path -- is exactly the kind
+    of nearly-right that would run `git -C /tmp push` a second time unasked.
+
+    """
+    name = os.path.basename(program)
+    question = DISPATCHERS.get(name)
+    if question is None or not args or args[0].startswith('-'):
+        return False
+
+    known = _subcommands(program, question)
+    if not known:
+        # No answer, and an empty one is no answer either: a program that
+        # listed nothing would make every subcommand look like a typo.
+        return False
+
+    if args[0] in known:
+        return False
+
+    logs.debug(u'Replay: {} has no subcommand {}, so it does nothing'.format(
+        name, args[0]))
+    return True
 
 
 def is_inert(script):
     """Whether there is reason to believe running `script` again does nothing.
 
-    Two things are worth not asking about:
+    Three things are worth not asking about:
 
     - the program is not there to run, so the shell will fail to find it a
       second time exactly as it did the first;
     - the program is one of the ones that only ever read, whatever they are
-      asked to do.
+      asked to do;
+    - the program dispatches on a subcommand and was given one it does not
+      have, so it fails at dispatch a second time exactly as it did the first.
 
     """
-    program = _program(script)
-    if program is None:
+    words = _words(script)
+    if words is None:
         return False
-    if program == '':
+    if not words:
+        # Assignments and nothing else, which a subshell throws away.
         return True
 
+    program = words[0]
     name = os.path.basename(program)
     if name in EFFECTIVE_BUILTINS or program in EFFECTIVE_BUILTINS:
         return False
@@ -153,7 +239,10 @@ def is_inert(script):
 
     from .utils import which
 
-    return which(program) is None
+    if which(program) is None:
+        return True
+
+    return _dispatch_fails(program, words[1:])
 
 
 def _ask(script):

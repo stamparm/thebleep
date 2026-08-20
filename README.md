@@ -138,14 +138,30 @@ deploy production has to run again to be read, and anything it changes will
 change twice. Run it? [y/N]
 ```
 
-So it asks first. It skips asking in two cases: the program is not there to be
-found, so nothing runs either time (`gti status`), or the program is one of a
-short list that only ever read, whatever they are asked to do (`ls`, `cat`,
-`grep`). That second one is a judgement about the *name*, and a name is not a
-proof about the program a `PATH` lookup will find — what makes it a reasonable
-one is that the same program under the same name ran a moment ago, when you
-typed it. It is deliberately *not* a list of dangerous commands: such a list
-only declares the ones nobody thought of to be safe.
+So it asks first. It skips asking in three cases.
+
+**There is no such program**, so nothing runs either time — `gti status`.
+
+**You mistyped a subcommand.** `git satus` is not a `git push`: git does nothing
+whatever until it has recognised a subcommand, so one it does not have fails at
+dispatch the second time exactly as it did the first. The subcommands are not
+written down anywhere here — git is asked for its own list, so one added after
+this was written is not mistaken for a typo. A subcommand git *does* have is
+still a question, `git status` along with `git push`, because whether it writes
+depends on the flags. So is an alias, which git lists as its own: `st` can stand
+for anything, `!deploy.sh` included. And so is anything with git's own options
+in front of the subcommand (`git -C /tmp satus`) — working out which of them
+take a value, and which of the remaining words is therefore the subcommand
+rather than a path, is the kind of nearly-right that would run `git -C /tmp
+push` again unasked.
+
+**The program only ever reads**, whatever it is asked to do — `ls`, `cat`,
+`grep`. That last one is a judgement about the *name*, and a name is not a proof
+about the program a `PATH` lookup will find; what makes it a reasonable one is
+that the same program under the same name ran a moment ago, when you typed it.
+It is deliberately *not* a list of dangerous commands: such a list only declares
+the ones nobody thought of to be safe. It is also why no subcommand dispatcher
+is on it — `git branch` reads and `git branch -d` deletes.
 
 Where nobody can be asked — a pipe, a subprocess, CI — the answer is no, and
 the correction is attempted from the command alone.
