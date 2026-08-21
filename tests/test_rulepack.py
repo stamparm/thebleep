@@ -420,15 +420,51 @@ class TestDispatch(object):
                  if entry['output'] and entry['apps'] is None]
         assert needy, 'no rule declares what it needs in the output'
         entry = needy[0]
-        needle = entry['output'][0][0][0]
+
+        # One alternative out of *every* clause. The clauses are ANDed and the
+        # alternatives inside one are ORed, and this used to inject only
+        # `entry['output'][0][0][0]` -- the first alternative of the first
+        # clause. Every rule in the package happens to have exactly one clause,
+        # so that was the same thing and the assumption never showed; the first
+        # rule to want two markers at once ("invalid choice" *and* "usage:")
+        # failed here, on a test that is not about it.
+        enough = ' x '.join(clause[0][0] for clause in entry['output'])
 
         without = {found['name'] for _, found in rulepack.candidate_entries(
             entries, Command('made-up-command', 'nothing interesting here'))}
         assert entry['name'] not in without
 
         with_it = {found['name'] for _, found in rulepack.candidate_entries(
-            entries, Command('made-up-command', 'x {} x'.format(needle)))}
+            entries, Command('made-up-command', 'x {} x'.format(enough)))}
         assert entry['name'] in with_it
+
+    def test_a_rule_that_wants_two_markers_at_once(self, entries):
+        """Clauses are ANDed, alternatives within a clause are ORed.
+
+        No rule in the package needs this today, which is exactly why it is
+        worth a test of its own: the behaviour is what a contributor writing
+        `'invalid choice' in output and 'usage:' in output` depends on, and
+        until now nothing here exercised it.
+
+        """
+        entry = dict(next(iter(entries.values())),
+                     name='pretend_rule', apps=None,
+                     output=((('invalid choice', False),),
+                             (('usage:', False),)))
+        pack = {'pretend': entry}
+
+        def candidates(output):
+            return {found['name'] for _, found in rulepack.candidate_entries(
+                pack, Command('made-up-command', output))}
+
+        assert candidates('invalid choice: x\nusage: prog\n') \
+            == {'pretend_rule'}
+        # Either marker alone is not enough.
+        assert candidates('invalid choice: x\n') == set()
+        assert candidates('usage: prog\n') == set()
+        # And with no output at all the clauses do not rule it out, because
+        # there is nothing to check them against.
+        assert candidates('') == {'pretend_rule'}
 
     def test_prefilter_actually_narrows(self, entries):
         command = Command('git brnch', "git: 'brnch' is not a git command.")
