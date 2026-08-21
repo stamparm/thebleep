@@ -242,3 +242,49 @@ class TestReplayingInTheRightShell(object):
 
         monkeypatch.setattr(generic.os, 'name', 'nt')
         assert getattr(shells, name)().replay_argv('echo hi') is None
+
+
+class TestWhatInfoIsAllowedToSay(object):
+    """`--version` prints one line, and `info()` is that line.
+
+    4.0.3 shipped with `[WARN] Could not determine Generic Shell version` in
+    front of every `thebleep --version` on a machine whose shell was not
+    recognised. Nothing had failed: `Generic` is the driver for exactly that
+    case, its `_get_version` has no program to ask, and a warning added for the
+    real drivers -- where an empty answer means the shell would not start -- read
+    that "no version exists" as "the probe failed".
+
+    A regression nobody would notice in a test that only checked the version
+    line, which is what the tests for this did.
+
+    """
+
+    @pytest.fixture
+    def shell(self):
+        return Generic()
+
+    def test_the_fallback_shell_complains_about_nothing(self, shell, capsys):
+        assert shell.info() == 'Generic Shell'
+        assert capsys.readouterr()[1] == ''
+
+    def test_a_real_driver_with_nothing_to_say_still_says_so(
+            self, capsys, mocker):
+        """The case the warning was added for: a driver that has a shell to
+        ask, asked it, and got nothing -- which is what a shell that is not
+        there or will not start looks like."""
+        from thebleep.shells import Bash
+
+        mocker.patch.object(Bash, '_get_version', return_value='')
+        assert Bash().info() == 'Bash'
+        assert 'Could not determine' in capsys.readouterr()[1]
+
+    @pytest.mark.parametrize('name', [
+        'Generic', 'Bash', 'Zsh', 'Fish', 'Tcsh', 'Nushell', 'Powershell',
+    ])
+    def test_no_driver_warns_when_it_has_a_version(self, name, capsys, mocker):
+        from thebleep import shells
+
+        driver = getattr(shells, name)
+        mocker.patch.object(driver, '_get_version', return_value='1.2.3')
+        assert driver().info().endswith('1.2.3')
+        assert capsys.readouterr()[1] == ''

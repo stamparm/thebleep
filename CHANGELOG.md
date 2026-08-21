@@ -1,5 +1,29 @@
 # Changelog
 
+## 4.0.4 — unreleased
+
+### Fixed
+
+- **`thebleep --version` printed a warning at people whose shell it did not
+  recognise.** 4.0.3 added a word when a shell's version probe answers nothing,
+  because for a real shell that means one that is not there or will not start.
+  `Generic` is the driver for a shell nothing recognised: it has no program to
+  ask and no version to fail to get, so it answered nothing by design and got
+  complained at for it.
+
+  ```
+  $ thebleep --version
+  [WARN] Could not determine Generic Shell version
+  The Bleep 4.0.3 using Python 3.12.13 and Generic Shell
+  ```
+
+  Nothing had failed, and `--doctor` already reports an unrecognised shell as a
+  problem, with advice, which is where that belongs. Corrections were never
+  affected. `Generic._get_version` now answers `None` -- "there is no version to
+  ask for" -- which is a different thing from a real driver's empty answer, and
+  `tests/shells/test_generic.py` holds every driver to saying nothing when it has
+  nothing to complain about.
+
 ## 4.0.3 — 2026-08-21
 
 ### Security

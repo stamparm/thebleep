@@ -449,8 +449,21 @@ class Generic(object):
                 'until', 'wait', 'while']
 
     def _get_version(self):
-        """Returns the version of the current shell"""
-        return ''
+        """The version of the current shell, or `None` if there is none to ask.
+
+        `None` here and not `''`, because the two mean different things to
+        `info` below. This is the driver for a shell nothing recognised: there
+        is no program to ask and no version to fail to get. A *real* driver
+        answering `''` has asked something and been told nothing, which is worth
+        a word.
+
+        Conflating them shipped a `[WARN] Could not determine Generic Shell
+        version` in front of every `thebleep --version` on any machine whose
+        shell was not recognised -- complaining that a probe had failed when
+        there had never been one.
+
+        """
+        return None
 
     def unsupported_version(self):
         """Why this shell is too old to be supported, or `None` if it is not.
@@ -471,12 +484,16 @@ class Generic(object):
             warn(u'Could not determine shell version: {}'.format(e))
             version = ''
 
-        if not version:
-            # The probe answered with nothing, which since it went through
-            # `utils.tool_lines` is what a shell that is not there, will not
-            # start, or did not finish in time looks like. Worth saying, because
-            # this is what `--doctor` prints and somebody is reading it to find
-            # out why something is wrong.
+        if version is None:
+            # There is no version to have: see `_get_version`. Nothing failed,
+            # so nothing is said.
+            version = ''
+        elif not version:
+            # A driver that has a shell to ask, asked it, and got nothing --
+            # which since the probe goes through `utils.tool_lines` is what a
+            # shell that is not there, will not start, or did not finish in time
+            # looks like. Worth saying, because this is what `--doctor` prints
+            # and somebody is reading it to find out why something is wrong.
             warn(u'Could not determine {} version'.format(self.friendly_name))
 
         return u'{} {}'.format(self.friendly_name, version).rstrip()
