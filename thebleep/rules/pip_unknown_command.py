@@ -56,19 +56,14 @@ def _pip_commands(interpreter):
     which is where this started.
 
     """
-    from subprocess import check_output
-    from thebleep.utils import DEVNULL
+    from thebleep.utils import tool_output
 
     source = ('import sys;'
               'from pip._internal.commands import commands_dict;'
               'sys.stdout.write("\\n".join(commands_dict))')
-    try:
-        answer = check_output((interpreter, '-c', source), stderr=DEVNULL,
-                              timeout=10)
-    except Exception:
-        return []
-
-    return answer.decode('utf-8', 'replace').split()
+    # Ten seconds rather than the usual five: this starts an interpreter and
+    # imports pip, which on a cold page cache is not quick.
+    return tool_output((interpreter, '-c', source), timeout=10).split()
 
 
 def _interpreter(command):

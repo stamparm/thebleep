@@ -95,6 +95,9 @@ EFFECTIVE_BUILTINS = frozenset({
 # Held to that bar, these did not make it, each having been made to demonstrate
 # the effect it is not supposed to be able to have:
 #
+#   xxd    takes an output file as its second operand, and `-r` patches a file
+#          in place -- `xxd -r patch.hex target` is what its own manual page
+#          demonstrates. It was on this list until somebody read the manual.
 #   uniq   takes an output file as its second operand and overwrites it
 #   file   `-C` compiles a magic file and writes the `.mgc` beside it
 #   info   `--output` writes the page to a file
@@ -116,7 +119,7 @@ READ_ONLY = frozenset({
     'sha256sum', 'sha512sum', 'size', 'stat', 'strings', 'tac', 'tail',
     'tr', 'true', 'type', 'uname', 'unexpand', 'uptime',
     'users', 'vdir', 'vmstat', 'w', 'wc', 'whatis', 'whereis', 'which', 'who',
-    'whoami', 'xxd', 'zcat', 'zgrep',
+    'whoami', 'zcat', 'zgrep',
 })
 
 # Programs that do nothing whatever until they have recognised a subcommand,
@@ -184,12 +187,11 @@ def _words(script):
     """The words `sh` would run, or `None` if it isn't that simple.
 
     The script is the expanded one, so a shell alias has already been resolved
-    into whatever it stands for. Shell *functions* are not expanded, but the
-    rerun goes through a non-interactive `sh` that never loads them, so the
-    program named here really is the one that would run.
+    into whatever it stands for.
 
     An empty list means assignments and nothing else, which a subshell throws
-    away.
+    away. A leading assignment in front of a *command* makes this return `None`:
+    see `_assignments_change_everything`.
 
     """
     if any(syntax in script for syntax in EFFECTIVE_SYNTAX):
@@ -202,14 +204,60 @@ def _words(script):
     # `FOO=bar cmd` sets FOO for cmd; the assignments are not the command.
     from .utils import command_word_index
 
-    words = words[command_word_index(words):]
+    at = command_word_index(words)
+    words = words[at:]
     if not words:
+        # Assignments and nothing else. A subshell throws those away, and there
+        # is no command for them to change the meaning of.
         return []
+
+    if at and _assignments_change_everything():
+        return None
 
     if not LITERAL_PROGRAM.match(words[0]):
         return None
 
     return words
+
+
+def _assignments_change_everything():
+    """Always true, and here to be read rather than to be called usefully.
+
+    `FOO=bar cmd` is one command with an environment of its own, and every
+    question this module asks about `cmd` is a question whose answer that
+    environment can change. Two demonstrations, both reproduced:
+
+        $ PATH=/tmp/mine:/usr/bin git satus
+        $ bleep
+
+    `_words` dropped the assignment to find the program, so the dispatcher probe
+    asked `/usr/bin/git` whether it has a `satus`. It has not -- and the command
+    that ran was `/tmp/mine/git`, which is a different program with different
+    subcommands and a side effect. The proof was about one binary and the
+    consent it bought was for another.
+
+        $ GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.deploy \
+              GIT_CONFIG_VALUE_0='!./deploy.sh' git deploy
+        $ bleep
+
+    Same shape without swapping anything: with those three variables set, `git
+    --list-cmds=main,others,alias` lists `deploy`; without them it does not. The
+    probe runs without them, calls `deploy` an unknown subcommand, and the alias
+    it had already run does whatever it likes.
+
+    The alternative to refusing is a list of the variables that can change how a
+    program resolves or behaves -- `PATH`, `LD_PRELOAD`, `LD_LIBRARY_PATH`,
+    `PYTHONPATH`, `GIT_CONFIG_*`, `BASH_ENV`, and whatever the next one is. That
+    is exactly the sort of supposedly-complete security list this module refuses
+    to keep elsewhere: `READ_ONLY` is a list of things believed *safe*, which
+    fails towards asking, while a list of dangerous variables fails towards not
+    asking.
+
+    So an assignment in front of a command costs a question. `LC_ALL=C ls` is
+    the common case and it is a keystroke.
+
+    """
+    return True
 
 
 def _subcommands(program, question):
@@ -307,6 +355,71 @@ def previous_status():
         return None
 
 
+# What bash calls an exported function in the environment. 4.3 and later use
+# `BASH_FUNC_name%%`; older ones used the bare name with a body that starts
+# `() {`, which is the shape Shellshock was about.
+_EXPORTED_FUNCTION = 'BASH_FUNC_{}%%'
+
+
+def _is_an_exported_function(name):
+    """Whether `name` is a shell function the replay would inherit.
+
+    The replay runs `bash -c <script>` in the shell the command was typed in,
+    and bash imports exported functions from its environment -- so "not on
+    `PATH`" stopped meaning "there is nothing to run":
+
+        deploy() { printf x >> log; return 1; }
+        export -f deploy
+
+        $ deploy
+        $ bleep          # which('deploy') is None, so this used to be free
+        # ...and the function ran a second time, unasked.
+
+    Reproduced end to end. The function is deliberately *not* stripped from the
+    replay environment: the interactive shell had it, so running it is what
+    faithfully reproduces the failure -- it just has to be asked about first.
+
+    zsh does not export functions through the environment and fish has no
+    equivalent, so this is bash's alone; a shell that grows one will need a
+    line here.
+
+    """
+    return (_EXPORTED_FUNCTION.format(name) in os.environ
+            # The pre-4.3 spelling, and belt-and-braces against a bash built to
+            # use it: a variable whose name is the command and whose value is a
+            # function body.
+            or os.environ.get(name, '').startswith('() {'))
+
+
+# Files a non-interactive shell runs before it runs anything it was asked to.
+# `BASH_ENV` is bash's, `ENV` is POSIX `sh`'s and zsh reads it too.
+STARTUP_FILE_ENV = ('BASH_ENV', 'ENV')
+
+
+def _starting_the_shell_has_an_effect():
+    """Whether merely opening the replay shell does something.
+
+    A non-interactive bash sources whatever `BASH_ENV` names, before the command
+    it was given. So with that set, replaying a command that does not exist at
+    all still has an effect:
+
+        $ BASH_ENV=/tmp/x bash -c nosuchcommand
+        # /tmp/x ran
+
+    Reproduced. This is the hole with the sharpest edge, because `is_inert` is a
+    claim about the *command* while the replay executes a shell, its startup
+    files, an inherited environment and then the command. The claim and the
+    thing done have to be about the same object.
+
+    Not stripped from the replay environment, though stripping would also close
+    it: the variable is the user's, and a tool that quietly unsets part of
+    somebody's environment to make its own proof come out true is worse than a
+    tool that asks. It costs a question, in a configuration almost nobody has.
+
+    """
+    return any(os.environ.get(name) for name in STARTUP_FILE_ENV)
+
+
 def is_inert(script):
     """Whether there is reason to believe running `script` again does nothing.
 
@@ -320,6 +433,9 @@ def is_inert(script):
       have, so it fails at dispatch a second time exactly as it did the first.
 
     """
+    if _starting_the_shell_has_an_effect():
+        return False
+
     words = _words(script)
     if words is None:
         return False
@@ -331,8 +447,21 @@ def is_inert(script):
     name = os.path.basename(program)
     if name in EFFECTIVE_BUILTINS or program in EFFECTIVE_BUILTINS:
         return False
-    if name in READ_ONLY:
+
+    # `READ_ONLY` is a judgement about the program conventionally called `ls`,
+    # and a path is not that. `./ls` is a file in this directory which the user
+    # has specifically said to execute, and its name says nothing at all about
+    # what it does -- one written for the occasion re-ran itself here and
+    # doubled its side effect. A bare name at least goes through `PATH`, which
+    # is the same lookup the shell just did.
+    if program == name and name in READ_ONLY:
         return True
+
+    if _is_an_exported_function(name):
+        # `bash -c` imports functions the shell exported into the environment,
+        # so a name that is not on `PATH` can still run something. See the
+        # function.
+        return False
 
     from .utils import which
 

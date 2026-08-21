@@ -22,7 +22,7 @@ def on_path(mocker):
     """A machine where these programs exist and nothing else does."""
     installed = {'ls', 'cat', 'grep', 'git', 'apt-get', 'reboot', 'deploy',
                  'sort', 'find', 'sed', 'awk', 'tree', 'docker', 'npm', 'env',
-                 'cargo', 'kubectl', 'uv'}
+                 'cargo', 'kubectl', 'uv', 'xxd'}
 
     def which(name):
         return '/usr/bin/' + name if name.split('/')[-1] in installed else None
@@ -70,8 +70,6 @@ class TestIsInert(object):
         'ls -lah /nowhere',
         'cat a b c',
         'grep -r pattern .',
-        '/bin/ls -l',
-        '/usr/bin/grep x f',
         # A subcommand git does not have, so it fails at dispatch again and
         # does nothing on the way -- which is the whole of the typo case.
         'git satus',
@@ -80,10 +78,6 @@ class TestIsInert(object):
         'git puhs origin main',
         'cargo buld --release',
         'cargo tset',
-        # Variables set for a command that only reads.
-        'LC_ALL=C ls -l',
-        'GIT_TRACE=1 LANG=C grep x f',
-        'GIT_TRACE=1 git satus',
         # Assignments and nothing else: a subshell throws them away.
         'FOO=bar',
     ])
@@ -132,6 +126,24 @@ class TestIsInert(object):
         'find . -delete',
         'tree -o out',
         'env FOO=bar deploy',
+        # An assignment in front of a command, even one that looks harmless.
+        # `FOO=bar cmd` is one command with an environment of its own, and
+        # every question this module asks about `cmd` is one whose answer that
+        # environment can change -- `PATH=/tmp/mine git satus` had the
+        # dispatcher probe asking a different git than the one that ran. See
+        # `replay._assignments_change_everything`.
+        'LC_ALL=C ls -l',
+        'GIT_TRACE=1 LANG=C grep x f',
+        'GIT_TRACE=1 git satus',
+        # A path, even to the real one. `READ_ONLY` is a judgement about the
+        # program conventionally called `ls`, and a path is the user naming a
+        # *file* -- whose name says nothing about what it does. `./ls` written
+        # for the occasion re-ran itself and doubled its side effect, and there
+        # is no test that tells `/bin/ls` from `./ls` without trusting the very
+        # thing in question. So a path costs a question.
+        '/bin/ls -l',
+        '/usr/bin/grep x f',
+        './ls',
         # Redirection, chaining, substitution, backgrounding: the program name
         # no longer says what the script does.
         'ls > listing',
@@ -755,3 +767,93 @@ def test_every_shell_that_can_report_the_status_does(set_shell):
                   and not line.strip().startswith(('function', 'bleep',
                                                    '#'))]
         assert not others, '{}: {}'.format(shell_class.__name__, others)
+
+
+class TestTheProofAndTheReplayAreAboutTheSameThing(object):
+    """`is_inert` is a claim about the command; the replay executes more.
+
+    A third-party review put it exactly right: `is_inert()` proves something
+    about the command, while `rerun.get_output()` executes *a new shell, its
+    startup files, an inherited environment, and then the command*. Those have
+    to be the same object for the claim to mean anything, and for a while they
+    were not. Every case below was reproduced end to end before it was fixed.
+
+    """
+
+    def test_an_exported_shell_function_is_not_nothing(self, os_environ,
+                                                       on_path):
+        """`bash -c` imports functions the shell exported.
+
+            deploy() { printf x >> log; return 1; }
+            export -f deploy
+
+        `which('deploy')` is `None`, so this was free -- and the function ran a
+        second time, unasked. Verified with a real bash and a marker file: `x`
+        became `xx`.
+
+        """
+        os_environ['BASH_FUNC_deploy%%'] = '() {  printf x >> log\n}'
+        assert not replay.is_inert('deploy')
+        # And a name that is not one still is.
+        assert replay.is_inert('no-such-program-at-all')
+
+    def test_the_pre_4_3_spelling_too(self, os_environ, on_path):
+        """Which is the shape Shellshock was about, and some builds keep it."""
+        os_environ['deploy'] = '() { printf x >> log; }'
+        assert not replay.is_inert('deploy')
+
+    @pytest.mark.parametrize('variable', ['BASH_ENV', 'ENV'])
+    def test_a_startup_file_makes_opening_the_shell_do_something(
+            self, os_environ, on_path, variable):
+        """A non-interactive bash sources `$BASH_ENV` before the command it was
+        given, so replaying a command that does not exist *at all* still had an
+        effect. `ENV` is the POSIX `sh` equivalent."""
+        os_environ[variable] = '/tmp/somebodys-startup-file'
+        assert not replay.is_inert('no-such-program-at-all')
+        assert not replay.is_inert('ls')
+
+    @pytest.mark.parametrize('script', [
+        # The dispatcher probe asked `/usr/bin/git` about `satus` while the
+        # command that ran was a different git entirely.
+        'PATH=/tmp/mine:/usr/bin git satus',
+        # No swapping needed: with these set, `git --list-cmds` lists `deploy`;
+        # without them it does not, and the probe runs without them.
+        'GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.deploy'
+        ' GIT_CONFIG_VALUE_0=!./deploy.sh git deploy',
+        # And the ones that are almost certainly harmless, which pay a question
+        # rather than have somebody keep a list of the ones that are not.
+        'LC_ALL=C ls',
+        'LD_PRELOAD=/tmp/x.so ls',
+    ])
+    def test_an_assignment_in_front_of_a_command(self, os_environ, on_path,
+                                                 script):
+        assert not replay.is_inert(script)
+
+    def test_assignments_and_nothing_else_are_still_free(self, on_path):
+        """A subshell throws those away, and there is no command for them to
+        change the meaning of."""
+        assert replay.is_inert('FOO=bar')
+        assert replay.is_inert('FOO=bar BAZ=qux')
+
+    @pytest.mark.parametrize('script', ['./ls', '/tmp/mine/ls', 'bin/cat f'])
+    def test_a_path_is_not_the_program_that_name_usually_means(
+            self, script, on_path):
+        """`READ_ONLY` is a judgement about the program conventionally called
+        `ls`. `./ls` is a file in this directory that the user has specifically
+        said to execute, and its name says nothing about what it does -- one
+        written for the occasion re-ran itself and doubled its side effect."""
+        assert not replay.is_inert(script)
+
+    def test_a_bare_name_still_is(self, on_path):
+        assert replay.is_inert('ls')
+        assert replay.is_inert('cat notes.txt')
+
+    @pytest.mark.parametrize('script', [
+        'xxd in.bin out.hex',
+        'xxd -r patch.hex target.bin',
+    ])
+    def test_xxd_writes_files(self, script, on_path):
+        """It takes an output file as its second operand, and `-r` patches one
+        in place -- which is what its own manual page demonstrates. It was on
+        `READ_ONLY` until somebody read the manual."""
+        assert not replay.is_inert(script)

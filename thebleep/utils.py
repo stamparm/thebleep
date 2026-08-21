@@ -46,6 +46,52 @@ TOOL_TIMEOUT = 5
 TOOL_OUTPUT = 4 * 1024 * 1024
 
 
+CHUNK = 64 * 1024
+
+
+class Tail(object):
+    """The last `limit` bytes of everything appended to it.
+
+    Used by both things here that read a program's output: the replay, and the
+    helper the rules ask a tool with. Both have a ceiling on how much they will
+    hold, and a ceiling applied *after* reading everything is not one.
+
+    """
+
+    def __init__(self, limit):
+        self._limit = limit
+        self._chunks = []
+        self._size = 0
+        self.truncated = False
+
+    def append(self, chunk):
+        self._chunks.append(chunk)
+        self._size += len(chunk)
+        while self._size - len(self._chunks[0]) >= self._limit:
+            self._size -= len(self._chunks.pop(0))
+            self.truncated = True
+
+    def value(self):
+        joined = b''.join(self._chunks)
+        if len(joined) > self._limit:
+            self.truncated = True
+            joined = joined[-self._limit:]
+        return joined
+
+
+def drain(stream, sink):
+    """Reads `stream` to its end, keeping only what `sink` will keep."""
+    try:
+        while True:
+            chunk = stream.read(CHUNK)
+            if not chunk:
+                break
+            sink.append(chunk)
+    except (OSError, ValueError):
+        # The pipe was closed under us, which is what killing the tree does.
+        pass
+
+
 def tool_lines(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False):
     """The lines `arguments` printed on stdout, or `[]`.
 
@@ -80,13 +126,26 @@ def tool_lines(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False):
     except Exception:                                        # noqa: BLE001
         return []
 
+    # Read while it runs, into a bounded sink, and only then wait. The cap used
+    # to be applied to whatever `communicate()` handed back -- which is every
+    # byte the program printed, so a helper that emitted two gigabytes had
+    # already cost two gigabytes by the time the slice ran. A ceiling applied
+    # after reading everything is not a ceiling. `output_readers.rerun` had it
+    # right and this borrows the same two pieces.
+    import threading
+
+    sink = Tail(TOOL_OUTPUT)
+    reader = threading.Thread(target=drain, args=(process.stdout, sink))
+    reader.daemon = True
+    reader.start()
+
     try:
         try:
-            output = process.communicate(timeout=timeout)[0]
+            process.wait(timeout=timeout)
         except TimeoutExpired:
             process.kill()
             try:
-                process.communicate(timeout=1)
+                process.wait(timeout=1)
             except Exception:                                # noqa: BLE001
                 pass
             from . import logs
@@ -97,10 +156,8 @@ def tool_lines(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False):
     except Exception:                                        # noqa: BLE001
         return []
 
-    if len(output) > TOOL_OUTPUT:
-        output = output[:TOOL_OUTPUT]
-
-    return output.decode('utf-8', errors='replace').splitlines()
+    reader.join(1)
+    return sink.value().decode('utf-8', errors='replace').splitlines()
 
 
 def tool_output(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False):

@@ -43,7 +43,10 @@ def fix_command(known_args):
             # for a line nobody sees unless they asked for it.
             from pprint import pformat
 
-            logs.debug(u'Run with settings: {}'.format(pformat(settings)))
+            from ..conf import redacted
+
+            logs.debug(u'Run with settings: {}'.format(
+                pformat(redacted(settings))))
         raw_command = _get_raw_command(known_args)
 
         try:

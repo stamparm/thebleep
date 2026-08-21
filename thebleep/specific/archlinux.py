@@ -1,5 +1,4 @@
 """ This file provide some utility functions for Arch Linux specific rules."""
-import subprocess
 from .. import utils
 
 
@@ -10,28 +9,22 @@ def get_pkgfile(command):
     If the command is of the form `sudo foo`, searches for the `foo` command
     instead.
     """
-    try:
-        command = command.strip()
+    command = command.strip()
 
-        if command.startswith('sudo '):
-            command = command[5:]
+    if command.startswith('sudo '):
+        command = command[5:]
 
-        command = command.split(" ")[0]
+    command = command.split(" ")[0]
 
-        packages = subprocess.check_output(
-            ['pkgfile', '-b', '-v', command],
-            universal_newlines=True, stderr=utils.DEVNULL
-        ).splitlines()
+    # Through `tool_lines`, which is where the timeout is: `pkgfile` reads a
+    # package database that may be on a network mount, and this runs from a
+    # rule's `match`. It also swallows what the three `except` clauses here used
+    # to catch -- pkgfile not installed, pkgfile finding nothing and exiting 1,
+    # pkgfile gone since the rule was enabled -- and answers `[]` to all of
+    # them, which is what each of them meant.
+    packages = utils.tool_lines(['pkgfile', '-b', '-v', command])
 
-        return [package.split()[0] for package in packages]
-    except subprocess.CalledProcessError as err:
-        if err.returncode == 1 and err.output == "":
-            return []
-        else:
-            raise err
-    except OSError:
-        # pkgfile is not installed, or went away since the rule was enabled.
-        return []
+    return [package.split()[0] for package in packages if package.split()]
 
 
 # The AUR helpers, in the order they are looked for. `paru` first because it is

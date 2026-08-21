@@ -1,8 +1,7 @@
 import re
-from subprocess import CalledProcessError, check_output
 from thebleep.shells import shell
 from thebleep.specific.git import git_support
-from thebleep.utils import DEVNULL, memoize, replace_argument
+from thebleep.utils import memoize, replace_argument, tool_output
 
 # Where to move to before deleting the branch we are standing on. `master` is
 # only a guess, and a wrong one in any repository made since 2020.
@@ -10,11 +9,10 @@ FALLBACK_BRANCH = 'master'
 
 
 def _git(*arguments):
-    try:
-        return check_output(('git',) + arguments,
-                            stderr=DEVNULL).decode('utf-8', 'replace').strip()
-    except (OSError, CalledProcessError):
-        return ''
+    # Through `tool_output`, which is where the timeout is: a `git` against a
+    # repository on a stuck network mount answers when the mount does, and a
+    # rule that never returns is The Bleep frozen at the prompt.
+    return tool_output(('git',) + arguments).strip()
 
 
 @memoize

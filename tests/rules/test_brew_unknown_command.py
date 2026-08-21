@@ -79,11 +79,11 @@ class TestWhereTheCommandsAreLookedFor(object):
 
 
 def test_the_repository_is_what_brew_is_asked_for(mocker, no_memoize):
-    check_output = mocker.patch('subprocess.check_output',
-                                return_value='/opt/homebrew\n')
+    asked = mocker.patch('thebleep.specific.brew.tool_output',
+                         return_value='/opt/homebrew\n')
 
     assert brew.get_brew_repository() == '/opt/homebrew'
-    assert check_output.call_args[0][0] == ['brew', '--repository']
+    assert asked.call_args[0][0] == ['brew', '--repository']
 
 
 def test_get_new_command(brew_unknown_cmd, brew_unknown_cmd2):

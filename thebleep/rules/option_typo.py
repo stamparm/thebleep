@@ -113,28 +113,26 @@ def _options_from_help(program, subcommand):
     subcommand's options behind `git <subcommand> -h`; everything else answers
     `--help`.
 
-    Several programs -- git among them -- exit non-zero when asked for help, and
-    the text is on the exception rather than the return value. Treating that as
-    a failure is how this came to answer nothing for exactly the programs it was
-    written for.
+    Several programs -- git among them -- exit non-zero when asked for help.
+    `tool_output` does not care what the exit status was, which is the point:
+    treating a non-zero help as a failure is how this came to answer nothing for
+    exactly the programs it was written for.
 
     """
-    from subprocess import CalledProcessError, PIPE, run, TimeoutExpired
-    from thebleep.utils import DEVNULL
+    from thebleep.utils import tool_output
 
     if program == 'git' and subcommand:
         arguments = (program, subcommand, '-h')
     else:
         arguments = (program, '--help')
 
-    try:
-        finished = run(arguments, stdout=PIPE, stderr=PIPE, stdin=DEVNULL,
-                       timeout=5)
-    except (OSError, CalledProcessError, TimeoutExpired, ValueError):
-        return []
-
-    printed = (finished.stdout + finished.stderr).decode('utf-8', 'replace')
-    return OPTION.findall(printed)
+    # `merge_stderr`, because a program's help goes to either one and some
+    # change their mind between versions -- and reading one pipe while merely
+    # opening the other is a deadlock waiting for a program chatty enough to
+    # fill it. `tool_output` also bounds how much is held, which `PIPE` and
+    # `run()` did not: a help screen is small, but this asks a program the user
+    # named and it need not be one.
+    return OPTION.findall(tool_output(arguments, merge_stderr=True))
 
 
 # Options every program has and nobody means. `ls: unrecognized option

@@ -1,5 +1,4 @@
-import subprocess
-from ..utils import memoize, which
+from ..utils import memoize, tool_output, which
 
 
 brew_available = bool(which('brew'))
@@ -14,8 +13,6 @@ def get_brew_repository():
     git-cloned install the prefix is the repository.
 
     """
-    try:
-        return subprocess.check_output(['brew', '--repository'],
-                                       universal_newlines=True).strip()
-    except Exception:
-        return None
+    # Through `tool_output`, which is where the timeout is.
+    found = tool_output(['brew', '--repository']).strip()
+    return found or None

@@ -76,7 +76,10 @@ def test_falling_back_when_there_is_no_remote(answers, expected, output,
 
 @pytest.mark.usefixtures('no_memoize')
 def test_git_not_being_there_is_not_fatal(mocker, output):
-    mocker.patch.object(git_branch_delete_checked_out, 'check_output',
-                        side_effect=OSError)
+    # `tool_output` answers `''` for every way a program can fail to answer --
+    # not installed, not finished in time, exited non-zero -- so a rule sees
+    # one thing instead of three exceptions.
+    mocker.patch.object(git_branch_delete_checked_out, 'tool_output',
+                        return_value='')
     assert get_new_command(Command('git branch -d foo', output)) \
         == 'git checkout master && git branch -D foo'

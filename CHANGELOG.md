@@ -240,6 +240,56 @@
 
 ### Fixed
 
+- **A safety proof about the command, authorising something larger than the
+  command.** Three holes, all of the same shape, all reported by a third-party
+  review and reproduced end to end before being fixed. `is_inert()` says
+  "running this again cannot have an effect"; what actually runs is *a shell, its
+  startup files, an inherited environment, and then the command*.
+
+  - **An exported shell function.** The replay runs `bash -c <script>` in the
+    shell the command was typed in, and bash imports functions from its
+    environment -- so `which('deploy')` returning `None` stopped meaning there
+    was nothing to run. A function that appended to a file and failed appended
+    twice, unasked. It is asked about now; the function is deliberately *not*
+    stripped from the replay environment, because the interactive shell had it
+    and running it is what reproduces the failure faithfully.
+  - **`BASH_ENV`.** A non-interactive bash sources whatever it names before the
+    command it was given, so replaying a command that did not exist *at all*
+    still had an effect. Opening the shell was the effect.
+  - **An assignment in front of the command.** `PATH=/tmp/mine git satus` had
+    the dispatcher probe asking `/usr/bin/git` whether it has a `satus`, and
+    using the answer to authorise re-running `/tmp/mine/git`, which is a
+    different program with different subcommands and a side effect.
+    `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.deploy ... git deploy` is the
+    same shape without swapping anything: those variables make `git --list-cmds`
+    list `deploy`, and the probe runs without them. Any assignment in front of a
+    command now costs a question -- the alternative is keeping a list of the
+    variables that can change how a program resolves or behaves, which is
+    exactly the sort of supposedly-complete list this module refuses to keep.
+- **`xxd` is not read-only.** It takes an output file as its second operand, and
+  `xxd -r patch.hex target` patches a file in place, which is what its own manual
+  page demonstrates. It was on the list of commands that only ever read.
+- **A path is not the program its name usually means.** `READ_ONLY` is a
+  judgement about the program conventionally called `ls`; `./ls` is a file the
+  user has specifically said to execute, and its name says nothing about what it
+  does. One written for the occasion re-ran itself and doubled its side effect.
+  A path costs a question now, `/bin/ls` included -- there is no test that tells
+  `/bin/ls` from `./ls` without trusting the thing in question.
+- **The helper output cap bounded nothing.** `tool_lines` sliced to 4MB *after*
+  `communicate()` had already accumulated everything, so a helper that printed
+  two gigabytes had already cost two gigabytes. It reads into the same bounded
+  tail the replay uses; 100MB through the pipe now costs 256KB of peak memory.
+- **Six more programs started without a timeout**, four named by the review and
+  two found by the test written to refuse the next one: `git_branch_delete_checked_out`,
+  `specific/archlinux`, `specific/brew`, `option_typo`, `git_hook_bypass` and
+  `pip_unknown_command`. `tests/test_every_rule.py` now fails the build if
+  anything under `thebleep/rules` or `thebleep/specific` calls `Popen`,
+  `check_output`, `check_call` or `subprocess.run` directly.
+- **`--debug` printed the values of the `env` setting**, which is where people
+  keep tokens, and the issue template asks for debug output to be pasted into a
+  bug report. The previous entry claiming this was fixed was wrong: the *replay*
+  logger had been fixed and this one, which runs first, printed the whole
+  settings dict. It prints the names.
 - **`git commit` that *failed* was answered with `git reset HEAD~`.** The rule
   fired on any failed command containing `commit`, and every failed commit is a
   commit that has not happened -- so what it offered to throw away was the one

@@ -63,18 +63,11 @@ def _hooks_directory():
 
     """
     import os
-    from subprocess import check_output
-    from thebleep.utils import DEVNULL
+    from thebleep.utils import tool_output
 
-    try:
-        answer = check_output(('git', 'rev-parse', '--git-path', 'hooks'),
-                              stderr=DEVNULL, timeout=5)
-    except Exception:
-        # Not a repository, no git, a timeout: either way there is no
-        # hooks directory to find, so there is nothing to bypass.
-        return None
-
-    path = answer.decode('utf-8', 'replace').strip()
+    # Not a repository, no git, a timeout: `tool_output` answers `''` to all of
+    # them, and either way there is no hooks directory to find.
+    path = tool_output(('git', 'rev-parse', '--git-path', 'hooks')).strip()
     return path if path and os.path.isdir(path) else None
 
 

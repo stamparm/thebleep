@@ -19,6 +19,7 @@ these run against the real machine, which is the point.
 
 """
 
+import os
 import pytest
 from thebleep import const, types
 
@@ -215,3 +216,47 @@ def test_nothing_irreversible_is_offered_on_no_evidence(os_environ):
                                      corrected.rule.name, corrected.script))
 
     assert not offered, sorted(offered)
+
+
+def test_no_rule_starts_a_program_by_itself():
+    """One subprocess API, and rules go through it.
+
+    Twenty rules used to call `Popen` or `check_output` directly, and not one of
+    them had a timeout: `lsof` against a wedged NFS mount, `docker` against a
+    dead daemon, `gradle` waiting on a daemon of its own. A rule that raises is
+    caught by `Rule.get_corrected_commands`; a rule that never returns is The
+    Bleep frozen at the prompt, and there is nothing to catch.
+
+    `utils.tool_lines` and `utils.tool_output` have the timeout, the process
+    kill, the bounded read, the `/dev/null` stderr and the replacement-character
+    decoding in one place. This is what stops the twenty coming back one at a
+    time -- a review found four still outside it after the first sweep, which is
+    what a rule this cheap is for.
+
+    `specific/` is included: a helper a rule calls can hang exactly as well as
+    the rule can.
+
+    """
+    import re
+
+    banned = re.compile(r'\b(?:Popen|check_output|check_call|subprocess\.run)\b')
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    offenders = []
+    for directory in ('rules', 'specific'):
+        where = os.path.join(root, 'thebleep', directory)
+        for name in sorted(os.listdir(where)):
+            if not name.endswith('.py'):
+                continue
+            with open(os.path.join(where, name), encoding='utf-8') as handle:
+                for number, line in enumerate(handle, 1):
+                    if line.lstrip().startswith('#'):
+                        continue
+                    if banned.search(line):
+                        offenders.append('{}/{}:{}: {}'.format(
+                            directory, name, number, line.strip()))
+
+    assert not offenders, (
+        'these start a program without the shared timeout; use'
+        ' utils.tool_lines or utils.tool_output:\n  '
+        + '\n  '.join(offenders))

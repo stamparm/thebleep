@@ -3,6 +3,7 @@ import shlex
 from subprocess import Popen, PIPE, STDOUT, TimeoutExpired
 from .. import logs
 from ..conf import settings
+from ..utils import Tail, drain
 
 
 def _kill_process(proc):
@@ -63,45 +64,6 @@ def _kill_tree(popen):
 # reader has always worked to a fixed size for the same reason.
 MAX_OUTPUT = 8 * 1024 * 1024
 
-_CHUNK = 64 * 1024
-
-
-class _Tail(object):
-    """The last `limit` bytes of everything appended to it."""
-
-    def __init__(self, limit):
-        self._limit = limit
-        self._chunks = []
-        self._size = 0
-        self.truncated = False
-
-    def append(self, chunk):
-        self._chunks.append(chunk)
-        self._size += len(chunk)
-        while self._size - len(self._chunks[0]) >= self._limit:
-            self._size -= len(self._chunks.pop(0))
-            self.truncated = True
-
-    def value(self):
-        joined = b''.join(self._chunks)
-        if len(joined) > self._limit:
-            self.truncated = True
-            joined = joined[-self._limit:]
-        return joined
-
-
-def _drain(stream, sink):
-    """Reads `stream` to its end, keeping only what `sink` will keep."""
-    try:
-        while True:
-            chunk = stream.read(_CHUNK)
-            if not chunk:
-                break
-            sink.append(chunk)
-    except (OSError, ValueError):
-        # The pipe was closed under us, which is what killing the tree does.
-        pass
-
 
 def _wait_output(popen, is_slow):
     """Returns the command's output, or `None` if it ran out of time.
@@ -133,8 +95,8 @@ def _wait_output(popen, is_slow):
         except Exception:                                    # noqa: BLE001
             pass
 
-    sink = _Tail(MAX_OUTPUT)
-    reader = threading.Thread(target=_drain, args=(popen.stdout, sink))
+    sink = Tail(MAX_OUTPUT)
+    reader = threading.Thread(target=drain, args=(popen.stdout, sink))
     reader.daemon = True
     reader.start()
 

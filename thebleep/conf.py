@@ -273,4 +273,32 @@ class Settings(dict):
         return from_args
 
 
+# Settings whose *values* are nobody else's business. `env` is where people
+# put tokens -- it is handed to the replayed command as its environment -- and
+# the issue template asks for debug output to be pasted into a bug report.
+SECRET = frozenset(('env',))
+
+
+def redacted(values):
+    """`values` with the secret ones reduced to their names.
+
+    `fix_command` prints the whole settings object under `--debug`, and
+    `Settings` is a plain dict, so it printed `{'env': {'API_TOKEN':
+    'super-secret-value'}}` -- verified, and the changelog claimed otherwise
+    because only the *replay* logger had been fixed. `--doctor` is the output
+    written to be safe to paste; debug output is a copy of what happened and
+    cannot be, but it does not have to hand over a token to say what it did.
+
+    """
+    shown = {}
+    for name, value in values.items():
+        if name in SECRET and isinstance(value, dict):
+            shown[name] = sorted(value)
+        elif name in SECRET and value:
+            shown[name] = '<set>'
+        else:
+            shown[name] = value
+    return shown
+
+
 settings = Settings(const.DEFAULT_SETTINGS)
