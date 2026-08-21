@@ -75,11 +75,6 @@ BROKEN = (
 # flag that can be negated, and the name wanted is `short`.
 OPTION = re.compile(r'--(?:\[no-\])?([A-Za-z0-9][\w-]*)')
 
-# Enough of the wording for the rule pack to skip this rule when it cannot
-# apply. `for_app` is absent on purpose: the program is not known in advance.
-MARKERS = ('unrecognized option', 'unknown option', 'invalid option',
-           'unrecognized argument', ': is unknown')
-
 
 def _broken(output):
     """The option name the program did not recognise."""

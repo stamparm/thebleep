@@ -75,12 +75,6 @@ CARGO_TIP = re.compile(
     r'(?:help: a command with a similar name exists|Did you mean):? '
     r'`([^`]+)`')
 
-# Enough of the wording to tell the rule pack when this cannot possibly apply,
-# so it is not loaded for every correction. `for_app` is deliberately absent --
-# the whole point is that the program is not known in advance.
-MARKERS = ('tip: a similar', 'tip: some similar',
-           'a command with a similar name exists', 'Did you mean')
-
 
 def _broken(output):
     found = BROKEN.search(output) or CARGO_BROKEN.search(output)

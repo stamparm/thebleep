@@ -438,6 +438,29 @@ class TestDispatch(object):
             entries, Command('made-up-command', 'x {} x'.format(enough)))}
         assert entry['name'] in with_it
 
+    @pytest.mark.parametrize('name', ['clap_suggestion', 'option_typo'])
+    def test_the_framework_rules_declare_their_wording_in_match(self, name,
+                                                                entries):
+        """The wording has to be in `match` itself to narrow anything.
+
+        These two read a framework's output rather than a named program, so
+        `apps` is `None` and what they need in the output is the only thing
+        keeping them off every correction. Both also listed the same strings in
+        a module constant called `MARKERS`, under a comment saying that was
+        what the rule pack read. It was not: `_extract_metadata` reads the
+        expression `match` returns and nothing anywhere reads `MARKERS`. So it
+        was decoration in the shape of machinery, and the next three rules
+        written against these as a model copied it. This is the claim that
+        comment was making, made where it can fail.
+
+        """
+        entry = next(entry for entry in entries.values()
+                     if entry['name'] == name)
+
+        assert entry['apps'] is None
+        assert entry['output'], \
+            '{} is a candidate for every command'.format(name)
+
     def test_a_rule_that_wants_two_markers_at_once(self, entries):
         """Clauses are ANDed, alternatives within a clause are ORed.
 
