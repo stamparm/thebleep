@@ -196,3 +196,82 @@ def test_rank_offers_no_candidate_twice():
     ranked = matching.rank('colour', ['color', 'color', 'column', 'color'])
     assert ranked == sorted(set(ranked), key=ranked.index)
     assert ranked.count('color') == 1
+
+
+class TestWhereTheKeysAre:
+    """`a` mistyped as `d` is not as likely as `ca` missing its last letter.
+
+    Damerau-Levenshtein charges one edit for either, which is what let `cd`
+    stand beside `cat` as an equally good answer for `ca`.
+
+    """
+
+    def test_a_neighbour_is_one_key_away(self):
+        assert matching.key_distance('a', 's') == 1.0
+        assert matching.key_distance('o', 'i') == 1.0
+
+    def test_the_diagonals_count_as_neighbours(self):
+        assert matching.key_distance('a', 'q') <= matching.ADJACENT
+        assert matching.key_distance('s', 'w') <= matching.ADJACENT
+        assert matching.key_distance('a', 'z') <= matching.ADJACENT
+
+    def test_two_columns_over_is_not_a_slip(self):
+        assert matching.key_distance('a', 'd') == 2.0
+        assert matching.key_distance('a', 'd') > matching.ADJACENT
+
+    def test_the_same_physical_key_on_qwertz(self):
+        """`y` and `z` swap between QWERTY and QWERTZ, so a German-layout slip
+        lands on the other one. Straight-line distance on a QWERTY grid puts
+        them five keys apart."""
+        assert matching.key_distance('y', 'z') <= matching.ADJACENT
+
+    def test_a_character_off_the_grid_is_not_called_a_slip(self):
+        assert matching.key_distance('a', u'\u00e9') > matching.ADJACENT
+
+    def test_a_missed_key_is_explained_and_a_far_reach_is_not(self):
+        assert matching.plausible('ca', 'cat')
+        assert matching.plausible('ca', 'cs')
+        assert not matching.plausible('ca', 'cd')
+
+    def test_a_transposition_is_not_read_as_two_bad_reaches(self):
+        """`sl` and `ls` differ in both positions, which position-by-position
+        looks like two expensive substitutions when it is one swap."""
+        assert matching.plausible('sl', 'ls')
+
+    def test_the_adjacent_slip_wins_the_tie(self):
+        """Nothing else separates them: same distance, neither is a prefix,
+        both share one opening character. Left to the alphabet, `cd` won."""
+        assert matching.rank('ca', ['cd', 'cs']) == ['cs', 'cd']
+
+    def test_the_shared_opening_still_outranks_the_reach(self):
+        """`order` keeps every candidate, so once distances hit the cap the
+        shared opening carries the decision. A reach term above it promoted
+        long unrelated words -- `extension` over `none` for `nmae`."""
+        assert matching.order('nmae', ['none', 'extension'])[0] == 'none'
+
+
+class TestWhatOutsideEvidenceMayReorder:
+
+    def test_a_two_key_jump_is_not_up_for_reordering(self):
+        """The whole `ca` case: `cat` and `cd` are both one edit away, and only
+        one of them is a plausible slip."""
+        ranked = matching.rank_with_distance('ca', ['cat', 'cd', 'cs'])
+        assert matching.plausible_slips('ca', ranked) == ['cat', 'cs']
+
+    def test_an_adjacent_slip_is(self):
+        """`got` is one key from `git` and one dropped key from `go`, so both
+        are real explanations and history is the right thing to choose with."""
+        ranked = matching.rank_with_distance('got', ['go', 'git'])
+        assert sorted(matching.plausible_slips('got', ranked)) == ['git', 'go']
+
+    def test_nothing_further_away_than_the_closest(self):
+        """`gtk` stays: `i` and `k` are neighbours, so it is a real explanation
+        even though `git` is the better one. `grep` is three edits away and is
+        not up for reordering at any price."""
+        ranked = matching.rank_with_distance('gti', ['git', 'gtk', 'grep'])
+        slips = matching.plausible_slips('gti', ranked)
+        assert 'grep' not in slips
+        assert slips[0] == 'git'
+
+    def test_no_candidates_at_all(self):
+        assert matching.plausible_slips('ca', []) == []

@@ -85,6 +85,48 @@ def _candidates():
                     if name not in known]
 
 
+# Commands whose first argument has to be a directory. A suggestion that cannot
+# possibly succeed is worse than no suggestion, and this is the one case where
+# that is knowable without running anything: `cd` was being offered for
+# `ca .gitignore`, where `.gitignore` is a file sitting right there.
+_WANTS_A_DIRECTORY = frozenset(('cd', 'chdir', 'pushd', 'rmdir'))
+
+
+def _cannot_work(name, arguments):
+    """Whether `name` is certain to fail on the arguments already typed.
+
+    Only certainty counts. A path that does not exist is not evidence -- it may
+    be a typo of its own, or relative to somewhere else -- so this says nothing
+    about it. A path that exists and is not a directory, handed to `cd`, is an
+    error message with no way round it.
+
+    """
+    import os
+
+    if name not in _WANTS_A_DIRECTORY:
+        return False
+
+    for argument in arguments:
+        if argument.startswith('-'):
+            continue
+        return os.path.exists(argument) and not os.path.isdir(argument)
+
+    return False
+
+
+def _demote_impossible(ranked, arguments):
+    """The same names, with the ones that cannot run moved to the back.
+
+    Moved rather than dropped: this knows that `cd somefile` fails, not what you
+    were going to do about it, and the name is still one keystroke from what you
+    typed.
+
+    """
+    possible = [name for name in ranked if not _cannot_work(name, arguments)]
+    impossible = [name for name in ranked if _cannot_work(name, arguments)]
+    return possible + impossible
+
+
 def _used_executables(command):
     """The programs you have actually run, from your history."""
     return {script.split(' ')[0]
@@ -102,17 +144,37 @@ def get_new_command(command):
     ranked = [name for name, _ in scored]
     used = _used_executables(command)
 
-    # History breaks a tie and nothing more. `rank_with_distance` has already
-    # put the candidates in order, so anything sharing the best distance is
-    # equally good by the metric -- and among equals, prefer the one you have
-    # used. Anything worse stays where it is.
-    best = scored[0][1]
-    equal = [name for name, edits in scored if edits == best]
+    # History breaks a tie and nothing more. Among candidates the metric cannot
+    # choose between, prefer the one you have used; anything worse stays where
+    # it is.
+    #
+    # "Equally good" used to mean the same edit *distance* and nothing else, so
+    # every one-edit candidate counted as a tie and history reordered them
+    # freely:
+    #
+    #     $ ca .gitignore
+    #     $ bleep
+    #     cd .gitignore            <- and `cat .gitignore` second
+    #
+    # `cat` is `ca` with the last key missed, which is the commonest slip there
+    # is; `cd` is `a` mistyped as `d`, two keys away and hit with a different
+    # finger. The metric knew that and had already put `cat` first -- but `cd`
+    # was one edit away too, which was all it took to qualify, and `cd` is in
+    # everybody's history because it is the most-typed command there is. So the
+    # tie-break promoted the worse answer, every time, for anyone.
+    #
+    # `plausible_slips` asks for both: as close as the closest, and explainable
+    # as one slip. `got` still gives you `git` over `go` -- `o` and `i` are
+    # neighbours, so both are real explanations and your history is the right
+    # thing to choose between them.
+    equal = matching.plausible_slips(old_command, scored)
     if len(equal) > 1:
         familiar = [name for name in equal if name in used]
         if familiar:
             ranked = familiar + [name for name in ranked
                                  if name not in familiar]
+
+    ranked = _demote_impossible(ranked, command.script_parts[1:])
 
     from thebleep.conf import settings
 

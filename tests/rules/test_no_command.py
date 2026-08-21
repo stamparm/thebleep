@@ -48,3 +48,84 @@ def test_not_match(mocker, script, output, which):
     ('gti commit -m "new commit"', ['git commit -m "new commit"'])])
 def test_get_new_command(script, result):
     assert get_new_command(Command(script, '')) == result
+
+
+class TestHistoryMayNotPromoteAWorseAnswer:
+    """`ca .gitignore` answered `cd .gitignore`, with `cat .gitignore` second.
+
+    The metric had `cat` first. The history tie-break grouped candidates by edit
+    distance alone, `cd` is one edit from `ca` too, and `cd` is in everybody's
+    history -- so it was promoted over a better answer for anyone who ran this.
+
+    """
+
+    @pytest.fixture(autouse=True)
+    def executables(self, mocker):
+        mocker.patch('thebleep.rules.no_command.get_all_executables',
+                     return_value=['cat', 'cd', 'cp', 'ls', 'git'])
+
+    @pytest.fixture
+    def history(self, mocker):
+        def _set(*commands):
+            return mocker.patch(
+                'thebleep.rules.no_command'
+                '.get_valid_history_without_current',
+                return_value=list(commands))
+
+        return _set
+
+    @pytest.mark.usefixtures('no_memoize')
+    def test_the_dropped_key_wins(self, history):
+        history('cd /tmp', 'cd ..', 'git status')
+        assert get_new_command(Command('ca setup.py', ''))[0] == 'cat setup.py'
+
+    @pytest.mark.usefixtures('no_memoize')
+    def test_even_with_nothing_in_the_history(self, history):
+        history()
+        assert get_new_command(Command('ca setup.py', ''))[0] == 'cat setup.py'
+
+    @pytest.mark.usefixtures('no_memoize')
+    def test_a_used_command_still_wins_a_real_tie(self, history):
+        """`cp` and `cd` are both one key from `cs`, and both are neighbours of
+        `s`, so history is what should choose."""
+        history('cd /tmp')
+        ranked = get_new_command(Command('cs /tmp', ''))
+        assert ranked[0] == 'cd /tmp'
+
+
+class TestASuggestionThatCannotRun:
+    """`cd` was offered for `ca .gitignore`, where the argument is a file."""
+
+    @pytest.fixture(autouse=True)
+    def executables(self, mocker):
+        mocker.patch('thebleep.rules.no_command.get_all_executables',
+                     return_value=['cat', 'cd'])
+
+    @pytest.mark.usefixtures('no_memoize')
+    def test_cd_goes_last_when_the_argument_is_a_file(self, mocker, tmpdir):
+        mocker.patch('thebleep.rules.no_command'
+                     '.get_valid_history_without_current',
+                     return_value=['cd /tmp'])
+        a_file = tmpdir.join('.gitignore')
+        a_file.write('*.pyc')
+        ranked = get_new_command(Command(u'ca {}'.format(a_file), ''))
+        assert ranked[0].startswith('cat ')
+        assert not ranked[0].startswith('cd ')
+
+    @pytest.mark.usefixtures('no_memoize')
+    def test_a_directory_argument_is_left_alone(self, mocker, tmpdir):
+        """The demotion is about what cannot work, not about disliking `cd`."""
+        mocker.patch('thebleep.rules.no_command'
+                     '.get_valid_history_without_current',
+                     return_value=['cd /tmp'])
+        assert any(script.startswith('cd ') for script
+                   in get_new_command(Command(u'ca {}'.format(tmpdir), '')))
+
+    @pytest.mark.usefixtures('no_memoize')
+    def test_a_path_that_does_not_exist_is_not_evidence(self, mocker):
+        """It may be a typo of its own, or relative to somewhere else."""
+        mocker.patch('thebleep.rules.no_command'
+                     '.get_valid_history_without_current',
+                     return_value=['cd /tmp'])
+        assert any(script.startswith('cd ') for script in
+                   get_new_command(Command('ca no/such/path', '')))
