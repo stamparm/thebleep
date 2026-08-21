@@ -1,6 +1,6 @@
 {
   "environment": {
-    "commit": "5d0ba4a14d9ac996d31cb2f4f9334f45a3c5a6c7",
+    "commit": "48d4fbc41683013eb1f989731e03017d0b2d6fbc",
     "working_tree_clean": true
   },
   "groups": [
@@ -10,8 +10,8 @@
       "what": "you misspelled the command itself"
     },
     {
-      "hits": 18,
-      "of": 18,
+      "hits": 20,
+      "of": 20,
       "what": "the tool named the fix itself"
     },
     {
@@ -29,7 +29,7 @@
       },
       {
         "hits": 6,
-        "of": 18,
+        "of": 20,
         "what": "the tool named the fix itself"
       },
       {
@@ -40,11 +40,11 @@
     ],
     "total": {
       "hits": 55,
-      "of": 83
+      "of": 85
     }
   },
   "total": {
-    "hits": 83,
-    "of": 83
+    "hits": 85,
+    "of": 85
   }
 }

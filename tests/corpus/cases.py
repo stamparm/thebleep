@@ -175,6 +175,21 @@ THE_TOOL_SAID_SO = [
      "fatal: subcommand wasn't specified; 'push' can't be assumed due to"
      " unexpected token 'pp'\n",
      'git stash pop'),
+    # Python's argparse, which prints every value it accepts. The same wording
+    # on 3.9 through 3.14, and `pytest`, `mypy`, `pre-commit`, `tox` and
+    # `coverage` all inherit it. From
+    # https://github.com/stamparm/thebleep/pull/5.
+    ('python -m pytest --color=ayt',
+     'ERROR: usage: python -m pytest [options] [file_or_dir] [file_or_dir]'
+     ' [...]\n'
+     "python -m pytest: error: argument --color: invalid choice: 'ayt'"
+     " (choose from 'yes', 'no', 'auto')\n",
+     'python -m pytest --color=auto'),
+    # commander.js, which is what most Node command line tools are built with.
+    # From https://github.com/stamparm/thebleep/pull/4.
+    ('prettier --chekc src/',
+     "error: unknown option '--chekc'\n(Did you mean --check?)\n",
+     'prettier --check src/'),
     # A mistyped *second* word. git makes no "most similar command" suggestion
     # for these -- it prints its usage, which is a list of the answers, and for
     # a dozen commands that dispatch twice nothing was reading it.

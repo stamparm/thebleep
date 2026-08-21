@@ -35,8 +35,7 @@ locale -- the quotes are typographic in one and plain in the other.
 
 import re
 from thebleep import matching
-from thebleep.shells import shell
-from thebleep.utils import memoize, replace_argument
+from thebleep.utils import memoize, replace_value
 
 # Either quote style: gnulib prints `'x'` under LC_ALL=C and `‘x’` otherwise.
 _Q = u'[\'‘’]'
@@ -86,32 +85,13 @@ def match(command):
     return _rejected_and_valid(command.output) is not None
 
 
-def _with(script, rejected, name):
-    """`script` with the rejected value replaced by `name`.
-
-    Two shapes, because both are how the value is written: `--sort=nmae` and
-    `--sort nmae`. `replace_argument` handles the second -- it looks for a
-    *word* -- and cannot see the first, which is not space-delimited. Passing
-    `--sort=nmae` through it returned the script unchanged, and
-    `corrector._worth_offering` drops a suggestion identical to the command, so
-    the rule fired and offered nothing at all.
-
-    """
-    # Quoted: these came out of the program's own output, and the result is
-    # handed to the shell to be evaluated. A bare word gets no quotes.
-    quoted = shell.quote(name)
-
-    glued = u'={}'.format(rejected)
-    if glued in script:
-        return script.replace(glued, u'={}'.format(quoted), 1)
-
-    return replace_argument(script, rejected, quoted)
-
-
 def get_new_command(command):
     rejected, valid = _rejected_and_valid(command.output)
 
-    return [_with(command.script, rejected, name)
+    # `replace_value` because the value can be glued to its option with an
+    # `=`, which `replace_argument` cannot see. It quotes, too: these names came
+    # out of the program's own output.
+    return [replace_value(command.script, rejected, name)
             for name in matching.order(rejected, valid, limit=3)]
 
 

@@ -139,6 +139,11 @@
 
 ### Changed
 
+- **`utils.replace_value`** replaces an option's value whether it was written
+  `--sort name` or `--sort=name`. `replace_argument` looks for a whitespace-
+  delimited word and cannot see the second, so it handed the script back
+  unchanged and the suggestion was dropped as identical to the command -- two
+  rules had each grown their own copy of the workaround.
 - **A command is replayed in the shell it failed in.** Running it again went
   through `Popen(shell=True)`, which is the *platform's* shell -- `/bin/sh`, dash
   on Debian and Ubuntu -- whatever shell you had typed it in. So a bash-ism came
@@ -570,6 +575,25 @@
 
 ### Rules
 
+- `argparse_invalid_choice` corrects a mistyped choice or subcommand in any
+  tool built with Python's standard library `argparse` -- `pytest --color=ayt`,
+  `mytool bulid` -- which is `pytest`, `mypy`, `pre-commit`, `tox`, `coverage`
+  and a very long tail. The fourth of the framework rules in spirit: argparse
+  prints the value it refused and every value it accepts, so nothing has to be
+  guessed. By [@TrixSec](https://github.com/TrixSec) in
+  [#5](https://github.com/stamparm/thebleep/pull/5). Its fixtures showed the
+  choices unquoted, which argparse has never printed on any Python this project
+  supports; they are captured from 3.9 through 3.14 now, along with the
+  `--color/-c` shape an option with a short alias produces.
+- `commander_suggestion` does the same for
+  [commander.js](https://github.com/tj/commander.js), which is what most Node
+  command line tools are written with -- `prettier --chekc .`, and `eslint`,
+  `prisma`, `nest`, `turbo` and `webpack-cli` with nothing added for any of
+  them. By [@TrixSec](https://github.com/TrixSec) in
+  [#4](https://github.com/stamparm/thebleep/pull/4), and it needed nothing: the
+  wording is byte-exact against commander 13.1.0, it goes through
+  `replace_command` like its three siblings, and it comes with its own injection
+  test.
 - Four rules were dead against what their tool actually prints, each for
   however many releases ago the wording moved. The framework catches what a rule
   raises, which is the right failure model and also why nobody noticed: a rule

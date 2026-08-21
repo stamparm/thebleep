@@ -514,6 +514,41 @@ def replace_argument(script, from_, to):
             u' {} '.format(from_), u' {} '.format(to), 1)
 
 
+def replace_value(script, rejected, name):
+    """`script` with an option's rejected *value* replaced by `name`, quoted.
+
+    `replace_argument` looks for a whitespace-delimited word, which is one of
+    the two ways a value is written. The other is glued to its option with an
+    `=`, and there `replace_argument` finds nothing and hands the script back
+    unchanged -- and `corrector._worth_offering` drops a suggestion identical to
+    the command, so the rule fires and offers nothing at all:
+
+        $ ls --sort=nmae
+        ls: invalid argument 'nmae' for '--sort'
+        $ bleep
+        No bleeps given
+
+    Quoted, like `replace_command`: every caller reads `name` out of a tool's
+    own output, and the result goes to the shell to be evaluated. A plain word
+    comes back unquoted, so the ordinary case costs nothing.
+
+    Not folded into `replace_argument` itself, tempting though that is: forty
+    rules call that one to replace a *word*, and making it notice `=` first
+    would change what they do to a command where the same text appears in both
+    places.
+
+    """
+    from thebleep.shells import shell
+
+    quoted = shell.quote(name)
+
+    glued = u'={}'.format(rejected)
+    if glued in script:
+        return script.replace(glued, u'={}'.format(quoted), 1)
+
+    return replace_argument(script, rejected, quoted)
+
+
 @decorator
 def eager(fn, *args, **kwargs):
     return list(fn(*args, **kwargs))

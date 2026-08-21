@@ -69,16 +69,16 @@ written from that file by [`bench/chart.py`](bench/chart.py). [Reproduce it, and
 read where the time went](#performance).
 
 It is also right more often, which in the end matters more than being quick.
-The same 83 typos — real commands, with the output the real tool printed — put
+The same 85 typos — real commands, with the output the real tool printed — put
 to both:
 
 <!-- hit-rate: written by bench/hit_rate.py --compare -->
 | what went wrong | for example | The Bleep | The Fuck 3.32 |
 | --- | --- | --- | --- |
 | you misspelled the command itself | `gti status` | **56/56** | 46/56 |
-| the tool named the fix itself | `git satus` | **18/18** | 6/18 |
+| the tool named the fix itself | `git satus` | **20/20** | 6/20 |
 | nothing should be suggested | `zzzzzqqqq` | **9/9** | 3/9 |
-| **all 83 of them** |  | **83/83 (100%)** | 55/83 (66%) |
+| **all 85 of them** |  | **85/85 (100%)** | 55/85 (65%) |
 <!-- end hit-rate -->
 
 Only the *first* suggestion counts, because that is the one <kbd>enter</kbd>
@@ -96,7 +96,7 @@ contains the answer: git prints `the most similar command is status`, npm lists
 the scripts in your `package.json`, `ls --sort=nmae` prints every value `--sort`
 accepts. Nothing has to be guessed here — it only has to be *read*. Getting one
 of these wrong means ignoring an answer already on the screen, which is why 6 of
-18 is the number to look at: those rules were written against wordings the tools
+20 is the number to look at: those rules were written against wordings the tools
 have since changed, and nobody noticed because a rule that stops matching just
 goes quiet.
 
@@ -405,9 +405,9 @@ $ thebleep --doctor
   Executable          ~/.local/bin/thebleep
   On PATH             yes
   Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
-  Rules               180 bundled, 3 of your own
-  Rule health         177 enabled, none raising
-  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (180 rules cached)
+  Rules               182 bundled, 3 of your own
+  Rule health         168 enabled, none raising
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (182 rules cached)
 - Replayless capture  available, not switched on
                       See --enable-experimental-instant-mode.
   Editing             supported by this shell (tab at the prompt)
@@ -588,7 +588,7 @@ nothing.
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
-| **Rules** | 180 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+| **Rules** | 182 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
@@ -866,6 +866,7 @@ The following rules are enabled by default:
 * `adb_unknown_command` — fixes misspelled commands like `adb logcta`;
 * `ag_literal` — adds `-Q` to `ag` when suggested;
 * `aws_cli` — fixes misspelled commands like `aws dynamdb scan`;
+* `argparse_invalid_choice` — the same for Python's standard library [argparse](https://docs.python.org/3/library/argparse.html), which is what `pytest`, `mypy`, `pre-commit`, `tox` and `coverage` are built on — `pytest --color=ayt`, `mytool bulid`;
 * `az_cli` — fixes misspelled commands like `az providers`;
 * `cargo` — runs `cargo build` instead of `cargo`;
 * `cat_dir` — replaces `cat` with `ls` when you try to `cat` a directory;
@@ -878,6 +879,7 @@ The following rules are enabled by default:
 * `click_suggestion` — the same for [Click](https://click.palletsprojects.com/), which most Python tools use — `black --chekc .`;
 * `choco_install` — appends common suffixes for chocolatey packages;
 * `cobra_suggestion` — the same for [cobra](https://cobra.dev/), which most Go tools use — `gh reop list`, `helm instal mychart`, `kubectl gat pods`. Replaces the hand-written `kubectl_unknown_command`;
+* `commander_suggestion` — the same for [commander.js](https://github.com/tj/commander.js), which most Node.js tools use — `prettier --chekc .`, `mytool bulid`;
 * `composer_not_command` — fixes composer command name;
 * `conda_mistype` — fixes conda commands;
 * `cp_create_destination` — creates a new directory when you attempt to `cp` or `mv` to a non-existent one
@@ -1366,7 +1368,7 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches about a fifth of the 180 rules, and
+  running it. A typical command now reaches about a fifth of the 182 rules, and
   one for a tool with many rules of its own — `git` — under a quarter, instead of
   all of them. Rules that don't say what they are about are always loaded, so
   this makes corrections faster, never fewer.

@@ -48,7 +48,7 @@ def canary(tmpdir):
     for name in ('git', 'az', 'composer', 'grunt', 'npm', 'yarn', 'gradle',
                  'sh', 'env', 'rm', 'kill', 'ssh', 'ssh-keygen', 'vim',
                  'rails', 'kubectl', 'uv', 'ruff', 'gh', 'helm',
-                 'black', 'cargo'):
+                 'black', 'cargo', 'prettier', 'pytest', 'mytool'):
         shutil.copy(str(stub), str(stubs.join(name)))
 
     work = tmpdir.mkdir('work')
@@ -315,4 +315,36 @@ class TestNamesFromSomewhereElse(object):
         if not click_suggestion.match(command):
             return
         for suggestion in click_suggestion.get_new_command(command):
+            assert canary(suggestion) == []
+
+    def test_commander_suggestion(self, name, payload, canary):
+        """commander.js lists what it thinks you meant, and we repeat one back.
+
+        From [#4](https://github.com/stamparm/thebleep/pull/4).
+
+        """
+        from thebleep.rules import commander_suggestion
+
+        output = (u"error: unknown command 'bulid'\n"
+                  u"(Did you mean {})?\n".format(payload))
+        command = Command(u'mytool bulid', output)
+        if not commander_suggestion.match(command):
+            return
+        for suggestion in commander_suggestion.get_new_command(command):
+            assert canary(suggestion) == []
+
+    def test_argparse_invalid_choice(self, name, payload, canary):
+        """argparse lists every choice it accepts, and we repeat one back.
+
+        From [#5](https://github.com/stamparm/thebleep/pull/5).
+
+        """
+        from thebleep.rules import argparse_invalid_choice
+
+        output = (u"mytool: error: argument sub: invalid choice: 'bulid' "
+                  u"(choose from 'install', '{}')\n".format(payload))
+        command = Command(u'mytool bulid', output)
+        if not argparse_invalid_choice.match(command):
+            return
+        for suggestion in argparse_invalid_choice.get_new_command(command):
             assert canary(suggestion) == []
