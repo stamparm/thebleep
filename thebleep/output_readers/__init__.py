@@ -17,6 +17,7 @@ environment variable and one path.
 import os
 from .. import const
 from ..conf import settings
+from ..utils import without_control_sequences
 
 
 def _shell_logger_available():
@@ -36,6 +37,18 @@ def _shell_logger_available():
 
 
 def get_output(script, expanded):
+    """What the failed command printed, as a rule wants to read it.
+
+    Whichever reader answers, the answer comes back through here, and the
+    painting comes off here: colour is something a program does to a terminal
+    and every rule below is reading text. See `without_control_sequences` for
+    what that was costing.
+
+    """
+    return without_control_sequences(_read(script, expanded))
+
+
+def _read(script, expanded):
     """Get output of the script.
 
     The first two readers have the output already, recorded as the command ran.

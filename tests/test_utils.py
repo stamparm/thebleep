@@ -11,7 +11,8 @@ from thebleep import cachefile
 from thebleep.utils import default_settings, \
     memoize, get_closest, get_all_executables, replace_argument, \
     get_all_matched_commands, is_app, for_app, cache, \
-    get_valid_history_without_current, get_close_matches, which
+    get_valid_history_without_current, get_close_matches, which, \
+    without_control_sequences
 from thebleep.types import Command
 
 
@@ -511,3 +512,78 @@ class TestAnEmptyPathEntry(object):
                                                   monkeypatch):
         monkeypatch.setenv('PATH', ':/usr/bin')
         assert which(a_program_here) is not None
+
+
+class TestOutputAProgramPainted(object):
+    """A rule reads what was said; colour is how it looked.
+
+    The case that found this is deno, and it is worth spelling out because it
+    looks like nothing from the outside. deno is a clap program, so
+    `clap_suggestion` -- which reads clap's wording and corrects every clap tool
+    without knowing any of their names -- should have covered it from the day it
+    was written. It did not, and `ruff chekc` had a correction while
+    `deno runn` had none.
+
+    """
+
+    # Captured with `docker run --rm --entrypoint sh denoland/deno:latest -c
+    # 'deno runn'`, byte for byte, redirected to a file -- so not a terminal,
+    # and deno painted it anyway. That is the part that makes this ordinary
+    # rather than a curiosity: deno honours `NO_COLOR` but never asks whether
+    # anybody is watching, so this is what a rule gets every time.
+    DENO = (u'\x1b[0m\x1b[1m\x1b[31merror\x1b[0m: unrecognized subcommand'
+            u" 'runn'\n"
+            u'\n'
+            u"  tip: a similar subcommand exists: 'run'\n"
+            u'\n'
+            u'Usage: deno [OPTIONS] [COMMAND]\n')
+
+    def test_the_reset_sits_inside_the_word(self):
+        """`error\\x1b[0m:` is not `error:`, and that was the whole bug."""
+        assert 'error: unrecognized subcommand' not in self.DENO
+        assert 'error: unrecognized subcommand' in \
+            without_control_sequences(self.DENO)
+
+    def test_the_rule_that_should_always_have_matched(self):
+        from thebleep.rules import clap_suggestion
+
+        painted = Command('deno runn', self.DENO)
+        assert not clap_suggestion.match(painted)
+
+        plain = Command('deno runn', without_control_sequences(self.DENO))
+        assert clap_suggestion.match(plain)
+        assert clap_suggestion.get_new_command(plain) == ['deno run']
+
+    def test_it_comes_off_wherever_the_output_came_from(self, monkeypatch):
+        """The three readers do not each need to know about this."""
+        from thebleep import output_readers
+
+        monkeypatch.setattr(output_readers, '_read',
+                            lambda script, expanded: self.DENO)
+        assert output_readers.get_output('deno runn', 'deno runn') == \
+            without_control_sequences(self.DENO)
+
+    @pytest.mark.parametrize('painted, said', [
+        # Colour, bold, and a reset with no parameters.
+        (u'\x1b[31mred\x1b[0m', u'red'),
+        (u'\x1b[1;33;40mwarning\x1b[m', u'warning'),
+        # Cursor movement and erase, which a progress bar leaves behind.
+        (u'12%\x1b[2K\r100%', u'12%\r100%'),
+        (u'a\x1b[3Ab', u'ab'),
+        # A window title, which build tools set: OSC, ended either way.
+        (u'\x1b]0;make\x07done', u'done'),
+        (u'\x1b]2;make\x1b\\done', u'done'),
+        # Two-character escapes.
+        (u'a\x1b7b\x1b8c', u'abc'),
+        # What the text is made of survives: rules split on these.
+        (u'one\ntwo\r\n\tthree', u'one\ntwo\r\n\tthree'),
+        # Nothing to do, and the common case.
+        (u'error: no such file', u'error: no such file'),
+        (u'', u''),
+    ])
+    def test_what_comes_off_and_what_does_not(self, painted, said):
+        assert without_control_sequences(painted) == said
+
+    def test_no_output_at_all(self):
+        """`requires_output = False` rules run with `None`."""
+        assert without_control_sequences(None) is None

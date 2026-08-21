@@ -4,6 +4,26 @@
 
 ### Fixed
 
+- **A program's colour hid its message from every rule that reads one.** Rules
+  read output as text, and nothing took the terminal control sequences out
+  first. deno is a clap program, so `clap_suggestion` -- which corrects any
+  clap tool from clap's own wording, without knowing the tool's name -- should
+  have covered it from the day it was written. What arrived was
+
+  ```
+  \x1b[0m\x1b[1m\x1b[31merror\x1b[0m: unrecognized subcommand 'runn'
+  ```
+
+  with a reset sequence between `error` and its colon, so the rule looking for
+  `error: unrecognized subcommand` found nothing and `deno runn` had no
+  correction while `ruff chekc` had one. deno honours `NO_COLOR` but never asks
+  whether anything is watching, so that is what a rule got every time.
+
+  Output now comes through `utils.without_control_sequences` on its way out of
+  whichever reader produced it -- one place, so no reader and no rule needs to
+  know. `\r`, `\n` and `\t` are left alone: they are the shape of the text, not
+  decoration, and rules split on them.
+
 - **`thebleep --version` printed a warning at people whose shell it did not
   recognise.** 4.0.3 added a word when a shell's version probe answers nothing,
   because for a real shell that means one that is not there or will not start.

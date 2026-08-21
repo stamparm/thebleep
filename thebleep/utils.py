@@ -165,6 +165,53 @@ def tool_output(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False):
     return '\n'.join(tool_lines(arguments, timeout, merge_stderr))
 
 
+# What a program writes to paint its output rather than to say something.
+#
+# Rules read the output as text, and a rule that reads a tool's own wording is
+# reading a message a byte at a time: `clap_suggestion` looks for
+# `error: unrecognized subcommand`. deno prints exactly that -- it is a clap
+# program -- and colours the word `error` red, so what actually arrives is
+#
+#     \x1b[0m\x1b[1m\x1b[31merror\x1b[0m: unrecognized subcommand 'runn'
+#
+# with a reset sequence sitting between `error` and its colon. The rule found
+# nothing, and `deno runn` had no correction while `ruff chekc` had one, for no
+# reason a reader of either would guess. deno paints whether or not anything is
+# watching -- it honours `NO_COLOR` but does not ask whether it has a terminal
+# -- so this is not a rare case, and one escaped byte inside a word defeats
+# every rule that reads a message, which is most of them.
+#
+# Three shapes, in the order they have to be tried. CSI (`ESC [ ... final`) is
+# colour, cursor movement and erase, and is almost all of it. The string
+# sequences (`ESC ]`, and `ESC P`, `^`, `_`, `X` beside it) carry text of their
+# own until a terminator: the window title, which build tools set as they work.
+# Anything else introduced by `ESC` is two bytes, and that alternative is last
+# so that it cannot swallow the introducer of one of the first two -- but it is
+# there, because `ESC 7` and `ESC 8` save and restore the cursor and leaving
+# them out left a bare `7` in the middle of a line.
+#
+# `\r`, `\n` and `\t` are deliberately not here. They are not escape sequences,
+# they are the shape of the text, and rules split output on them.
+CONTROL_SEQUENCE = re.compile(
+    r'\x1b\[[0-?]*[ -/]*[@-~]'
+    r'|\x1b[\]P^_X][^\x07\x1b]*(?:\x07|\x1b\\)'
+    r'|\x1b[ -~]')
+
+
+def without_control_sequences(output):
+    """`output` as a rule wants to read it: what was said, not how it looked.
+
+    The `\\x1b` test is there because most output has none: a program with no
+    colour to add pays a substring search rather than a walk over its own
+    output, and that is the common case on the path every correction takes.
+
+    """
+    if not output or '\x1b' not in output:
+        return output
+
+    return CONTROL_SEQUENCE.sub('', output)
+
+
 def decorator(caller):
     """Turns a `caller(fn, *args, **kwargs)` function into a decorator.
 
