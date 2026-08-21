@@ -1,6 +1,6 @@
 {
   "environment": {
-    "commit": "e147b6a16d35079dab5a6da75687ed9f4e003da7",
+    "commit": "5d0ba4a14d9ac996d31cb2f4f9334f45a3c5a6c7",
     "working_tree_clean": true
   },
   "groups": [
@@ -12,12 +12,12 @@
     {
       "hits": 18,
       "of": 18,
-      "what": "the tool printed the answer"
+      "what": "the tool named the fix itself"
     },
     {
       "hits": 9,
       "of": 9,
-      "what": "no suggestion is the right answer"
+      "what": "nothing should be suggested"
     }
   ],
   "thefuck_3_32": {
@@ -30,12 +30,12 @@
       {
         "hits": 6,
         "of": 18,
-        "what": "the tool printed the answer"
+        "what": "the tool named the fix itself"
       },
       {
         "hits": 3,
         "of": 9,
-        "what": "no suggestion is the right answer"
+        "what": "nothing should be suggested"
       }
     ],
     "total": {

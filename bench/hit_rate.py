@@ -47,8 +47,8 @@ sys.path.insert(0, ROOT)
 # README, where this table is published.
 GROUPS = (
     ('you misspelled the command itself', 'gti status'),
-    ('the tool printed the answer', 'git satus'),
-    ('no suggestion is the right answer', 'zzzzzqqqq'),
+    ('the tool named the fix itself', 'git satus'),
+    ('nothing should be suggested', 'zzzzzqqqq'),
 )
 
 
