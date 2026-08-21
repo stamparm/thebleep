@@ -47,9 +47,11 @@
   logger had always done.
 - **Debug output named the values of your `env` setting**, which is where people
   keep tokens -- and `.github/ISSUE_TEMPLATE.md` asks for debug output to be
-  pasted into a bug report. It logs the names only, and the template now says to
-  read what you paste. `--doctor` was already written to be safe to paste; debug
-  output is a copy of what happened and cannot be.
+  pasted into a bug report. Both places that printed it log the names only now:
+  the environment a replayed command is given, and the settings dump at the top
+  of every `--debug` run. The template also says to read what you paste --
+  `--doctor` is the output written to be safe to paste, and debug output is a
+  copy of what happened and cannot be.
 - **Every GitHub Action is pinned to a commit**, the publishing one especially:
   its job holds `id-token: write`, and a tag can be moved. `build` and `twine`
   are pinned too, so two builds of the same tag use the same toolchain.
@@ -285,11 +287,6 @@
   `pip_unknown_command`. `tests/test_every_rule.py` now fails the build if
   anything under `thebleep/rules` or `thebleep/specific` calls `Popen`,
   `check_output`, `check_call` or `subprocess.run` directly.
-- **`--debug` printed the values of the `env` setting**, which is where people
-  keep tokens, and the issue template asks for debug output to be pasted into a
-  bug report. The previous entry claiming this was fixed was wrong: the *replay*
-  logger had been fixed and this one, which runs first, printed the whole
-  settings dict. It prints the names.
 - **`git commit` that *failed* was answered with `git reset HEAD~`.** The rule
   fired on any failed command containing `commit`, and every failed commit is a
   commit that has not happened -- so what it offered to throw away was the one
