@@ -33,8 +33,10 @@ import re
 from thebleep import matching
 from thebleep.utils import memoize, replace_value
 
-# `error: argument --color: invalid choice: 'ayt' (choose from yes, no, auto)`
-# or with quotes: `(choose from 'install', 'build', 'check')`.
+# `error: argument --color: invalid choice: 'ayt' (choose from 'yes', 'no',
+# 'auto')`. The choices are quoted on every Python from 3.9 to 3.14; the
+# unquoted form is accepted too, in case a future one drops them, and because
+# `argparse` is vendored and patched in more places than is comfortable.
 INVALID_CHOICE = re.compile(
     r"error: argument (?:[^\s:]+): invalid choice: '([^']*)' \(choose from ([^)]+)\)")
 
