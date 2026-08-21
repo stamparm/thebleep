@@ -383,12 +383,17 @@ def _rule_health(report):
                                                type(error).__name__))
                 break
 
+    # "enabled", because the line above this one counts what is *bundled* and
+    # these are the ones your settings actually load. Two different numbers
+    # both labelled "rules" read as a contradiction in a diagnostic somebody is
+    # scanning for what is wrong.
     if not broken:
-        report.add('Rule health', '{} rules, none raising'.format(len(rules)))
+        report.add('Rule health',
+                   '{} enabled, none raising'.format(len(rules)))
         return
 
     report.add('Rule health',
-               '{} of {} rules raise on a plain command'.format(
+               '{} of {} enabled rules raise on a plain command'.format(
                    len(broken), len(rules)),
                WARN,
                'These never fire, and nothing says so: ' + ', '.join(broken))

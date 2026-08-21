@@ -419,7 +419,7 @@ class TestRuleHealth(object):
         printed = ' '.join(capsys.readouterr()[0].split())
         assert 'exploding_rule (IndexError)' in printed
         assert 'never fire' in printed
-        assert '1 of 1 rules raise' in printed
+        assert '1 of 1 enabled rules raise' in printed
 
     def test_the_probes_are_shapes_a_correction_really_makes(self):
         """`Command('', '')` is not one -- `from_raw_script` refuses an empty

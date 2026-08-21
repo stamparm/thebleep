@@ -1,23 +1,23 @@
 {
   "environment": {
-    "commit": "318a97d99f23d037030bffe630e338f7cf957d03",
+    "commit": "e147b6a16d35079dab5a6da75687ed9f4e003da7",
     "working_tree_clean": true
   },
   "groups": [
     {
       "hits": 56,
       "of": 56,
-      "what": "an unknown program"
+      "what": "you misspelled the command itself"
     },
     {
       "hits": 18,
       "of": 18,
-      "what": "the tool said so"
+      "what": "the tool printed the answer"
     },
     {
       "hits": 9,
       "of": 9,
-      "what": "nothing is right"
+      "what": "no suggestion is the right answer"
     }
   ],
   "thefuck_3_32": {
@@ -25,17 +25,17 @@
       {
         "hits": 46,
         "of": 56,
-        "what": "an unknown program"
+        "what": "you misspelled the command itself"
       },
       {
         "hits": 6,
         "of": 18,
-        "what": "the tool said so"
+        "what": "the tool printed the answer"
       },
       {
         "hits": 3,
         "of": 9,
-        "what": "nothing is right"
+        "what": "no suggestion is the right answer"
       }
     ],
     "total": {

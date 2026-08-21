@@ -41,7 +41,15 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, ROOT)
 
 
-GROUPS = ('an unknown program', 'the tool said so', 'nothing is right')
+# What each group of the corpus is, in words somebody who has never read this
+# file will understand, and an example of the shape. The names inside
+# `tests/corpus/cases.py` are shorthand for us; these are for the reader of the
+# README, where this table is published.
+GROUPS = (
+    ('you misspelled the command itself', 'gti status'),
+    ('the tool printed the answer', 'git satus'),
+    ('no suggestion is the right answer', 'zzzzzqqqq'),
+)
 
 
 @contextlib.contextmanager
@@ -107,9 +115,10 @@ def _measure(package='thebleep'):
         return ('/usr/bin/' + name
                 if os.path.basename(name) in installed else None)
 
-    groups = list(zip(GROUPS, (cases.NO_SUCH_PROGRAM,
-                               cases.THE_TOOL_SAID_SO,
-                               cases.NOTHING_IS_RIGHT)))
+    groups = list(zip([label for label, _ in GROUPS],
+                      (cases.NO_SUCH_PROGRAM,
+                       cases.THE_TOOL_SAID_SO,
+                       cases.NOTHING_IS_RIGHT)))
 
     results = []
     with mock.patch.object(utils.memoize, 'disabled', True), \
@@ -193,24 +202,28 @@ def main():
             print('thefuck is not importable here; skipping the comparison.',
                   file=sys.stderr)
 
+    examples = dict(GROUPS)
+
     print()
     if other:
         other_hits, _ = _totals(other)
-        print('| what is being asked | The Bleep | The Fuck 3.32 |')
-        print('| --- | --- | --- |')
+        print('| what went wrong | for example | The Bleep | The Fuck 3.32 |')
+        print('| --- | --- | --- | --- |')
         for (label, hits, count, _), (_, theirs, _, _) in zip(results, other):
-            print('| {} | **{}/{}** | {}/{} |'.format(
-                label, hits, count, theirs, count))
-        print('| **all of it** | **{}/{} ({:.0f}%)** | {}/{} ({:.0f}%) |'.format(
-            total_hits, total, 100.0 * total_hits / total,
-            other_hits, total, 100.0 * other_hits / total))
+            print('| {} | `{}` | **{}/{}** | {}/{} |'.format(
+                label, examples[label], hits, count, theirs, count))
+        print('| **all {} of them** |  | **{}/{} ({:.0f}%)** |'
+              ' {}/{} ({:.0f}%) |'.format(
+                  total, total_hits, total, 100.0 * total_hits / total,
+                  other_hits, total, 100.0 * other_hits / total))
     else:
-        print('| what is being asked | first answer right |')
-        print('| --- | --- |')
+        print('| what went wrong | for example | first answer right |')
+        print('| --- | --- | --- |')
         for label, hits, count, _ in results:
-            print('| {} | {}/{} |'.format(label, hits, count))
-        print('| **all of it** | **{}/{}  ({:.0f}%)** |'.format(
-            total_hits, total, 100.0 * total_hits / total))
+            print('| {} | `{}` | {}/{} |'.format(
+                label, examples[label], hits, count))
+        print('| **all {} of them** |  | **{}/{} ({:.0f}%)** |'.format(
+            total, total_hits, total, 100.0 * total_hits / total))
     print()
 
     for label, _, _, misses in results:

@@ -2,6 +2,58 @@
 
 ## 4.0.3 — unreleased
 
+### Security
+
+- **Exit status 127 authorised running your command again.** 126 and 127 are
+  what a shell reports for `cannot execute` and `command not found`, and this
+  read them as proof that nothing had happened -- so the previous command could
+  be run a second time without asking. They are a *convention* the shell follows
+  for its own failures, and nothing stops a program from exiting with either.
+  The ones that do are exactly the ones that had already done something:
+
+  ```bash
+  $ make install                # a recipe's command was missing, four recipes
+  make: cc: No such file        # having already run
+  make: *** [install] Error 127
+  $ bleep
+  make install                  # run again, unasked
+  ```
+
+  `npm run`, `sh -c` and anything else that reports its child's status do the
+  same. The shortcut is gone; the `PATH` lookup beside it was always the sound
+  version of the same idea, and [Safe by
+  default](README.md#safe-by-default) still describes the three cases that skip
+  the question.
+- **An empty `PATH` entry made a local program look absent.** `PATH=:/usr/bin`
+  searches the current directory first -- that is what an empty component means
+  on POSIX, and `shutil.which` honours it. This skipped it, and the replay gate
+  reads "not on `PATH`" as "there is nothing there to run, so running it again
+  is free". So a `./deploy` the shell had just found and run was run a second
+  time without being asked about. `tests/test_utils.py` now holds the lookup to
+  agreeing with `shutil.which` across five `PATH` shapes.
+- **The cache directory in `/tmp` could run somebody else's code as you.** With
+  no home directory to expand `~` against -- a service account, a cron job, a
+  stripped container -- caches fell back to
+  `/tmp/thebleep-cache-<user>`, created with whatever the umask allowed and
+  never checked. What goes in there is the compiled rule pack, which the next
+  correction `marshal.loads`es and `exec`s, and the filename is worked out from
+  two public constants. So whoever created that directory first, with a pack of
+  their own in it, ran code as you. It is created `0700` now, and one that
+  exists and belongs to somebody else is refused rather than used.
+- **The first-run tracker was a predictable name in a shared `/tmp`**, opened
+  `'w'` -- so a symlink planted there beforehand was followed and whatever it
+  pointed at was truncated. It lives under your own cache directory now, opened
+  with `O_NOFOLLOW` and mode `0600`, which is what its sibling in the instant
+  logger had always done.
+- **Debug output named the values of your `env` setting**, which is where people
+  keep tokens -- and `.github/ISSUE_TEMPLATE.md` asks for debug output to be
+  pasted into a bug report. It logs the names only, and the template now says to
+  read what you paste. `--doctor` was already written to be safe to paste; debug
+  output is a copy of what happened and cannot be.
+- **Every GitHub Action is pinned to a commit**, the publishing one especially:
+  its job holds `id-token: write`, and a tag can be moved. `build` and `twine`
+  are pinned too, so two builds of the same tag use the same toolchain.
+
 ### Added
 
 - **A clone runs itself, with nothing installed.** The alias is shell code that
@@ -30,8 +82,6 @@
   `pipx` or `pip` it finds, for when you would rather have `thebleep` on your
   `PATH` for real. Installing a checkout without it copies the files once, and
   the copy is stale by the next commit.
-
-### Added
 
 - **It corrects tools it has never heard of.** Until now the model was one rule
   per program, written after somebody noticed the program existed, and then left
@@ -89,6 +139,51 @@
 
 ### Changed
 
+- **A command is replayed in the shell it failed in.** Running it again went
+  through `Popen(shell=True)`, which is the *platform's* shell -- `/bin/sh`, dash
+  on Debian and Ubuntu -- whatever shell you had typed it in. So a bash-ism came
+  back as an `sh` error and the correction was for a problem you never had:
+
+  ```bash
+  $ [[ -f /nope ]]                # bash: exits 1, prints nothing
+  $ bleep
+  /bin/sh: 1: [[: not found       # a different error entirely
+  ```
+
+  fish and zsh syntax the same, and PowerShell through `cmd.exe` is a total
+  mismatch. Each shell now says how to run one of its own command lines. A POSIX
+  shell on Windows is Git Bash or WSL, with its own `PATH` and its own
+  `/usr/bin`, so there the replay stays on the platform's shell -- starting the
+  other one reproduces a different machine.
+- **`no_command` costs half what it did.** An unknown command is the commonest
+  way a command fails, and this scanned every name on `PATH` twice -- once to
+  decide whether to fire, once to work out the answer -- then made a third pass
+  recomputing distances the second one had just produced. 187ms to 93ms across
+  five typos on the machine in `bench/results`.
+- **A huge shell history is read from the end.** `no_command` asks for history
+  to break a tie on what you have actually run, and the whole file was read and
+  decoded to look at the last ten entries. 34ms to 3.7ms on a 12MB history.
+- **Twenty rules that never look at the output say so.** `requires_output`
+  defaults to true, so each was switched off whenever the output was
+  unavailable -- which is every correction where re-running your command was
+  declined, and exactly when a rule that needs only the command is the one thing
+  that could have helped.
+- **A quarter of the word means a quarter.** `matching.max_distance` said
+  "roughly a quarter" and then allowed 3 edits for anything longer than eight
+  characters, which for a nine-letter word is a third: in a container with no
+  systemd, `systemctl statu ssh` was answered with `sysctl statu ssh`.
+- **The transport is scrubbed by name, not by `TB_` prefix.** Your own
+  `TB_ANYTHING` reached the replayed command again; `TB_` is short enough to
+  belong to a build system or an in-house tool, and deleting a stranger's
+  variable makes the command behave differently the second time for a reason
+  nobody could find.
+- **<kbd>ctrl+p</kbd> goes back and <kbd>ctrl+n</kbd> goes forward**, which is
+  what they do in every shell's own history. They were the other way round.
+- **The hit rate in the README is reproducible.** It was measuring the machine:
+  `apt_get` asks Debian's `command-not-found` database what provides `sl`, so the
+  commit that recorded 80/80 scores 76/80 on a machine that has that database,
+  with no code in between. The benchmark hides it, and the recording is now
+  tracked so CI checks the README against it rather than skipping.
 - **`whomi` no longer suggests `which`.** The question the whole tool exists to
   answer -- what did you mean -- had no module and no test. It was three utility
   functions inherited unexamined from The Fuck, and underneath them
@@ -140,6 +235,93 @@
 
 ### Fixed
 
+- **`git commit` that *failed* was answered with `git reset HEAD~`.** The rule
+  fired on any failed command containing `commit`, and every failed commit is a
+  commit that has not happened -- so what it offered to throw away was the one
+  before it. A failed hook, unmerged files or a stale index lock each left the
+  previous commit one keystroke from gone. It now wants the commit to have
+  worked, which is the moment it exists for.
+- **`ln -s /etc/hostname /tmp/link` offered a symlink on top of
+  `/etc/hostname`.** The rule moved the first argument that exists on disk to
+  the end; when both exist that is the source. The command was written correctly
+  and only wanted `-f`.
+- **Twenty rules could hang for as long as the program they asked did.** `lsof`
+  against a wedged NFS mount, `docker` against a dead daemon, `gradle` waiting
+  on a daemon of its own -- none of them had a timeout, and a rule that raises
+  is caught while a rule that never returns is The Bleep frozen at your prompt.
+  Several also piped stderr and read only stdout, which deadlocks on a program
+  chatty enough to fill that pipe. One helper now, with the timeout, the size
+  cap and the `/dev/null` stderr in it -- and `fish -ic` and `tcsh -ic`, which
+  read your config and run on the hot path of every correction in those shells,
+  go through it too.
+- **Replay output had no ceiling.** The timeout bounds how long a command has to
+  print, not how much: a failed build can put hundreds of megabytes through the
+  pipe in three seconds, and all of it was held in memory and then decoded into a
+  second copy. The last 8MB is kept.
+- **`THEBLEEP_REPEAT=false` turned repeat mode on.** It was missing from the list
+  of settings read as booleans, so the string `false` was stored, and any
+  non-empty string is true. The booleans are read off the defaults now, so one
+  added later cannot be forgotten.
+- **Nowhere to write a config was fatal.** `XDG_CONFIG_HOME` pointing at a file,
+  a read-only home, a container mount: creating the config directory happened
+  outside the error handling, so it was a traceback out of the middle of every
+  correction and every `--alias` -- which is a shell that cannot start. Defaults
+  are a complete answer; writing them down is a convenience.
+- **A stale shell-logger socket ended every correction.** A daemon that exited
+  and left its socket file behind gave `ConnectionRefusedError`; one that
+  accepted and said nothing blocked forever. It is a reader like the others now:
+  no answer means fall through to the next one. It also stopped at the first
+  non-matching command, so correcting anything but the newest logged one
+  silently switched off every rule that needs output.
+- **A recording shorter than 1MB killed instant mode**, or the process: an empty
+  file raised an uncaught `ValueError` and a partially written one raised
+  `SIGBUS`. As much of it as there is, is mapped.
+- **`--shell-logger` was unreachable through the alias.** The alias exports
+  `TB_HISTORY`, and the correction branch was tested first -- so from any shell
+  with the alias loaded, `bleep --shell-logger session.log` ran a correction
+  instead, and with `require_confirmation` off it *executed* one.
+- **A checkout at a path with a space produced a broken alias**, silently, for
+  every POSIX shell: the quoting around the path closed the single-quoted alias
+  body early. POSIX can spell an embedded quote, so it now does. tcsh cannot, so
+  tcsh keeps its warning and its fallback.
+- **`grep '??' notes` was not the command any rule saw.** `split_command` used
+  `??` as its stand-in for an escaped space while `shlex` did the splitting, and
+  `??` is two characters anybody can type.
+- **A rule that returns something that is not a command costs that rule.** A
+  custom rule with a path through it that returns `None` -- a regex that matched
+  in `match` and did not here, the commonest mistake there is -- reached the
+  display as `None.strip()` and took the whole CLI with it.
+- **<kbd>ctrl+c</kbd> at a prompt on Windows raised a traceback.**
+  `msvcrt.getwch` is documented to raise `KeyboardInterrupt`, which nothing
+  caught. It aborts, the way it does on POSIX.
+- **A process that exits while its tree is being killed is not an error.** Only
+  `AccessDenied` was caught, so the ordinary way a timeout comes apart produced
+  a traceback instead of "no output".
+- **`FOO=1 gradle build` got the three-second timeout.** `slow_commands` was
+  matched against the first word, and the command was two lines above; `sudo
+  gradle`, `nice gradle` and `/usr/bin/gradle` missed it too. So the setting
+  that exists to give a slow command longer gave it nothing, and it timed out
+  with no output to correct from.
+- **The shell-logger session reported success when it failed.** `waitpid`
+  returns an encoded status, so a child that exited 1 gave 256, and
+  `sys.exit(256)` exits *zero*.
+- **`ls --sort=nmae` was answered with `ls --help`.** GNU prints the value it
+  refused and every value it accepts; the last line of that was matched, the
+  rest of the command thrown away, and a help screen offered as a correction.
+- **`mkdir -p x && rmdir y` was answered with `mkdir -p -p x && rmdir y`.** `No
+  such file or directory` is a message half the tools on the machine print, and
+  the `mkdir` in that command had worked.
+- **`ls-la` was answered with `lsblk`, and `gitstatus` with `aa-status`** -- with
+  `ls -la` and `git status` one row below, behind an answer nobody would want. A
+  missing space is one edit, and it was losing to three-edit neighbours.
+- **`sudo apt-get updte` on a machine without sudo was answered with `su do
+  apt-get updte`.** `su` is a prefix of `sudo`, so the rule split a real command
+  name it had never heard of; `git k` for `gitk` and `pip x` for `pipx` are the
+  same slip.
+- **`diff --colour=alwys a b` was answered with `diff --color a b`**, silently
+  dropping the value and suggesting a different command.
+- **An option correction could be offered twice**, where a name reached the
+  ranking from both the printed usage and `--help`.
 - **`apt instal vim` gets a correction again.** apt 3.0 -- Debian trixie,
   Ubuntu 25.04 and newer -- prints `Error: Invalid operation instal` where
   apt-get prints `E: Invalid operation instal`, and only apt-get's wording was
@@ -388,6 +570,64 @@
 
 ### Rules
 
+- Four rules were dead against what their tool actually prints, each for
+  however many releases ago the wording moved. The framework catches what a rule
+  raises, which is the right failure model and also why nobody noticed: a rule
+  that never fires looks exactly like a rule with nothing to say.
+
+  - `git_add` matched the message with a full stop on the end and git dropped it.
+  - `hostscli` read the whole error sentence instead of the name in it, and then
+    looked for that sentence in the command you typed.
+  - `git_rebase_merge_dir` found the `rm -fr ".git/rebase-merge"` line by
+    counting back from the end of the output, which against the real message
+    lands on a sentence of prose -- so it offered prose as a command and never
+    offered the `rm`.
+  - `git_fix_stash` looked for a `usage:` block and git stopped printing one for
+    `git stash`. What it prints instead names the token it could not read, which
+    is better evidence than the usage block ever was.
+
+  So now every rule is asked: `tests/test_every_rule.py` throws malformed
+  output, somebody else's error and one-word commands at all of them and holds
+  them to not raising, and `thebleep --doctor` reports any that do.
+- `invalid_argument_for_option` reads the values a tool lists after refusing
+  one: `ls --sort=nmae` becomes `ls --sort=none`. The wording is gnulib's
+  `argmatch`, so `du --time`, `ls --format`, `ls --quoting-style` and
+  `df --output` come with it.
+- `git_unknown_subcommand` reads the usage block git prints for a mistyped
+  *second* word -- `git remote ad`, `git worktree lst`, `git notes ad`,
+  `git sparse-checkout se`. git makes no "most similar command" suggestion for
+  these; it lists the answers instead, and nothing was reading them.
+- `missing_space_before_known_subcommand` answers the half of a missing space
+  that is not a guess -- the rest is a flag, or a subcommand the program itself
+  listed -- and answers it ahead of the spelling correction. The guessing half
+  stays where it was: `whoiam` is two edits from `whoami` and one insertion from
+  `who iam`, and distance cannot tell those apart.
+- Nothing irreversible is offered on no evidence. A command that failed, with
+  output that explains nothing, is never answered with `rm -rf`, `git reset`,
+  `--force` or `--no-verify` -- checked against every rule, because that is the
+  class both of the worst bugs here belonged to.
+- `git_pull` no longer matches `git config pull.rebase`, and reads git's advice
+  by looking for it rather than by counting lines from the end -- which is off by
+  one between the two output readers, so the same failure was corrected in
+  instant mode and not otherwise.
+- `no_such_file` deferred to `cp_create_destination`, which does the same job
+  more carefully. It used to suggest `mkdir` with no argument for a destination
+  with no directory in it, and it fired when the *source* was what was missing.
+- `long_form_help` matched case-insensitively and then answered
+  case-sensitively, so it was dead for every lowercase spelling of `try 'x
+  --help'` -- which is most of them.
+- `git_flag_after_filename` had four ways to raise and took all of them: it
+  called `match` again and dereferenced the result, indexed on a flag git had
+  normalised, read a variable only assigned inside a loop, and indexed an empty
+  name.
+- `switch_lang` assigned to `command.script`, so every rule consulted after it
+  saw a command you had not typed.
+- Seven more rules put a value from a tool's output or your own history into a
+  suggestion without quoting it, and a suggestion is `eval`led: `aws_cli`,
+  `npm_wrong_command`, `path_from_history`, `option_typo`, `brew_install`,
+  `workon_doesnt_exists` and `fab_command_not_found`. `path_from_history` keeps a
+  leading `~` outside the quotes, because that is the one character there whose
+  meaning the shell is meant to change.
 - `kubectl gat pods` becomes `kubectl get pods`, sorted by how close each
   suggestion is to what was typed, because kubectl's own order offers `set`
   before `get`. Arrived as a `kubectl_unknown_command` rule
