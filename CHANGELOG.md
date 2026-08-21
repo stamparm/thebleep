@@ -2,6 +2,26 @@
 
 ## 4.0.4 — unreleased
 
+### Added
+
+- **`bun_script_not_found`** — `bun run buidl` -> `bun run build`, and
+  `bun instal` -> `bun install`. bun reports an unknown word as a missing
+  *script* whether or not `run` was typed, and offers no suggestion of its own:
+
+  ```
+  $ bun instal
+  error: Script not found "instal"
+  ```
+
+  So the candidates come from the project's `package.json` -- found by walking
+  up from the current directory, which is what bun does -- and, when `run` was
+  not typed, from bun's own commands as `bun --help` lists them. Nothing is
+  offered after `bun run` except a script, because `bun run install` is not
+  `bun install`; it is another missing script.
+
+  Thanks to [@TrixSec](https://github.com/TrixSec) for pointing at the
+  ecosystem ([#6](https://github.com/stamparm/thebleep/pull/6)).
+
 ### Fixed
 
 - **A program's colour hid its message from every rule that reads one.** Rules
