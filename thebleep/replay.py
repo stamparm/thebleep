@@ -183,6 +183,39 @@ DISPATCHERS = {
 PROBE_TIMEOUT = 5
 
 
+# Why an assignment in front of a command means "ask".
+#
+# `FOO=bar cmd` is one command with an environment of its own, and every question
+# this module asks about `cmd` is a question whose answer that environment can
+# change. Two demonstrations, both reproduced:
+#
+#     $ PATH=/tmp/mine:/usr/bin git satus
+#     $ bleep
+#
+# `_words` dropped the assignment to find the program, so the dispatcher probe
+# asked `/usr/bin/git` whether it has a `satus`. It has not -- and the command
+# that ran was `/tmp/mine/git`, which is a different program with different
+# subcommands and a side effect. The proof was about one binary and the consent
+# it bought was for another.
+#
+#     $ GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.deploy \
+#           GIT_CONFIG_VALUE_0='!./deploy.sh' git deploy
+#     $ bleep
+#
+# Same shape without swapping anything: with those three variables set, `git
+# --list-cmds=main,others,alias` lists `deploy`; without them it does not. The
+# probe runs without them, calls `deploy` an unknown subcommand, and the alias it
+# had already run does whatever it likes.
+#
+# The alternative to refusing is a list of the variables that can change how a
+# program resolves or behaves -- `PATH`, `LD_PRELOAD`, `LD_LIBRARY_PATH`,
+# `PYTHONPATH`, `GIT_CONFIG_*`, `BASH_ENV`, and whatever the next one is. That is
+# exactly the sort of supposedly-complete security list this module refuses to
+# keep elsewhere: `READ_ONLY` is a list of things believed *safe*, which fails
+# towards asking, while a list of dangerous variables fails towards not asking.
+#
+# So an assignment in front of a command costs a question. `LC_ALL=C ls` is the
+# common case and it is a keystroke.
 def _words(script):
     """The words `sh` would run, or `None` if it isn't that simple.
 
@@ -211,53 +244,14 @@ def _words(script):
         # is no command for them to change the meaning of.
         return []
 
-    if at and _assignments_change_everything():
+    if at:
+        # An assignment in front of a command: see the note above this function.
         return None
 
     if not LITERAL_PROGRAM.match(words[0]):
         return None
 
     return words
-
-
-def _assignments_change_everything():
-    """Always true, and here to be read rather than to be called usefully.
-
-    `FOO=bar cmd` is one command with an environment of its own, and every
-    question this module asks about `cmd` is a question whose answer that
-    environment can change. Two demonstrations, both reproduced:
-
-        $ PATH=/tmp/mine:/usr/bin git satus
-        $ bleep
-
-    `_words` dropped the assignment to find the program, so the dispatcher probe
-    asked `/usr/bin/git` whether it has a `satus`. It has not -- and the command
-    that ran was `/tmp/mine/git`, which is a different program with different
-    subcommands and a side effect. The proof was about one binary and the
-    consent it bought was for another.
-
-        $ GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.deploy \
-              GIT_CONFIG_VALUE_0='!./deploy.sh' git deploy
-        $ bleep
-
-    Same shape without swapping anything: with those three variables set, `git
-    --list-cmds=main,others,alias` lists `deploy`; without them it does not. The
-    probe runs without them, calls `deploy` an unknown subcommand, and the alias
-    it had already run does whatever it likes.
-
-    The alternative to refusing is a list of the variables that can change how a
-    program resolves or behaves -- `PATH`, `LD_PRELOAD`, `LD_LIBRARY_PATH`,
-    `PYTHONPATH`, `GIT_CONFIG_*`, `BASH_ENV`, and whatever the next one is. That
-    is exactly the sort of supposedly-complete security list this module refuses
-    to keep elsewhere: `READ_ONLY` is a list of things believed *safe*, which
-    fails towards asking, while a list of dangerous variables fails towards not
-    asking.
-
-    So an assignment in front of a command costs a question. `LC_ALL=C ls` is
-    the common case and it is a keystroke.
-
-    """
-    return True
 
 
 def _subcommands(program, question):
