@@ -382,7 +382,7 @@ $ thebleep --doctor
   On PATH             yes
   Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
   Rules               180 bundled, 3 of your own
-  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (180 rules cached)
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (181 rules cached)
 - Replayless capture  available, not switched on
                       See --enable-experimental-instant-mode.
   Editing             supported by this shell (tab at the prompt)
@@ -563,7 +563,7 @@ nothing.
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
-| **Rules** | 180 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+| **Rules** | 181 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
@@ -1000,6 +1000,7 @@ The following rules are enabled by default:
 
 The following rules are enabled by default on specific platforms only:
 
+* `argparse_invalid_choice` — fixes invalid choices and subcommands for Python [argparse](https://docs.python.org/3/library/argparse.html) tools — `pytest --color=ayt`, `mytool bulid`;
 * `apt_get` — installs app from apt if it not installed (requires `python-commandnotfound` / `python3-commandnotfound`);
 * `apt_get_search` — changes trying to search using `apt-get` with searching using `apt-cache`;
 * `apt_invalid_operation` — fixes invalid `apt` and `apt-get` calls, like `apt-get isntall vim`;
@@ -1341,7 +1342,7 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches about a fifth of the 180 rules, and
+  running it. A typical command now reaches about a fifth of the 181 rules, and
   one for a tool with many rules of its own — `git` — under a quarter, instead of
   all of them. Rules that don't say what they are about are always loaded, so
   this makes corrections faster, never fewer.

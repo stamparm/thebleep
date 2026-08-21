@@ -48,7 +48,7 @@ def canary(tmpdir):
     for name in ('git', 'az', 'composer', 'grunt', 'npm', 'yarn', 'gradle',
                  'sh', 'env', 'rm', 'kill', 'ssh', 'ssh-keygen', 'vim',
                  'rails', 'kubectl', 'uv', 'ruff', 'gh', 'helm',
-                 'black', 'cargo'):
+                 'black', 'cargo', 'pytest', 'mytool'):
         shutil.copy(str(stub), str(stubs.join(name)))
 
     work = tmpdir.mkdir('work')
@@ -315,4 +315,16 @@ class TestNamesFromSomewhereElse(object):
         if not click_suggestion.match(command):
             return
         for suggestion in click_suggestion.get_new_command(command):
+            assert canary(suggestion) == []
+
+    def test_argparse_invalid_choice(self, name, payload, canary):
+        """Python argparse choices list is read from output and quoted."""
+        from thebleep.rules import argparse_invalid_choice
+
+        output = (u"mytool: error: argument sub: invalid choice: 'bulid' "
+                  u"(choose from install, {})\n".format(payload))
+        command = Command(u'mytool bulid', output)
+        if not argparse_invalid_choice.match(command):
+            return
+        for suggestion in argparse_invalid_choice.get_new_command(command):
             assert canary(suggestion) == []
