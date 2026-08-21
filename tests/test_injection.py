@@ -15,6 +15,7 @@ stubs before anything runs, so a suggestion cannot do anything else either.
 
 """
 
+import json
 import os
 import shutil
 import subprocess
@@ -48,7 +49,8 @@ def canary(tmpdir):
     for name in ('git', 'az', 'composer', 'grunt', 'npm', 'yarn', 'gradle',
                  'sh', 'env', 'rm', 'kill', 'ssh', 'ssh-keygen', 'vim',
                  'rails', 'kubectl', 'uv', 'ruff', 'gh', 'helm',
-                 'black', 'cargo', 'prettier', 'pytest', 'mytool'):
+                 'black', 'cargo', 'prettier', 'pytest', 'mytool',
+                 'bun'):
         shutil.copy(str(stub), str(stubs.join(name)))
 
     work = tmpdir.mkdir('work')
@@ -141,6 +143,31 @@ class TestNamesFromSomewhereElse(object):
         output = u'Warning: Task "brnch" not found.\n'
         assert canary(grunt_task_not_found.get_new_command(
             Command(u'grunt brnch', output))) == []
+
+    def test_bun_script_not_found(self, name, payload, canary, tmpdir,
+                                  monkeypatch):
+        """Script names come out of the repository's own `package.json`.
+
+        Read off disk rather than mocked, because the file is the thing that
+        arrives with a clone and JSON will hold any of these names.
+
+        """
+        from thebleep.rules import bun_script_not_found
+
+        project = tmpdir.mkdir('bunproj-{}'.format(name))
+        project.join('package.json').write(
+            json.dumps({'scripts': {payload: 'true'}}))
+        monkeypatch.chdir(str(project))
+
+        output = u'error: Script not found "brnch"\n'
+        command = Command(u'bun run brnch', output)
+        if not bun_script_not_found.match(command):
+            return
+
+        suggestions = bun_script_not_found.get_new_command(command)
+        assert suggestions, 'the hostile name never reached a suggestion'
+        for suggestion in suggestions:
+            assert canary(suggestion) == []
 
     def test_ssh_known_hosts(self, name, payload, canary):
         """The known_hosts path and host name come out of ssh's warning."""
