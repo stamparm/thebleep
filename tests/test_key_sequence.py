@@ -18,6 +18,7 @@ Reproduced through a real terminal before it was fixed, and again after:
 """
 
 import sys
+import builtins
 import pytest
 
 pytestmark = pytest.mark.skipif(sys.platform == 'win32',
@@ -131,3 +132,49 @@ class TestReadingOneKey(object):
 
         mocker.patch('termios.tcgetattr', side_effect=termios.error)
         assert unix.read_key_sequence() == '\x03'
+
+
+class TestCtrlCBeforeRawMode(object):
+    """Ctrl+C is `\\x03` once the terminal is raw, and a `KeyboardInterrupt`
+    before that.
+
+    The window is not theoretical. The three modules that make a terminal raw
+    are imported lazily, so the *first* keypress in a process waits through
+    finding, compiling and writing their bytecode -- and a real CI run caught
+    the interrupt arriving inside `import tty`, which came out of the prompt as
+    a traceback rather than as an abandoned suggestion. The Windows reader had
+    the same fault by a different route.
+
+    """
+
+    def test_an_interrupt_during_the_imports(self, unix, mocker):
+        """Which is where CI caught it."""
+        real_import = builtins.__import__
+
+        def interrupt(name, *args, **kwargs):
+            if name == 'tty':
+                raise KeyboardInterrupt
+            return real_import(name, *args, **kwargs)
+
+        mocker.patch.object(builtins, '__import__', side_effect=interrupt)
+        assert unix.read_key_sequence() == '\x03'
+
+    def test_an_interrupt_between_asking_and_raw_mode(self, unix,
+                                                      mocker):
+        """`tcgetattr` has answered, `setraw` has not run, and the default
+        SIGINT handler is still the one installed."""
+        mocker.patch('sys.stdin.fileno', return_value=0)
+        mocker.patch('termios.tcgetattr', return_value=[])
+        restore = mocker.patch('termios.tcsetattr')
+        mocker.patch('tty.setraw', side_effect=KeyboardInterrupt)
+
+        assert unix.read_key_sequence() == '\x03'
+        # And the terminal is put back the way it was found.
+        assert restore.called
+
+    def test_and_it_reads_as_an_abort(self, unix, mocker):
+        """Which is the whole point: the same answer as the byte itself."""
+        from thebleep import const
+
+        mocker.patch.object(unix, 'read_key_sequence', return_value='\x03')
+        assert unix.get_key() is const.KEY_CTRL_C

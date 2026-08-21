@@ -51,14 +51,39 @@ def _is_incomplete(sequence):
 
 
 def read_key_sequence():
-    """Reads a keypress as the characters the terminal sent for it."""
+    """Reads a keypress as the characters the terminal sent for it.
+
+    Ctrl+C comes back as `\x03`, the byte the terminal sends for it, which is
+    what raw mode is for -- and there is a window before raw mode is on where
+    the default SIGINT handler is still installed and Ctrl+C raises instead.
+    The window is not theoretical: the three imports below are lazy, so the
+    *first* keypress in a process waits through finding, compiling and writing
+    the bytecode for them, and a real CI run caught a `KeyboardInterrupt`
+    coming out of the middle of `import tty`:
+
+        File "thebleep/system/unix.py", line 61, in read_key_sequence
+          import tty
+        ...
+          File "<frozen importlib._bootstrap_external>", line 206,
+            in _write_atomic
+        KeyboardInterrupt
+
+    Nothing catches that, so pressing Ctrl+C at the prompt printed a traceback
+    instead of abandoning the suggestion -- the same fault the Windows reader
+    had, arriving by a different route. Both hand back the Ctrl+C byte now, so
+    Ctrl+C means one thing wherever it lands.
+
+    """
     # The three modules that make a terminal raw are imported here rather than
     # at the top. Only somebody being shown a suggestion and answering it gets
     # this far; `--yes`, `--alias` and every correction that finds nothing
     # never do, and they were all paying to find and open them.
-    import select
-    import termios
-    import tty
+    try:
+        import select
+        import termios
+        import tty
+    except KeyboardInterrupt:
+        return '\x03'
 
     fd = sys.stdin.fileno()
     try:
@@ -88,6 +113,11 @@ def read_key_sequence():
         while (_is_incomplete(sequence)
                and select.select([fd], [], [], ESCAPE_TIMEOUT)[0]):
             sequence += os.read(fd, 1)
+    except KeyboardInterrupt:
+        # Between `tcgetattr` and `setraw` the handler is still the default
+        # one. Answering as if the byte had arrived is the same outcome by a
+        # shorter path.
+        return '\x03'
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
 
