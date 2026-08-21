@@ -405,9 +405,9 @@ $ thebleep --doctor
   Executable          ~/.local/bin/thebleep
   On PATH             yes
   Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
-  Rules               182 bundled, 3 of your own
+  Rules               185 bundled, 3 of your own
   Rule health         168 enabled, none raising
-  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (182 rules cached)
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (185 rules cached)
 - Replayless capture  available, not switched on
                       See --enable-experimental-instant-mode.
   Editing             supported by this shell (tab at the prompt)
@@ -588,7 +588,7 @@ nothing.
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
-| **Rules** | 182 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+| **Rules** | 185 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
@@ -881,14 +881,16 @@ The following rules are enabled by default:
 * `cobra_suggestion` — the same for [cobra](https://cobra.dev/), which most Go tools use — `gh reop list`, `helm instal mychart`, `kubectl gat pods`. Replaces the hand-written `kubectl_unknown_command`;
 * `commander_suggestion` — the same for [commander.js](https://github.com/tj/commander.js), which most Node.js tools use — `prettier --chekc .`, `mytool bulid`;
 * `composer_not_command` — fixes composer command name;
+* `yargs_suggestion` — the same for [yargs](https://yargs.js.org/), the other major Node.js CLI framework — `eslint --fixx .`, `mytool bulid`, `webpack bulid`;
 * `conda_mistype` — fixes conda commands;
 * `cp_create_destination` — creates a new directory when you attempt to `cp` or `mv` to a non-existent one
 * `cp_omitting_directory` — adds `-a` when you `cp` directory;
 * `cpp11` — adds missing `-std=c++11` to `g++` or `clang++`;
-* `dirty_untar` — suggests re-extracting a `tar x` that unpacked into the current directory into a directory of its own (it does not delete what was already unpacked — nothing in the archive says which of those files you already had);
+* `dirty_untar` — suggests re-extracting a `tar x` that unpacked into the current directory into a directory of its own (it does not delete what was already unpacked — nothing in the archive says which of these files you already had);
 * `dirty_unzip` — the same for `unzip`;
 * `django_south_ghost` — adds `--delete-ghost-migrations` to failed because ghosts django south migration;
 * `django_south_merge` — adds `--merge` to inconsistent django south migration;
+* `deno_suggestion` — corrects mistyped Deno subcommands — `deno runn`, `deno chekc`, `deno fmtt`;
 * `docker_daemon_not_running` — starts Docker with `systemctl` when its daemon is not listening;
 * `docker_login` — executes a `docker login` and repeats the previous command;
 * `docker_not_command` — fixes wrong docker commands like `docker tags`;
@@ -1039,6 +1041,7 @@ The following rules are enabled by default on specific platforms only:
 * `brew_uninstall` — adds `--force` to `brew uninstall` if multiple versions were installed;
 * `brew_unknown_command` — fixes wrong brew commands, for example `brew docto/brew doctor`;
 * `brew_update_formula` — turns `brew update <formula>` into `brew upgrade <formula>`;
+* `bun_unknown_command` — corrects mistyped bun commands and scripts — `bun runn`, `bun run buidl`;
 * `dnf_no_such_command` — fixes mistyped DNF commands;
 * `nixos_cmd_not_found` — installs apps on NixOS;
 * `pacman` — installs app with `pacman` if it is not installed (uses `paru`, `yay`, `pikaur` or `yaourt` if available, in that order);
@@ -1368,7 +1371,7 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches about a fifth of the 182 rules, and
+  running it. A typical command now reaches about a fifth of the 185 rules, and
   one for a tool with many rules of its own — `git` — under a quarter, instead of
   all of them. Rules that don't say what they are about are always loaded, so
   this makes corrections faster, never fewer.

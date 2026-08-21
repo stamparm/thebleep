@@ -1,8 +1,9 @@
 import re
 from thebleep.specific.npm import npm_available
-from thebleep.utils import replace_argument, for_app, eager, get_closest
+from thebleep.utils import replace_argument, for_app, eager
 from thebleep.specific.sudo import sudo_support
 from thebleep.shells import shell
+from thebleep import matching
 
 enabled_by_default = npm_available
 
@@ -83,14 +84,16 @@ def get_new_command(command):
                 for suggestion in suggested]
 
     npm_commands = _get_available_commands(command.output)
-    fixed = get_closest(wrong_command, npm_commands)
-    if fixed is None:
+    if not npm_commands:
         # npm 7 and later print no command listing, and when they have nothing
         # to suggest they print no suggestion either -- so there is nothing to
-        # go on. `get_closest` returning `None` instead of raising was the fix
-        # for a crash here; passing it on produced the literal suggestion
-        # `npm None`, which is worse than saying nothing, because it looks like
-        # an answer and cannot run.
+        # go on.
         return []
 
-    return replace_argument(command.script, wrong_command, shell.quote(fixed))
+    # Use thebleep.matching.order() for Damerau-Levenshtein distance,
+    # which handles transpositions correctly (e.g., 'instal' -> 'install')
+    ordered = matching.order(wrong_command, npm_commands, limit=1)
+    if not ordered:
+        return []
+
+    return replace_argument(command.script, wrong_command, shell.quote(ordered[0]))

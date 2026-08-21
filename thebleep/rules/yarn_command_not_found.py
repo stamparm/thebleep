@@ -1,6 +1,8 @@
 import re
 from thebleep.utils import (for_app, eager, replace_command, replace_argument,
                             cache, which, tool_lines)
+from thebleep.shells import shell
+from thebleep import matching
 
 regex = re.compile(r'error Command "(.*)" not found.')
 
@@ -35,7 +37,14 @@ def get_new_command(command):
     misspelled_task = regex.findall(command.output)[0]
     if misspelled_task in npm_commands:
         yarn_command = npm_commands[misspelled_task]
-        return replace_argument(command.script, misspelled_task, yarn_command)
+        return replace_argument(command.script, misspelled_task,
+                                 shell.quote(yarn_command))
     else:
         tasks = _get_all_tasks()
-        return replace_command(command, misspelled_task, tasks)
+        if not tasks:
+            return []
+        # Use thebleep.matching.order() for proper typo detection
+        ordered = matching.order(misspelled_task, tasks, limit=3)
+        if not ordered:
+            return []
+        return replace_command(command, misspelled_task, ordered)

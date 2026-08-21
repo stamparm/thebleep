@@ -1,4 +1,6 @@
-from thebleep.utils import for_app, get_close_matches, replace_command
+from thebleep.utils import for_app, replace_command
+from thebleep.shells import shell
+from thebleep import matching
 import re
 
 
@@ -23,8 +25,12 @@ def get_new_command(command):
     failed_lifecycle = _get_failed_lifecycle(command)
     available_lifecycles = _getavailable_lifecycles(command)
     if available_lifecycles and failed_lifecycle:
-        selected_lifecycle = get_close_matches(
-            failed_lifecycle.group(1), available_lifecycles.group(1).split(", "))
-        return replace_command(command, failed_lifecycle.group(1), selected_lifecycle)
+        available = available_lifecycles.group(1).split(", ")
+        # Use thebleep.matching.order() for Damerau-Levenshtein distance
+        ordered = matching.order(failed_lifecycle.group(1), available, limit=3)
+        if not ordered:
+            return []
+        # replace_command handles quoting internally
+        return replace_command(command, failed_lifecycle.group(1), ordered)
     else:
         return []

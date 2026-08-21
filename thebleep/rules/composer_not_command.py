@@ -1,6 +1,7 @@
 import re
 from thebleep.shells import shell
 from thebleep.utils import replace_argument, for_app
+from thebleep import matching
 
 
 NOT_DEFINED = re.compile(r"Command \"([^']*)\" is not defined")
