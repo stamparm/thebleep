@@ -548,7 +548,11 @@ class TestOutputAProgramPainted(object):
         from thebleep.rules import clap_suggestion
 
         painted = Command('deno runn', self.DENO)
-        assert not clap_suggestion.match(painted)
+        # It reads the painted capture itself since the fix: before that, the
+        # reset between `error` and its colon hid the whole message and this
+        # match was false -- which is why the helper below exists at all.
+        assert clap_suggestion.match(painted)
+        assert clap_suggestion.get_new_command(painted) == ['deno run']
 
         plain = Command('deno runn', without_control_sequences(self.DENO))
         assert clap_suggestion.match(plain)
