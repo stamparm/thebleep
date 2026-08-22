@@ -25,6 +25,10 @@ Two guards, and they are the reason this is worth keeping rather than deleting:
 - **a name The Bleep already knows is never split.** `sudo`, `doas`, `env`,
   `nice` and the rest are commands this tool has a model of; a machine without
   one is missing a command, it has not gained a typo.
+- **nor is a typo of one.** `sudoo id` on that same machine reached
+  `su doo id` through the `su` prefix -- one edit from `sudo` is still a
+  spelling question, not a spacing one, whether or not `sudo` itself is
+  installed.
 
 What survives is what the rule is for: a subcommand (`gitstatus`, `npminstall`)
 or a flag (`ls-la`) that lost its space.
@@ -96,6 +100,13 @@ def match(command):
     word = command.script_parts[0]
     return (not _is_a_command_already(word)
             and not _known_name(word)
+            # One edit from something you could type -- installed or a wrapper
+            # this tool models -- is a typo of that, and no split competes
+            # with it. Asked here rather than only inside `certain`, because
+            # this is the rule that fires when nothing is certain: `sudoo id`
+            # on a machine without `sudo` reached `su doo id` through the `su`
+            # prefix with nothing above to beat it.
+            and not _one_edit_away(word)
             and bool(_get_executable(word))
             # The confident half of this is a rule of its own, and it answers
             # ahead of the spelling correction. See
@@ -110,15 +121,29 @@ def _one_edit_away(word):
     Programs *and* builtins, which is the set `no_command` guesses from: `exti`
     is one edit from `exit`, and `exit` is not on `PATH`.
 
+    The wrappers are in that set whether or not they are installed, and this is
+    the case that taught it: on a machine without `sudo`,
+
+        $ sudoo id
+        su doo id
+
+    `su` is a prefix of `sudoo`, so the split looked available -- but `sudoo`
+    is one key from a command this tool has a model of, which is a typo and
+    not a missing space, installed or not. The same argument as the exact-name
+    guard in `match`, one edit out.
+
     """
     from thebleep import matching
 
     from thebleep.shells import shell as current_shell
 
+    from thebleep.wrappers import WRAPPERS
+
     names = list(get_all_executables())
     known = set(names)
     names.extend(name for name in current_shell.get_builtin_commands()
                  if name not in known)
+    names.extend(name for name in WRAPPERS if name not in known)
 
     best = matching.rank_with_distance(word, names, limit=1)
     return bool(best) and best[0][1] <= 1

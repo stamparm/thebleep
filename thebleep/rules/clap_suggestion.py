@@ -39,7 +39,21 @@ changes: seven such rules were found dead in a single afternoon.
 mistyped flag is at least as common as a mistyped subcommand and clap hands you
 the answer for both.
 
-Wordings captured from ruff 0.14.5, uv 0.12.5 and cargo 1.97.1.
+And there is a third shape, which is why the broken word is not always read out
+of the message. deno 2.1 stopped echoing it:
+
+    $ deno runn
+    error: unrecognized subcommand
+
+      tip: a similar subcommand exists: 'run'
+
+The tip still names the answer, so the only question left is *what* to replace,
+and that is on the command line the user typed: the first word after the
+program that is not an option. Picking a nested dispatcher's word by mistake
+costs nothing -- the closeness filter between that word and the names in the
+tip comes back empty, and the rule offers nothing rather than nonsense.
+
+Wordings captured from ruff 0.14.5, uv 0.12.5, cargo 1.97.1 and deno 2.1.4.
 
 """
 
@@ -48,9 +62,10 @@ from thebleep.utils import replace_command
 
 # What clap says it did not recognise. A subcommand is quoted plainly; an
 # argument keeps its dashes, which is what makes the replacement land on the
-# flag rather than on a word of the command.
-BROKEN = re.compile(r"error: (?:unrecognized subcommand|unexpected argument) "
-                    r"'([^']+)'")
+# flag rather than on a word of the command. The quotes are optional: deno 2.1
+# names nothing at all, and the word comes off the command line instead.
+BROKEN = re.compile(r"error: (?:unrecognized subcommand|unexpected argument)"
+                    r"(?: '([^']+)')?")
 
 # Singular and plural, subcommand and argument, all four in one:
 #
@@ -76,9 +91,24 @@ CARGO_TIP = re.compile(
     r'`([^`]+)`')
 
 
-def _broken(output):
-    found = BROKEN.search(output) or CARGO_BROKEN.search(output)
-    return found.group(1) if found else None
+def _broken(command):
+    """The word clap could not read, wherever it is named.
+
+    The message names it when it names it at all; otherwise it is the first
+    word of the command after the program that is not an option, which is
+    where a subcommand sits. See the deno capture above for the shape that
+    taught this.
+
+    """
+    found = BROKEN.search(command.output) or CARGO_BROKEN.search(command.output)
+    # The bare deno shape *matches* `BROKEN`, with nothing captured -- so
+    # "the regex found it" and "it named the word" are different questions.
+    if found and found.group(1):
+        return found.group(1)
+
+    for part in command.script_parts[1:]:
+        if not part.startswith('-'):
+            return part
 
 
 def _suggestions(output):
@@ -96,10 +126,10 @@ def match(command):
              or 'tip: some similar' in command.output
              or 'a command with a similar name exists' in command.output
              or 'no such subcommand' in command.output)
-            and bool(_broken(command.output))
+            and bool(_broken(command))
             and bool(_suggestions(command.output)))
 
 
 def get_new_command(command):
-    return replace_command(command, _broken(command.output),
+    return replace_command(command, _broken(command),
                            _suggestions(command.output))

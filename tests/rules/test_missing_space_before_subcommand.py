@@ -73,6 +73,13 @@ class TestWhatItUsedToSplitThatItShouldNot(object):
         this tool has a model of -- see `wrappers`."""
         assert not match(Command('sudo apt-get updte', 'sudo: not found'))
 
+    def test_a_typo_of_a_wrapper_without_it_installed(self):
+        """And one edit out from the same conclusion: `sudoo` is a typo of
+        `sudo`, which this tool has a model of whether or not it is
+        installed. `su` is a prefix of it, so the split looked available --
+        and `su doo id` is not what anybody meant."""
+        assert not match(Command('sudoo id', 'bash: sudoo: command not found'))
+
     @pytest.mark.parametrize('script', ['gitk', 'pipx', 'gitk --all'])
     def test_a_one_character_remainder(self, script):
         """`git k` and `pip x` have never been what anybody meant, and both

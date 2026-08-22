@@ -1,9 +1,32 @@
+# -*- encoding: utf-8 -*-
+
+# Appends -lah when ls ran but showed nothing hidden
+#
+# Example:
+# > ls
+# file.txt
 from thebleep.utils import for_app
+
+# The ways an `ls` says it failed rather than listed. A rule that answers any
+# output at all was answering these too:
+#
+#     $ ls /nonexistent-dir-xyz
+#     ls -lah /nonexistent-dir-xyz
+#
+# -- more flags offered to a command that had just said the argument was not
+# there. Hidden files were never the question, and rerunning it fails again.
+_FAILURES = ('cannot access',
+             'No such file or directory',
+             'Not a directory')
 
 
 @for_app('ls')
 def match(command):
-    return command.script_parts and 'ls -' not in command.script
+    if not command.script_parts or 'ls -' in command.script:
+        return False
+
+    return not any(failure in command.output
+                   for failure in _FAILURES)
 
 
 def get_new_command(command):
@@ -12,8 +35,6 @@ def get_new_command(command):
     return ' '.join(command)
 
 
-# This rule never looks at what the command printed -- the command itself is
-# the whole question -- so it does not need the output. Without saying so it was
-# skipped whenever the output was not available, which is every correction where
-# re-running the command was declined.
-requires_output = False
+# The error check above is the whole point now; without the output there is
+# nothing to tell a listing from a failure.
+requires_output = True

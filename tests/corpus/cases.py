@@ -279,6 +279,22 @@ THE_TOOL_SAID_SO = [
      'error: unknown command "gat" for "kubectl"\n\n'
      'Did you mean this?\n\tget\n\tset\n',
      'kubectl get pods'),
+    # deno is a clap program that colours its error even when nothing is
+    # watching, and the reset between `error` and its colon used to hide the
+    # message from every rule that reads one -- `deno runn` went uncorrected
+    # while `ruff chekc` had an answer. Captured from deno 2.1.4, piped, no
+    # NO_COLOR set: the escapes are what a rule actually receives.
+    ('deno runn',
+     '\x1b[0m\x1b[1m\x1b[31merror\x1b[0m: unrecognized subcommand\n\n'
+     "  tip: a similar subcommand exists: 'run'\n",
+     'deno run'),
+    # And its multi-candidate shape, captured with NO_COLOR set: four of
+    # deno's subcommands are near `instal`, and `install` has to come first.
+    ('deno instal',
+     'error: unrecognized subcommand\n\n'
+     "  tip: some similar subcommands exist: 'init', 'lint', 'uninstall', "
+     "'install'\n",
+     'deno install'),
 ]
 
 # Group 3: nothing is the right answer. A confident wrong suggestion is worse
@@ -309,6 +325,20 @@ NOTHING_IS_RIGHT = [
     # A subcommand git does not have and nothing close enough to name.
     ('git zzzzzz',
      "git: 'zzzzzz' is not a git command. See 'git --help'.\n", None),
+    # `ls` saying the argument is not there is not a listing that hid
+    # anything. This was answered with `ls -lah /nonexistent-dir-xyz` -- more
+    # flags for a command that had just failed.
+    ('ls /nonexistent-dir-xyz',
+     "ls: cannot access '/nonexistent-dir-xyz': No such file or directory\n",
+     None),
+    # A missing module is not a filename that lost `.py`. This was answered
+    # with `python -c 'import nonexistent_zz'.py`, `.py` and all inside the
+    # quotes.
+    ("python -c 'import nonexistent_zz'",
+     'Traceback (most recent call last):\n'
+     '  File "<string>", line 1, in <module>\n'
+     "ModuleNotFoundError: No module named 'nonexistent_zz'\n",
+     None),
 ]
 
 ALL = NO_SUCH_PROGRAM + THE_TOOL_SAID_SO + NOTHING_IS_RIGHT

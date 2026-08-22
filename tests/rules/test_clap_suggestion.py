@@ -45,6 +45,23 @@ UV_MANY = (
     'Usage: uv [OPTIONS] <COMMAND>\n'
 )
 
+# deno 2.1.4, which colours its error even when nothing is watching and no
+# longer echoes the word it choked on. The escapes are what a rule receives;
+# captured piped, with no NO_COLOR set.
+DENO_COLOURED = (
+    '\x1b[0m\x1b[1m\x1b[31merror\x1b[0m: unrecognized subcommand\n'
+    '\n'
+    "  tip: a similar subcommand exists: 'run'\n"
+)
+
+# The same shape without the colour, and with several candidates.
+DENO_MANY = (
+    'error: unrecognized subcommand\n'
+    '\n'
+    "  tip: some similar subcommands exist: 'init', 'lint', 'uninstall', "
+    "'install'\n"
+)
+
 # cargo 1.97.1, which words it its own way, in backticks.
 CARGO = (
     'error: no such command: `instal`\n'
@@ -112,6 +129,18 @@ class TestCorrecting(object):
     def test_several_are_offered_closest_first(self):
         assert get_new_command(Command('uv re', UV_MANY)) == [
             'uv tree', 'uv remove']
+
+    def test_the_word_is_taken_from_the_command_when_clap_names_nothing(self):
+        """deno 2.1 stopped echoing it; the tip still names the answer."""
+        assert match(Command('deno runn', DENO_COLOURED))
+        assert get_new_command(Command('deno runn', DENO_COLOURED)) == \
+            ['deno run']
+
+    def test_the_colour_does_not_hide_any_of_it(self):
+        """The reset between `error` and its colon used to hide the whole
+        message from this rule -- see 4.0.4."""
+        assert get_new_command(Command('deno instal', DENO_MANY))[0] == \
+            'deno install'
 
     def test_the_rest_of_the_command_survives(self):
         assert get_new_command(
