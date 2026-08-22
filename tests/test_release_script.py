@@ -231,3 +231,40 @@ class TestWhatItWritesWhenTheGatesPass(object):
         release.main(['release.py', '4.0.1'])
         assert "VERSION = '4.0.1'" in a_tree.read('setup.py')
         assert 'badge/version-4.0.1-' in a_tree.read('README.md')
+
+
+class TestTheChangelogMustHaveANextSection(object):
+    """`release.py` rewrites the *first* `## x — y` heading in the CHANGELOG.
+
+    With no unreleased section open above it, that heading belongs to the
+    release that already shipped -- which is how a run of this script put a new
+    version and today's date on the previous release's security notes, caught
+    afterwards by luck.
+
+    """
+
+    def test_a_closed_changelog_stops_the_release_untouched(
+            self, release, a_tree, no_subprocesses):
+        closed = a_tree.read('CHANGELOG.md').replace(
+            '— unreleased', '— 2026-01-15')
+        with io.open(os.path.join(a_tree.path, 'CHANGELOG.md'), 'w',
+                     encoding='utf-8') as handle:
+            handle.write(closed)
+
+        with pytest.raises(SystemExit) as raised:
+            release.main(['release.py', '4.0.1'])
+
+        said = str(raised.value)
+        assert 'unreleased' in said
+        assert 'Open one' in said
+        assert a_tree.read('CHANGELOG.md') == closed
+        assert "VERSION = '4.0.1'" not in a_tree.read('setup.py')
+
+    def test_an_open_section_is_relabelled_as_before(
+            self, release, a_tree, no_subprocesses):
+        """The guard changes what is refused, not what is written."""
+        import datetime
+
+        release.main(['release.py', '4.0.1'])
+        assert '## 4.0.1 — {}'.format(
+            datetime.date.today().isoformat()) in a_tree.read('CHANGELOG.md')

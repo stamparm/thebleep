@@ -87,10 +87,38 @@ def today():
     return datetime.date.today().isoformat()
 
 
+def check_next_section_is_open(pattern, text):
+    """The CHANGELOG heading about to be relabelled must be the *next*
+    release's.
+
+    This script rewrites the *first* `## x — y` heading, which is only the next
+    release when a section for it has been opened. With none open, the first
+    heading belongs to the release that already shipped -- which is how a run of
+    this script once put a new version and today's date on the previous
+    release's security notes, caught afterwards by luck. Refusing costs one
+    line in the CHANGELOG; relabelling history costs a rewrite of it.
+
+    """
+    found = pattern.search(text)
+    if found is None or 'unreleased' not in found.group(0).lower():
+        sys.exit("release.py: CHANGELOG.md's first heading is not the "
+                 "unreleased section. Open one -- `## {} — unreleased` -- so "
+                 "this relabels the release to come instead of the one that "
+                 "already shipped.".format(today()))
+
+
 def set_version(version, date):
     """Puts the version in every file that states it."""
+    # Read first, check first, write last: the guard below has to fire before
+    # any file has been rewritten, not after setup.py already says a version
+    # the CHANGELOG refuses to take.
+    texts = {path: read(path) for path, _, _ in STATES_THE_VERSION}
+    for path, pattern, _ in STATES_THE_VERSION:
+        if path == 'CHANGELOG.md':
+            check_next_section_is_open(pattern, texts[path])
+
     for path, pattern, replacement in STATES_THE_VERSION:
-        text = read(path)
+        text = texts[path]
         if replacement is None:
             # The badge, whose version sits in the middle of a URL.
             new, count = pattern.subn(r'\g<1>%s\g<2>' % version, text)
