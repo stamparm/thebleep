@@ -32,6 +32,7 @@ Wording captured from git 2.43.
 """
 
 import re
+from thebleep.shells import shell
 from thebleep.utils import get_close_matches
 from thebleep.specific.git import git_support
 
@@ -39,7 +40,7 @@ from thebleep.specific.git import git_support
 # directory is read out of the message rather than assumed to be
 # `.git/rebase-merge`, because `--git-dir`, a worktree and `GIT_DIR` all move
 # it, and git has already worked out where it is.
-REMOVE = re.compile(r'^\s*(rm -fr "[^"]+")\s*$', re.MULTILINE)
+REMOVE = re.compile(r'^\s*rm -fr "([^"]+)"\s*$', re.MULTILINE)
 
 
 @git_support
@@ -55,7 +56,11 @@ def get_new_command(command):
 
     found = REMOVE.search(command.output)
     if found:
-        # Not quoted: it is git's own line, verbatim, quotes included.
-        command_list.append(found.group(1))
+        # Quoted here, though not in git's message: the path came out of the
+        # output and this goes to a shell, and the double quotes git prints do
+        # not stop a `$(...)` or a backtick that a directory name contains.
+        # `shell.quote` does; for the ordinary path it adds nothing at all.
+        command_list.append(
+            'rm -fr {}'.format(shell.quote(found.group(1))))
 
     return get_close_matches(command.script, command_list, 4, 0)

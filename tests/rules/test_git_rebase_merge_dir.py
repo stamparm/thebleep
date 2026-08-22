@@ -41,13 +41,13 @@ def test_not_match(script):
 @pytest.mark.parametrize('script, result', [
     ('git rebase master', [
         'git rebase --abort', 'git rebase --skip', 'git rebase --continue',
-        'rm -fr "/foo/bar/baz/egg/.git/rebase-merge"']),
+        'rm -fr /foo/bar/baz/egg/.git/rebase-merge']),
     ('git rebase -skip', [
         'git rebase --skip', 'git rebase --abort', 'git rebase --continue',
-        'rm -fr "/foo/bar/baz/egg/.git/rebase-merge"']),
+        'rm -fr /foo/bar/baz/egg/.git/rebase-merge']),
     ('git rebase', [
         'git rebase --skip', 'git rebase --abort', 'git rebase --continue',
-        'rm -fr "/foo/bar/baz/egg/.git/rebase-merge"'])])
+        'rm -fr /foo/bar/baz/egg/.git/rebase-merge'])])
 def test_get_new_command(output, script, result):
     assert get_new_command(Command(script, output)) == result
 
@@ -60,7 +60,7 @@ def test_get_new_command(output, script, result):
 def test_the_rm_is_offered_whatever_the_reader_did_to_the_output(output):
     """One reader strips what it hands over and one does not, so counting lines
     from either end is counting something that moves."""
-    assert 'rm -fr "/foo/bar/baz/egg/.git/rebase-merge"' in \
+    assert 'rm -fr /foo/bar/baz/egg/.git/rebase-merge' in \
         get_new_command(Command('git rebase master', output))
 
 
@@ -71,3 +71,14 @@ def test_no_rm_line_is_not_a_crash():
               'I wonder if you are in the middle of another rebase.\n')
     assert sorted(get_new_command(Command('git rebase master', output))) == [
         'git rebase --abort', 'git rebase --continue', 'git rebase --skip']
+
+
+def test_a_path_from_the_output_is_quoted():
+    """The path came out of git's message and goes back to a shell, and git's
+    own double quotes do not stop a command substitution a directory name
+    contains. See `tests/test_injection.py`."""
+    hostile = REAL.replace(
+        '"/foo/bar/baz/egg/.git/rebase-merge"',
+        '"/foo/bar$(>PWNED)/.git/rebase-merge"')
+    assert get_new_command(Command('git rebase master', hostile))[-1] == \
+        "rm -fr '/foo/bar$(>PWNED)/.git/rebase-merge'"
