@@ -141,6 +141,16 @@ def get_new_command(command):
     if not scored:
         return []
 
+    # Nothing here is one plausible slip from what was typed. Similar is not
+    # the same as mistyped: on a machine without `cargo`, `cargo` is two
+    # non-neighbouring substitutions from `xargs`, and offering `xargs buld`
+    # for `cargo buld` invents a command nobody meant. Every correction this
+    # rule has ever been right about was a dropped, doubled or transposed key,
+    # or a neighbouring one -- which is exactly what `plausible` asks for --
+    # so that is the floor, and below it the honest answer is silence.
+    if not matching.plausible_slips(old_command, scored):
+        return []
+
     ranked = [name for name, _ in scored]
     used = _used_executables(command)
 
@@ -163,10 +173,10 @@ def get_new_command(command):
     # everybody's history because it is the most-typed command there is. So the
     # tie-break promoted the worse answer, every time, for anyone.
     #
-    # `plausible_slips` asks for both: as close as the closest, and explainable
-    # as one slip. `got` still gives you `git` over `go` -- `o` and `i` are
-    # neighbours, so both are real explanations and your history is the right
-    # thing to choose between them.
+    # `plausible_slips`, the floor above, is also the tie set: as close as the
+    # closest and explainable as one slip. `got` still gives you `git` over
+    # `go` -- `o` and `i` are neighbours, so both are real explanations and
+    # your history is the right thing to choose between them.
     equal = matching.plausible_slips(old_command, scored)
     if len(equal) > 1:
         familiar = [name for name in equal if name in used]

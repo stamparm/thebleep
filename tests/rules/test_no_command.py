@@ -129,3 +129,22 @@ class TestASuggestionThatCannotRun:
                      return_value=['cd /tmp'])
         assert any(script.startswith('cd ') for script in
                    get_new_command(Command('ca no/such/path', '')))
+
+
+class TestSilenceWhenNothingIsAPlausibleSlip:
+    """`cargo buld` answered `xargs buld`.
+
+    On a machine without `cargo` -- a container, a CI image -- `cargo` is two
+    substitutions from `xargs`, and no finger explains them: `a` to `r` and
+    `o` to `s` sit rows apart. Similar is not mistyped; the honest answer is
+    nothing, the same trade `max_distance` already makes for `ndeo`.
+    """
+
+    @pytest.mark.usefixtures('no_memoize')
+    def test_similar_is_not_offered_when_it_is_not_a_slip(self, mocker):
+        mocker.patch('thebleep.rules.no_command.get_all_executables',
+                     return_value=['xargs'])
+        mocker.patch('thebleep.rules.no_command.which', return_value=None)
+        command = Command('cargo buld', 'bash: cargo: command not found')
+        assert match(command)
+        assert get_new_command(command) == []
