@@ -167,6 +167,21 @@ _KEYS = {char: (row_index, offset + column)
          for row_index, (offset, row) in enumerate(_ROWS)
          for column, char in enumerate(row)}
 
+# The same grid, with `y` and `z` sitting in each other's slot. QWERTZ does not
+# just swap the two letters' meaning for each other -- it moves `z` into the
+# slot next to `t` and `u`, and `y` into the slot next to `a` and `x`. A slip
+# that lands on one of *those* neighbours is invisible if the only concession
+# made is "`y` and `z` are the same key": `zmux` for `tmux` is `z` hit for its
+# QWERTZ neighbour `t`, not `z` hit for `y`.
+_KEYS_QWERTZ = dict(_KEYS, y=_KEYS['z'], z=_KEYS['y'])
+
+
+def _grid_distance(first, second, keys):
+    here, there = keys.get(first), keys.get(second)
+    if here is None or there is None:
+        return _OFF_GRID
+    return ((here[0] - there[0]) ** 2 + (here[1] - there[1]) ** 2) ** 0.5
+
 
 def key_distance(first, second):
     """How far apart two characters sit on the keyboard.
@@ -175,16 +190,18 @@ def key_distance(first, second):
     grid -- a digit in one name and a letter in the other, a non-Latin
     character -- is `_OFF_GRID`, because we cannot say it was a slip.
 
+    Which physical key typed `y` or `z` depends on a layout nobody here is
+    told, so both readings are tried and the more charitable one wins -- the
+    same reasoning `FOLD_CASE` already applies to case.
+
     """
     if first == second:
         return 0.0
     if {first, second} == {'y', 'z'}:
         # the same physical key on QWERTY and QWERTZ
         return 1.0
-    here, there = _KEYS.get(first), _KEYS.get(second)
-    if here is None or there is None:
-        return _OFF_GRID
-    return ((here[0] - there[0]) ** 2 + (here[1] - there[1]) ** 2) ** 0.5
+    return min(_grid_distance(first, second, _KEYS),
+               _grid_distance(first, second, _KEYS_QWERTZ))
 
 
 def _misreach(word, candidate):
