@@ -111,7 +111,12 @@ def _fix(word):
 
 @memoize
 def _fixed_argument(command):
-    for part in command.script_parts[1:]:
+    # A plain whitespace split, not `command.script_parts`. That goes through
+    # `shlex`, which is POSIX quoting rules even on Windows and treats a
+    # backslash as an escape character -- `C:\Users\you\ec\passwd` came back
+    # as `C:Usersyouecpasswd`, no separators left to walk at all. Nothing
+    # here needs shell-quote awareness; it needs the path as typed.
+    for part in command.script.split()[1:]:
         fixed = _fix(part)
         if fixed:
             return part, fixed
