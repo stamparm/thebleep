@@ -49,6 +49,20 @@ def test_get_new_command(tree):
 
 
 @pytest.mark.usefixtures('no_memoize')
+def test_get_new_command_quotes_only_when_the_fix_needs_it(tmp_path):
+    stuff = tmp_path / 'my stuff'
+    stuff.mkdir()
+    (stuff / 'notes.txt').write_text('')
+
+    broken = str(tmp_path / 'mystuff' / 'notes.txt')
+    fixed = str(stuff / 'notes.txt')
+    command = Command('cat {}'.format(broken),
+                      'cat: {}: No such file or directory'.format(broken))
+
+    assert get_new_command(command) == "cat '{}'".format(fixed)
+
+
+@pytest.mark.usefixtures('no_memoize')
 def test_get_new_command_fixes_the_last_segment_too(tree):
     broken = str(tree / 'etc' / 'psswd')
     fixed = str(tree / 'etc' / 'passwd')

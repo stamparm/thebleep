@@ -28,12 +28,21 @@ a file.
 
 """
 
+import re
 from pathlib import Path
 
 from thebleep import matching
 from thebleep.shells import shell
 from thebleep.system import expanduser
 from thebleep.utils import memoize, replace_argument
+
+# `shlex.quote`'s idea of a character that needs quoting, minus the backslash:
+# on Windows it is the path separator, so asking `shell.quote` -- POSIX rules
+# -- about any path there wrapped `C:\Users\...` in quotes the user never
+# typed. The path as typed already survived the shell once, unquoted; only a
+# corrected segment can bring in a character that would not, and a space --
+# `Program Files` -- is the one that actually happens.
+_NEEDS_QUOTING = re.compile(r'[^\w@%+=:,./\\-]')
 
 
 def _closest(name, entries):
@@ -134,7 +143,9 @@ def match(command):
 
 def get_new_command(command):
     word, fixed = _fixed_argument(command)
-    return replace_argument(command.script, word, shell.quote(fixed))
+    if _NEEDS_QUOTING.search(fixed):
+        fixed = shell.quote(fixed)
+    return replace_argument(command.script, word, fixed)
 
 
 # Behind `path_from_history`, at 800: a path you have actually used before is
