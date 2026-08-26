@@ -608,8 +608,17 @@ def replace_argument(script, from_, to):
     output or the user's history through here has to quote it first -- the
     result is handed to the shell to be evaluated.
 
+    `to` is not only unescaped for the shell, it has to survive `re.sub`
+    too: passed as a plain string, a backslash in it is read as the start of
+    a backreference, and `\\U` -- the start of every Windows path a caller
+    might put here -- is not even a valid one. `re.sub(pattern, str, ...)`
+    is asking for literal text with extra steps, so it is asked for with a
+    function instead, which `re.sub` hands the match to and takes the return
+    value verbatim.
+
     """
-    replaced_in_the_end = re.sub(u' {}$'.format(re.escape(from_)), u' {}'.format(to),
+    replaced_in_the_end = re.sub(u' {}$'.format(re.escape(from_)),
+                                 lambda _: u' {}'.format(to),
                                  script, count=1)
     if replaced_in_the_end != script:
         return replaced_in_the_end
