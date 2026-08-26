@@ -89,8 +89,12 @@ def _fix(word):
     `passwd` could be one slip from a hundred things depending on where the
     program would have looked for it, and no filesystem walk resolves that.
 
+    Absolute is asked of `Path` rather than a leading `/`, because that is
+    also how `C:\\Users\\...` answers: an `\\ec\\passwd` on Windows starts
+    with a drive letter, not a slash, and never reached the walk below.
+
     """
-    if not (word.startswith('/') or word.startswith('~')):
+    if not (Path(word).is_absolute() or word.startswith('~')):
         return None
 
     expanded = expanduser(word)
