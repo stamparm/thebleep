@@ -3,6 +3,7 @@
 import os
 from thebleep.specific.sudo import sudo_support
 from thebleep.rules import cd_mkdir
+from thebleep.shells import shell
 from thebleep.utils import for_app, get_close_matches
 
 __author__ = "mmussomele"
@@ -50,4 +51,4 @@ def get_new_command(command):
             cwd = os.path.join(cwd, best_matches[0])
         else:
             return cd_mkdir.get_new_command(command)
-    return u'cd "{0}"'.format(cwd)
+    return u'cd {}'.format(shell.quote(cwd))

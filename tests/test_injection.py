@@ -396,3 +396,19 @@ def test_learned_correction_quotes_its_replacement(
         Command('corpctl deply', '')))[0].script
 
     assert canary(suggestion) == []
+
+
+@pytest.mark.skipif(sys.platform == 'win32', reason='needs a POSIX shell')
+def test_cd_correction_quotes_hostile_dir(
+        canary, mocker, tmpdir, monkeypatch):
+    from thebleep.rules import cd_correction
+
+    monkeypatch.chdir(str(tmpdir))
+    hostile = u'folder$(>CD_CORRECTION)'
+    mocker.patch.object(cd_correction, '_get_sub_dirs',
+                        return_value=[hostile])
+    mocker.patch.object(cd_correction, 'get_close_matches',
+                        return_value=[hostile])
+
+    suggestion = cd_correction.get_new_command(Command('cd folder', ''))
+    assert canary(suggestion) == []
