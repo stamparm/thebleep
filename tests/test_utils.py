@@ -12,8 +12,31 @@ from thebleep.utils import default_settings, \
     memoize, get_closest, get_all_executables, replace_argument, \
     get_all_matched_commands, is_app, for_app, cache, \
     get_valid_history_without_current, get_close_matches, which, \
-    without_control_sequences
+    without_control_sequences, format_raw_script
 from thebleep.types import Command
+
+
+@pytest.mark.parametrize('raw_script, expected', [
+    (['echo', 'a b'], "echo 'a b'"),
+    (['printf', '$(touch marker)'], "printf '$(touch marker)'"),
+    (['git', 'commit', '-m', 'a message'],
+     "git commit -m 'a message'"),
+])
+def test_format_raw_script_preserves_argv_boundaries(raw_script, expected):
+    assert format_raw_script(raw_script) == expected
+
+
+def test_format_raw_script_keeps_complete_history_line():
+    script = "echo 'a b' && printf '%s' \"$HOME\""
+    assert format_raw_script([script]) == script
+
+
+def test_format_raw_script_quotes_a_powershell_command(monkeypatch):
+    from thebleep import shells
+    from thebleep.shells.powershell import Powershell
+
+    monkeypatch.setattr(shells, 'shell', Powershell())
+    assert format_raw_script(['echo', 'a b']) == "& 'echo' 'a b'"
 
 
 @pytest.mark.parametrize('override, old, new', [

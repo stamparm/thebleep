@@ -870,7 +870,26 @@ def format_raw_script(raw_script):
     :type raw_script: [basestring]
     :rtype: basestring
 
+    A single part is already a complete script: this is how a history line and
+    ``--force-command`` arrive. Multiple parts came from argv, where the shell
+    has already removed their quoting, so put that boundary back before the
+    command is parsed or replayed. Without this, ``echo a b`` and
+    ``echo 'a b'`` become indistinguishable.
+
     """
-    script = ' '.join(raw_script)
+    if not any(raw_script):
+        script = ''
+    elif len(raw_script) == 1:
+        script = raw_script[0]
+    else:
+        from .shells import shell
+
+        parts = [shell.quote(part) for part in raw_script]
+        # PowerShell treats a quoted string at the start as a string
+        # expression, not a command. Its call operator makes a quoted
+        # executable path behave as one on every shell version.
+        if getattr(shell, 'friendly_name', None) == 'PowerShell':
+            parts.insert(0, '&')
+        script = ' '.join(parts)
 
     return script.lstrip()
