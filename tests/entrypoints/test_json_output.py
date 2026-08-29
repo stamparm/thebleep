@@ -50,7 +50,7 @@ def test_json_output_reports_a_missing_output_file(tmpdir, mocker, capsys):
 def test_json_output_reads_output_from_stdin(mocker, capsys, monkeypatch):
     _no_settings(mocker)
     monkeypatch.setattr(json_output_module.sys, 'stdin', type(
-        'Input', (), {'read': lambda self: 'gti: command not found'})())
+        'Input', (), {'read': lambda self, size: 'gti: command not found'})())
     suggest = mocker.patch(
         'thebleep.entrypoints.json_output.api.suggest',
         return_value={'suggestions': []})
@@ -59,3 +59,12 @@ def test_json_output_reads_output_from_stdin(mocker, capsys, monkeypatch):
 
     suggest.assert_called_once_with('gti', 'gti: command not found')
     assert json.loads(capsys.readouterr().out) == {'suggestions': []}
+
+
+def test_json_output_rejects_oversized_output(tmpdir, mocker, capsys):
+    _no_settings(mocker)
+    output = tmpdir.join('too-large')
+    output.write('x' * (json_output_module.MAX_OUTPUT + 1))
+
+    assert json_output(_args(['gti'], str(output))) == 2
+    assert '8 MiB limit' in capsys.readouterr().err

@@ -416,6 +416,10 @@ The same contract is available from the command line:
 thebleep --json --stderr error.txt --cwd "$PWD" -- gti status
 ```
 
+`--stderr -` reads captured output from standard input. Input is bounded at
+8 MiB; an unexpectedly large capture is rejected rather than buffered without
+limit.
+
 ##### [Back to Contents](#contents)
 
 ## thebleep --doctor

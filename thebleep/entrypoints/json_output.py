@@ -11,18 +11,28 @@ from ..conf import settings
 from ..utils import format_raw_script
 
 
+MAX_OUTPUT = 8 * 1024 * 1024
+
+
 def _read_output(path):
     if not path:
         return None
-    if path == '-':
-        return sys.stdin.read()
 
     try:
-        with open(path, encoding='utf-8') as handle:
-            return handle.read()
+        if path == '-':
+            output = sys.stdin.read(MAX_OUTPUT + 1)
+        else:
+            with open(path, encoding='utf-8') as handle:
+                output = handle.read(MAX_OUTPUT + 1)
     except (OSError, UnicodeError) as error:
         logs.failed('Could not read {}: {}'.format(path, error))
         return False
+
+    if len(output) > MAX_OUTPUT:
+        logs.failed('{} is larger than the {} MiB limit'.format(
+            'stdin' if path == '-' else path, MAX_OUTPUT // (1024 * 1024)))
+        return False
+    return output
 
 
 def json_output(args):
