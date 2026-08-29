@@ -1,4 +1,4 @@
-from thebleep.utils import for_app, which
+from thebleep.utils import for_app, replace_argument, which
 
 
 @for_app("choco", "cinst")
@@ -18,7 +18,10 @@ def get_new_command(command):
             and '=' not in script_part and '/' not in script_part
             # These are certainly parameters
         ):
-            return command.script.replace(script_part, script_part + ".install")
+            fixed = replace_argument(command.script, script_part,
+                                     script_part + ".install")
+            if fixed != command.script:
+                return fixed
     return []
 
 

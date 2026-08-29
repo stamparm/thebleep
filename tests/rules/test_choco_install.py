@@ -84,3 +84,9 @@ def not_test_match(command):
     ('cinst chocolatey -y', 'cinst chocolatey.install -y'), ])
 def test_get_new_command(before, after):
     assert (get_new_command(Command(before, '')) == after)
+
+
+def test_does_not_change_a_quoted_value_before_the_package():
+    command = Command('choco install "note logstitcher" logstitcher', '')
+    assert get_new_command(command) == \
+        'choco install "note logstitcher" logstitcher.install'

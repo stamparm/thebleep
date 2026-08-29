@@ -1,4 +1,4 @@
-from thebleep.utils import for_app
+from thebleep.utils import for_app, replace_argument
 from thebleep.specific.sudo import sudo_support
 
 
@@ -21,4 +21,4 @@ def get_new_command(command):
     # correction is the right moment to do that, so there is no second attempt
     # -- an environment where even `--user` cannot write wants a virtualenv or
     # pipx, which is a decision and not a one-line fix.
-    return command.script.replace(' install ', ' install --user ')
+    return replace_argument(command.script, 'install', 'install --user')

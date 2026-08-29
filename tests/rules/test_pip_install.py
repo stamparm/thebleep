@@ -56,3 +56,9 @@ def test_get_new_command():
     assert get_new_command(Command('pip install -r requirements.txt', '')) == 'pip install --user -r requirements.txt'
     assert get_new_command(Command('pip install bacon', '')) == 'pip install --user bacon'
     assert get_new_command(Command('pip3 install bacon', '')) == 'pip3 install --user bacon'
+
+
+def test_does_not_change_a_quoted_value_before_install():
+    command = Command('pip --message "install package" install bacon', '')
+    assert get_new_command(command) == \
+        'pip --message "install package" install --user bacon'
