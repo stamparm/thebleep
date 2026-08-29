@@ -1,9 +1,9 @@
 """Small, hermetic tests for the CI command discovery utility."""
 
 import importlib.util
+import io
 import os
 from pathlib import Path
-import sys
 
 
 def _inventory_module(source_root):
@@ -32,19 +32,20 @@ def test_inventory_keeps_first_path_entry(monkeypatch, tmpdir, source_root):
         {'name': 'tool', 'path': str(first.joinpath('tool'))}]
 
 
-def test_probe_is_bounded(monkeypatch, tmpdir, source_root):
+def test_probe_reader_is_bounded(source_root):
     module = _inventory_module(source_root)
     module.MAX_PROBE_OUTPUT = 1024
-    module.PROBE_TIMEOUT = 1
+    output = bytearray()
+    finished = module.threading.Event()
+    output_limited = module.threading.Event()
+    process = type('Process', (), {
+        'stdout': io.BytesIO(b'x' * 4096)})()
 
-    result = module.run_probe(
-        sys.executable,
-        ['-c', 'import sys; sys.stdout.write("x" * 1000000)'],
-        Path(str(tmpdir)),
-        os.environ.copy())
+    module._probe_output(process, output, finished, output_limited)
 
-    assert result['output_truncated']
-    assert len(result['output']) == 1024
+    assert output_limited.is_set()
+    assert finished.is_set()
+    assert len(output) == 1024
 
 
 def test_protected_path_entry_is_skipped(source_root):
