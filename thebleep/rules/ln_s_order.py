@@ -29,12 +29,24 @@ import os
 import re
 from thebleep.specific.sudo import sudo_support
 
-# `ln: failed to create symbolic link 'x': File exists` -- the name ln was
-# asked to create, which is the second operand.
-FAILED = re.compile(r"failed to create symbolic link '([^']*)': File exists")
+# `ln: failed to create symbolic link 'x': File exists` -- GNU's spelling.
+# macOS/BSD says `ln: x: File exists` instead. In both cases the name ln was
+# asked to create is the second operand.
+FAILED = (
+    re.compile(r"failed to create symbolic link '([^']*)': File exists"),
+    re.compile(r"(?m)^ln: (.+): File exists$"))
 
 FLAGS = {'-s', '--symbolic', '-f', '--force', '-n', '--no-dereference',
          '-v', '--verbose', '-r', '--relative', '-T', '--no-target-directory'}
+
+
+def _failed_destination(output):
+    for pattern in FAILED:
+        found = pattern.search(output)
+        if found:
+            return found.group(1)
+
+    return None
 
 
 def _operands(script_parts):
@@ -67,8 +79,7 @@ def _reversed_pair(command):
 
     # The name ln could not create, when it said which. It is the second
     # operand; if the message names something else, this is not that failure.
-    named = FAILED.search(command.output)
-    if named and named.group(1) != destination:
+    if _failed_destination(command.output) != destination:
         return None
 
     # The second exists -- that is what `File exists` means -- and the first

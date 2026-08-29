@@ -21,6 +21,7 @@ from thebleep.rules.ln_s_order import match, get_new_command
 from thebleep.types import Command
 
 get_output = "ln: failed to create symbolic link '{}': File exists".format
+bsd_output = 'ln: {}: File exists'.format
 
 
 @pytest.fixture
@@ -43,6 +44,13 @@ def test_the_reversed_command(on_disk, script, result):
     command = Command(script, get_output('source'))
     assert match(command)
     assert get_new_command(command) == result
+
+
+def test_bsd_error(on_disk):
+    on_disk('source')
+    command = Command('ln -s dest source', bsd_output('source'))
+    assert match(command)
+    assert get_new_command(command) == 'ln -s source dest'
 
 
 class TestWhenNothingNeedsReordering(object):
@@ -78,3 +86,7 @@ class TestWhenNothingNeedsReordering(object):
     def test_no_output_says_nothing(self, on_disk):
         on_disk('source')
         assert not match(Command('ln -s dest source', ''))
+
+    def test_unrelated_file_exists_says_nothing(self, on_disk):
+        on_disk('source')
+        assert not match(Command('ln -s dest source', 'File exists'))
