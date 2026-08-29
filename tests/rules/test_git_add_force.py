@@ -17,6 +17,11 @@ def test_match(output):
     assert not match(Command('git add dist/*.js', ''))
 
 
+def test_a_configuration_token_is_not_an_add():
+    output = 'add.name Use -f if you really want to add them.'
+    assert not match(Command('git config --get-regexp add', output))
+
+
 def test_get_new_command(output):
     assert (get_new_command(Command('git add dist/*.js', output))
             == "git add --force dist/*.js")

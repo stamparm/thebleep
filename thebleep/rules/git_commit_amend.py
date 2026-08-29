@@ -31,7 +31,7 @@ so it still works when the previous command is not re-read.
 """
 
 from thebleep import replay
-from thebleep.utils import replace_argument
+from thebleep.utils import command_word_index, replace_argument
 from thebleep.specific.git import git_support
 
 requires_output = False
@@ -39,7 +39,9 @@ requires_output = False
 
 @git_support
 def match(command):
-    return ('commit' in command.script_parts
+    parts = command.script_parts
+    index = command_word_index(parts)
+    return (parts[index + 1:index + 2] == ['commit']
             # Exactly zero. `None` means the shell did not say -- an alias from
             # a release before it was reported -- and guessing that a command
             # worked is how this came to answer a failed one.

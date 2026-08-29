@@ -75,3 +75,8 @@ def test_a_different_subcommand(exited):
     exited(0)
     assert not match(Command('git status', ''))
     assert not match(Command('git push', ''))
+
+
+def test_a_configuration_token_is_not_a_commit(exited):
+    exited(0)
+    assert not match(Command('git config commit true', ''))

@@ -36,3 +36,8 @@ def test_not_match(output, script):
 )
 def test_get_new_command(script, new_command):
     assert get_new_command(Command(script, "")) == new_command
+
+
+def test_a_configuration_token_is_not_a_commit():
+    output = "commit.name no changes added to commit"
+    assert not match(Command("git config --get-regexp commit", output))
