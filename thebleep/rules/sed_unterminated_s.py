@@ -5,7 +5,10 @@ from thebleep.utils import for_app
 
 @for_app('sed')
 def match(command):
-    return "unterminated `s' command" in command.output
+    return any(message in command.output for message in (
+        "unterminated `s' command",
+        'unescaped newline inside substitute pattern',
+        "unmatched '/'"))
 
 
 def get_new_command(command):

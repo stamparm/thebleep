@@ -3,9 +3,12 @@ from thebleep.rules.sed_unterminated_s import match, get_new_command
 from thebleep.types import Command
 
 
-@pytest.fixture
-def sed_unterminated_s():
-    return "sed: -e expression #1, char 9: unterminated `s' command"
+@pytest.fixture(params=[
+    "sed: -e expression #1, char 9: unterminated `s' command",
+    'sed: 1: "s/foo/bar": unescaped newline inside substitute pattern',
+    "sed: unmatched '/'"])
+def sed_unterminated_s(request):
+    return request.param
 
 
 def test_match(sed_unterminated_s):
