@@ -1,0 +1,51 @@
+from thebleep import api
+from thebleep.types import CorrectedCommand
+
+
+class Rule(object):
+    name = 'test_rule'
+    path = None
+    requires_output = True
+
+
+def test_suggest_returns_structured_correction(mocker):
+    correction = CorrectedCommand(
+        'git status', None, 1200, rule=Rule())
+    mocker.patch.object(api, 'get_corrected_commands',
+                        return_value=iter([correction]))
+
+    result = api.suggest('gti status', 'command not found')
+
+    assert result == {
+        'command': 'gti status',
+        'output_supplied': True,
+        'suggestions': [{
+            'command': 'git status',
+            'rule': 'test_rule',
+            'priority': 1200,
+            'side_effect': False,
+            'evidence': [
+                'a condition this rule works out for itself',
+                'what your command printed'],
+        }],
+    }
+
+
+def test_suggest_does_not_collect_missing_output(mocker):
+    corrections = mocker.patch.object(
+        api, 'get_corrected_commands', return_value=iter([]))
+
+    result = api.suggest('gti status')
+
+    corrections.assert_called_once()
+    assert result['output_supplied'] is False
+    assert result['suggestions'] == []
+
+
+def test_suggest_requires_text():
+    try:
+        api.suggest(['gti', 'status'])
+    except TypeError as error:
+        assert str(error) == 'script must be a string'
+    else:
+        assert False, 'non-string script was accepted'

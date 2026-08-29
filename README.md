@@ -141,6 +141,9 @@ The rest of the reasons:
 - **Press `?` to be told why.** Which rule made the suggestion, what it saw,
   and whether accepting it does anything besides run the command.
   [Why am I being told this](#why-am-i-being-told-this).
+- **A structured Python API.** IDEs and agents can supply a command and its
+  captured output without asking The Bleep to run anything again.
+  [Structured API](#structured-api).
 - **`thebleep --doctor`** answers the questions a bug report usually starts
   with, in one screen you can paste anywhere.
   [Diagnostics](#thebleep---doctor).
@@ -156,21 +159,22 @@ contributors; their work and history remain fully credited.
 1. [Safe by default](#safe-by-default)
 2. [Edit before you run](#edit-before-you-run)
 3. [Why am I being told this](#why-am-i-being-told-this)
-4. [thebleep --doctor](#thebleep---doctor)
-5. [Coming from The Fuck](#coming-from-the-fuck)
-6. [What's fixed](#whats-fixed)
-7. [Supported everything](#supported-everything)
-8. [Installation](#installation)
-9. [Updating](#updating)
-10. [Uninstall](#uninstall)
-11. [How it works](#how-it-works)
-12. [Creating your own rules](#creating-your-own-rules)
-13. [Settings](#settings)
-14. [Third-party packages with rules](#third-party-packages-with-rules)
-15. [Experimental instant mode](#experimental-instant-mode)
-16. [Performance](#performance)
-17. [Developing](#developing)
-18. [License](#license-mit)
+4. [Structured API](#structured-api)
+5. [thebleep --doctor](#thebleep---doctor)
+6. [Coming from The Fuck](#coming-from-the-fuck)
+7. [What's fixed](#whats-fixed)
+8. [Supported everything](#supported-everything)
+9. [Installation](#installation)
+10. [Updating](#updating)
+11. [Uninstall](#uninstall)
+12. [How it works](#how-it-works)
+13. [Creating your own rules](#creating-your-own-rules)
+14. [Settings](#settings)
+15. [Third-party packages with rules](#third-party-packages-with-rules)
+16. [Experimental instant mode](#experimental-instant-mode)
+17. [Performance](#performance)
+18. [Developing](#developing)
+19. [License](#license-mit)
 
 ## Safe by default
 
@@ -383,6 +387,26 @@ rule had to be given a hand-written description for this to work — so a rule o
 your own, or one from a package, explains itself exactly as well as a bundled
 one does. A rule that works its condition out in a way this cannot read says so:
 `matched  a condition this rule works out for itself`.
+
+##### [Back to Contents](#contents)
+
+## Structured API
+
+For an editor, IDE or agent that already has the failed command's output, use
+the deterministic engine without invoking a shell:
+
+```python
+from thebleep.api import suggest
+
+result = suggest('git chekout feature', "git: 'chekout' is not a git command")
+for item in result['suggestions']:
+    print(item['command'], item['rule'], item['evidence'])
+```
+
+The result contains the original command, whether output was supplied, and
+each suggestion's command, rule, priority, side-effect flag and evidence. If
+output is omitted, output-dependent rules are skipped; the API never replays a
+command to fill it in.
 
 ##### [Back to Contents](#contents)
 
