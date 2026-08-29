@@ -51,10 +51,12 @@ def suggest(script, output=None):
         raise TypeError('output must be a string or None')
 
     command = Command(script, output)
+    suggestions = [
+        _suggestion(corrected, command)
+        for corrected in get_corrected_commands(command)]
     return {
         'command': script,
         'output_supplied': output is not None,
-        'suggestions': [
-            _suggestion(corrected, command)
-            for corrected in get_corrected_commands(command)],
+        'decision': 'suggest' if suggestions else 'abstain',
+        'suggestions': suggestions,
     }

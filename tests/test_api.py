@@ -19,6 +19,7 @@ def test_suggest_returns_structured_correction(mocker):
     assert result == {
         'command': 'gti status',
         'output_supplied': True,
+        'decision': 'suggest',
         'suggestions': [{
             'command': 'git status',
             'rule': 'test_rule',
@@ -45,6 +46,7 @@ def test_suggest_does_not_collect_missing_output(mocker):
 
     corrections.assert_called_once()
     assert result['output_supplied'] is False
+    assert result['decision'] == 'abstain'
     assert result['suggestions'] == []
 
 
