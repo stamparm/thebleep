@@ -51,6 +51,7 @@ PROBES = {
     'kubectl': [['version', '--client']],
     'ln': [{'arguments': ['-s', 'missing', 'existing'],
             'files': ['existing']}],
+    'ls': [['--definitely-not-a-bleep-option']],
     'make': [['--version']],
     'mv': [{'arguments': ['thebleep-source', 'missing-dir/destination'],
             'files': ['thebleep-source']},
