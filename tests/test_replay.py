@@ -225,9 +225,10 @@ class TestASubcommandTheProgramDoesNotHave(object):
         subcommands.assert_called_once_with('git', replay.DISPATCHERS['git'])
 
     def test_a_path_to_the_program_is_still_the_program(self, subcommands):
-        """`/usr/bin/git satus` dispatches exactly as `git satus` does."""
-        assert replay.is_inert('/usr/bin/git satus')
+        """A path may name any executable, even when its basename is git."""
+        assert not replay.is_inert('/usr/bin/git satus')
         assert not replay.is_inert('/usr/bin/git push')
+        assert not subcommands.called
 
     def test_the_git_list_is_not_filtered(self):
         """`nohelpers` looks tidier and is an under-inclusion.
@@ -330,6 +331,22 @@ class TestAskingTheProgramItself(object):
     def test_a_program_that_hangs_is_not_waited_for(self, monkeypatch):
         monkeypatch.setattr(replay, 'PROBE_TIMEOUT', 1)
         assert replay._subcommands('sleep', ('30',)) is None
+
+
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='needs a POSIX executable script')
+def test_an_explicit_dispatcher_path_is_not_executed(tmpdir, monkeypatch):
+    """A local `git`-named executable must not be probed for free."""
+    marker = tmpdir.join('probed')
+    program = tmpdir.join('git')
+    program.write('#!/bin/sh\n'
+                  'printf ran > "{}"\n'
+                  'printf status\n'.format(marker))
+    program.chmod(0o755)
+    monkeypatch.chdir(tmpdir)
+
+    assert not replay.is_inert('./git satus')
+    assert not marker.check()
 
 
 @pytest.mark.parametrize('program, effect', [

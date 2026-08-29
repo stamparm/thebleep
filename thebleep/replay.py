@@ -291,10 +291,12 @@ def _dispatch_fails(program, args):
     which of a program's own options take a value -- and which of the remaining
     words is therefore the subcommand rather than a path -- is exactly the kind
     of nearly-right that would run `git -C /tmp push` a second time unasked.
+    An explicit path is left to the question too: its basename may be `git`,
+    but the file at `./git` can be any executable.
 
     """
     name = os.path.basename(program)
-    question = DISPATCHERS.get(name)
+    question = DISPATCHERS.get(name) if program == name else None
     if question is None or not args or args[0].startswith('-'):
         return False
 

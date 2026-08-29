@@ -39,6 +39,10 @@
 
 ### Security
 
+- **Explicit paths to dispatchers are no longer probed automatically.** A file
+  named `git` or `cargo` can be an arbitrary executable, so it now requires
+  replay confirmation like any other explicit path.
+
 - **Cache deserialization is bounded.** Oversized cache files are rejected
   before their contents are handed to the marshal parser.
 
