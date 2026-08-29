@@ -50,9 +50,13 @@ def test_not_match_when_first_word_runs(mocker):
 def test_not_match_when_second_word_is_too_short(mocker):
     """A one-letter argument is not evidence of a second command.
 
-    Without this guard, an installed two-letter command can turn `rmm f`
-    into the confident but wrong `rm mf`.
+    The executable set is deliberately the smallest one that made the old
+    implementation false-positive: both `rm` and `mf` are runnable, so
+    `rmm f` would otherwise be split into `rm mf`.
     """
+    mocker.patch(
+        'thebleep.rules.missing_space_before_subcommand.get_all_executables',
+        return_value=['rm', 'mf'])
     mocker.patch(
         'thebleep.rules.misplaced_space.which', return_value=None)
 
