@@ -58,6 +58,14 @@ def _main():
         rulepack.clear()
         cachefile.clear()
         print('Caches cleared. The next correction will be a slow one.')
+    elif getattr(known_args, 'forget', None) is not None:
+        from .. import failure_store
+
+        if failure_store.forget(known_args.forget):
+            print('Forgot failure {}.'.format(known_args.forget))
+        else:
+            logs.failed('No recorded failure {}'.format(known_args.forget))
+            sys.exit(2)
     elif known_args.alias_loader:
         from .alias import print_alias_loader
 

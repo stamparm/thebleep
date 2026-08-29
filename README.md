@@ -143,8 +143,8 @@ The rest of the reasons:
   [Why am I being told this](#why-am-i-being-told-this).
 - **It remembers the last five failed commands.** `thebleep --pick` lists them;
   `thebleep --pick 2` corrects one using its captured output and working
-  directory, without replaying it. The records are local, bounded and removed
-  by `--clear-cache`.
+  directory, without replaying it. `thebleep --forget 2` removes one record;
+  `--clear-cache` removes them all. The records are local and bounded.
 - **A structured Python API.** IDEs and agents can supply a command and its
   captured output without asking The Bleep to run anything again.
   [Structured API](#structured-api).
@@ -409,6 +409,7 @@ sensitive data, so `thebleep --clear-cache` removes it with the other caches.
 ```bash
 thebleep --pick       # list the failures
 thebleep --pick 2     # correct the second one, without replaying it
+thebleep --forget 2   # remove the second one
 ```
 
 If its original directory no longer exists, correction continues from the

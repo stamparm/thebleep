@@ -16,10 +16,10 @@ narrower, and fails towards asking rather than running:
     is there a reason to believe running this again does nothing?
 
 One answer is certain: there is no such program, so the shell will fail to find
-it a second time exactly as it did the first. The shell says as much in the exit
-status -- 127 for a command it could not find, 126 for one it could not run --
-and that covers an alias or a function or a `PATH` that has changed underneath,
-which a name lookup does not.
+it a second time exactly as it did the first. The `PATH` lookup below checks
+that case directly, and covers an alias or a `PATH` that has changed underneath
+without trusting the shell's exit status -- 126 and 127 are conventions, and a
+wrapper or a program can return either after doing work.
 
 The other side of the same coin: a command that **succeeded** has nothing to
 correct. Re-running it can only repeat whatever it did, and the correction it

@@ -12,6 +12,7 @@ DEFAULTS = {'alias': None,
             'doctor': False,
             'edit': False,
             'explain': False,
+            'forget': None,
             'enable_experimental_instant_mode': False,
             'force_command': None,
             'help': False,
@@ -144,6 +145,12 @@ class Parser(object):
             type=int,
             metavar='NUMBER',
             help='list recent failures, or select one by number')
+        self._parser.add_argument(
+            '--forget',
+            action='store',
+            type=int,
+            metavar='NUMBER',
+            help='remove one recorded failure')
         self._parser.add_argument(
             '--command',
             dest='command_text',

@@ -37,6 +37,27 @@ def test_record_does_not_store_success_or_invalid_status(mocker):
     assert not save.called
 
 
+def test_forget_removes_one_failure(mocker):
+    save = mocker.patch('thebleep.failure_store.cachefile.save')
+    entries = [
+        {'script': 'first', 'output': '', 'cwd': 'project', 'shell': 'bash',
+         'exit': 1, 'saved_at': 1},
+        {'script': 'second', 'output': '', 'cwd': 'project', 'shell': 'bash',
+         'exit': 1, 'saved_at': 2}]
+    mocker.patch('thebleep.failure_store.load', return_value=entries)
+
+    assert failure_store.forget(1)
+    assert [entry['script'] for entry in save.call_args.args[2]] == ['second']
+
+
+def test_forget_rejects_missing_failure(mocker):
+    save = mocker.patch('thebleep.failure_store.cachefile.save')
+    mocker.patch('thebleep.failure_store.load', return_value=[])
+
+    assert not failure_store.forget(1)
+    assert not save.called
+
+
 def test_output_is_bounded_at_both_ends():
     output = 'a' * failure_store.MAX_OUTPUT + 'tail'
 

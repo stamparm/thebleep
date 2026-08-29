@@ -67,6 +67,16 @@ def record(script, output, exit_status, cwd=None, shell_name=None):
     cachefile.save('failures', FINGERPRINT, [entry] + entries[:LIMIT - 1])
 
 
+def forget(number):
+    """Removes one stored failure by its current list number."""
+    entries = load()
+    if type(number) is not int or number < 1 or number > len(entries):
+        return False
+    entries.pop(number - 1)
+    cachefile.save('failures', FINGERPRINT, entries)
+    return True
+
+
 def print_recent(entries=None):
     """Prints a compact, stable list for a human choosing a failure."""
     if entries is None:
