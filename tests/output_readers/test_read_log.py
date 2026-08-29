@@ -79,6 +79,12 @@ class TestWhatItReads(object):
              (u'echo foobar', u'wrong'))
         assert read_log.get_output(u'echo foo') == u'right'
 
+    def test_command_words_cannot_be_part_of_a_shell_word(
+            self, tmpdir, os_environ):
+        _log(tmpdir, (u'echo foo', u'right'),
+             (u'echo foo-bar', u'wrong'))
+        assert read_log.get_output(u'echo foo') == u'right'
+
     def test_a_command_that_printed_nothing(self, tmpdir, os_environ):
         """An empty answer is an answer, and must not be read as a failure."""
         _log(tmpdir, (u'true', u''))

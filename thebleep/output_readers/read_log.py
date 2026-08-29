@@ -83,6 +83,10 @@ def _wrapped_together(script_line, lines, width):
 
 
 def _get_script_group_lines(grouped, script):
+    def _word_continues(character):
+        return bool(character) and not character.isspace() \
+            and character not in "'\";&|(){}<>"
+
     def _find_word(text, word, start):
         while True:
             position = text.find(word, start)
@@ -91,8 +95,7 @@ def _get_script_group_lines(grouped, script):
             before = text[position - 1] if position else ''
             after_at = position + len(word)
             after = text[after_at] if after_at < len(text) else ''
-            if not (before.isalnum() or before == '_') \
-                    and not (after.isalnum() or after == '_'):
+            if not _word_continues(before) and not _word_continues(after):
                 return position
             start = position + 1
 
