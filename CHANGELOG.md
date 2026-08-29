@@ -35,6 +35,10 @@
 
 ### Security
 
+- **Failure history is bounded and terminal-safe.** Oversized records are not
+  stored or loaded, and `--pick` escapes control characters and line breaks
+  before displaying commands and paths.
+
 - **Learned corrections are written privately.** The local learning store is
   created with mode `0600` and its temporary file cannot follow a symlink on
   platforms that support `O_NOFOLLOW`.
