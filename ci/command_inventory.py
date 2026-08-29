@@ -52,7 +52,7 @@ PROBES = {
     'ln': [{'arguments': ['-s', 'missing', 'existing'],
             'files': ['existing']}],
     'ls': [{'arguments': ['--definitely-not-a-bleep-option'],
-            'platforms': ('posix',)}],
+            'platforms': ('Darwin', 'Linux')}],
     'make': [['--version']],
     'mv': [{'arguments': ['thebleep-source', 'missing-dir/destination'],
             'files': ['thebleep-source']},
@@ -215,7 +215,7 @@ def probe_commands(commands):
                 else:
                     arguments, files = specification, ()
                     platforms = None
-                current_platform = 'nt' if os.name == 'nt' else 'posix'
+                current_platform = platform.system()
                 if platforms and current_platform not in platforms:
                     continue
                 with tempfile.TemporaryDirectory(

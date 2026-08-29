@@ -60,7 +60,7 @@ def test_protected_path_entry_is_skipped(source_root):
 
 def test_platform_specific_probe_is_skipped(monkeypatch, source_root):
     module = _inventory_module(source_root)
-    monkeypatch.setattr(module.os, 'name', 'nt')
+    monkeypatch.setattr(module.platform, 'system', lambda: 'Windows')
     monkeypatch.setattr(module, 'PROBES', {
         'ls': [{'arguments': ['--invalid'], 'platforms': ('posix',)}]})
 
