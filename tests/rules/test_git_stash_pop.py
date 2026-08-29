@@ -13,6 +13,10 @@ def test_match(output):
     assert not match(Command('git stash', ''))
 
 
+def test_stash_and_pop_in_another_command_are_not_a_stash_pop(output):
+    assert not match(Command('git show stash pop', output))
+
+
 def test_get_new_command(output):
     assert (get_new_command(Command('git stash pop', output))
             == "git add --update && git stash pop && git reset .")

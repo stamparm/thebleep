@@ -35,6 +35,10 @@ def test_not_match(script):
     assert not match(Command(script, "Deleted branch foo (was a1b2c3d)."))
 
 
+def test_branch_delete_text_in_an_argument_is_not_a_command(output):
+    assert not match(Command("git config --get-regexp 'branch -d'", output))
+
+
 @pytest.mark.parametrize(
     "script, new_command",
     [

@@ -1,10 +1,11 @@
 from thebleep.utils import replace_argument
-from thebleep.specific.git import git_support
+from thebleep.specific.git import git_subcommand_index, git_support
 
 
 @git_support
 def match(command):
-    return ('branch -d' in command.script
+    index = git_subcommand_index(command.script_parts)
+    return (command.script_parts[index:index + 2] == ['branch', '-d']
             and 'If you are sure you want to delete it' in command.output)
 
 

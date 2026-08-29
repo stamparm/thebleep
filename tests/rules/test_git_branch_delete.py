@@ -17,6 +17,10 @@ def test_match(output):
     assert not match(Command('ls', output))
 
 
+def test_branch_delete_text_in_an_argument_is_not_a_command(output):
+    assert not match(Command("git config --get-regexp 'branch -d'", output))
+
+
 def test_get_new_command(output):
     assert get_new_command(Command('git branch -d branch', output))\
         == "git branch -D branch"

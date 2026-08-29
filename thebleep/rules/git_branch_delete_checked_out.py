@@ -1,6 +1,6 @@
 import re
 from thebleep.shells import shell
-from thebleep.specific.git import git_support
+from thebleep.specific.git import git_subcommand_index, git_support
 from thebleep.utils import memoize, replace_argument, tool_output
 
 # Where to move to before deleting the branch we are standing on. `master` is
@@ -46,7 +46,9 @@ CHECKED_OUT = re.compile(
 
 @git_support
 def match(command):
-    return (("branch -d" in command.script or "branch -D" in command.script)
+    index = git_subcommand_index(command.script_parts)
+    branch_command = command.script_parts[index:index + 2]
+    return (branch_command in (['branch', '-d'], ['branch', '-D'])
             and bool(CHECKED_OUT.search(command.output)))
 
 
