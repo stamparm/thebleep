@@ -29,3 +29,9 @@ def test_get_new_command_does_not_rewrite_a_quoted_argument():
                       output_clean)
 
     assert get_new_command(command) == 'git clone "keep git clone here" foo'
+
+
+def test_global_options_are_preserved():
+    command = Command('git -C worktree clone git clone foo', output_clean)
+    assert match(command)
+    assert get_new_command(command) == 'git -C worktree clone foo'
