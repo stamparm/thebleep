@@ -45,3 +45,13 @@ def test_probe_is_bounded(monkeypatch, tmpdir, source_root):
 
     assert result['output_truncated']
     assert len(result['output']) == 1024
+
+
+def test_protected_path_entry_is_skipped(source_root):
+    module = _inventory_module(source_root)
+
+    class ProtectedPath:
+        def is_file(self):
+            raise PermissionError('protected')
+
+    assert not module._is_executable(ProtectedPath())

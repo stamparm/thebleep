@@ -81,13 +81,18 @@ def _path_entries():
 
 
 def _is_executable(path):
-    if not path.is_file():
+    try:
+        if not path.is_file():
+            return False
+        if os.name == 'nt':
+            suffixes = os.environ.get(
+                'PATHEXT', '.COM;.EXE;.BAT;.CMD').lower().split(';')
+            return path.suffix.lower() in suffixes
+        return os.access(str(path), os.X_OK)
+    except OSError:
+        # Hosted runners contain protected system directories. They are still
+        # valid PATH entries; one unreadable file must not lose the inventory.
         return False
-    if os.name == 'nt':
-        suffixes = os.environ.get(
-            'PATHEXT', '.COM;.EXE;.BAT;.CMD').lower().split(';')
-        return path.suffix.lower() in suffixes
-    return os.access(str(path), os.X_OK)
 
 
 def inventory_commands():
