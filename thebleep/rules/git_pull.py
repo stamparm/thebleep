@@ -1,5 +1,5 @@
 from thebleep.shells import shell
-from thebleep.specific.git import git_support
+from thebleep.specific.git import git_subcommand_index, git_support
 from thebleep.utils import quote_words
 
 
@@ -8,7 +8,8 @@ from thebleep.utils import quote_words
 # an upstream to set.
 @git_support
 def match(command):
-    return ('pull' in command.script_parts
+    index = git_subcommand_index(command.script_parts)
+    return (command.script_parts[index:index + 1] == ['pull']
             and 'set-upstream' in command.output
             and _set_upstream_line(command) is not None)
 

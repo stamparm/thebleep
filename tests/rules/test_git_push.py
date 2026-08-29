@@ -30,13 +30,19 @@ Branch feature/set-upstream set up to track remote branch feature/set-upstream f
 
 @pytest.mark.parametrize('script, branch_name', [
     ('git push', 'master'),
-    ('git push origin', 'master')])
+    ('git push origin', 'master'),
+    ('git -c test=test push', 'master')])
 def test_match(output, script, branch_name):
     assert match(Command(script, output))
 
 
 def test_match_bitbucket(output_bitbucket):
     assert not match(Command('git push origin', output_bitbucket))
+
+
+def test_a_configuration_token_is_not_a_push():
+    output = ('git push --set-upstream origin master\n')
+    assert not match(Command('git config --get-regexp push', output))
 
 
 @pytest.mark.parametrize('script, branch_name', [

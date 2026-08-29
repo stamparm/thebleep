@@ -1,11 +1,13 @@
 import re
-from thebleep.specific.git import git_support
+from thebleep.specific.git import git_subcommand_index, git_support
 from thebleep.utils import quote_words
 
 
 @git_support
 def match(command):
-    return "push" in command.script and "The upstream branch of your current branch does not match" in command.output
+    index = git_subcommand_index(command.script_parts)
+    return (command.script_parts[index:index + 1] == ['push']
+            and "The upstream branch of your current branch does not match" in command.output)
 
 
 @git_support

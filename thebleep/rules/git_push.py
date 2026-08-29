@@ -1,11 +1,12 @@
 import re
 from thebleep.utils import quote_words, replace_argument
-from thebleep.specific.git import git_support
+from thebleep.specific.git import git_subcommand_index, git_support
 
 
 @git_support
 def match(command):
-    return ('push' in command.script_parts
+    index = git_subcommand_index(command.script_parts)
+    return (command.script_parts[index:index + 1] == ['push']
             and 'git push --set-upstream' in command.output)
 
 

@@ -33,6 +33,10 @@ def test_match(command):
     assert match(command)
 
 
+def test_a_configuration_token_is_not_a_push():
+    assert not match(Command('git config --get-regexp push', git_err))
+
+
 @pytest.mark.parametrize('command', [
     Command('git push', git_ok),
     Command('git push', git_uptodate),

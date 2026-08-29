@@ -25,6 +25,11 @@ def test_match():
     assert match(Command('git push', error_msg('foo', 'bar')))
 
 
+def test_a_configuration_token_is_not_a_push():
+    assert not match(Command('git config --get-regexp push',
+                             error_msg('foo', 'bar')))
+
+
 @pytest.mark.parametrize('command', [
     Command('vim', ''),
     Command('git status', error_msg('foo', 'bar')),

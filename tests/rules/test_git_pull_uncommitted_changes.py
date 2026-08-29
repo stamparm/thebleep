@@ -14,6 +14,10 @@ def test_match(output):
     assert not match(Command('ls', output))
 
 
+def test_a_configuration_token_is_not_a_pull(output):
+    assert not match(Command('git config --get-regexp pull', output))
+
+
 def test_get_new_command(output):
     assert (get_new_command(Command('git pull', output))
             == "git stash && git pull && git stash pop")
