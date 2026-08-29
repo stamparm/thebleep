@@ -75,6 +75,22 @@ def test_corrects_unspaced_or_wrapped_compound_commands(mocker, script, expect):
     assert get_new_command(command)[0] == expect
 
 
+@pytest.mark.parametrize('script, expect', [
+    ('if gti status; then echo ok; fi',
+     'if git status; then echo ok; fi'),
+    ('if ! gti status; then echo ok; fi',
+     'if ! git status; then echo ok; fi'),
+    ('while gti status; do echo ok; done',
+     'while git status; do echo ok; done'),
+])
+def test_corrects_commands_inside_control_blocks(mocker, script, expect):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command(script, 'bash: line 1: gti: command not found')
+
+    assert get_new_command(command)[0] == expect
+
+
 def test_does_not_replace_an_ambiguous_argument(mocker):
     mocker.patch('thebleep.rules.no_command.which', return_value=None)
 

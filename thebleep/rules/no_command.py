@@ -71,6 +71,9 @@ def match(command):
 _COMMAND_SEPARATORS = frozenset(('&&', '||', '|', '|&', ';', '&'))
 _ENVIRONMENT_ASSIGNMENT = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
 _SAFE_COMMAND_NAME = re.compile(r'^[A-Za-z0-9_@%+=:,./-]+$')
+_CONTROL_PREFIXES = frozenset(
+    ('if', 'then', 'else', 'elif', 'while', 'until', 'do', '!'))
+_CONTROL_ENDS = frozenset(('fi', 'done', 'end'))
 
 
 def _compound_parts(command):
@@ -93,7 +96,14 @@ def _compound_parts(command):
 
 
 def _command_indexes(parts):
-    """Indexes of command words in simple compound shell syntax."""
+    """Indexes of command words in simple compound shell syntax.
+
+    Shell control words are not commands themselves. Keeping the command
+    boundary open after ``if`` and ``then`` lets an unknown command inside a
+    conditional be corrected without mistaking ``if`` for the failed program.
+    The wrapper check comes first: ``env if`` executes a program named ``if``;
+    it is not a shell conditional.
+    """
     command_start = True
     segment_start = 0
     for index, part in enumerate(parts):
@@ -106,12 +116,29 @@ def _command_indexes(parts):
                    and _ENVIRONMENT_ASSIGNMENT.match(
                        parts[command_start_index])):
                 command_start_index += 1
-            wrapped = wrappers.wrapped_command_index(
-                parts[command_start_index:])
-            if wrapped is None:
+            if command_start_index >= len(parts):
                 command_start = False
                 continue
-            yield command_start_index + wrapped
+
+            word = parts[command_start_index]
+            if word in wrappers.WRAPPERS:
+                wrapped = wrappers.wrapped_command_index(
+                    parts[command_start_index:])
+                if wrapped is None:
+                    command_start = False
+                    continue
+                yield command_start_index + wrapped
+                command_start = False
+                continue
+
+            if word in _CONTROL_ENDS:
+                command_start = False
+                continue
+            if word in _CONTROL_PREFIXES:
+                segment_start = command_start_index + 1
+                continue
+
+            yield command_start_index
             command_start = False
 
 
