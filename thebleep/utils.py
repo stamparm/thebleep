@@ -886,10 +886,14 @@ def format_raw_script(raw_script):
 
         parts = [shell.quote(part) for part in raw_script]
         # PowerShell treats a quoted string at the start as a string
-        # expression, not a command. Its call operator makes a quoted
-        # executable path behave as one on every shell version.
+        # expression, not a command. Keep an ordinary command name bare, but
+        # use its call operator when quoting is needed for an executable path.
         if getattr(shell, 'friendly_name', None) == 'PowerShell':
-            parts.insert(0, '&')
+            first = raw_script[0]
+            if not re.match(r'^[A-Za-z0-9_./:+%=-]+$', first):
+                parts.insert(0, '&')
+            else:
+                parts[0] = first
         script = ' '.join(parts)
 
     return script.lstrip()

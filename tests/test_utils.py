@@ -36,7 +36,9 @@ def test_format_raw_script_quotes_a_powershell_command(monkeypatch):
     from thebleep.shells.powershell import Powershell
 
     monkeypatch.setattr(shells, 'shell', Powershell())
-    assert format_raw_script(['echo', 'a b']) == "& 'echo' 'a b'"
+    assert format_raw_script(['echo', 'a b']) == "echo 'a b'"
+    assert format_raw_script(['C:/Program Files/tool', 'a b']) == \
+        "& 'C:/Program Files/tool' 'a b'"
 
 
 @pytest.mark.parametrize('override, old, new', [
