@@ -19,6 +19,12 @@ from . import diagnostics, risk
 
 
 SCHEMA_VERSION = 1
+MAX_OUTPUT = 8 * 1024 * 1024
+
+
+def _check_output(output):
+    if output is not None and len(output) > MAX_OUTPUT:
+        raise ValueError('output exceeds the 8 MiB limit')
 
 
 def _suggestion(corrected, command):
@@ -56,6 +62,7 @@ def suggest(script, output=None):
         raise TypeError('script must be a string')
     if output is not None and not isinstance(output, str):
         raise TypeError('output must be a string or None')
+    _check_output(output)
 
     command = Command(script, output)
     suggestions = [
@@ -76,6 +83,7 @@ def why(script, output=None, platform_name=None):
         raise TypeError('script must be a string')
     if output is not None and not isinstance(output, str):
         raise TypeError('output must be a string or None')
+    _check_output(output)
 
     result = diagnostics.diagnose(script, output, platform_name)
     result['schema'] = SCHEMA_VERSION

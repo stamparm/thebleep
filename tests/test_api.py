@@ -1,5 +1,6 @@
 from thebleep import api
 from thebleep.types import CorrectedCommand
+import pytest
 
 
 class Rule(object):
@@ -69,6 +70,12 @@ def test_suggest_requires_text_output():
         assert str(error) == 'output must be a string or None'
     else:
         assert False, 'non-string output was accepted'
+
+
+@pytest.mark.parametrize('function', [api.suggest, api.why])
+def test_api_rejects_oversized_output(function):
+    with pytest.raises(ValueError, match='8 MiB limit'):
+        function('gti status', 'x' * (api.MAX_OUTPUT + 1))
 
 
 def test_suggest_keeps_action_details_labeled(mocker):

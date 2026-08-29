@@ -500,7 +500,8 @@ thebleep --json --stderr error.txt --cwd "$PWD" --command 'gti status'
 
 `--stderr -` reads captured output from standard input. Input is bounded at
 8 MiB; an unexpectedly large capture is rejected rather than buffered without
-limit. `--command` preserves the exact command string, including compound
+limit. The Python API applies the same 8 MiB output limit. `--command` preserves
+the exact command string, including compound
 syntax and quoting; the older positional form after `--` remains supported.
 
 When the command itself is valid but failed, ask for a deterministic diagnosis

@@ -11,7 +11,7 @@ from ..conf import settings
 from ..utils import format_raw_script
 
 
-MAX_OUTPUT = 8 * 1024 * 1024
+MAX_OUTPUT = api.MAX_OUTPUT
 
 
 def _read_output(path):
