@@ -144,6 +144,13 @@ def test_a_short_argument_cannot_become_a_second_command(mocker):
     assert _first('rmm f', cases.DASH.format('rmm')) == 'rm f'
 
 
+def test_a_pipeline_command_is_corrected_in_place():
+    """The failed command need not be the first command in the script."""
+    assert _first(
+        'cd project && gti status | grpe main',
+        cases.DASH.format('gti')) == 'cd project && git status | grpe main'
+
+
 @pytest.mark.parametrize('script, output, expect', cases.THE_TOOL_SAID_SO,
                          ids=[_identify(c) for c in cases.THE_TOOL_SAID_SO])
 def test_the_tool_said_so(script, output, expect):

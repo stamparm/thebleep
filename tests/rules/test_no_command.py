@@ -50,6 +50,33 @@ def test_get_new_command(script, result):
     assert get_new_command(Command(script, '')) == result
 
 
+def test_corrects_a_command_inside_a_pipeline(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command(
+        'cd project && gti status | grpe main', 'gti: command not found')
+
+    assert get_new_command(command)[0] == (
+        'cd project && git status | grpe main')
+
+
+def test_does_not_replace_an_ambiguous_argument(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command('echo gti && gti status', 'gti: command not found')
+
+    assert get_new_command(command) == []
+
+
+@pytest.mark.usefixtures('no_memoize')
+def test_quotes_a_path_candidate(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+    mocker.patch('thebleep.rules.no_command.get_all_executables',
+                 return_value=['gti;'])
+
+    assert get_new_command(Command('gti', 'gti: not found')) == ["'gti;'"]
+
+
 class TestHistoryMayNotPromoteAWorseAnswer:
     """`ca .gitignore` answered `cd .gitignore`, with `cat .gitignore` second.
 

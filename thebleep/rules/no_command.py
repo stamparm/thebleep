@@ -30,11 +30,16 @@ you have used wins when it is *as good* a match, and never when it is worse.
 now `thebleep.matching`'s job; see the module for why `gti` used to suggest
 `tic`.
 
+For a compound command it follows simple shell separators and fixes the
+command word named by the shell, such as `cd project && gti status`.
+
 """
+
+import re
 
 from thebleep import matching
 from thebleep.utils import get_all_executables, \
-    get_valid_history_without_current, memoize, which
+    get_valid_history_without_current, memoize, replace_argument, which
 from thebleep.specific.sudo import sudo_support
 
 
@@ -57,15 +62,49 @@ def _ranked(word):
 
 
 def match(command):
-    return (not which(command.script_parts[0])
-            and ('not found' in command.output
-                 # fish says `fish: Unknown command: gerp` and never the words
-                 # "not found", so every unknown command in fish -- the
-                 # commonest way a command fails, in a shell this supports --
-                 # went uncorrected.
-                 or 'unknown command' in command.output.lower()
-                 or 'is not recognized as' in command.output)
-            and bool(_ranked(command.script_parts[0])))
+    unknown = _unknown_command(command)
+    return bool(unknown and _ranked(unknown[1]))
+
+
+_COMMAND_SEPARATORS = frozenset(('&&', '||', '|', '|&', ';', '&'))
+_ENVIRONMENT_ASSIGNMENT = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
+
+
+def _command_indexes(parts):
+    """Indexes of command words in simple compound shell syntax."""
+    command_start = True
+    for index, part in enumerate(parts):
+        if part in _COMMAND_SEPARATORS:
+            command_start = True
+        elif command_start:
+            if _ENVIRONMENT_ASSIGNMENT.match(part):
+                continue
+            yield index
+            command_start = False
+
+
+def _unknown_command(command, output_required=True):
+    """`(index, word)` for the failed command named by the shell."""
+    output = command.output or ''
+    if not ('not found' in output
+            # fish says `fish: Unknown command: gerp` and never the words
+            # "not found", so every unknown command in fish -- the
+            # commonest way a command fails in a shell this supports --
+            # went uncorrected.
+            or 'unknown command' in output.lower()
+            or 'is not recognized as' in output):
+        if output_required:
+            return None
+        index = next(iter(_command_indexes(command.script_parts)), None)
+        return ((index, command.script_parts[index])
+                if index is not None else None)
+
+    for index in _command_indexes(command.script_parts):
+        word = command.script_parts[index]
+        if word in output and not which(word):
+            return index, word
+
+    return None
 
 
 def _candidates():
@@ -135,7 +174,11 @@ def _used_executables(command):
 
 @sudo_support
 def get_new_command(command):
-    old_command = command.script_parts[0]
+    unknown = _unknown_command(command, output_required=False)
+    if unknown is None:
+        return []
+
+    command_index, old_command = unknown
 
     scored = _ranked(old_command)
     if not scored:
@@ -184,12 +227,28 @@ def get_new_command(command):
             ranked = familiar + [name for name in ranked
                                  if name not in familiar]
 
-    ranked = _demote_impossible(ranked, command.script_parts[1:])
+    ranked = _demote_impossible(ranked, command.script_parts[command_index + 1:])
 
     from thebleep.conf import settings
 
-    return [command.script.replace(old_command, name, 1)
-            for name in ranked[:settings.num_close_matches]]
+    from thebleep.shells import shell
+
+    corrected = []
+    for name in ranked[:settings.num_close_matches]:
+        replacement = shell.quote(name)
+        if command_index == 0:
+            script = command.script.replace(old_command, replacement, 1)
+        elif command.script.count(' ' + old_command) != 1:
+            # String replacement cannot identify the right token when the
+            # failed command also appears as an argument. Abstain rather than
+            # rewrite the wrong occurrence.
+            continue
+        else:
+            script = replace_argument(command.script, old_command, replacement)
+        if script != command.script:
+            corrected.append(script)
+
+    return corrected
 
 
 priority = 3000
