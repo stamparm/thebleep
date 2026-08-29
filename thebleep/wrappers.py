@@ -320,3 +320,20 @@ def wrapped_app(script_parts):
     """
     consumed = _wrapper_words(script_parts)
     return script_parts[consumed] if consumed else None
+
+
+def wrapped_command_index(script_parts):
+    """Index of the command behind transparent wrappers, or ``None``.
+
+    Unlike :func:`wrapped_app`, this is useful to callers that need to replace
+    the command in a token stream while keeping the words before it intact.
+    ``None`` also covers a wrapper with no command, rather than making its last
+    option look executable.
+    """
+    if not script_parts:
+        return None
+    if script_parts[0] not in WRAPPERS:
+        return 0
+
+    consumed = _wrapper_words(script_parts)
+    return consumed if consumed and consumed < len(script_parts) else None

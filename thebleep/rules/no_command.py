@@ -36,10 +36,12 @@ command word named by the shell, such as `cd project && gti status`.
 """
 
 import re
+import shlex
 
 from thebleep import matching
+from thebleep import wrappers
 from thebleep.utils import get_all_executables, \
-    get_valid_history_without_current, memoize, replace_argument, which
+    get_valid_history_without_current, memoize, which
 from thebleep.specific.sudo import sudo_support
 
 
@@ -71,21 +73,51 @@ _ENVIRONMENT_ASSIGNMENT = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
 _SAFE_COMMAND_NAME = re.compile(r'^[A-Za-z0-9_@%+=:,./-]+$')
 
 
+def _compound_parts(command):
+    """Command words and separators, including unspaced shell syntax.
+
+    ``Command.script_parts`` deliberately uses each shell's ordinary argument
+    splitting. That leaves ``foo&&gti`` as one word, which is fine for most
+    rules but hides the second command from this one. Punctuation-aware
+    ``shlex`` is used only here, where separators have meaning; quoted text is
+    still kept as one argument and malformed input falls back to the shell's
+    normal split.
+    """
+    lexer = shlex.shlex(command.script, posix=True, punctuation_chars=';&|')
+    lexer.whitespace_split = True
+    lexer.commenters = ''
+    try:
+        return list(lexer)
+    except ValueError:
+        return command.script_parts
+
+
 def _command_indexes(parts):
     """Indexes of command words in simple compound shell syntax."""
     command_start = True
+    segment_start = 0
     for index, part in enumerate(parts):
         if part in _COMMAND_SEPARATORS:
             command_start = True
+            segment_start = index + 1
         elif command_start:
-            if _ENVIRONMENT_ASSIGNMENT.match(part):
+            command_start_index = segment_start
+            while (command_start_index < len(parts)
+                   and _ENVIRONMENT_ASSIGNMENT.match(
+                       parts[command_start_index])):
+                command_start_index += 1
+            wrapped = wrappers.wrapped_command_index(
+                parts[command_start_index:])
+            if wrapped is None:
+                command_start = False
                 continue
-            yield index
+            yield command_start_index + wrapped
             command_start = False
 
 
 def _unknown_command(command, output_required=True):
     """`(index, word)` for the failed command named by the shell."""
+    parts = _compound_parts(command)
     output = command.output or ''
     if not ('not found' in output
             # fish says `fish: Unknown command: gerp` and never the words
@@ -96,12 +128,12 @@ def _unknown_command(command, output_required=True):
             or 'is not recognized as' in output):
         if output_required:
             return None
-        index = next(iter(_command_indexes(command.script_parts)), None)
-        return ((index, command.script_parts[index])
+        index = next(iter(_command_indexes(parts)), None)
+        return ((index, parts[index])
                 if index is not None else None)
 
-    for index in _command_indexes(command.script_parts):
-        word = command.script_parts[index]
+    for index in _command_indexes(parts):
+        word = parts[index]
         if word in output and not which(word):
             return index, word
 
@@ -228,7 +260,8 @@ def get_new_command(command):
             ranked = familiar + [name for name in ranked
                                  if name not in familiar]
 
-    ranked = _demote_impossible(ranked, command.script_parts[command_index + 1:])
+    parts = _compound_parts(command)
+    ranked = _demote_impossible(ranked, parts[command_index + 1:])
 
     from thebleep.conf import settings
 
@@ -240,13 +273,13 @@ def get_new_command(command):
                        else shell.quote(name))
         if command_index == 0:
             script = command.script.replace(old_command, replacement, 1)
-        elif command.script.count(' ' + old_command) != 1:
+        elif command.script.count(old_command) != 1:
             # String replacement cannot identify the right token when the
             # failed command also appears as an argument. Abstain rather than
             # rewrite the wrong occurrence.
             continue
         else:
-            script = replace_argument(command.script, old_command, replacement)
+            script = command.script.replace(old_command, replacement, 1)
         if script != command.script:
             corrected.append(script)
 

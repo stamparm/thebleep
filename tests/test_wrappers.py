@@ -135,6 +135,17 @@ def test_which_app_dispatch_is_told_about(script, app):
     assert wrappers.wrapped_app(shell.split_command(script)) == app
 
 
+@pytest.mark.parametrize('parts, index', [
+    (['git', 'chekout'], 0),
+    (['sudo', 'git', 'chekout'], 1),
+    (['env', 'FOO=bar', 'npm', 'sart'], 2),
+    (['sudo', '-u', 'root', 'git', 'chekout'], 3),
+    (['sudo', '-i'], None),
+])
+def test_wrapped_command_index(parts, index):
+    assert wrappers.wrapped_command_index(parts) == index
+
+
 class TestDispatch(object):
     def test_both_names_reach_dispatch(self):
         """A rule may be about the wrapper or about what it wraps."""

@@ -60,6 +60,21 @@ def test_corrects_a_command_inside_a_pipeline(mocker):
         'cd project && git status | grpe main')
 
 
+@pytest.mark.parametrize('script, expect', [
+    ('cd project&&gti status', 'cd project&&git status'),
+    ('gti status|grpe main', 'git status|grpe main'),
+    ('cd project&&sudo gti status', 'cd project&&sudo git status'),
+    ('FOO=bar cd project&&env BAZ=qux gti status',
+     'FOO=bar cd project&&env BAZ=qux git status'),
+])
+def test_corrects_unspaced_or_wrapped_compound_commands(mocker, script, expect):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command(script, 'gti: command not found')
+
+    assert get_new_command(command)[0] == expect
+
+
 def test_does_not_replace_an_ambiguous_argument(mocker):
     mocker.patch('thebleep.rules.no_command.which', return_value=None)
 
