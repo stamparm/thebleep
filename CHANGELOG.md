@@ -46,6 +46,9 @@
 - **Rule-pack deserialization is bounded.** An oversized compiled rule cache is
   rejected before its contents are handed to the marshal parser.
 
+- **Shell-logger responses are bounded.** An oversized or incomplete socket
+  response is discarded before JSON parsing.
+
 - **Explicit paths to dispatchers are no longer probed automatically.** A file
   named `git` or `cargo` can be an arbitrary executable, so it now requires
   replay confirmation like any other explicit path.

@@ -34,9 +34,10 @@ def is_available():
 
 # A local socket that a listening daemon answers from memory. A second of it is
 # already a long time; anything longer is a daemon that is not going to answer,
-# and waiting for it is worse than not asking. `readline()` with no timeout at
-# all was a correction that never came back.
+# and waiting for it is worse than not asking. A response also gets a ceiling:
+# `readline()` with no limit let a malformed daemon response grow without bound.
 TIMEOUT = 1.0
+MAX_RESPONSE = 8 * 1024 * 1024
 
 
 def _get_last_n(n):
@@ -48,8 +49,11 @@ def _get_last_n(n):
             "count": n,
         }) + '\n'
         client.sendall(request.encode('utf-8'))
-        response = client.makefile().readline()
-        return json.loads(response)['commands']
+        with client.makefile('rb') as stream:
+            response = stream.readline(MAX_RESPONSE + 1)
+        if len(response) > MAX_RESPONSE or not response.endswith(b'\n'):
+            raise ValueError('shell logger response is too large or incomplete')
+        return json.loads(response.decode('utf-8'))['commands']
 
 
 def _get_output_lines(output):
