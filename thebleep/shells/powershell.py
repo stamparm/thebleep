@@ -6,6 +6,11 @@ from .generic import Generic, ShellConfiguration
 class Powershell(Generic):
     friendly_name = 'PowerShell'
 
+    def split_command(self, command):
+        """Hide PowerShell's call operator from rule argument handling."""
+        parts = super(Powershell, self).split_command(command)
+        return parts[1:] if parts[:1] == ['&'] else parts
+
     def replay_argv(self, script):
         """See `Generic.replay_argv`.
 

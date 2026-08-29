@@ -38,6 +38,10 @@ class TestPowershell(object):
         assert shell.or_('a', 'b', 'c') == \
             'a; if (-not $?) { b; if (-not $?) { c } }'
 
+    def test_split_command_ignores_call_operator(self, shell):
+        assert shell.split_command("& 'C:/Program Files/tool' 'a b'") == \
+            ['C:/Program Files/tool', 'a b']
+
     @pytest.mark.parametrize('value, quoted', [
         ('plain', "'plain'"),
         ('two words', "'two words'"),
