@@ -28,3 +28,15 @@ def test_match(option):
 def test_get_new_command(option):
     new_command = get_new_command(Command("pacman -{}v meat".format(option), ""))
     assert new_command == "pacman -{}v meat".format(option.upper())
+
+
+def test_quoted_option_text_does_not_match():
+    command = Command('pacman "keep -s" meat', bad_output)
+
+    assert not match(command)
+
+
+def test_get_new_command_does_not_rewrite_quoted_option_text():
+    command = Command('pacman "keep -s" -sv meat', bad_output)
+
+    assert get_new_command(command) == 'pacman "keep -s" -Sv meat'
