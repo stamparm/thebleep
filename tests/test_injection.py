@@ -378,6 +378,7 @@ class TestNamesFromSomewhereElse(object):
             assert canary(suggestion) == []
 
 
+@pytest.mark.skipif(sys.platform == 'win32', reason='needs a POSIX shell')
 def test_learned_correction_quotes_its_replacement(
         canary, mocker, settings, tmpdir, monkeypatch, set_shell):
     """A learned word is still shell text when it is offered again."""
