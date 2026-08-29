@@ -12,6 +12,9 @@
   with `thebleep --learn-last`, listed with `thebleep --learned`, and removed
   with `thebleep --forget-learning`.
 
+- **Inline correction** — Bash, Zsh and Fish can bind <kbd>Esc Esc</kbd> to
+  place a command-only correction in the current line without running it.
+
 - **`bun_script_not_found`** — `bun run buidl` -> `bun run build`, and
   `bun instal` -> `bun install`. bun reports an unknown word as a missing
   *script* whether or not `run` was typed, and offers no suggestion of its own:

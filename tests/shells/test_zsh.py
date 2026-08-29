@@ -80,6 +80,13 @@ class TestZsh(object):
         assert 'print -z -r -- "$TB_CMD"' in alias
         assert '-eq {}'.format(const.EXIT_EDIT) in alias
 
+    def test_inline_binding_only_edits_zle(self, shell):
+        binding = shell.inline_binding()
+        assert "bindkey '\\e\\e'" in binding
+        assert '--inline --command "$BUFFER"' in binding
+        assert 'BUFFER=$fixed' in binding
+        assert 'eval' not in binding
+
     def test_get_history(self, history_lines, shell):
         history_lines([': 1432613911:0;ls', ': 1432613916:0;rm'])
         assert list(shell.get_history()) == ['ls', 'rm']

@@ -97,6 +97,18 @@ class Fish(Generic):
     def can_edit_buffer(self):
         return True
 
+    def inline_binding(self):
+        """Bind Esc Esc to a command-only correction in Fish."""
+        return '''
+function __thebleep_inline
+    set -l fixed (env TB_SHELL=fish {command} --inline --command (commandline) | string collect)
+    if test -n "$fixed"
+        commandline --replace -- $fixed
+    end
+end
+bind \\e\\e __thebleep_inline
+'''.format(command=self._invocation())
+
     def _edit_line(self):
         """`commandline -r` writes fish's own line editor.
 

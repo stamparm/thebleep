@@ -94,6 +94,13 @@ class TestBash(object):
         settings.alter_history = False
         assert 'history -s "$TB_EDIT"' not in shell.app_alias('bleep')
 
+    def test_inline_binding_only_edits_readline(self, shell):
+        binding = shell.inline_binding()
+        assert 'bind -x' in binding
+        assert '--inline --command "$READLINE_LINE"' in binding
+        assert 'READLINE_LINE="$fixed"' in binding
+        assert 'eval' not in binding
+
     def test_get_history(self, history_lines, shell):
         history_lines(['ls', 'rm'])
         assert list(shell.get_history()) == ['ls', 'rm']

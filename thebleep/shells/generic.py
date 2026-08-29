@@ -261,6 +261,10 @@ class Generic(object):
         """
         return False
 
+    def inline_binding(self):
+        """Shell code for correcting the current line, or ``None``."""
+        return None
+
     def edit_hint(self):
         """What to tell the user about where the correction went, or `None`.
 

@@ -20,6 +20,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 import pytest
 from thebleep import const
 from thebleep.shells import Bash, Fish, Zsh
@@ -71,6 +72,14 @@ FAKE_RUNS = u"""#!/bin/sh
 echo 'echo RAN-AAA'
 exit 0
 """
+
+# A command-only correction. The line editor must install this in its buffer;
+# it must not execute it until the user submits the line.
+INLINE_COMMAND = 'touch "$THEBLEEP_INLINE_MARKER"; echo INLINE-DONE'
+FAKE_INLINE = u"""#!/bin/sh
+echo '{}'
+exit 0
+""".format(INLINE_COMMAND)
 
 # Reports what the alias decided about editing, the way the real one reads it.
 FAKE_REPORTS = u"""#!/bin/sh
@@ -132,6 +141,34 @@ def _spawn(name, tmpdir, fake_source):
     return proc
 
 
+def _spawn_inline(name, tmpdir):
+    under = SHELLS[name]
+    binary = shutil.which(name)
+    if binary is None:
+        pytest.skip('{} is not installed'.format(name))
+
+    fake = tmpdir.join('thebleep')
+    fake.write(FAKE_INLINE)
+    os.chmod(str(fake), 0o755)
+
+    binding = tmpdir.join('binding')
+    binding.write_text(under.shell_class().inline_binding(), 'utf-8')
+
+    environment = dict(os.environ,
+                       LC_ALL='C.UTF-8', LANG='C.UTF-8', TERM='dumb',
+                       THEBLEEP_INLINE_MARKER=str(tmpdir.join(
+                           'inline-marker')),
+                       PATH='{}{}{}'.format(str(tmpdir), os.pathsep,
+                                            os.environ['PATH']))
+    proc = pexpect.spawnu(binary, under.arguments, cwd=str(tmpdir),
+                          env=environment, timeout=TIMEOUT)
+    proc.sendline(under.prompt)
+    proc.expect_exact(PROMPT)
+    proc.sendline(under.source.format(binding))
+    proc.expect_exact(PROMPT)
+    return proc
+
+
 @pytest.mark.skipif(sys.platform == 'win32', reason='needs a POSIX shell')
 @pytest.mark.parametrize('name', sorted(SHELLS))
 class TestEditBuffer(object):
@@ -183,6 +220,23 @@ class TestEditBuffer(object):
         proc.expect_exact(u'AAA')
         proc.sendline(u'echo "left: $(set | grep -cE \'^TB_[A-Z]+=\')"')
         proc.expect_exact(u'left: 0')
+        proc.close(force=True)
+
+    def test_inline_binding_edits_without_running(self, name, tmpdir):
+        """Esc Esc fills the current buffer; return is still required."""
+        if not _can_edit(name):
+            pytest.skip('this {} cannot edit'.format(name))
+        proc = _spawn_inline(name, tmpdir)
+        proc.send(u'gti status')
+        proc.send(u'\x1b\x1b')
+        # The binding starts a subprocess while readline is active. Let the
+        # line editor finish that callback before submitting the replacement.
+        time.sleep(0.5)
+        assert not tmpdir.join('inline-marker').check()
+        proc.expect_exact(INLINE_COMMAND)
+        proc.send(u'\x03')
+        proc.expect_exact(PROMPT)
+        assert not tmpdir.join('inline-marker').check()
         proc.close(force=True)
 
 

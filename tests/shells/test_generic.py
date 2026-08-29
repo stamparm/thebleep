@@ -49,6 +49,9 @@ class TestGeneric(object):
     def test_how_to_configure(self, shell):
         assert shell.how_to_configure() is None
 
+    def test_inline_binding_is_not_invented_for_unknown_shells(self, shell):
+        assert shell.inline_binding() is None
+
     @pytest.mark.parametrize('side_effect, expected_info, warn', [
         ([u'3.5.9'], u'Generic Shell 3.5.9', False),
         ([OSError], u'Generic Shell', True),

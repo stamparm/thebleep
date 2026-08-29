@@ -126,6 +126,13 @@ class TestFish(object):
         assert 'builtin history delete' not in shell.app_alias('BLEEP')
         assert 'builtin history merge' not in shell.app_alias('BLEEP')
 
+    def test_inline_binding_only_edits_commandline(self, shell):
+        binding = shell.inline_binding()
+        assert 'bind \\e\\e __thebleep_inline' in binding
+        assert '--inline --command (commandline)' in binding
+        assert 'commandline --replace -- $fixed' in binding
+        assert 'eval' not in binding
+
     @pytest.mark.parametrize('env, history_file_name', [
         ({}, '~/.local/share/fish/fish_history'),
         ({'XDG_DATA_HOME': '/xdg/data'}, '/xdg/data/fish/fish_history'),

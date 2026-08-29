@@ -60,6 +60,22 @@ class Bash(Generic):
         """
         return True
 
+    def inline_binding(self):
+        """Bind Esc Esc to a command-only correction in readline."""
+        return '''
+if [ "${{BASH_VERSINFO[0]:-0}}" -ge 4 ]; then
+    __thebleep_inline() {{
+        local fixed
+        fixed=$(TB_SHELL=bash {command} --inline --command "$READLINE_LINE")
+        if [ "$?" -eq 0 ] && [ -n "$fixed" ]; then
+            READLINE_LINE="$fixed"
+            READLINE_POINT=${{#READLINE_LINE}}
+        fi
+    }}
+    bind -x '"\\e\\e":__thebleep_inline'
+fi
+'''.format(command=self._invocation())
+
     def _edit_line(self):
         """Reopens the correction in readline for the user to finish.
 

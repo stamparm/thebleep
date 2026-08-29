@@ -116,6 +116,14 @@ def _main():
         from .json_output import json_output
 
         sys.exit(json_output(known_args))
+    elif getattr(known_args, 'bind_inline', False):
+        from .inline import print_binding
+
+        sys.exit(print_binding(known_args))
+    elif getattr(known_args, 'inline', False):
+        from .inline import inline_command
+
+        sys.exit(inline_command(known_args))
     elif known_args.command_text is not None:
         logs.failed('--command needs --json')
         sys.exit(2)

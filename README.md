@@ -300,6 +300,25 @@ it only writes your next command for you.
 The arrow keys still walk the other suggestions, so you can pick the one worth
 editing before you edit it.
 
+### Inline correction before execution
+
+For a command that has not run yet, print an opt-in <kbd>Esc Esc</kbd> binding
+for your shell and add it to your shell configuration:
+
+```bash
+thebleep --bind-inline >> ~/.bashrc
+```
+
+Then type a command such as `gti status`, press <kbd>Esc Esc</kbd>, and the
+correction is placed in the current line for you to inspect. It is not run
+until you press return. Bash 4+, Zsh and Fish are supported; the other shells
+leave the binding unavailable rather than injecting keystrokes into the
+terminal.
+
+Inline correction has no command output to inspect, so rules that require
+stderr are skipped. Use `--inline --command 'gti status'` to try the same
+non-executing lookup without a line editor.
+
 ### Which shells
 
 The correction goes into the line editor through whatever the shell offers for

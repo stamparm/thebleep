@@ -11,6 +11,8 @@ DEFAULTS = {'alias': None,
             'debug': False,
             'doctor': False,
             'edit': False,
+            'inline': False,
+            'bind_inline': False,
             'explain': False,
             'forget': None,
             'forget_learning': None,
@@ -138,6 +140,14 @@ class Parser(object):
             action='store_true',
             help='return structured suggestions without running a command')
         self._parser.add_argument(
+            '--inline',
+            action='store_true',
+            help='correct a command buffer without running it')
+        self._parser.add_argument(
+            '--bind-inline',
+            action='store_true',
+            help='print an Esc Esc inline-correction binding for this shell')
+        self._parser.add_argument(
             '--why',
             action='store_true',
             help='explain the previous failure, or return one with --json')
@@ -175,7 +185,7 @@ class Parser(object):
             '--command',
             dest='command_text',
             metavar='COMMAND',
-            help='use this exact command string with --json')
+            help='use this exact command string with --json or --inline')
         self._parser.add_argument(
             '--stderr',
             action='store',

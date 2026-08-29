@@ -52,6 +52,22 @@ class Zsh(Generic):
     def can_edit_buffer(self):
         return True
 
+    def inline_binding(self):
+        """Bind Esc Esc to a command-only correction in ZLE."""
+        return '''
+__thebleep_inline() {{
+    local fixed
+    fixed=$(TB_SHELL=zsh {command} --inline --command "$BUFFER")
+    if [[ $? -eq 0 && -n $fixed ]]; then
+        BUFFER=$fixed
+        CURSOR=${{#BUFFER}}
+    fi
+    zle redisplay
+}}
+zle -N __thebleep_inline
+bindkey '\\e\\e' __thebleep_inline
+'''.format(command=self._invocation())
+
     def _edit_line(self):
         """`print -z` is zsh's own answer to this, and has been for decades.
 
