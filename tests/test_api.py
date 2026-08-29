@@ -28,6 +28,11 @@ def test_suggest_returns_structured_correction(mocker):
             'evidence': [
                 'a condition this rule works out for itself',
                 'what your command printed'],
+            'explanation': [
+                {'label': 'rule', 'value': 'test_rule (from somewhere unrecorded)'},
+                {'label': 'matched',
+                 'value': 'a condition this rule works out for itself'},
+                {'label': 'read', 'value': 'what your command printed'}],
         }],
     }
 
@@ -59,3 +64,16 @@ def test_suggest_requires_text_output():
         assert str(error) == 'output must be a string or None'
     else:
         assert False, 'non-string output was accepted'
+
+
+def test_suggest_keeps_action_details_labeled(mocker):
+    correction = CorrectedCommand(
+        'sudo rm -r cache', lambda *_: None, 1200, rule=Rule())
+    mocker.patch.object(api, 'get_corrected_commands',
+                        return_value=iter([correction]))
+
+    explanation = api.suggest('rm -r cache', 'permission denied')
+    labels = [item['label'] for item in explanation['suggestions'][0]
+              ['explanation']]
+
+    assert labels == ['rule', 'matched', 'read', 'side effect', 'runs as']

@@ -404,9 +404,11 @@ for item in result['suggestions']:
 ```
 
 The result contains the original command, whether output was supplied, and
-each suggestion's command, rule, priority, side-effect flag and evidence. If
-output is omitted, output-dependent rules are skipped; the API never replays a
-command to fill it in.
+each suggestion's command, rule, priority, side-effect flag and evidence. The
+`explanation` field keeps the same facts with labels, so a consumer can tell
+matched output from the read requirement, side effect or privilege change
+without parsing prose. If output is omitted, output-dependent rules are
+skipped; the API never replays a command to fill it in.
 
 The same contract is available from the command line:
 

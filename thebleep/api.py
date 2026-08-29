@@ -29,6 +29,9 @@ def _suggestion(corrected, command):
         'evidence': [
             value for label, value in explanation
             if label in ('matched', 'read')],
+        'explanation': [
+            {'label': label, 'value': value}
+            for label, value in explanation],
     }
 
 
