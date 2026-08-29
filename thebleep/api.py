@@ -15,7 +15,7 @@ engine is never asked to replay the command on behalf of this API.
 from . import explain as explain_module
 from .corrector import get_corrected_commands
 from .types import Command
-from . import diagnostics
+from . import diagnostics, risk
 
 
 SCHEMA_VERSION = 1
@@ -24,11 +24,14 @@ SCHEMA_VERSION = 1
 def _suggestion(corrected, command):
     rule = getattr(corrected, 'rule', None)
     explanation = explain_module.describe(corrected, command)
+    assessment = risk.assess(corrected)
     return {
         'command': corrected.script,
         'rule': rule.name if rule is not None else None,
         'priority': corrected.priority,
         'side_effect': bool(corrected.side_effect),
+        'risk': assessment['level'],
+        'risk_factors': assessment['factors'],
         'requires_output': bool(rule and rule.requires_output),
         'evidence': [
             value for label, value in explanation

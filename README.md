@@ -485,7 +485,8 @@ The result includes `schema: 1` for contract versioning, the original command,
 whether output was supplied, and a `decision`: `suggest` when a candidate passed
 the rules, or `abstain` when no candidate was verified. Each suggestion contains
 its command, rule, priority,
-side-effect flag and evidence. The
+side-effect flag, conservative risk markers and evidence. `risk: low` means
+that no known high-risk marker was found; it is not a safety guarantee. The
 `explanation` field keeps the same facts with labels, so a consumer can tell
 matched output from the read requirement, side effect or privilege change
 without parsing prose. If output is omitted, output-dependent rules are

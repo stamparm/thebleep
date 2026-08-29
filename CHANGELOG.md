@@ -4,6 +4,10 @@
 
 ### Added
 
+- **Structured suggestions include conservative risk metadata.** API consumers
+  can see explicit privilege, destructive-command, bypass and side-effect
+  markers before deciding how to present a correction.
+
 - **Recent failure history** — `thebleep --pick` lists the last five failed
   commands, `thebleep --pick 2` corrects one from its bounded local record
   without replaying it, and `thebleep --forget 2` removes one.

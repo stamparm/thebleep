@@ -26,6 +26,8 @@ def test_suggest_returns_structured_correction(mocker):
             'rule': 'test_rule',
             'priority': 1200,
             'side_effect': False,
+            'risk': 'low',
+            'risk_factors': [],
             'requires_output': True,
             'evidence': [
                 'a condition this rule works out for itself',
@@ -80,6 +82,19 @@ def test_suggest_keeps_action_details_labeled(mocker):
               ['explanation']]
 
     assert labels == ['rule', 'matched', 'read', 'side effect', 'runs as']
+
+
+def test_suggest_marks_explicitly_risky_corrections(mocker):
+    correction = CorrectedCommand(
+        'sudo rm -rf cache', None, 1200, rule=Rule())
+    mocker.patch.object(api, 'get_corrected_commands',
+                        return_value=iter([correction]))
+
+    suggestion = api.suggest('rm cache', 'permission denied')['suggestions'][0]
+
+    assert suggestion['risk'] == 'high'
+    assert suggestion['risk_factors'] == [
+        'privilege escalation', 'destructive command']
 
 
 def test_why_returns_the_versioned_diagnosis_contract():
