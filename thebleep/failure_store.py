@@ -71,12 +71,19 @@ def record(script, output, exit_status, cwd=None, shell_name=None):
             or len(script) > MAX_SCRIPT):
         return
 
-    saved_cwd = cwd if isinstance(cwd, str) and len(cwd) <= MAX_CWD else ''
+    if cwd is None:
+        try:
+            saved_cwd = os.getcwd()
+        except OSError:
+            saved_cwd = ''
+    else:
+        saved_cwd = (cwd if isinstance(cwd, str) and len(cwd) <= MAX_CWD
+                     else '')
     saved_shell = (shell_name if isinstance(shell_name, str)
                    and len(shell_name) <= MAX_SHELL else '')
     entry = {'script': script,
              'output': _clip_output(output),
-             'cwd': saved_cwd if cwd is not None else os.getcwd(),
+             'cwd': saved_cwd,
              'shell': saved_shell,
              'exit': status,
              'saved_at': time.time()}

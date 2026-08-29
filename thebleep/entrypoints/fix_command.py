@@ -93,8 +93,12 @@ def fix_command(known_args):
             logs.debug('Empty command, nothing to do')
             return
 
+        try:
+            cwd = os.getcwd()
+        except OSError:
+            cwd = ''
         failure_store.record(command.script, command.output,
-                             os.environ.get('TB_EXIT'), os.getcwd(),
+                             os.environ.get('TB_EXIT'), cwd,
                              os.environ.get('TB_SHELL'))
         _fix_command(known_args, command)
 

@@ -45,6 +45,16 @@ def test_record_does_not_store_an_oversized_command(mocker):
     assert not save.called
 
 
+def test_record_survives_an_unavailable_working_directory(mocker):
+    save = mocker.patch('thebleep.failure_store.cachefile.save')
+    mocker.patch('thebleep.failure_store.os.getcwd',
+                 side_effect=OSError('directory was removed'))
+
+    failure_store.record('gti status', 'not found', 127)
+
+    assert save.call_args.args[2][0]['cwd'] == ''
+
+
 def test_forget_removes_one_failure(mocker):
     save = mocker.patch('thebleep.failure_store.cachefile.save')
     entries = [

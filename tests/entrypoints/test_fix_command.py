@@ -126,3 +126,20 @@ def test_pick_lists_without_correcting(capsys, mocker, settings):
                      debug=False, why=False, pick=0))
 
     assert capsys.readouterr().out == 'No recorded failures.\n'
+
+
+def test_recording_survives_an_unavailable_working_directory(mocker, settings):
+    mocker.patch('thebleep.entrypoints.fix_command._get_raw_command',
+                 return_value=['gti'])
+    mocker.patch('thebleep.entrypoints.fix_command.types.Command'
+                 '.from_raw_script', return_value=Command('gti', 'not found'))
+    record = mocker.patch(
+        'thebleep.entrypoints.fix_command.failure_store.record')
+    mocker.patch('thebleep.entrypoints.fix_command._fix_command')
+    mocker.patch('thebleep.entrypoints.fix_command.os.getcwd',
+                 side_effect=OSError('directory was removed'))
+
+    fix_command(Mock(command=[], force_command=None, repeat=False,
+                     debug=False, why=False, pick=None))
+
+    assert record.call_args.args[3] == ''
