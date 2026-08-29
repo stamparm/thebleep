@@ -55,6 +55,12 @@ class TestRerun(object):
         assert rerun.get_output('', '') is None
         wait_output_mock.assert_called_once()
 
+    @patch('thebleep.output_readers.rerun.Popen',
+           side_effect=OSError('program disappeared'))
+    def test_a_program_that_disappears_before_launch_is_not_a_traceback(
+            self, popen_mock):
+        assert rerun.get_output('ls', 'ls') is None
+
     @patch('thebleep.output_readers.rerun.Popen')
     def test_get_output_invalid_continuation_byte(self, popen_mock):
         output = b'ls: illegal option -- \xc3\nusage: ls [-@ABC...] [file ...]\n'

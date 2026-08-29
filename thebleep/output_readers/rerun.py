@@ -265,8 +265,16 @@ def get_output(script, expanded):
     with logs.debug_time(u'Call: {}; with env: {}; is slow: {}'.format(
             script, logged_env, is_slow)):
         argv, through_a_shell = _call(expanded)
-        result = Popen(argv, shell=through_a_shell, stdin=PIPE,
-                       stdout=PIPE, stderr=STDOUT, env=env)
+        try:
+            result = Popen(argv, shell=through_a_shell, stdin=PIPE,
+                           stdout=PIPE, stderr=STDOUT, env=env)
+        except (OSError, ValueError) as error:
+            # The lookup in `_call` and the process launch are separate
+            # operations. A program can disappear, lose execute permission or
+            # become invalid between them; that is no output to correct from,
+            # not a reason to take the whole CLI down.
+            logs.debug(u'Rerun could not start: {}'.format(error))
+            return None
         output = _wait_output(result, is_slow)
         if output is None:
             logs.debug(u'Execution timed out!')

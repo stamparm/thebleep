@@ -28,6 +28,10 @@
 
 ### Fixed
 
+- **A disappearing command could crash correction.** If an executable vanished
+  between the safe lookup and the replay launch, The Bleep now treats that as
+  unavailable output and continues without a traceback.
+
 - **A program's colour hid its message from every rule that reads one.** Rules
   read output as text, and nothing took the terminal control sequences out
   first. deno is a clap program, so `clap_suggestion` -- which corrects any
