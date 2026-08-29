@@ -62,6 +62,18 @@ def test_not_match(exited, script):
     assert not match(Command(script, ''))
 
 
+def test_a_configuration_token_is_not_a_commit(exited):
+    exited(0)
+
+    assert not match(Command('git config commit true', ''))
+
+
+def test_a_commit_after_environment_assignments_still_matches(exited):
+    exited(0)
+
+    assert match(Command('GIT_OPTIONAL_LOCKS=0 git commit', ''))
+
+
 @pytest.mark.parametrize('script', [
     ('git commit -m "test commit"'),
     ('git commit')])
