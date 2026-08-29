@@ -184,6 +184,20 @@ def test_tool_lines_kills_a_timed_out_process_tree(mocker):
     kill_tree.assert_called_once_with(process)
 
 
+def test_tool_lines_joins_the_reader_after_timeout(mocker):
+    from subprocess import TimeoutExpired
+    from thebleep import utils
+
+    process = mocker.Mock(stdout=io.BytesIO())
+    process.wait.side_effect = [TimeoutExpired('helper', 1), 0]
+    mocker.patch.object(utils, 'kill_process_tree')
+    reader = mocker.patch('threading.Thread').return_value
+    mocker.patch('subprocess.Popen', return_value=process)
+
+    assert utils.tool_lines(['helper'], timeout=1) == []
+    reader.join.assert_called_once_with(1)
+
+
 # Kept before anything patches them, so that the tests which are *about* the
 # disk cache can put the real thing back.
 REAL_CACHEFILE = (cachefile.load, cachefile.save)

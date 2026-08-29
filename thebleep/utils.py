@@ -174,6 +174,7 @@ def tool_lines(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False,
                 process.wait(timeout=1)
             except Exception:                                # noqa: BLE001
                 pass
+            reader.join(1)
             from . import logs
 
             logs.debug(u'{} did not answer in {}s'.format(

@@ -139,6 +139,14 @@ class TestRerun(object):
         kill_process_mock.assert_called_once_with(self.proc_mock)
 
     @patch('thebleep.output_readers.rerun._kill_process')
+    def test_wait_output_joins_the_reader_after_timeout(self,
+                                                        kill_process_mock,
+                                                        mocker):
+        reader = mocker.patch('threading.Thread').return_value
+        assert rerun._wait_output(_popen(timeout=True), False) is None
+        reader.join.assert_called_once_with(1)
+
+    @patch('thebleep.output_readers.rerun._kill_process')
     def test_wait_output_timeout_children(self, kill_process_mock):
         self.proc_mock.children.return_value = [Mock()] * 2
         assert rerun._wait_output(_popen(timeout=True), False) is None

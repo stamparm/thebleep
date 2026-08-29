@@ -108,6 +108,7 @@ def _wait_output(popen, is_slow):
             popen.wait(timeout=1)
         except Exception:                                    # noqa: BLE001
             pass
+        reader.join(1)
         return None
 
     # The command has exited; anything still in the pipe arrives now. A
