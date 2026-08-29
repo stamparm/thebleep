@@ -135,6 +135,15 @@ def test_no_such_program(script, output, expect):
     assert _first(script, output) == expect
 
 
+def test_a_short_argument_cannot_become_a_second_command(mocker):
+    """An installed name must not turn `rmm f` into `rm mf`."""
+    mocker.patch(
+        'thebleep.rules.missing_space_before_subcommand.get_all_executables',
+        return_value=_executables() + ['mf'])
+
+    assert _first('rmm f', cases.DASH.format('rmm')) == 'rm f'
+
+
 @pytest.mark.parametrize('script, output, expect', cases.THE_TOOL_SAID_SO,
                          ids=[_identify(c) for c in cases.THE_TOOL_SAID_SO])
 def test_the_tool_said_so(script, output, expect):
