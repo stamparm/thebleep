@@ -408,6 +408,12 @@ each suggestion's command, rule, priority, side-effect flag and evidence. If
 output is omitted, output-dependent rules are skipped; the API never replays a
 command to fill it in.
 
+The same contract is available from the command line:
+
+```bash
+thebleep --json --stderr error.txt --cwd "$PWD" -- gti status
+```
+
 ##### [Back to Contents](#contents)
 
 ## thebleep --doctor

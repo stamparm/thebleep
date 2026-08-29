@@ -79,6 +79,10 @@ def _main():
             logs.warn('Shell logger supports only Linux and macOS')
         else:
             shell_logger(known_args.shell_logger)
+    elif known_args.json:
+        from .json_output import json_output
+
+        sys.exit(json_output(known_args))
     elif known_args.command or 'TB_HISTORY' in os.environ:
         from .fix_command import fix_command
 

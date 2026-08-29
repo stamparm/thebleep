@@ -14,9 +14,12 @@ DEFAULTS = {'alias': None,
             'enable_experimental_instant_mode': False,
             'force_command': None,
             'help': False,
+            'json': False,
             'repeat': False,
             'shell': None,
             'shell_logger': None,
+            'stderr': None,
+            'cwd': None,
             'version': False,
             'yes': False}
 
@@ -123,6 +126,20 @@ class Parser(object):
             '--doctor',
             action='store_true',
             help='report what is installed and configured, and what is wrong')
+        self._parser.add_argument(
+            '--json',
+            action='store_true',
+            help='return structured suggestions without running a command')
+        self._parser.add_argument(
+            '--stderr',
+            action='store',
+            metavar='FILE',
+            help='read captured command output from FILE with --json')
+        self._parser.add_argument(
+            '--cwd',
+            action='store',
+            metavar='DIRECTORY',
+            help='evaluate --json in DIRECTORY')
         self._parser.add_argument(
             '--clear-cache',
             action='store_true',

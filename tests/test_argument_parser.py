@@ -6,11 +6,11 @@ from thebleep.const import ARGUMENT_PLACEHOLDER
 def _args(**override):
     args = {'alias': None, 'alias_loader': None, 'clear_cache': False,
             'command': [], 'yes': False,
-            'help': False, 'version': False, 'debug': False,
+            'help': False, 'version': False, 'debug': False, 'json': False,
             'force_command': None, 'repeat': False, 'edit': False,
             'doctor': False, 'explain': False,
             'enable_experimental_instant_mode': False,
-            'shell': None, 'shell_logger': None}
+            'shell': None, 'shell_logger': None, 'stderr': None, 'cwd': None}
     args.update(override)
     return args
 
@@ -43,6 +43,9 @@ def _args(**override):
     (['thebleep', 'git', 'branch', ARGUMENT_PLACEHOLDER, '--shell', 'fish'],
      _args(command=['git', 'branch'], shell='fish')),
     (['thebleep', '--doctor'], _args(doctor=True)),
+    (['thebleep', '--json', '--stderr', 'error.txt', '--cwd', '/tmp', '--',
+      'gti', 'status'],
+     _args(json=True, stderr='error.txt', cwd='/tmp', command=['gti', 'status'])),
     (['thebleep', 'git', 'branch', ARGUMENT_PLACEHOLDER, '--explain'],
      _args(command=['git', 'branch'], explain=True))])
 def test_parse(argv, result):
