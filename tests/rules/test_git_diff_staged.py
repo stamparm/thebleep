@@ -46,6 +46,10 @@ class TestAfterADiffThatWorked(object):
 
 
 class TestWhenItShouldStandAside(object):
+    def test_a_configuration_token_is_not_a_diff(self, exited):
+        exited(0)
+        assert not match(Command('git config --get-regexp diff', ''))
+
     def test_a_diff_that_failed(self, exited):
         """`git_flag_after_filename` knows this message and gets it right."""
         exited(1)

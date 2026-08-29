@@ -13,12 +13,18 @@ def test_match():
     assert not match(Command('ls', output))
 
 
+def test_a_merge_argument_is_not_the_subcommand():
+    assert not match(Command('git show merge local', output))
+
+
 @pytest.mark.parametrize('command, new_command', [
     (Command('git merge local', output),
      'git merge remote/local'),
     (Command('git merge -m "test" local', output),
      'git merge -m "test" remote/local'),
     (Command('git merge -m "test local" local', output),
-     'git merge -m "test local" remote/local')])
+     'git merge -m "test local" remote/local'),
+    (Command('git -C worktree merge local', output),
+     'git -C worktree merge remote/local')])
 def test_get_new_command(command, new_command):
     assert get_new_command(command) == new_command

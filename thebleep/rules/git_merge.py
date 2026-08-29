@@ -1,12 +1,13 @@
 import re
 from thebleep.shells import shell
 from thebleep.utils import replace_argument
-from thebleep.specific.git import git_support
+from thebleep.specific.git import git_subcommand_index, git_support
 
 
 @git_support
 def match(command):
-    return ('merge' in command.script
+    index = git_subcommand_index(command.script_parts)
+    return (command.script_parts[index:index + 1] == ['merge']
             and ' - not something we can merge' in command.output
             and 'Did you mean this?' in command.output)
 

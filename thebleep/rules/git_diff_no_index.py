@@ -1,13 +1,15 @@
 from thebleep.utils import replace_argument
-from thebleep.specific.git import git_support
+from thebleep.specific.git import git_subcommand_index, git_support
 
 
 @git_support
 def match(command):
-    files = [arg for arg in command.script_parts[2:]
+    parts = command.script_parts
+    index = git_subcommand_index(parts)
+    files = [arg for arg in parts[index + 1:]
              if not arg.startswith('-')]
-    return ('diff' in command.script
-            and '--no-index' not in command.script
+    return (parts[index:index + 1] == ['diff']
+            and '--no-index' not in parts
             and len(files) == 2)
 
 

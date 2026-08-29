@@ -26,16 +26,17 @@ It needs no output: the exit status and the command are the whole question.
 
 from thebleep import replay
 from thebleep.utils import replace_argument
-from thebleep.specific.git import git_support
+from thebleep.specific.git import git_subcommand_index, git_support
 
 requires_output = False
 
 
 @git_support
 def match(command):
-    return ('diff' in command.script_parts
-            and '--staged' not in command.script
-            and '--cached' not in command.script
+    index = git_subcommand_index(command.script_parts)
+    return (command.script_parts[index:index + 1] == ['diff']
+            and '--staged' not in command.script_parts
+            and '--cached' not in command.script_parts
             # Exactly zero: `None` means the shell did not say, and guessing
             # that a command worked is what put `--staged` in front of an error
             # message.
