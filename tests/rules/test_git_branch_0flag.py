@@ -68,3 +68,9 @@ def output_not_valid_object():
 )
 def test_get_new_command_not_valid_object(script, output_not_valid_object, new_command):
     assert get_new_command(Command(script, output_not_valid_object)) == new_command
+
+
+def test_get_new_command_does_not_rewrite_a_quoted_argument(output_not_valid_object):
+    command = Command("git branch 'keep 0l' 0l", output_not_valid_object)
+
+    assert get_new_command(command) == "git branch 'keep 0l' -l"
