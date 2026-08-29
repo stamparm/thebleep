@@ -43,6 +43,7 @@ PROBES = {
     'go': [['version']],
     'grep': [['--version'], ['--definitely-not-a-bleep-option']],
     'hg': [['--version']],
+    'ifconfig': [['thebleep-no-such-interface']],
     'java': [['-version']],
     'kubectl': [['version', '--client']],
     'make': [['--version']],
