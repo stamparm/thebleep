@@ -83,6 +83,19 @@ def _wrapped_together(script_line, lines, width):
 
 
 def _get_script_group_lines(grouped, script):
+    def _find_word(text, word, start):
+        while True:
+            position = text.find(word, start)
+            if position == -1:
+                return -1
+            before = text[position - 1] if position else ''
+            after_at = position + len(word)
+            after = text[after_at] if after_at < len(text) else ''
+            if not (before.isalnum() or before == '_') \
+                    and not (after.isalnum() or after == '_'):
+                return position
+            start = position + 1
+
     parts = _words(script)
     width = max(get_terminal_size().columns, 1)
 
@@ -90,7 +103,7 @@ def _get_script_group_lines(grouped, script):
         joined = _wrapped_together(script_line, lines, width)
         position = 0
         for part in parts:
-            position = joined.find(part, position)
+            position = _find_word(joined, part, position)
             if position == -1:
                 break
             position += len(part)
