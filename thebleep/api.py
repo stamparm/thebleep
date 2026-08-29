@@ -67,14 +67,14 @@ def suggest(script, output=None):
     }
 
 
-def why(script, output=None):
+def why(script, output=None, platform_name=None):
     """Return deterministic diagnoses for output the caller already has."""
     if not isinstance(script, str):
         raise TypeError('script must be a string')
     if output is not None and not isinstance(output, str):
         raise TypeError('output must be a string or None')
 
-    result = diagnostics.diagnose(script, output)
+    result = diagnostics.diagnose(script, output, platform_name)
     result['schema'] = SCHEMA_VERSION
     # Keep the top-level contract fields in the same order as `suggest`, even
     # though JSON consumers should treat object order as insignificant.

@@ -33,6 +33,27 @@ def test_address_in_use_extracts_port_and_offers_read_only_next_step():
                 'risk': 'read-only'}]}]}
 
 
+@pytest.mark.parametrize('kind, script, output, command', [
+    ('address_in_use', 'python server.py --port 5432',
+     'OSError: [WinError 10048] Address already in use',
+     'netstat -ano -p tcp | findstr ":5432"'),
+    ('connection_refused', 'python client.py --port 8080',
+     'ConnectionRefusedError: [WinError 10061] Connection refused',
+     'netstat -ano -p tcp | findstr ":8080"'),
+    ('certificate_expired', 'curl https://example.test',
+     'certificate has expired', '[DateTime]::UtcNow'),
+    ('disk_full', 'make', 'No space left on device',
+     'Get-PSDrive -PSProvider FileSystem'),
+])
+def test_windows_diagnostics_offer_windows_read_only_next_steps(
+        kind, script, output, command):
+    result = diagnostics.diagnose(script, output, platform_name='nt')
+
+    diagnosis = next(item for item in result['diagnoses']
+                     if item['kind'] == kind)
+    assert diagnosis['next_steps'][0]['command'] == command
+
+
 @pytest.mark.parametrize('script, output, kind, summary', [
     ('cat /root/file', 'Permission denied', 'permission_denied',
      'The operating system denied the operation.'),
@@ -93,3 +114,9 @@ def test_missing_output_abstains_without_collecting_it():
 def test_requires_text(script, output, message):
     with pytest.raises(TypeError, match=message):
         diagnostics.diagnose(script, output)
+
+
+def test_platform_name_is_explicitly_limited():
+    with pytest.raises(
+            ValueError, match="platform_name must be 'posix' or 'nt'"):
+        diagnostics.diagnose('python', 'error', platform_name='darwin')

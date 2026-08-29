@@ -28,6 +28,10 @@
 
 ### Fixed
 
+- **`--why` suggested Linux-only checks on Windows.** Deterministic follow-up
+  commands now match the target platform, including PowerShell clock and
+  filesystem checks and a Windows-compatible port lookup.
+
 - **A disappearing command could crash correction.** If an executable vanished
   between the safe lookup and the replay launch, The Bleep now treats that as
   unavailable output and continues without a traceback.

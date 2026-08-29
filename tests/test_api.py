@@ -98,3 +98,13 @@ def test_why_returns_the_versioned_diagnosis_contract():
                 'reason': 'check whether a distribution with this name is '
                           'installed',
                 'risk': 'read-only'}]}]}
+
+
+def test_why_can_describe_a_different_target_platform():
+    result = api.why(
+        'python server.py --port 5432',
+        'OSError: [WinError 10048] Address already in use',
+        platform_name='nt')
+
+    assert result['diagnoses'][0]['next_steps'][0]['command'] == (
+        'netstat -ano -p tcp | findstr ":5432"')

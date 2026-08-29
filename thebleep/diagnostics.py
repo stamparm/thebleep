@@ -9,6 +9,7 @@ machine, reruns the command, or turns an extracted value into an executable
 action.
 """
 
+import os
 import re
 import shlex
 
@@ -35,7 +36,19 @@ def _step(command, reason):
     return {'command': command, 'reason': reason, 'risk': 'read-only'}
 
 
-def _address_in_use(script, output):
+def _shell_command(posix, windows, platform_name):
+    """Return a read-only follow-up for the target platform."""
+    return windows if platform_name == 'nt' else posix
+
+
+def _quote(value, platform_name):
+    """Quote a value for a displayed follow-up command."""
+    if platform_name != 'nt':
+        return shlex.quote(value)
+    return "'{}'".format(value.replace("'", "''"))
+
+
+def _address_in_use(script, output, platform_name):
     if not re.search(r'address already in use', output, re.IGNORECASE):
         return None
 
@@ -45,7 +58,10 @@ def _address_in_use(script, output):
     if port:
         evidence.append('port {}'.format(port))
         next_steps.append(_step(
-            'lsof -nP -iTCP:{} -sTCP:LISTEN'.format(port),
+            _shell_command(
+                'lsof -nP -iTCP:{} -sTCP:LISTEN'.format(port),
+                'netstat -ano -p tcp | findstr ":{}"'.format(port),
+                platform_name),
             'find the process listening on this port'))
     return {
         'kind': 'address_in_use',
@@ -56,7 +72,7 @@ def _address_in_use(script, output):
     }
 
 
-def _permission_denied(script, output):
+def _permission_denied(script, output, platform_name):
     if not re.search(r'(?:permission denied|access is denied)', output,
                      re.IGNORECASE):
         return None
@@ -70,7 +86,7 @@ def _permission_denied(script, output):
     }
 
 
-def _certificate_expired(script, output):
+def _certificate_expired(script, output, platform_name):
     if not re.search(r'certificate has expired', output, re.IGNORECASE):
         return None
     match = re.search(r'certificate has expired', output, re.IGNORECASE)
@@ -79,11 +95,13 @@ def _certificate_expired(script, output):
         'summary': 'The peer certificate could not be trusted because it is '
                    'expired.',
         'evidence': [match.group(0).lower()],
-        'next_steps': [_step('date -u', 'check the local clock')],
+        'next_steps': [_step(
+            _shell_command('date -u', '[DateTime]::UtcNow', platform_name),
+            'check the local clock')],
     }
 
 
-def _disk_full(script, output):
+def _disk_full(script, output, platform_name):
     if not re.search(r'no space left on device|disk full', output,
                      re.IGNORECASE):
         return None
@@ -93,11 +111,16 @@ def _disk_full(script, output):
         'kind': 'disk_full',
         'summary': 'The filesystem is out of space.',
         'evidence': [match.group(0).lower()],
-        'next_steps': [_step('df -h', 'inspect filesystem capacity')],
+        'next_steps': [_step(
+            _shell_command(
+                'df -h',
+                'Get-PSDrive -PSProvider FileSystem',
+                platform_name),
+            'inspect filesystem capacity')],
     }
 
 
-def _connection_refused(script, output):
+def _connection_refused(script, output, platform_name):
     if not re.search(r'connection refused', output, re.IGNORECASE):
         return None
     match = re.search(r'connection refused', output, re.IGNORECASE)
@@ -107,7 +130,10 @@ def _connection_refused(script, output):
     if port:
         evidence.append('port {}'.format(port))
         next_steps.append(_step(
-            'lsof -nP -iTCP:{} -sTCP:LISTEN'.format(port),
+            _shell_command(
+                'lsof -nP -iTCP:{} -sTCP:LISTEN'.format(port),
+                'netstat -ano -p tcp | findstr ":{}"'.format(port),
+                platform_name),
             'check whether anything is listening on this port'))
     return {
         'kind': 'connection_refused',
@@ -118,7 +144,7 @@ def _connection_refused(script, output):
     }
 
 
-def _missing_module(script, output):
+def _missing_module(script, output, platform_name):
     match = _MODULE.search(output)
     if not match:
         return None
@@ -128,12 +154,14 @@ def _missing_module(script, output):
         'summary': 'Python could not import module {!r}.'.format(module),
         'evidence': ["No module named '{}'".format(module)],
         'next_steps': [_step(
-            'python -m pip show {}'.format(shlex.quote(module)),
+            '{} -m pip show {}'.format(
+                _shell_command('python', 'python', platform_name),
+                _quote(module, platform_name)),
             'check whether a distribution with this name is installed')],
     }
 
 
-def _dubious_ownership(script, output):
+def _dubious_ownership(script, output, platform_name):
     if not re.search(r'detected dubious ownership', output, re.IGNORECASE):
         return None
     match = re.search(r'detected dubious ownership', output, re.IGNORECASE)
@@ -152,7 +180,7 @@ _DETECTORS = (_address_in_use, _permission_denied, _certificate_expired,
               _dubious_ownership)
 
 
-def diagnose(script, output=None):
+def diagnose(script, output=None, platform_name=None):
     """Return factual diagnoses for supplied command output.
 
     No diagnosis is returned without output. A detector must recognise a
@@ -163,10 +191,14 @@ def diagnose(script, output=None):
         raise TypeError('script must be a string')
     if output is not None and not isinstance(output, str):
         raise TypeError('output must be a string or None')
+    if platform_name is None:
+        platform_name = os.name
+    if platform_name not in ('posix', 'nt'):
+        raise ValueError("platform_name must be 'posix' or 'nt'")
 
     diagnoses = [] if output is None else [
         diagnosis for detector in _DETECTORS
-        for diagnosis in (detector(script, output),)
+        for diagnosis in (detector(script, output, platform_name),)
         if diagnosis is not None]
     return {
         'command': script,

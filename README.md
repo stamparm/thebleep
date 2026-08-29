@@ -468,7 +468,9 @@ observed evidence, a short summary and read-only `next_steps`. It covers a
 small set of high-signal failures such as occupied ports, missing Python
 modules and Git's dubious-ownership refusal. It never probes the machine or
 reruns the command. Unknown wording returns `decision: abstain`, because a
-plausible explanation is not proof.
+plausible explanation is not proof. Follow-up commands are selected for the
+current platform; callers using the Python API can pass `platform_name='nt'`
+when diagnosing output for a Windows target from another machine.
 
 The command-line form is:
 
