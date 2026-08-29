@@ -7,6 +7,7 @@ DEFAULTS = {'alias': None,
             'alias_loader': None,
             'clear_cache': False,
             'command': [],
+            'command_text': None,
             'debug': False,
             'doctor': False,
             'edit': False,
@@ -130,6 +131,11 @@ class Parser(object):
             '--json',
             action='store_true',
             help='return structured suggestions without running a command')
+        self._parser.add_argument(
+            '--command',
+            dest='command_text',
+            metavar='COMMAND',
+            help='use this exact command string with --json')
         self._parser.add_argument(
             '--stderr',
             action='store',

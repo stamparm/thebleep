@@ -416,12 +416,13 @@ skipped; the API never replays a command to fill it in.
 The same contract is available from the command line:
 
 ```bash
-thebleep --json --stderr error.txt --cwd "$PWD" -- gti status
+thebleep --json --stderr error.txt --cwd "$PWD" --command 'gti status'
 ```
 
 `--stderr -` reads captured output from standard input. Input is bounded at
 8 MiB; an unexpectedly large capture is rejected rather than buffered without
-limit.
+limit. `--command` preserves the exact command string, including compound
+syntax and quoting; the older positional form after `--` remains supported.
 
 ##### [Back to Contents](#contents)
 

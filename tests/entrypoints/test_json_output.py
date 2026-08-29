@@ -4,12 +4,13 @@ import thebleep.entrypoints.json_output as json_output_module
 from thebleep.entrypoints.json_output import json_output
 
 
-def _args(command, stderr=None, cwd=None):
+def _args(command, stderr=None, cwd=None, command_text=None):
     class Arguments(object):
         pass
 
     args = Arguments()
     args.command = command
+    args.command_text = command_text
     args.stderr = stderr
     args.cwd = cwd
     args.yes = args.debug = args.repeat = args.edit = args.explain = False
@@ -33,6 +34,24 @@ def test_json_output_uses_captured_output_and_restores_cwd(
 
     suggest.assert_called_once_with('gti status', 'git: unknown command')
     assert json.loads(capsys.readouterr().out) == {'suggestions': []}
+
+
+def test_json_output_preserves_an_exact_command(mocker, capsys):
+    _no_settings(mocker)
+    suggest = mocker.patch(
+        'thebleep.entrypoints.json_output.api.suggest',
+        return_value={'suggestions': []})
+    args = _args([], command_text="cd 'a b' && gti status")
+
+    assert json_output(args) == 0
+    suggest.assert_called_once_with("cd 'a b' && gti status", None)
+    assert json.loads(capsys.readouterr().out) == {'suggestions': []}
+
+
+def test_json_output_rejects_both_command_forms(mocker, capsys):
+    _no_settings(mocker)
+    assert json_output(_args(['gti'], command_text='git status')) == 2
+    assert 'cannot be combined' in capsys.readouterr().err
 
 
 def test_json_output_requires_a_command(mocker, capsys):

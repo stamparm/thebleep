@@ -43,7 +43,11 @@ def json_output(args):
     command-only rules.
     """
     settings.init(args)
-    if not args.command:
+    command_text = getattr(args, 'command_text', None)
+    if command_text is not None and args.command:
+        logs.failed('--command cannot be combined with positional command')
+        return 2
+    if command_text is None and not args.command:
         logs.failed('--json needs a command after the options')
         return 2
 
@@ -55,7 +59,9 @@ def json_output(args):
     try:
         if args.cwd:
             os.chdir(args.cwd)
-        result = api.suggest(format_raw_script(args.command), output)
+        script = (command_text if command_text is not None else
+                  format_raw_script(args.command))
+        result = api.suggest(script, output)
     except OSError as error:
         logs.failed('Could not use {}: {}'.format(args.cwd, error))
         return 2

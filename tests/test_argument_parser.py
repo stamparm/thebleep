@@ -5,7 +5,7 @@ from thebleep.const import ARGUMENT_PLACEHOLDER
 
 def _args(**override):
     args = {'alias': None, 'alias_loader': None, 'clear_cache': False,
-            'command': [], 'yes': False,
+            'command': [], 'command_text': None, 'yes': False,
             'help': False, 'version': False, 'debug': False, 'json': False,
             'force_command': None, 'repeat': False, 'edit': False,
             'doctor': False, 'explain': False,
@@ -46,6 +46,8 @@ def _args(**override):
     (['thebleep', '--json', '--stderr', 'error.txt', '--cwd', '/tmp', '--',
       'gti', 'status'],
      _args(json=True, stderr='error.txt', cwd='/tmp', command=['gti', 'status'])),
+    (['thebleep', '--json', '--command', 'gti status'],
+     _args(json=True, command_text='gti status')),
     (['thebleep', 'git', 'branch', ARGUMENT_PLACEHOLDER, '--explain'],
      _args(command=['git', 'branch'], explain=True))])
 def test_parse(argv, result):
