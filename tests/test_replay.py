@@ -332,6 +332,16 @@ class TestAskingTheProgramItself(object):
         monkeypatch.setattr(replay, 'PROBE_TIMEOUT', 1)
         assert replay._subcommands('sleep', ('30',)) is None
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason='needs a POSIX script')
+    def test_a_truncated_listing_is_not_trusted(self, tmpdir, monkeypatch):
+        """An incomplete listing could hide a real, effectful subcommand."""
+        program = tmpdir.join('dispatcher')
+        program.write('#!/bin/sh\nprintf "status-123456789\\n"\n')
+        program.chmod(0o755)
+        monkeypatch.setattr('thebleep.utils.TOOL_OUTPUT', 8)
+
+        assert replay._subcommands(str(program), ('--list',)) is None
+
 
 @pytest.mark.skipif(sys.platform == 'win32',
                     reason='needs a POSIX executable script')

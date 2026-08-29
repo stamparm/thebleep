@@ -39,6 +39,10 @@
 
 ### Security
 
+- **Dispatcher listings are bounded and conservative.** A listing that exceeds
+  the output limit is not treated as complete, so replay never infers that a
+  subcommand is harmless from a truncated answer.
+
 - **Explicit paths to dispatchers are no longer probed automatically.** A file
   named `git` or `cargo` can be an arbitrary executable, so it now requires
   replay confirmation like any other explicit path.

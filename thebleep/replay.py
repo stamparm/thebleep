@@ -268,18 +268,22 @@ def _subcommands(program, question):
     prints nothing or cannot be run at all returns `None`, and `None` asks.
 
     """
-    import subprocess
-
     try:
-        answer = subprocess.check_output(
-            (program,) + question, stderr=subprocess.DEVNULL,
-            stdin=subprocess.DEVNULL, timeout=PROBE_TIMEOUT)
+        from .utils import tool_lines
+
+        answer, truncated = tool_lines(
+            (program,) + question, timeout=PROBE_TIMEOUT,
+            return_truncated=True)
     except Exception:
         logs.debug(u'Replay: {} would not list its subcommands'.format(
             program))
         return None
 
-    names = answer.decode('utf-8', 'replace').split()
+    if truncated:
+        logs.debug(u'Replay: {} listed too much to trust'.format(program))
+        return None
+
+    names = '\n'.join(answer).split()
     return frozenset(names) if names else None
 
 

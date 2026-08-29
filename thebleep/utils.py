@@ -92,7 +92,8 @@ def drain(stream, sink):
         pass
 
 
-def tool_lines(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False):
+def tool_lines(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False,
+               return_truncated=False):
     """The lines `arguments` printed on stdout, or `[]`.
 
     `merge_stderr` for the programs that print their help to stderr, or that
@@ -117,6 +118,9 @@ def tool_lines(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False):
     subcommand being asked about. A rule that cannot get a list has nothing to
     suggest, which is a rule that does not fire.
 
+    `return_truncated` is for callers that require a complete answer. When it
+    is true, the return value is `(lines, truncated)`.
+
     """
     from subprocess import PIPE, Popen, STDOUT, TimeoutExpired
 
@@ -124,7 +128,7 @@ def tool_lines(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False):
         process = Popen(arguments, stdin=DEVNULL, stdout=PIPE,
                         stderr=STDOUT if merge_stderr else DEVNULL)
     except Exception:                                        # noqa: BLE001
-        return []
+        return ([], False) if return_truncated else []
 
     # Read while it runs, into a bounded sink, and only then wait. The cap used
     # to be applied to whatever `communicate()` handed back -- which is every
@@ -152,12 +156,13 @@ def tool_lines(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False):
 
             logs.debug(u'{} did not answer in {}s'.format(
                 arguments[0] if arguments else '?', timeout))
-            return []
+            return ([], False) if return_truncated else []
     except Exception:                                        # noqa: BLE001
-        return []
+        return ([], False) if return_truncated else []
 
     reader.join(1)
-    return sink.value().decode('utf-8', errors='replace').splitlines()
+    lines = sink.value().decode('utf-8', errors='replace').splitlines()
+    return (lines, sink.truncated) if return_truncated else lines
 
 
 def tool_output(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False):
