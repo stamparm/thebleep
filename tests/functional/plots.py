@@ -15,9 +15,7 @@ def with_confirmation(proc, TIMEOUT):
     assert proc.expect([TIMEOUT, u'echo test'])
     assert proc.expect([TIMEOUT, u'enter'])
     assert proc.expect_exact([TIMEOUT, u'ctrl+c'])
-    proc.send('\n')
-
-    assert proc.expect([TIMEOUT, u'test'])
+    _answer(proc, TIMEOUT, u'\n', u'test')
 
 
 def history_changed(proc, TIMEOUT, *to):
@@ -32,6 +30,22 @@ def history_not_changed(proc, TIMEOUT):
     """Ensures that history not changed."""
     proc.send('\033[A')
     assert proc.expect([TIMEOUT, u'bleep'])
+
+
+def _answer(proc, TIMEOUT, key, expected, attempts=5, patience=8):
+    """Sends an answer until the interactive process acknowledges it.
+
+    Enter and Ctrl+C can arrive before raw mode is ready, just like the `y`
+    used for replay. The terminal drops that first byte when it flushes its
+    input queue, so a single send makes these tests depend on scheduling.
+    """
+    for _ in range(attempts):
+        proc.send(key)
+        if proc.expect([TIMEOUT, expected], timeout=patience):
+            return
+    raise AssertionError(
+        'no {!r} after sending {!r} {} times'.format(
+            expected, key, attempts))
 
 
 def _agree(proc, TIMEOUT, expected, attempts=5, patience=8):
@@ -54,12 +68,7 @@ def _agree(proc, TIMEOUT, expected, attempts=5, patience=8):
     So the fix belongs here, and it is to ask again.
 
     """
-    for _ in range(attempts):
-        proc.send(u'y')
-        if proc.expect([TIMEOUT, expected], timeout=patience):
-            return
-    raise AssertionError(
-        'no {!r} after agreeing {} times'.format(expected, attempts))
+    _answer(proc, TIMEOUT, u'y', expected, attempts, patience)
 
 
 def select_command_with_arrows(proc, TIMEOUT):
@@ -100,9 +109,7 @@ def refuse_with_confirmation(proc, TIMEOUT):
     assert proc.expect([TIMEOUT, u'echo test'])
     assert proc.expect([TIMEOUT, u'enter'])
     assert proc.expect_exact([TIMEOUT, u'ctrl+c'])
-    proc.send('\003')
-
-    assert proc.expect([TIMEOUT, u'Aborted'])
+    _answer(proc, TIMEOUT, u'\003', u'Aborted')
 
 
 def without_confirmation(proc, TIMEOUT):
