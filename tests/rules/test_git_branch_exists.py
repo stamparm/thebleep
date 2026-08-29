@@ -23,9 +23,14 @@ def new_command(branch_name):
         'git branch -D {0} && git checkout -b {0}', 'git checkout {0}']]
 
 
+@pytest.fixture(params=["fatal: A branch named 'foo' already exists.",
+                        "fatal: a branch named 'foo' already exists"])
+def branch_exists_output(request):
+    return request.param
+
+
 @pytest.mark.parametrize('script, src_branch_name, branch_name', [
     ('git branch foo', 'foo', 'foo'),
-    ('git checkout bar', 'bar', 'bar'),
     ('git checkout -b "let\'s-push-this"', '"let\'s-push-this"', '"let\'s-push-this"')])
 def test_match(output, script, branch_name):
     assert match(Command(script, output))
@@ -33,15 +38,31 @@ def test_match(output, script, branch_name):
 
 @pytest.mark.parametrize('script', [
     'git branch foo',
-    'git checkout bar',
     'git checkout -b "let\'s-push-this"'])
 def test_not_match(script):
     assert not match(Command(script, ''))
 
 
+@pytest.mark.parametrize('script', [
+    'git checkout bar',
+    'git branch -d foo',
+    'git config branch.foo.remote origin',
+    'git show branch foo'])
+def test_an_unrelated_command_does_not_match(script, branch_exists_output):
+    assert not match(Command(script, branch_exists_output))
+
+
+@pytest.mark.parametrize('script', [
+    'git -C worktree branch foo',
+    'GIT_PAGER=cat git -C worktree checkout -b foo',
+    'git switch -c foo',
+    'git switch --force-create foo'])
+def test_global_options_and_switch_creation_match(script, branch_exists_output):
+    assert match(Command(script, branch_exists_output))
+
+
 @pytest.mark.parametrize('script, src_branch_name, branch_name', [
     ('git branch foo', 'foo', 'foo'),
-    ('git checkout bar', 'bar', 'bar'),
     # A quote in the name used to be escaped by hand as `\\'`, which escapes
     # nothing inside single quotes -- and the name was not in quotes anyway.
     ('git checkout -b "let\'s-push-this"', "let's-push-this",

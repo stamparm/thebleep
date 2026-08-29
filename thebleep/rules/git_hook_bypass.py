@@ -35,7 +35,7 @@ something to arrow down to.
 """
 
 from thebleep.utils import replace_argument
-from thebleep.specific.git import git_support
+from thebleep.specific.git import git_subcommand_index, git_support
 
 # The subcommands that consult a hook, and the hooks each one runs.
 HOOKED = {
@@ -47,11 +47,10 @@ HOOKED = {
 
 
 def _subcommand(script_parts):
-    for part in script_parts:
-        if part in HOOKED:
-            return part
-
-    return None
+    index = git_subcommand_index(script_parts)
+    return (script_parts[index]
+            if index < len(script_parts) and script_parts[index] in HOOKED
+            else None)
 
 
 def _hooks_directory():

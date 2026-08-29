@@ -84,10 +84,17 @@ class TestWhenNoHookCould(object):
 
     @pytest.mark.parametrize('script', [
         'git add foo', 'git status', 'git diff foo bar',
+        'git config commit.gpgsign true',
+        'git config push.default simple',
     ])
     def test_a_subcommand_that_runs_no_hooks(self, hooks, script):
         hooks('pre-commit', 'pre-push')
         assert not match(Command(script, 'anything\n'))
+
+    def test_global_option_value_is_not_the_subcommand(self, hooks):
+        hooks('pre-commit')
+        assert not match(Command('git -c alias.commit=show config',
+                                 'anything\n'))
 
 
 def test_it_needs_the_output():
