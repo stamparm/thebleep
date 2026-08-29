@@ -69,3 +69,10 @@ def test_get_branches(branches, branch_list, git_branch):
 def test_get_new_command(branches, command, new_command, git_branch):
     git_branch(branches)
     assert get_new_command(command) == new_command
+
+
+def test_checkout_with_global_options_can_create_the_branch(mocker):
+    mocker.patch('thebleep.rules.git_checkout.tool_lines', return_value=[])
+    command = Command('git -C worktree checkout unknown',
+                      did_not_match('unknown'))
+    assert get_new_command(command) == ['git -C worktree checkout -b unknown']

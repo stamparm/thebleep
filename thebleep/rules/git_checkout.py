@@ -1,7 +1,7 @@
 import re
 from thebleep import utils
 from thebleep.utils import replace_argument, tool_lines
-from thebleep.specific.git import git_support
+from thebleep.specific.git import git_subcommand_index, git_support
 from thebleep.shells import shell
 
 
@@ -46,7 +46,9 @@ def get_new_command(command):
         # `feature;rm -rf ~`, and this went back to the shell to be evaluated.
         new_commands.append(replace_argument(command.script, missing_file,
                                              shell.quote(closest_branch)))
-    if len(command.script_parts) > 1 and command.script_parts[1] == 'checkout':
+    index = git_subcommand_index(command.script_parts)
+    if (index < len(command.script_parts)
+            and command.script_parts[index] == 'checkout'):
         new_commands.append(replace_argument(command.script, 'checkout', 'checkout -b'))
 
     if not new_commands:

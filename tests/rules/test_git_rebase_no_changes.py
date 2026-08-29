@@ -26,3 +26,11 @@ def test_match(output):
 def test_get_new_command(output):
     assert (get_new_command(Command('git rebase --continue', output)) ==
             'git rebase --skip')
+
+
+def test_global_options_do_not_hide_rebase(output):
+    assert match(Command('git -C worktree rebase --continue', output))
+
+
+def test_rebase_in_an_argument_is_not_the_subcommand(output):
+    assert not match(Command('git config rebase.autostash true', output))

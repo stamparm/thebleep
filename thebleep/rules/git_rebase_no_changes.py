@@ -1,10 +1,11 @@
-from thebleep.specific.git import git_support
+from thebleep.specific.git import git_subcommand_index, git_support
 
 
 @git_support
 def match(command):
+    index = git_subcommand_index(command.script_parts)
     return (
-        {'rebase', '--continue'}.issubset(command.script_parts) and
+        command.script_parts[index:index + 2] == ['rebase', '--continue'] and
         'No changes - did you forget to use \'git add\'?' in command.output
     )
 

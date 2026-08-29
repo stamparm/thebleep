@@ -66,3 +66,10 @@ class TestAgainstCurrentGit(object):
 
     def test_a_stash_that_worked_says_nothing(self):
         assert not match(Command('git stash list', ''))
+
+    def test_global_options_are_kept_when_inserting_save(self):
+        command = Command('git -C worktree stash Some message',
+                          MODERN('Some'))
+        assert match(command)
+        assert get_new_command(command) == \
+            'git -C worktree stash save Some message'

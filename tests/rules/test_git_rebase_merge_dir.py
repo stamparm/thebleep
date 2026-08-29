@@ -33,6 +33,14 @@ def test_match(output, script):
     assert match(Command(script, output))
 
 
+def test_global_options_do_not_hide_rebase(output):
+    assert match(Command('git -C worktree rebase master', output))
+
+
+def test_rebase_in_an_argument_is_not_the_subcommand(output):
+    assert not match(Command('git config rebase.autoStash true', output))
+
+
 @pytest.mark.parametrize('script', ['git rebase master', 'git rebase -abort'])
 def test_not_match(script):
     assert not match(Command(script, ''))

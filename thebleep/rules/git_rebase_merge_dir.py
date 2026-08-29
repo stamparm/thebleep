@@ -34,7 +34,7 @@ Wording captured from git 2.43.
 import re
 from thebleep.shells import shell
 from thebleep.utils import get_close_matches
-from thebleep.specific.git import git_support
+from thebleep.specific.git import git_subcommand_index, git_support
 
 # The line git offers, indented by a tab, naming the directory in quotes. The
 # directory is read out of the message rather than assumed to be
@@ -45,7 +45,9 @@ REMOVE = re.compile(r'^\s*rm -fr "([^"]+)"\s*$', re.MULTILINE)
 
 @git_support
 def match(command):
-    return (' rebase' in command.script and
+    index = git_subcommand_index(command.script_parts)
+    return (index < len(command.script_parts)
+            and command.script_parts[index] == 'rebase' and
             'It seems that there is already a rebase-merge directory' in command.output and
             'I wonder if you are in the middle of another rebase' in command.output)
 

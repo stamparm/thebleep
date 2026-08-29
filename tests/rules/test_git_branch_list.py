@@ -14,6 +14,10 @@ def test_not_match():
     assert not match(Command('git stash list', ''))
 
 
+def test_global_options_are_ignored():
+    assert match(Command('git -C worktree branch list', ''))
+
+
 def test_get_new_command():
     assert (get_new_command(Command('git branch list', '')) ==
             shell.and_('git branch --delete list', 'git branch'))

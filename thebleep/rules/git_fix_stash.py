@@ -25,7 +25,7 @@ Wordings captured from git 2.43.
 import re
 from thebleep import utils
 from thebleep.utils import replace_argument
-from thebleep.specific.git import git_support
+from thebleep.specific.git import git_subcommand_index, git_support
 
 # git 2.x: the token it could not read, named.
 UNEXPECTED = re.compile(r"unexpected token '([^']+)'")
@@ -43,7 +43,8 @@ def _bad_token(command):
     # The old usage block names nothing, so the first word after `stash` that
     # is not an option is the guess -- which is what this always did, only
     # without assuming that word is at index 2.
-    for part in command.script_parts[2:]:
+    index = git_subcommand_index(command.script_parts)
+    for part in command.script_parts[index + 1:]:
         if not part.startswith('-'):
             return part
 
@@ -66,8 +67,9 @@ stash_commands = (
 
 @git_support
 def match(command):
-    return (len(command.script_parts) > 2
-            and command.script_parts[1] == 'stash'
+    index = git_subcommand_index(command.script_parts)
+    return (index < len(command.script_parts)
+            and command.script_parts[index] == 'stash'
             and _bad_token(command) is not None)
 
 
@@ -86,5 +88,5 @@ def get_new_command(command):
     # Not a misspelt subcommand, so it was meant as a message -- which is what
     # `git stash save` takes.
     cmd = command.script_parts[:]
-    cmd.insert(2, 'save')
+    cmd.insert(git_subcommand_index(cmd) + 1, 'save')
     return ' '.join(cmd)
