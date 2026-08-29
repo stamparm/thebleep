@@ -94,7 +94,7 @@ def get_new_command(command):
     if one_application and which('pipx'):
         # An application, into an environment pipx keeps for it. This is the
         # message's own first suggestion for anything you meant to *run*.
-        suggestions.append(u'pipx install {}'.format(names[0]))
+        suggestions.append(u'pipx install {}'.format(shell.quote(names[0])))
 
     # And the answer for everything else, which is also the message's: a
     # virtual environment, named the way every tool that makes one names it.

@@ -83,6 +83,10 @@ class TestWhatItSuggests(object):
             'pipx install black',
             'python3 -m venv .venv && .venv/bin/pip install black']
 
+    def test_pipx_quotes_a_package_name(self, with_pipx):
+        command = Command("pip install 'tool;>PWNED'", OUTPUT)
+        assert get_new_command(command)[0] == "pipx install 'tool;>PWNED'"
+
     def test_no_pipx_when_it_is_not_installed(self, no_pipx):
         assert 'pipx' not in ' '.join(
             get_new_command(Command('pip install black', OUTPUT)))
