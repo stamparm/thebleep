@@ -29,6 +29,8 @@ def match(command):
 
 def get_new_command(command):
     destination = _destination(command.output)
+    if not destination:
+        return []
 
     directory = (destination.rstrip('/') if destination.endswith('/')
                  else os.path.dirname(destination))

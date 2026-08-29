@@ -21,6 +21,7 @@ import pytest
 from thebleep.rules import (cp_create_destination, docker_image_being_used_by_container,
                             git_add, heroku_multiple_apps, nixos_cmd_not_found,
                             no_such_file, python_module_error, touch)
+from thebleep.shells import shell
 from thebleep.types import Command
 
 pytestmark = pytest.mark.skipif(sys.platform == 'win32',
@@ -98,6 +99,18 @@ def test_cp_create_destination(payload, arguments_reaching):
     output = ("cp: cannot create regular file '{}/f.txt': "
               'No such file or directory'.format(payload))
     command = Command('cp x {}/f.txt'.format(payload), output)
+    new_command = cp_create_destination.get_new_command(command)
+    assert arguments_reaching(new_command, 'mkdir') == ['-p', payload]
+
+
+@pytest.mark.parametrize('payload', NO_QUOTE)
+def test_cp_create_destination_macos_wording_is_quoted(
+        payload, arguments_reaching, tmpdir, monkeypatch):
+    tmpdir.join('x').write('source\n')
+    monkeypatch.chdir(str(tmpdir))
+    destination = payload + '/f.txt'
+    output = 'cp: {}: No such file or directory'.format(destination)
+    command = Command('cp x {}'.format(shell.quote(destination)), output)
     new_command = cp_create_destination.get_new_command(command)
     assert arguments_reaching(new_command, 'mkdir') == ['-p', payload]
 

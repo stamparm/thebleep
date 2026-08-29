@@ -32,7 +32,7 @@ including when the missing thing was the *source*:
 Both are fixed by reading which path the message names. `cannot create` and
 `cannot move ... to` name the destination, which is the case this rule is for;
 `cannot stat` names the source, which is somebody else's. Wordings captured from
-GNU coreutils 9.x.
+GNU coreutils 9.x, BusyBox 1.37 and macOS 26.
 
 """
 
@@ -66,22 +66,59 @@ DESTINATION = (
 )
 
 
-def _destination(output):
+# BSD cp does not say whether the path is the source or destination.  The
+# command has to settle that ambiguity: the reported path must be the final
+# operand and the source operand must still exist.  BSD mv names both operands
+# but uses the same wording for a missing source, so it needs the same check.
+BSD_CP = re.compile(
+    r'(?m)^cp: ([^\n]+): No such file or directory$')
+BSD_MV = re.compile(
+    r"(?m)^mv: rename '([^']*)' to '([^']*)': "
+    r'No such file or directory$')
+
+
+def _destination(output, command=None):
     for pattern in DESTINATION:
         found = pattern.search(output)
         if found:
             return found.group(1)
 
+    found = BSD_CP.search(output)
+    if found and _bsd_cp_destination(command, found.group(1)):
+        return found.group(1)
+
+    found = BSD_MV.search(output)
+    if found and _bsd_mv_destination(command, found.groups()):
+        return found.group(2)
+
     return None
+
+
+def _bsd_cp_destination(command, destination):
+    if command is None or len(command.script_parts) < 3:
+        return False
+    parts = command.script_parts
+    return (parts[-1] == destination and
+            os.path.lexists(parts[-2]))
+
+
+def _bsd_mv_destination(command, operands):
+    if command is None or len(command.script_parts) < 3:
+        return False
+    parts = command.script_parts
+    return (parts[-2:] == list(operands) and
+            os.path.lexists(parts[-2]))
 
 
 @for_app('cp', 'mv')
 def match(command):
-    return _destination(command.output) is not None
+    return _destination(command.output, command) is not None
 
 
 def get_new_command(command):
-    destination = _destination(command.output)
+    destination = _destination(command.output, command)
+    if not destination:
+        return []
 
     # The directory to make is the one holding the destination, not the
     # destination itself. A destination that names a directory outright -- a

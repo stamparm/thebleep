@@ -26,6 +26,8 @@ GNU_CP = ("cp: cannot create regular file '{}': "
 GNU_CP_DIR = "cp: cannot create directory '{}': No such file or directory\n"
 GNU_MV = "mv: cannot move '{}' to '{}': No such file or directory\n"
 BUSYBOX_CP = "cp: can't create '{}': No such file or directory\n"
+BSD_CP = "cp: {}: No such file or directory\n"
+BSD_MV = "mv: rename '{}' to '{}': No such file or directory\n"
 
 # The *source* is what is missing, so there is nothing to make and the copy
 # would fail again. Firing here left a directory named after the destination.
@@ -72,6 +74,23 @@ class TestTheDestinationIsMissing(object):
         command = Command('cp a.txt nodir/', GNU_CP.format('nodir/'))
         assert get_new_command(command) == 'mkdir -p nodir && cp a.txt nodir/'
 
+    def test_macos_wording_on_a_bare_command_is_ignored(self):
+        command = Command('cp', BSD_CP.format('nodir/a.txt'))
+        assert get_new_command(command) == []
+
+    @pytest.mark.parametrize('script, output', [
+        ('cp a.txt nodir/a.txt', BSD_CP.format('nodir/a.txt')),
+        ('mv a.txt nodir/a.txt', BSD_MV.format('a.txt', 'nodir/a.txt')),
+    ])
+    def test_macos_wording_when_source_exists(self, tmpdir, monkeypatch,
+                                              script, output):
+        monkeypatch.chdir(str(tmpdir))
+        tmpdir.join('a.txt').write('source\n')
+
+        assert match(Command(script, output))
+        assert get_new_command(Command(script, output)) \
+            == 'mkdir -p nodir && ' + script
+
 
 class TestNotTheDestination(object):
     @pytest.mark.parametrize('script, output', [
@@ -88,6 +107,9 @@ class TestNotTheDestination(object):
         # Nothing printed at all.
         ('cp a.txt b.txt', ''),
         ('mv a.txt b.txt', ''),
+        ('cp missing-source destination', BSD_CP.format('missing-source')),
+        ('mv missing-source destination',
+         BSD_MV.format('missing-source', 'destination')),
     ])
     def test_it_does_not_match(self, script, output):
         assert not match(Command(script, output))
