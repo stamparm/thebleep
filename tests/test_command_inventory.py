@@ -39,7 +39,7 @@ def test_probe_is_bounded(monkeypatch, tmpdir, source_root):
 
     result = module.run_probe(
         sys.executable,
-        ['-c', 'import sys; sys.stdout.write("x" * 4096)'],
+        ['-c', 'import sys; sys.stdout.write("x" * 1000000)'],
         Path(str(tmpdir)),
         os.environ.copy())
 
