@@ -61,6 +61,8 @@ from thebleep.utils import memoize, replace_argument, which
 # Every way a program says it did not know a long option. The name is captured
 # with or without its dashes, because git reports `shrot` for `--shrot`.
 BROKEN = (
+    # BSD utilities use a backtick for the opening quote.
+    re.compile(r"unrecognized option `-{1,2}([A-Za-z0-9][\w-]*)'"),
     # GNU: ls, tar, sort, and most of coreutils.
     re.compile(r"unrecognized option '?-{1,2}([A-Za-z0-9][\w-]*)'?"),
     # git, three different ways.

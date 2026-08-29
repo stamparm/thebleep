@@ -19,6 +19,9 @@ GNU = ("ls: unrecognized option '--colour'\n"
        "Try 'ls --help' for more information.\n")
 TAR = ("tar: unrecognized option '--extrat'\n"
        "Try 'tar --help' or 'tar --usage' for more information.\n")
+BSD_LS = ("ls: unrecognized option `--colr'\n"
+          "usage: ls [-@ABCFGHILOPRSTUWXabcdefghiklmnopqrstuvwxy1%,] "
+          "[--color=when] [-D format] [file ...]\n")
 CURL = ('curl: option --verbse: is unknown\n'
         "curl: try 'curl --help' or 'curl --manual' for more information\n")
 
@@ -77,6 +80,11 @@ class TestAskingTheProgram(object):
     ])
     def test_when_the_program_invited_it(self, script, output, expected):
         assert get_new_command(Command(script, output))[0] == expected
+
+    def test_macos_bsd_quote_style(self):
+        command = Command('ls --colr', BSD_LS)
+        assert match(command)
+        assert get_new_command(command)[0] == 'ls --color'
 
     def test_help_is_not_a_candidate(self, installed):
         """`Try 'ls --help'` puts `--help` in the output, and reading that as a
