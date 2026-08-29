@@ -66,6 +66,31 @@ def _main():
         else:
             logs.failed('No recorded failure {}'.format(known_args.forget))
             sys.exit(2)
+    elif getattr(known_args, 'learned', False):
+        from .. import learning
+
+        learning.print_entries()
+    elif getattr(known_args, 'learn_last', None) is not None:
+        from .. import learning
+
+        entry = learning.learn_last(known_args.learn_last)
+        if entry is None:
+            logs.failed('No eligible correction to learn.')
+            sys.exit(2)
+        print('Learned {} -> {} ({}, {}).'.format(
+            entry['before_parts'][entry['index']],
+            entry['after_parts'][entry['index']], entry['scope'],
+            entry['executable']))
+    elif getattr(known_args, 'forget_learning', None) is not None:
+        from .. import learning
+
+        if learning.forget(known_args.forget_learning):
+            print('Forgot learned correction {}.'.format(
+                known_args.forget_learning))
+        else:
+            logs.failed('No learned correction {}'.format(
+                known_args.forget_learning))
+            sys.exit(2)
     elif known_args.alias_loader:
         from .alias import print_alias_loader
 

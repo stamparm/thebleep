@@ -226,17 +226,23 @@ def get_corrected_commands(command):
     :rtype: Iterable[thebleep.types.CorrectedCommand]
 
     """
-    from . import wrappers
+    from itertools import chain
+
+    from . import learning, wrappers
 
     rules = get_rules(command)
+    learned_commands = learning.corrections(command)
     prefix, inner_script = wrappers.peel(command.script, command.script_parts)
 
     if prefix is None:
-        corrected_commands = _corrections(rules, command)
+        corrected_commands = chain(learned_commands,
+                                   _corrections(rules, command))
     else:
         logs.debug(u'Wrapped command: {!r} behind {!r}'.format(
             inner_script, prefix))
-        corrected_commands = _corrections_behind_the_wrapper(
-            rules, command, prefix, inner_script)
+        corrected_commands = chain(
+            learned_commands,
+            _corrections_behind_the_wrapper(rules, command, prefix,
+                                            inner_script))
 
     return organize_commands(corrected_commands, command.script)

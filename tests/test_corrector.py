@@ -69,6 +69,29 @@ def test_get_corrected_commands(mocker):
             == ['test!', 'test@', 'test;'])
 
 
+def test_learned_correction_is_offered_before_rules(mocker, settings, tmpdir,
+                                                    monkeypatch):
+    from thebleep import learning
+    from thebleep.system import Path
+
+    settings.user_dir = Path(str(tmpdir))
+    monkeypatch.chdir(str(tmpdir))
+    assert learning.remember_pending(
+        'corpctl deply payments', 'corpctl deploy payments',
+        cwd=str(tmpdir), shell_name='generic')
+    assert learning.learn_last() is not None
+    mocker.patch('thebleep.corrector.get_rules', return_value=[
+        Rule(match=lambda _: True,
+             get_new_command=lambda _: 'corpctl deploy all',
+             priority=100)])
+
+    commands = get_corrected_commands(
+        Command('corpctl deply payments', 'unrelated output'))
+
+    assert [command.script for command in commands] == [
+        'corpctl deploy payments', 'corpctl deploy all']
+
+
 def test_organize_commands():
     """Ensures that the function removes duplicates and sorts commands."""
     commands = [CorrectedCommand('ls'), CorrectedCommand('ls -la', priority=9000),

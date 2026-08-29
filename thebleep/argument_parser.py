@@ -13,10 +13,13 @@ DEFAULTS = {'alias': None,
             'edit': False,
             'explain': False,
             'forget': None,
+            'forget_learning': None,
             'enable_experimental_instant_mode': False,
             'force_command': None,
             'help': False,
             'json': False,
+            'learn_last': None,
+            'learned': False,
             'pick': None,
             'repeat': False,
             'shell': None,
@@ -151,6 +154,23 @@ class Parser(object):
             type=int,
             metavar='NUMBER',
             help='remove one recorded failure')
+        self._parser.add_argument(
+            '--learn-last',
+            nargs='?',
+            const='executable',
+            choices=('global', 'executable', 'repository'),
+            metavar='SCOPE',
+            help='learn the last accepted one-word correction')
+        self._parser.add_argument(
+            '--learned',
+            action='store_true',
+            help='list learned corrections')
+        self._parser.add_argument(
+            '--forget-learning',
+            action='store',
+            type=int,
+            metavar='NUMBER',
+            help='remove one learned correction')
         self._parser.add_argument(
             '--command',
             dest='command_text',

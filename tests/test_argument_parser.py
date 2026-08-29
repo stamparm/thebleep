@@ -9,11 +9,12 @@ def _args(**override):
             'help': False, 'version': False, 'debug': False, 'json': False,
             'pick': None,
             'forget': None,
+            'forget_learning': None,
             'force_command': None, 'repeat': False, 'edit': False,
             'doctor': False, 'explain': False,
             'enable_experimental_instant_mode': False,
             'shell': None, 'shell_logger': None, 'stderr': None, 'cwd': None,
-            'why': False}
+            'why': False, 'learn_last': None, 'learned': False}
     args.update(override)
     return args
 
@@ -56,6 +57,10 @@ def _args(**override):
     (['thebleep', '--pick'], _args(pick=0)),
     (['thebleep', '--pick', '2'], _args(pick=2)),
     (['thebleep', '--forget', '2'], _args(forget=2)),
+    (['thebleep', '--learn-last'], _args(learn_last='executable')),
+    (['thebleep', '--learn-last', 'global'], _args(learn_last='global')),
+    (['thebleep', '--learned'], _args(learned=True)),
+    (['thebleep', '--forget-learning', '2'], _args(forget_learning=2)),
     (['thebleep', 'git', 'branch', ARGUMENT_PLACEHOLDER, '--explain'],
      _args(command=['git', 'branch'], explain=True))])
 def test_parse(argv, result):

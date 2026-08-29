@@ -22,6 +22,7 @@ import subprocess
 import sys
 import pytest
 from thebleep.shells import Bash
+from thebleep.system import Path
 from thebleep.types import Command
 from thebleep.utils import replace_command
 
@@ -375,3 +376,22 @@ class TestNamesFromSomewhereElse(object):
             return
         for suggestion in argparse_invalid_choice.get_new_command(command):
             assert canary(suggestion) == []
+
+
+def test_learned_correction_quotes_its_replacement(
+        canary, mocker, settings, tmpdir, monkeypatch, set_shell):
+    """A learned word is still shell text when it is offered again."""
+    from thebleep import learning
+
+    set_shell(Bash)
+    settings.user_dir = Path(str(tmpdir))
+    monkeypatch.chdir(str(tmpdir))
+    assert learning.remember_pending(
+        'corpctl deply', "corpctl 'deploy;>LEARNED'",
+        cwd=str(tmpdir), shell_name='bash')
+    assert learning.learn_last() is not None
+
+    suggestion = list(learning.corrections(
+        Command('corpctl deply', '')))[0].script
+
+    assert canary(suggestion) == []

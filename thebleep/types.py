@@ -323,6 +323,11 @@ class CorrectedCommand(object):
         """
         if self.side_effect:
             self.side_effect(old_cmd, self.script)
+        else:
+            from . import learning
+
+            learning.remember_pending(
+                old_cmd.script, self.script, shell_name=shell._shell_name())
         if settings.alter_history:
             shell.put_to_history(self.script)
 

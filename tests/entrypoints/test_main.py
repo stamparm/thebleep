@@ -60,6 +60,69 @@ def test_why_uses_the_previous_command_instead_of_json(
     fix.assert_called_once()
 
 
+def test_learning_listing_is_a_management_command(main_module, mocker):
+    class Arguments(object):
+        alias = alias_loader = shell = shell_logger = None
+        command = []
+        command_text = None
+        clear_cache = doctor = edit = enable_experimental_instant_mode = False
+        help = json = repeat = version = yes = why = False
+        forget = forget_learning = learn_last = None
+        learned = False
+
+    Arguments.learned = True
+    mocker.patch.object(main_module.Parser, 'parse', return_value=Arguments())
+    listing = mocker.patch('thebleep.learning.print_entries')
+
+    main_module._main()
+
+    listing.assert_called_once_with()
+
+
+def test_learning_management_commands_delegate_to_the_store(
+        main_module, mocker):
+    class Arguments(object):
+        alias = alias_loader = shell = shell_logger = None
+        command = []
+        command_text = None
+        clear_cache = doctor = edit = enable_experimental_instant_mode = False
+        help = json = repeat = version = yes = why = False
+        forget = None
+        learned = False
+        learn_last = 'repository'
+        forget_learning = None
+
+    mocker.patch.object(main_module.Parser, 'parse', return_value=Arguments())
+    entry = {'before_parts': ['deply'], 'after_parts': ['deploy'],
+             'index': 0, 'scope': 'repository', 'executable': 'corpctl'}
+    learn = mocker.patch('thebleep.learning.learn_last', return_value=entry)
+
+    main_module._main()
+
+    learn.assert_called_once_with('repository')
+
+
+def test_forgetting_a_learning_entry_is_a_management_command(
+        main_module, mocker, capsys):
+    class Arguments(object):
+        alias = alias_loader = shell = shell_logger = None
+        command = []
+        command_text = None
+        clear_cache = doctor = edit = enable_experimental_instant_mode = False
+        help = json = repeat = version = yes = why = False
+        forget = learn_last = None
+        learned = False
+        forget_learning = 3
+
+    mocker.patch.object(main_module.Parser, 'parse', return_value=Arguments())
+    forget = mocker.patch('thebleep.learning.forget', return_value=True)
+
+    main_module._main()
+
+    forget.assert_called_once_with(3)
+    assert capsys.readouterr().out == 'Forgot learned correction 3.\n'
+
+
 class TestShellOverride(object):
     """`--shell`, for when working the shell out from the process tree fails."""
 

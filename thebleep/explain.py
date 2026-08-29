@@ -131,19 +131,23 @@ def describe(corrected_command, command=None):
     lines = [('rule', u'{} ({})'.format(rule.name, _origin(
         getattr(rule, 'path', None))))]
 
-    apps = metadata.get('apps')
-    said = _matched_because(metadata, command.output if command else None)
-    if apps and said:
-        lines.append(('matched', u'{}, and output containing {}'.format(
-            _listed(apps), ' and '.join(said))))
-    elif apps:
-        lines.append(('matched', u'{}, whatever it printed'.format(
-            _listed(apps))))
-    elif said:
-        lines.append(('matched', u'output containing {}'.format(
-            ' and '.join(said))))
+    if getattr(rule, 'learned', False):
+        lines.append(('matched', u'your {} learned correction for {}'.format(
+            rule.learning_scope, rule.learning_executable)))
     else:
-        lines.append(('matched', u'a condition this rule works out for itself'))
+        apps = metadata.get('apps')
+        said = _matched_because(metadata, command.output if command else None)
+        if apps and said:
+            lines.append(('matched', u'{}, and output containing {}'.format(
+                _listed(apps), ' and '.join(said))))
+        elif apps:
+            lines.append(('matched', u'{}, whatever it printed'.format(
+                _listed(apps))))
+        elif said:
+            lines.append(('matched', u'output containing {}'.format(
+                ' and '.join(said))))
+        else:
+            lines.append(('matched', u'a condition this rule works out for itself'))
 
     if rule.requires_output:
         if command is not None and command.output is None:

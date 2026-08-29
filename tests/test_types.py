@@ -43,6 +43,17 @@ class TestCorrectedCommand(object):
         out, _ = capsys.readouterr()
         assert out == printed
 
+    def test_run_records_the_accepted_command_for_explicit_learning(
+            self, capsys, settings, mocker):
+        remember = mocker.patch('thebleep.learning.remember_pending')
+
+        CorrectedCommand('git status', None, 1000).run(
+            Command('gti status', ''))
+
+        remember.assert_called_once_with(
+            'gti status', 'git status', shell_name='generic')
+        capsys.readouterr()
+
     def test_edit_hands_over_the_script_itself(self, capsys, settings):
         """Not `_get_script`: repeat mode's tail is not for editing."""
         settings.update({'repeat': True, 'debug': False})

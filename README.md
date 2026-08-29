@@ -145,6 +145,11 @@ The rest of the reasons:
   `thebleep --pick 2` corrects one using its captured output and working
   directory, without replaying it. `thebleep --forget 2` removes one record;
   `--clear-cache` removes them all. The records are local and bounded.
+- **It can learn an explicit correction.** After accepting a one-word fix,
+  `thebleep --learn-last` saves it locally for the executable; `global` and
+  `repository` scopes are available when the same correction should travel
+  further. `thebleep --learned` lists the entries and
+  `thebleep --forget-learning 2` removes one.
 - **A structured Python API.** IDEs and agents can supply a command and its
   captured output without asking The Bleep to run anything again.
   [Structured API](#structured-api).
@@ -168,22 +173,23 @@ contributors; their work and history remain fully credited.
 2. [Edit before you run](#edit-before-you-run)
 3. [Why am I being told this](#why-am-i-being-told-this)
 4. [Recent failures](#recent-failures)
-5. [Structured API](#structured-api)
-6. [thebleep --doctor](#thebleep---doctor)
-7. [Coming from The Fuck](#coming-from-the-fuck)
-8. [What's fixed](#whats-fixed)
-9. [Supported everything](#supported-everything)
-10. [Installation](#installation)
-11. [Updating](#updating)
-12. [Uninstall](#uninstall)
-13. [How it works](#how-it-works)
-14. [Creating your own rules](#creating-your-own-rules)
-15. [Settings](#settings)
-16. [Third-party packages with rules](#third-party-packages-with-rules)
-17. [Experimental instant mode](#experimental-instant-mode)
-18. [Performance](#performance)
-19. [Developing](#developing)
-20. [License](#license-mit)
+5. [Learned corrections](#learned-corrections)
+6. [Structured API](#structured-api)
+7. [thebleep --doctor](#thebleep---doctor)
+8. [Coming from The Fuck](#coming-from-the-fuck)
+9. [What's fixed](#whats-fixed)
+10. [Supported everything](#supported-everything)
+11. [Installation](#installation)
+12. [Updating](#updating)
+13. [Uninstall](#uninstall)
+14. [How it works](#how-it-works)
+15. [Creating your own rules](#creating-your-own-rules)
+16. [Settings](#settings)
+17. [Third-party packages with rules](#third-party-packages-with-rules)
+18. [Experimental instant mode](#experimental-instant-mode)
+19. [Performance](#performance)
+20. [Developing](#developing)
+21. [License](#license-mit)
 
 ## Safe by default
 
@@ -416,6 +422,30 @@ If its original directory no longer exists, correction continues from the
 current directory and says so. A stored failure is never executed merely by
 listing or selecting it; the normal confirmation and edit-before-run rules
 still apply.
+
+##### [Back to Contents](#contents)
+
+## Learned corrections
+
+Learning is explicit and deliberately narrow. When you accept a normal
+correction, *The Bleep* keeps one temporary candidate. Run
+`thebleep --learn-last` to promote it; only a simple command with exactly one
+changed shell word is eligible. Side-effect suggestions and edits are not
+learned, because an edit can contain anything the shell line editor accepted.
+
+```bash
+thebleep --learn-last              # keep it for this executable
+thebleep --learn-last global       # keep it wherever the command appears
+thebleep --learn-last repository   # keep it below the current Git root
+thebleep --learned                 # inspect the local list
+thebleep --forget-learning 2       # remove entry 2
+```
+
+Entries are stored locally in the normal *The Bleep* configuration directory,
+limited to 100, and never uploaded. Matching is exact for every other word in
+the command, so a learned `corpctl deply payments` correction cannot rewrite a
+different command or an unrelated argument. Repository entries also require a
+Git root and do not match outside it.
 
 ##### [Back to Contents](#contents)
 
