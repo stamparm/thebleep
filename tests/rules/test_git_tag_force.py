@@ -21,3 +21,7 @@ def test_a_configuration_token_is_not_a_tag():
 def test_get_new_command(output):
     assert (get_new_command(Command('git tag alert', output))
             == "git tag --force alert")
+
+
+def test_global_options_do_not_hide_a_tag(output):
+    assert match(Command('git -C worktree tag alert', output))

@@ -28,3 +28,13 @@ def test_not_match(script, output):
     ('git help ds', "`git ds' is aliased to `diff --staged'", 'git help diff')])
 def test_get_new_command(script, output, new_command):
     assert get_new_command(Command(script, output)) == new_command
+
+
+def test_a_word_in_an_argument_is_not_git_help():
+    assert not match(Command('git config help.alias',
+                             "'st' is aliased to 'status'"))
+
+
+def test_global_options_do_not_hide_git_help():
+    assert match(Command('git -C worktree help st',
+                         "'st' is aliased to 'status'"))

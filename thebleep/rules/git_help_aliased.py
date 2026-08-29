@@ -19,7 +19,7 @@ three of which print quotes.
 
 import re
 from thebleep.shells import shell
-from thebleep.specific.git import git_support
+from thebleep.specific.git import git_subcommand_index, git_support
 
 # Either quoting, and only the first word of what it stands for: an alias may
 # expand to a whole command line (`st = status --short --branch`) and only the
@@ -29,7 +29,9 @@ ALIASED = re.compile(r"""is aliased to ['`"]?([^\s'`"]+)""")
 
 @git_support
 def match(command):
-    return ('help' in command.script_parts
+    index = git_subcommand_index(command.script_parts)
+    return (index < len(command.script_parts)
+            and command.script_parts[index] == 'help'
             and ' is aliased to ' in command.output
             and bool(ALIASED.search(command.output)))
 

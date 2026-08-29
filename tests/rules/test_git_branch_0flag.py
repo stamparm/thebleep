@@ -54,6 +54,13 @@ def test_get_new_command_branch_exists(script, output_branch_exists, new_command
     assert get_new_command(Command(script, output_branch_exists)) == new_command
 
 
+def test_global_options_are_preserved_when_deleting_the_branch():
+    command = Command('git -C worktree branch 0a',
+                      "fatal: A branch named 'bar' already exists.")
+    assert get_new_command(command) == \
+        'git -C worktree branch -D 0a && git -C worktree branch -a'
+
+
 @pytest.fixture
 def output_not_valid_object():
     return "fatal: Not a valid object name: 'bar'."
