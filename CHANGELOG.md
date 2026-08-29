@@ -36,6 +36,10 @@
   created with mode `0600` and its temporary file cannot follow a symlink on
   platforms that support `O_NOFOLLOW`.
 
+- **Cache files are written and read privately.** The compiled rule pack and
+  other local caches now use exclusive `0600` temporary files and refuse
+  symlinked cache paths where the platform supports `O_NOFOLLOW`.
+
 ### Fixed
 
 - **`--why` now recognises DNS resolution failures.** A captured curl error

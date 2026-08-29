@@ -13,6 +13,7 @@ import ast
 import marshal
 import os
 import pytest
+import stat
 import time
 from thebleep import rulepack
 from thebleep.system import Path
@@ -78,6 +79,12 @@ class TestPack(object):
 
     def test_written_where_the_next_run_finds_it(self, entries, cache_home):
         assert rulepack._cache_path().is_file()
+
+    @pytest.mark.skipif(not hasattr(os, 'geteuid'),
+                        reason='Windows has no POSIX mode to check')
+    def test_pack_is_private(self, entries, cache_home):
+        assert stat.S_IMODE(os.stat(str(rulepack._cache_path())).st_mode) \
+            == 0o600
 
     def test_another_installations_rules_are_kept(self, cache_home, tmpdir,
                                                   rule_paths):

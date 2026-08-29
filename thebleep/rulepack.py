@@ -282,7 +282,7 @@ def _build_entry(path):
 def _read_pack():
     path = _cache_path()
     try:
-        with path.open('rb') as handle:
+        with cachefile._open_for_read(path) as handle:
             pack = marshal.load(handle)
     except Exception:
         return {}
@@ -296,21 +296,32 @@ def _read_pack():
 def _write_pack(entries):
     """Writes the pack where the next run can find it, or gives up quietly."""
     path = _cache_path()
+    temp = None
+    created = False
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         # Written to a neighbouring temporary file and moved into place, so a
         # second shell reading the pack never sees a half-written one.
-        temp = path.parent.joinpath('{}.{}.tmp'.format(path.name, os.getpid()))
-        with temp.open('wb') as handle:
+        import time
+
+        temp = path.parent.joinpath('{}.{}.tmp'.format(
+            path.name, '{}.{}'.format(os.getpid(), time.time_ns())))
+        flags = (os.O_WRONLY | os.O_CREAT | os.O_EXCL
+                 | getattr(os, 'O_NOFOLLOW', 0)
+                 | getattr(os, 'O_CLOEXEC', 0))
+        descriptor = os.open(str(temp), flags, 0o600)
+        created = True
+        with os.fdopen(descriptor, 'wb') as handle:
             marshal.dump({'format': FORMAT, 'magic': MAGIC_NUMBER,
                           'entries': entries}, handle)
         os.replace(str(temp), str(path))
     except Exception:
         logs.debug(u'Rule pack not written to {}'.format(path))
-        try:
-            os.unlink(str(temp))
-        except Exception:
-            pass
+        if temp is not None and created:
+            try:
+                os.unlink(str(temp))
+            except OSError:
+                pass
 
 
 def _is_well_formed(entry, key):
