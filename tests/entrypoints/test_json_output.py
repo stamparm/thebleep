@@ -13,6 +13,7 @@ def _args(command, stderr=None, cwd=None, command_text=None):
     args.command_text = command_text
     args.stderr = stderr
     args.cwd = cwd
+    args.why = False
     args.yes = args.debug = args.repeat = args.edit = args.explain = False
     return args
 
@@ -46,6 +47,19 @@ def test_json_output_preserves_an_exact_command(mocker, capsys):
     assert json_output(args) == 0
     suggest.assert_called_once_with("cd 'a b' && gti status", None)
     assert json.loads(capsys.readouterr().out) == {'suggestions': []}
+
+
+def test_json_output_can_diagnose_captured_output(mocker, capsys):
+    _no_settings(mocker)
+    why = mocker.patch(
+        'thebleep.entrypoints.json_output.api.why',
+        return_value={'diagnoses': []})
+    args = _args([], command_text='python app.py')
+    args.why = True
+
+    assert json_output(args) == 0
+    why.assert_called_once_with('python app.py', None)
+    assert json.loads(capsys.readouterr().out) == {'diagnoses': []}
 
 
 def test_json_output_rejects_both_command_forms(mocker, capsys):

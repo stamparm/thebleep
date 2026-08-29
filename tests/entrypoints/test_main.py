@@ -31,7 +31,7 @@ def test_exact_command_requires_json(main_module, mocker, capsys):
         command = []
         command_text = 'git status'
         clear_cache = doctor = edit = enable_experimental_instant_mode = False
-        help = json = repeat = version = yes = False
+        help = json = repeat = version = yes = why = False
 
     mocker.patch.object(main_module.Parser, 'parse', return_value=Arguments())
 
@@ -40,6 +40,24 @@ def test_exact_command_requires_json(main_module, mocker, capsys):
 
     assert exc_info.value.code == 2
     assert '--command needs --json' in capsys.readouterr().err
+
+
+def test_why_uses_the_previous_command_instead_of_json(
+        main_module, mocker):
+    class Arguments(object):
+        alias = alias_loader = shell = shell_logger = None
+        command = []
+        command_text = None
+        clear_cache = doctor = edit = enable_experimental_instant_mode = False
+        help = json = repeat = version = yes = False
+        why = True
+
+    mocker.patch.object(main_module.Parser, 'parse', return_value=Arguments())
+    fix = mocker.patch('thebleep.entrypoints.fix_command.fix_command')
+
+    main_module._main()
+
+    fix.assert_called_once()
 
 
 class TestShellOverride(object):

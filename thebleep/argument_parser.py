@@ -22,6 +22,7 @@ DEFAULTS = {'alias': None,
             'stderr': None,
             'cwd': None,
             'version': False,
+            'why': False,
             'yes': False}
 
 SIMPLE_FLAGS = {'-y': 'yes',
@@ -131,6 +132,10 @@ class Parser(object):
             '--json',
             action='store_true',
             help='return structured suggestions without running a command')
+        self._parser.add_argument(
+            '--why',
+            action='store_true',
+            help='explain the previous failure, or return one with --json')
         self._parser.add_argument(
             '--command',
             dest='command_text',

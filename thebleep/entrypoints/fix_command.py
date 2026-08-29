@@ -55,6 +55,13 @@ def fix_command(known_args):
             logs.debug('Empty command, nothing to do')
             return
 
+        if getattr(known_args, 'why', False):
+            from .. import diagnostics
+
+            print(diagnostics.format_human(
+                diagnostics.diagnose(command.script, command.output)))
+            return
+
         corrected_commands = get_corrected_commands(command)
         selected_command, action = select_command(corrected_commands, command)
 

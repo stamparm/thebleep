@@ -15,6 +15,7 @@ engine is never asked to replay the command on behalf of this API.
 from . import explain as explain_module
 from .corrector import get_corrected_commands
 from .types import Command
+from . import diagnostics
 
 
 SCHEMA_VERSION = 1
@@ -63,4 +64,24 @@ def suggest(script, output=None):
         'output_supplied': output is not None,
         'decision': 'suggest' if suggestions else 'abstain',
         'suggestions': suggestions,
+    }
+
+
+def why(script, output=None):
+    """Return deterministic diagnoses for output the caller already has."""
+    if not isinstance(script, str):
+        raise TypeError('script must be a string')
+    if output is not None and not isinstance(output, str):
+        raise TypeError('output must be a string or None')
+
+    result = diagnostics.diagnose(script, output)
+    result['schema'] = SCHEMA_VERSION
+    # Keep the top-level contract fields in the same order as `suggest`, even
+    # though JSON consumers should treat object order as insignificant.
+    return {
+        'schema': result['schema'],
+        'command': result['command'],
+        'output_supplied': result['output_supplied'],
+        'decision': result['decision'],
+        'diagnoses': result['diagnoses'],
     }

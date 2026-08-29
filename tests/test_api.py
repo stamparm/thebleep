@@ -80,3 +80,21 @@ def test_suggest_keeps_action_details_labeled(mocker):
               ['explanation']]
 
     assert labels == ['rule', 'matched', 'read', 'side effect', 'runs as']
+
+
+def test_why_returns_the_versioned_diagnosis_contract():
+    assert api.why('python app.py',
+                   "ModuleNotFoundError: No module named 'tomli'") == {
+        'schema': 1,
+        'command': 'python app.py',
+        'output_supplied': True,
+        'decision': 'diagnose',
+        'diagnoses': [{
+            'kind': 'missing_python_module',
+            'summary': "Python could not import module 'tomli'.",
+            'evidence': ["No module named 'tomli'"],
+            'next_steps': [{
+                'command': 'python -m pip show tomli',
+                'reason': 'check whether a distribution with this name is '
+                          'installed',
+                'risk': 'read-only'}]}]}

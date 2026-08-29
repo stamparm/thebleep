@@ -144,6 +144,10 @@ The rest of the reasons:
 - **A structured Python API.** IDEs and agents can supply a command and its
   captured output without asking The Bleep to run anything again.
   [Structured API](#structured-api).
+- **It can explain failures that are not typos.** `--why` recognises a small,
+  deterministic set of error fingerprints and suggests read-only next steps;
+  unknown failures remain an abstention.
+  [Structured API](#structured-api).
 - **`thebleep --doctor`** answers the questions a bug report usually starts
   with, in one screen you can paste anywhere.
   [Diagnostics](#thebleep---doctor).
@@ -423,6 +427,27 @@ thebleep --json --stderr error.txt --cwd "$PWD" --command 'gti status'
 8 MiB; an unexpectedly large capture is rejected rather than buffered without
 limit. `--command` preserves the exact command string, including compound
 syntax and quoting; the older positional form after `--` remains supported.
+
+When the command itself is valid but failed, ask for a deterministic diagnosis
+from the same captured output:
+
+```python
+from thebleep.api import why
+
+result = why('python client.py --port 5432',
+             'OSError: [Errno 98] Address already in use')
+```
+
+The result uses the same versioned envelope and returns `diagnoses` with the
+observed evidence, a short summary and read-only `next_steps`. It never probes
+the machine or reruns the command. Unknown wording returns `decision:
+abstain`, because a plausible explanation is not proof.
+
+The command-line form is:
+
+```bash
+thebleep --json --why --stderr error.txt --command 'python app.py'
+```
 
 ##### [Back to Contents](#contents)
 

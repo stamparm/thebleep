@@ -10,7 +10,8 @@ def _args(**override):
             'force_command': None, 'repeat': False, 'edit': False,
             'doctor': False, 'explain': False,
             'enable_experimental_instant_mode': False,
-            'shell': None, 'shell_logger': None, 'stderr': None, 'cwd': None}
+            'shell': None, 'shell_logger': None, 'stderr': None, 'cwd': None,
+            'why': False}
     args.update(override)
     return args
 
@@ -48,6 +49,8 @@ def _args(**override):
      _args(json=True, stderr='error.txt', cwd='/tmp', command=['gti', 'status'])),
     (['thebleep', '--json', '--command', 'gti status'],
      _args(json=True, command_text='gti status')),
+    (['thebleep', '--json', '--why', '--command', 'python app.py'],
+     _args(json=True, why=True, command_text='python app.py')),
     (['thebleep', 'git', 'branch', ARGUMENT_PLACEHOLDER, '--explain'],
      _args(command=['git', 'branch'], explain=True))])
 def test_parse(argv, result):

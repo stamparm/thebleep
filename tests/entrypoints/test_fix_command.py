@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import Mock
 from thebleep import const
+from thebleep.types import Command
 from thebleep.entrypoints.fix_command import _get_raw_command, fix_command
 
 
@@ -72,3 +73,24 @@ def test_debug_does_not_print_the_env_setting_values(capsys, settings, mocker):
     assert 'super-secret-value' not in printed
     # The name is still there, because that is the useful half.
     assert 'API_TOKEN' in printed
+
+
+def test_why_prints_a_deterministic_diagnosis_without_correcting(
+        capsys, settings, mocker):
+    settings.debug = False
+    mocker.patch('thebleep.entrypoints.fix_command._get_raw_command',
+                 return_value=['python server.py --port 5432'])
+    mocker.patch('thebleep.entrypoints.fix_command.types.Command'
+                 '.from_raw_script', return_value=Command(
+                     'python server.py --port 5432',
+                     'OSError: [Errno 98] Address already in use'))
+    correct = mocker.patch(
+        'thebleep.entrypoints.fix_command.get_corrected_commands')
+
+    fix_command(Mock(command=[], force_command=None, repeat=False,
+                     debug=False, why=True))
+
+    output = capsys.readouterr().out
+    assert 'Port 5432 is already in use.' in output
+    assert 'lsof -nP -iTCP:5432 -sTCP:LISTEN' in output
+    assert not correct.called
