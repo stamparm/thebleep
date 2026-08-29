@@ -51,7 +51,8 @@ PROBES = {
     'kubectl': [['version', '--client']],
     'ln': [{'arguments': ['-s', 'missing', 'existing'],
             'files': ['existing']}],
-    'ls': [['--definitely-not-a-bleep-option']],
+    'ls': [{'arguments': ['--definitely-not-a-bleep-option'],
+            'platforms': ('posix',)}],
     'make': [['--version']],
     'mv': [{'arguments': ['thebleep-source', 'missing-dir/destination'],
             'files': ['thebleep-source']},
@@ -210,8 +211,13 @@ def probe_commands(commands):
                 if isinstance(specification, dict):
                     arguments = specification['arguments']
                     files = specification.get('files', ())
+                    platforms = specification.get('platforms')
                 else:
                     arguments, files = specification, ()
+                    platforms = None
+                current_platform = 'nt' if os.name == 'nt' else 'posix'
+                if platforms and current_platform not in platforms:
+                    continue
                 with tempfile.TemporaryDirectory(
                         prefix='thebleep-probe-') as probe_directory:
                     for filename in files:
