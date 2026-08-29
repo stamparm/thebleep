@@ -134,7 +134,8 @@ class Parser(object):
             '--stderr',
             action='store',
             metavar='FILE',
-            help='read captured command output from FILE with --json')
+            help='read captured command output from FILE (or - for stdin)'
+                 ' with --json')
         self._parser.add_argument(
             '--cwd',
             action='store',

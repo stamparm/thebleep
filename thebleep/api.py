@@ -25,6 +25,7 @@ def _suggestion(corrected, command):
         'rule': rule.name if rule is not None else None,
         'priority': corrected.priority,
         'side_effect': bool(corrected.side_effect),
+        'requires_output': bool(rule and rule.requires_output),
         'evidence': [
             value for label, value in explanation
             if label in ('matched', 'read')],
@@ -43,6 +44,8 @@ def suggest(script, output=None):
     """
     if not isinstance(script, str):
         raise TypeError('script must be a string')
+    if output is not None and not isinstance(output, str):
+        raise TypeError('output must be a string or None')
 
     command = Command(script, output)
     return {

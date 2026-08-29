@@ -45,3 +45,17 @@ def test_json_output_reports_a_missing_output_file(tmpdir, mocker, capsys):
     _no_settings(mocker)
     assert json_output(_args(['gti'], str(tmpdir.join('missing')))) == 2
     assert 'Could not read' in capsys.readouterr().err
+
+
+def test_json_output_reads_output_from_stdin(mocker, capsys, monkeypatch):
+    _no_settings(mocker)
+    monkeypatch.setattr(json_output_module.sys, 'stdin', type(
+        'Input', (), {'read': lambda self: 'gti: command not found'})())
+    suggest = mocker.patch(
+        'thebleep.entrypoints.json_output.api.suggest',
+        return_value={'suggestions': []})
+
+    assert json_output(_args(['gti'], '-')) == 0
+
+    suggest.assert_called_once_with('gti', 'gti: command not found')
+    assert json.loads(capsys.readouterr().out) == {'suggestions': []}

@@ -4,6 +4,7 @@
 
 import json
 import os
+import sys
 
 from .. import api, logs
 from ..conf import settings
@@ -13,6 +14,8 @@ from ..utils import format_raw_script
 def _read_output(path):
     if not path:
         return None
+    if path == '-':
+        return sys.stdin.read()
 
     try:
         with open(path, encoding='utf-8') as handle:

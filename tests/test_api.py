@@ -24,6 +24,7 @@ def test_suggest_returns_structured_correction(mocker):
             'rule': 'test_rule',
             'priority': 1200,
             'side_effect': False,
+            'requires_output': True,
             'evidence': [
                 'a condition this rule works out for itself',
                 'what your command printed'],
@@ -49,3 +50,12 @@ def test_suggest_requires_text():
         assert str(error) == 'script must be a string'
     else:
         assert False, 'non-string script was accepted'
+
+
+def test_suggest_requires_text_output():
+    try:
+        api.suggest('gti status', b'command not found')
+    except TypeError as error:
+        assert str(error) == 'output must be a string or None'
+    else:
+        assert False, 'non-string output was accepted'
