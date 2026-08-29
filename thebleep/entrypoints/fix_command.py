@@ -50,7 +50,13 @@ def _picked_failure(number):
         return
 
     entry = entries[number - 1]
-    previous = os.getcwd()
+    try:
+        previous = os.getcwd()
+    except OSError:
+        # A shell can remain in a directory that was removed underneath it.
+        # There is no path to restore in that case, but selecting a saved
+        # failure should still be able to use its recorded directory.
+        previous = None
     try:
         try:
             os.chdir(entry['cwd'])
@@ -59,7 +65,11 @@ def _picked_failure(number):
                 entry['cwd'], previous))
         yield types.Command(entry['script'], entry['output'])
     finally:
-        os.chdir(previous)
+        if previous is not None:
+            try:
+                os.chdir(previous)
+            except OSError:
+                logs.debug('Could not restore the original working directory')
 
 
 def fix_command(known_args):

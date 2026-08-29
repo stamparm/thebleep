@@ -143,3 +143,36 @@ def test_recording_survives_an_unavailable_working_directory(mocker, settings):
                      debug=False, why=False, pick=None))
 
     assert record.call_args.args[3] == ''
+
+
+def test_picked_failure_survives_an_unavailable_working_directory(mocker):
+    from thebleep.entrypoints.fix_command import _picked_failure
+
+    stored = {'script': 'gti status', 'output': 'not found', 'cwd': '.',
+              'shell': 'bash', 'exit': 127, 'saved_at': 1}
+    mocker.patch('thebleep.entrypoints.fix_command.failure_store.load',
+                 return_value=[stored])
+    mocker.patch('thebleep.entrypoints.fix_command.os.getcwd',
+                 side_effect=OSError('directory was removed'))
+    chdir = mocker.patch('thebleep.entrypoints.fix_command.os.chdir')
+
+    with _picked_failure(1) as command:
+        assert command == Command('gti status', 'not found')
+
+    chdir.assert_called_once_with('.')
+
+
+def test_picked_failure_ignores_a_failed_restore(mocker):
+    from thebleep.entrypoints.fix_command import _picked_failure
+
+    stored = {'script': 'gti status', 'output': 'not found', 'cwd': '.',
+              'shell': 'bash', 'exit': 127, 'saved_at': 1}
+    mocker.patch('thebleep.entrypoints.fix_command.failure_store.load',
+                 return_value=[stored])
+    mocker.patch('thebleep.entrypoints.fix_command.os.getcwd',
+                 return_value='/original')
+    mocker.patch('thebleep.entrypoints.fix_command.os.chdir',
+                 side_effect=[None, OSError('directory was removed')])
+
+    with _picked_failure(1) as command:
+        assert command.script == 'gti status'
