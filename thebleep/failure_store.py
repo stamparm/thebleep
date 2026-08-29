@@ -14,6 +14,9 @@ from . import cachefile
 FINGERPRINT = ('failure-ring', 1)
 LIMIT = 5
 MAX_OUTPUT = 1024 * 1024
+MAX_SCRIPT = 32 * 1024
+MAX_CWD = 4096
+MAX_SHELL = 64
 
 
 def _clip_output(output):
@@ -30,10 +33,15 @@ def _valid(entry):
     """Whether a cache value has the shape this module writes."""
     return (isinstance(entry, dict)
             and isinstance(entry.get('script'), str)
+            and entry['script'].strip()
+            and len(entry['script']) <= MAX_SCRIPT
             and isinstance(entry.get('output'), str)
+            and len(entry['output']) <= MAX_OUTPUT
             and isinstance(entry.get('cwd'), str)
+            and len(entry['cwd']) <= MAX_CWD
             and isinstance(entry.get('shell'), str)
-            and isinstance(entry.get('exit'), int)
+            and len(entry['shell']) <= MAX_SHELL
+            and type(entry.get('exit')) is int
             and isinstance(entry.get('saved_at'), (int, float)))
 
 
@@ -51,13 +59,17 @@ def record(script, output, exit_status, cwd=None, shell_name=None):
         status = int(exit_status)
     except (TypeError, ValueError):
         return
-    if status == 0 or not isinstance(script, str) or not script.strip():
+    if (status == 0 or not isinstance(script, str) or not script.strip()
+            or len(script) > MAX_SCRIPT):
         return
 
+    saved_cwd = cwd if isinstance(cwd, str) and len(cwd) <= MAX_CWD else ''
+    saved_shell = (shell_name if isinstance(shell_name, str)
+                   and len(shell_name) <= MAX_SHELL else '')
     entry = {'script': script,
              'output': _clip_output(output),
-             'cwd': cwd if isinstance(cwd, str) else os.getcwd(),
-             'shell': shell_name if isinstance(shell_name, str) else '',
+             'cwd': saved_cwd if cwd is not None else os.getcwd(),
+             'shell': saved_shell,
              'exit': status,
              'saved_at': time.time()}
     entries = load()
@@ -79,6 +91,19 @@ def forget(number):
 
 def print_recent(entries=None):
     """Prints a compact, stable list for a human choosing a failure."""
+    def display(value):
+        """Keep stored terminal input on one harmless, readable line."""
+        from .utils import without_control_sequences
+
+        value = without_control_sequences(value)
+        return ''.join(
+            char if ord(char) >= 0x20 and ord(char) != 0x7f
+            else '\\n' if char == '\n'
+            else '\\r' if char == '\r'
+            else '\\t' if char == '\t'
+            else '\\x{:02x}'.format(ord(char))
+            for char in value)
+
     if entries is None:
         entries = load()
     if not entries:
@@ -87,4 +112,5 @@ def print_recent(entries=None):
     print('Recent failures:')
     for index, entry in enumerate(entries, 1):
         print('{:>2}  {}  (exit {}, {})'.format(
-            index, entry['script'], entry['exit'], entry['cwd']))
+            index, display(entry['script']), entry['exit'],
+            display(entry['cwd'])))

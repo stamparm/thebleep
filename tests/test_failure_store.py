@@ -37,6 +37,14 @@ def test_record_does_not_store_success_or_invalid_status(mocker):
     assert not save.called
 
 
+def test_record_does_not_store_an_oversized_command(mocker):
+    save = mocker.patch('thebleep.failure_store.cachefile.save')
+
+    failure_store.record('x' * (failure_store.MAX_SCRIPT + 1), '', 1)
+
+    assert not save.called
+
+
 def test_forget_removes_one_failure(mocker):
     save = mocker.patch('thebleep.failure_store.cachefile.save')
     entries = [
@@ -78,6 +86,16 @@ def test_load_discards_malformed_entries(mocker):
     assert failure_store.load() == [valid]
 
 
+def test_load_discards_oversized_entries(mocker):
+    valid = {'script': 'gti', 'output': '', 'cwd': 'project', 'shell': 'bash',
+             'exit': 127, 'saved_at': 1}
+    oversized = dict(valid, script='x' * (failure_store.MAX_SCRIPT + 1))
+    mocker.patch('thebleep.failure_store.cachefile.load',
+                 return_value=[oversized, valid])
+
+    assert failure_store.load() == [valid]
+
+
 def test_print_recent(capsys):
     failure_store.print_recent([{
         'script': 'gti status', 'output': '', 'cwd': 'project', 'shell': 'bash',
@@ -86,3 +104,14 @@ def test_print_recent(capsys):
     output = capsys.readouterr().out
     assert 'Recent failures:' in output
     assert '1  gti status  (exit 127, project)' in output
+
+
+def test_print_recent_escapes_terminal_input(capsys):
+    failure_store.print_recent([{
+        'script': 'gti\n\x1b[31mstatus\x1b[0m', 'output': '',
+        'cwd': 'project\twork', 'shell': 'bash', 'exit': 127, 'saved_at': 1}])
+
+    output = capsys.readouterr().out
+    assert output == ('Recent failures:\n'
+                      ' 1  gti\\nstatus  (exit 127, project\\twork)\n')
+    assert '\x1b' not in output
