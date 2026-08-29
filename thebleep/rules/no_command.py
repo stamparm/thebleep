@@ -68,6 +68,7 @@ def match(command):
 
 _COMMAND_SEPARATORS = frozenset(('&&', '||', '|', '|&', ';', '&'))
 _ENVIRONMENT_ASSIGNMENT = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
+_SAFE_COMMAND_NAME = re.compile(r'^[A-Za-z0-9_@%+=:,./-]+$')
 
 
 def _command_indexes(parts):
@@ -235,7 +236,8 @@ def get_new_command(command):
 
     corrected = []
     for name in ranked[:settings.num_close_matches]:
-        replacement = shell.quote(name)
+        replacement = (name if _SAFE_COMMAND_NAME.match(name)
+                       else shell.quote(name))
         if command_index == 0:
             script = command.script.replace(old_command, replacement, 1)
         elif command.script.count(' ' + old_command) != 1:
