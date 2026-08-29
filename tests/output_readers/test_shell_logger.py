@@ -1,6 +1,11 @@
 # -*- encoding: utf-8 -*-
 
+import socket
 import pytest
+
+if not hasattr(socket, 'AF_UNIX'):
+    pytest.skip('the shell logger is POSIX only', allow_module_level=True)
+
 from thebleep.output_readers import shell_logger
 
 
