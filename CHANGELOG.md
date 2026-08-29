@@ -43,6 +43,9 @@
   the output limit is not treated as complete, so replay never infers that a
   subcommand is harmless from a truncated answer.
 
+- **Rule-pack deserialization is bounded.** An oversized compiled rule cache is
+  rejected before its contents are handed to the marshal parser.
+
 - **Explicit paths to dispatchers are no longer probed automatically.** A file
   named `git` or `cargo` can be an arbitrary executable, so it now requires
   replay confirmation like any other explicit path.

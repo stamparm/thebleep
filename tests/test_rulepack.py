@@ -134,6 +134,19 @@ class TestPack(object):
         assert rulepack._read_pack() == {}
         assert rulepack.entries_for(rule_paths)
 
+    def test_an_oversized_pack_is_ignored_before_deserializing(
+            self, mocker):
+        handle = mocker.MagicMock()
+        handle.__enter__.return_value = handle
+        handle.read.return_value = b'x' * (rulepack.MAX_FILE + 1)
+        mocker.patch.object(rulepack.cachefile, '_open_for_read',
+                            return_value=handle)
+        loads = mocker.patch.object(rulepack.marshal, 'loads')
+
+        assert rulepack._read_pack() == {}
+        handle.read.assert_called_once_with(rulepack.MAX_FILE + 1)
+        assert not loads.called
+
     def test_pack_from_another_interpreter_is_ignored(self, cache_home,
                                                       rule_paths):
         path = rulepack._cache_path()

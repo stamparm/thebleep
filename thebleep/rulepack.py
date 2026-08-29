@@ -42,6 +42,7 @@ except (KeyError, AttributeError):                           # pragma: no cover
 # Bumped whenever the layout or the metadata extraction changes, so an older
 # pack is rebuilt instead of misread.
 FORMAT = 3
+MAX_FILE = 16 * 1024 * 1024
 
 # Decorators that tell us which app a rule is about. `sudo_support` is
 # deliberately absent: it is transparent, and a `sudo`-prefixed command is
@@ -283,7 +284,10 @@ def _read_pack():
     path = _cache_path()
     try:
         with cachefile._open_for_read(path) as handle:
-            pack = marshal.load(handle)
+            raw = handle.read(MAX_FILE + 1)
+        if len(raw) > MAX_FILE:
+            return {}
+        pack = marshal.loads(raw)
     except Exception:
         return {}
     if not isinstance(pack, dict) or pack.get('magic') != MAGIC_NUMBER \
