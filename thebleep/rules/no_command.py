@@ -273,6 +273,57 @@ def _demote_impossible(ranked, arguments):
     return possible + impossible
 
 
+def _replace_after_separator(script, old, replacement):
+    """Replace one unquoted ``old`` that starts a separated command.
+
+    A raw occurrence is not enough to identify a command: ``echo gti && gti``
+    contains the same word as data and as a program. This small lexer only
+    considers occurrences outside quotes, immediately after shell separators;
+    when that still leaves more than one choice it returns ``None`` and the
+    caller abstains.
+    """
+    separators = frozenset(';&|({}')
+    spans = []
+    quote = None
+    escaped = False
+    index = 0
+    while index < len(script):
+        character = script[index]
+        if escaped:
+            escaped = False
+            index += 1
+            continue
+        if character == '\\' and quote != "'":
+            escaped = True
+            index += 1
+            continue
+        if character in ("'", '"'):
+            if quote == character:
+                quote = None
+            elif quote is None:
+                quote = character
+            index += 1
+            continue
+        if (quote is None and script.startswith(old, index)
+                and (index == 0 or script[index - 1].isspace()
+                     or script[index - 1] in separators)
+                and (index + len(old) == len(script)
+                     or script[index + len(old)].isspace()
+                     or script[index + len(old)] in separators)):
+            before = script[:index].rstrip()
+            if before and before[-1] in separators:
+                spans.append((index, index + len(old)))
+            index += len(old)
+            continue
+        index += 1
+
+    if len(spans) != 1:
+        return None
+
+    start, end = spans[0]
+    return script[:start] + replacement + script[end:]
+
+
 def _used_executables(command):
     """The programs you have actually run, from your history."""
     return {script.split(' ')[0]
@@ -348,10 +399,13 @@ def get_new_command(command):
         if command_index == 0:
             script = command.script.replace(old_command, replacement, 1)
         elif command.script.count(old_command) != 1:
-            # String replacement cannot identify the right token when the
-            # failed command also appears as an argument. Abstain rather than
-            # rewrite the wrong occurrence.
-            continue
+            script = _replace_after_separator(command.script, old_command,
+                                              replacement)
+            if script is None:
+                # String replacement cannot identify the right token when the
+                # failed command also appears as an argument. Abstain rather
+                # than rewrite the wrong occurrence.
+                continue
         else:
             script = command.script.replace(old_command, replacement, 1)
         if script != command.script:

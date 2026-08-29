@@ -115,9 +115,17 @@ def test_corrects_commands_inside_powershell_blocks(mocker, script, expect):
 def test_does_not_replace_an_ambiguous_argument(mocker):
     mocker.patch('thebleep.rules.no_command.which', return_value=None)
 
-    command = Command('echo gti && gti status', 'gti: command not found')
+    command = Command('env gti gti status', 'gti: command not found')
 
     assert get_new_command(command) == []
+
+
+def test_replaces_a_repeated_word_when_a_separator_identifies_the_command(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command('echo gti && gti status', 'gti: command not found')
+
+    assert get_new_command(command)[0] == 'echo gti && git status'
 
 
 @pytest.mark.usefixtures('no_memoize')
