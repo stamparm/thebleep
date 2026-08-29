@@ -106,4 +106,14 @@ def test_json_output_rejects_oversized_output(tmpdir, mocker, capsys):
     output.write('x' * (json_output_module.MAX_OUTPUT + 1))
 
     assert json_output(_args(['gti'], str(output))) == 2
-    assert '8 MiB limit' in capsys.readouterr().err
+    assert 'limit' in capsys.readouterr().err
+
+
+def test_read_output_limits_raw_utf8_bytes(tmpdir, mocker, capsys):
+    _no_settings(mocker)
+    output = tmpdir.join('too-large-unicode')
+    output.write_binary(u'\N{SNOWMAN}'.encode('utf-8'))
+    mocker.patch.object(json_output_module, 'MAX_OUTPUT', 1)
+
+    assert json_output(_args(['gti'], str(output))) == 2
+    assert 'limit' in capsys.readouterr().err

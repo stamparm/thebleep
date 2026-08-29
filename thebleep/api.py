@@ -23,7 +23,7 @@ MAX_OUTPUT = 8 * 1024 * 1024
 
 
 def _check_output(output):
-    if output is not None and len(output) > MAX_OUTPUT:
+    if output is not None and len(output.encode('utf-8')) > MAX_OUTPUT:
         raise ValueError('output exceeds the 8 MiB limit')
 
 

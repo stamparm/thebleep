@@ -20,9 +20,10 @@ def _read_output(path):
 
     try:
         if path == '-':
-            output = sys.stdin.read(MAX_OUTPUT + 1)
+            stream = getattr(sys.stdin, 'buffer', sys.stdin)
+            output = stream.read(MAX_OUTPUT + 1)
         else:
-            with open(path, encoding='utf-8') as handle:
+            with open(path, 'rb') as handle:
                 output = handle.read(MAX_OUTPUT + 1)
     except (OSError, UnicodeError) as error:
         logs.failed('Could not read {}: {}'.format(path, error))
@@ -32,6 +33,12 @@ def _read_output(path):
         logs.failed('{} is larger than the {} MiB limit'.format(
             'stdin' if path == '-' else path, MAX_OUTPUT // (1024 * 1024)))
         return False
+    if isinstance(output, bytes):
+        try:
+            output = output.decode('utf-8')
+        except UnicodeError as error:
+            logs.failed('Could not read {}: {}'.format(path, error))
+            return False
     return output
 
 

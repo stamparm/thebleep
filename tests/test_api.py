@@ -78,6 +78,12 @@ def test_api_rejects_oversized_output(function):
         function('gti status', 'x' * (api.MAX_OUTPUT + 1))
 
 
+def test_api_limits_utf8_bytes(monkeypatch):
+    monkeypatch.setattr(api, 'MAX_OUTPUT', 1)
+    with pytest.raises(ValueError, match='8 MiB limit'):
+        api.suggest('gti status', u'\N{SNOWMAN}')
+
+
 def test_suggest_keeps_action_details_labeled(mocker):
     correction = CorrectedCommand(
         'sudo rm -r cache', lambda *_: None, 1200, rule=Rule())
