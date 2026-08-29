@@ -198,3 +198,13 @@ def test_failed_exclusive_create_does_not_remove_an_existing_temp(
     assert not learning._write('probe.json', {'value': 1})
     open_file.assert_called_once()
     assert not unlink.called
+
+
+@pytest.mark.skipif(not hasattr(os, 'O_NOFOLLOW'),
+                    reason='platform has no no-follow open flag')
+def test_learning_state_does_not_follow_a_symlink(learning_home):
+    target = learning_home.join('target.json')
+    target.write(json.dumps({'format': learning.FORMAT, 'entries': []}))
+    os.symlink(str(target), str(learning_home.join('learned.json')))
+
+    assert learning.load() == []

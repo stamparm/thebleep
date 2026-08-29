@@ -40,6 +40,10 @@
   other local caches now use exclusive `0600` temporary files and refuse
   symlinked cache paths where the platform supports `O_NOFOLLOW`.
 
+- **Learned state is read privately.** Learned corrections now refuse symlinked
+  state files where the platform supports `O_NOFOLLOW`, matching their secure
+  writer.
+
 ### Fixed
 
 - **`--why` now recognises DNS resolution failures.** A captured curl error

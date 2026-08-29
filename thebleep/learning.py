@@ -20,6 +20,12 @@ SCOPES = ('global', 'executable', 'repository')
 _CONTROL_WORDS = frozenset(('&&', '||', '|', ';', '(', ')'))
 
 
+def _open_for_read(path):
+    """Open learned state without following a symlink where supported."""
+    flags = os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0)
+    return os.fdopen(os.open(str(path), flags), 'rb')
+
+
 def _path(name):
     user_dir = settings.user_dir
     if user_dir is None:
@@ -38,7 +44,7 @@ def _read(name):
     if path is None:
         return None
     try:
-        with path.open('rb') as handle:
+        with _open_for_read(path) as handle:
             raw = handle.read(MAX_FILE + 1)
         if len(raw) > MAX_FILE:
             return None
