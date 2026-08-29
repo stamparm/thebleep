@@ -17,7 +17,8 @@ from thebleep import diagnostics
 def test_address_in_use_extracts_port_and_offers_read_only_next_step():
     result = diagnostics.diagnose(
         'python server.py --port 5432',
-        'OSError: [Errno 98] Address already in use')
+        'OSError: [Errno 98] Address already in use',
+        platform_name='posix')
 
     assert result == {
         'command': 'python server.py --port 5432',
