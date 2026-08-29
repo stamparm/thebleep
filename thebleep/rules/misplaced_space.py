@@ -52,7 +52,7 @@ def _respaced(command):
 
     """
     parts = command.script_parts
-    if len(parts) < 2:
+    if len(parts) < 2 or len(parts[1]) < SHORTEST_HALF:
         return None
 
     merged = parts[0] + parts[1]

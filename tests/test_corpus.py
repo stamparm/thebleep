@@ -52,6 +52,9 @@ def machine(request, mocker, monkeypatch, settings):
     mocker.patch('thebleep.utils.get_all_executables', return_value=names)
     mocker.patch('thebleep.rules.no_command.get_all_executables',
                  return_value=names)
+    mocker.patch(
+        'thebleep.rules.missing_space_before_subcommand.get_all_executables',
+        return_value=names)
     mocker.patch('thebleep.utils.get_valid_history_without_current',
                  return_value=cases.HISTORY)
     mocker.patch('thebleep.rules.no_command.get_valid_history_without_current',

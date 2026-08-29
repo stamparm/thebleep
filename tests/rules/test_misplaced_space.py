@@ -44,3 +44,16 @@ def test_not_match_when_first_word_runs(mocker):
                  return_value='/usr/bin/sudo')
 
     assert not match(Command('sud osu', ''))
+
+
+@pytest.mark.usefixtures('no_memoize')
+def test_not_match_when_second_word_is_too_short(mocker):
+    """A one-letter argument is not evidence of a second command.
+
+    Without this guard, an installed two-letter command can turn `rmm f`
+    into the confident but wrong `rm mf`.
+    """
+    mocker.patch(
+        'thebleep.rules.misplaced_space.which', return_value=None)
+
+    assert not match(Command('rmm f', "Command 'rmm' not found"))
