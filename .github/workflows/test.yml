@@ -150,15 +150,27 @@ jobs:
           wheel = glob.glob('dist/*.whl')[0]
           with zipfile.ZipFile(wheel) as archive:
               names = archive.namelist()
-          for unwanted in ('tests/', 'thefuck', '.egg-info/', 'bench/',
-                           'assets/', '.github/', '.scratch'):
-              found = [n for n in names if unwanted in n]
+          def has_component(path, component):
+              parts = path.rstrip('/').split('/')
+              return component in parts or (
+                  component == '.egg-info'
+                  and any(part.endswith('.egg-info') for part in parts))
+          def has_sequence(path, wanted):
+              parts = path.rstrip('/').split('/')
+              return any(parts[index:index + len(wanted)] == wanted
+                         for index in range(len(parts) - len(wanted) + 1))
+          for unwanted in ('tests', 'thefuck', '.egg-info', 'bench',
+                           'assets', '.github', '.scratch'):
+              found = [n for n in names if has_component(n, unwanted)]
               if found:
                   problems.append('wheel contains %s: %s' % (unwanted, found[:3]))
           with tarfile.open(glob.glob('dist/*.tar.gz')[0]) as archive:
               sdist = archive.getnames()
           for unwanted in ('thefuck', '.scratch', 'bench/.venvs'):
-              found = [n for n in sdist if unwanted in n]
+              wanted = unwanted.split('/')
+              found = [n for n in sdist
+                       if (has_component(n, unwanted) if len(wanted) == 1
+                           else has_sequence(n, wanted))]
               if found:
                   problems.append('sdist contains %s: %s' % (unwanted, found[:3]))
           if problems:

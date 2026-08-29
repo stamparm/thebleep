@@ -98,9 +98,18 @@ jobs:
               if wanted not in entry_points:
                   problems.append('missing entry point: ' + wanted)
           # Nothing that belongs to the repository rather than to the package.
-          for unwanted in ('tests/', 'thefuck', '.egg-info/', 'bench/',
-                           'assets/', '.github/', '.scratch'):
-              found = [n for n in names if unwanted in n]
+          def has_component(path, component):
+              parts = path.rstrip('/').split('/')
+              return component in parts or (
+                  component == '.egg-info'
+                  and any(part.endswith('.egg-info') for part in parts))
+          def has_sequence(path, wanted):
+              parts = path.rstrip('/').split('/')
+              return any(parts[index:index + len(wanted)] == wanted
+                         for index in range(len(parts) - len(wanted) + 1))
+          for unwanted in ('tests', 'thefuck', '.egg-info', 'bench',
+                           'assets', '.github', '.scratch'):
+              found = [n for n in names if has_component(n, unwanted)]
               if found:
                   problems.append('wheel contains %s: %s' % (unwanted, found[:3]))
           if not any(n.endswith('/rules/git_add.py') for n in names):
@@ -109,7 +118,10 @@ jobs:
           with tarfile.open(sdist) as archive:
               sdist_names = archive.getnames()
           for unwanted in ('thefuck', '.scratch', 'bench/.venvs'):
-              found = [n for n in sdist_names if unwanted in n]
+              wanted = unwanted.split('/')
+              found = [n for n in sdist_names
+                       if (has_component(n, unwanted) if len(wanted) == 1
+                           else has_sequence(n, wanted))]
               if found:
                   problems.append('sdist contains %s: %s' % (unwanted, found[:3]))
 
