@@ -1,5 +1,5 @@
 import re
-from thebleep.utils import for_app
+from thebleep.utils import for_app, replace_argument
 
 
 warning_regex = re.compile(r'Warning: (?:.(?!is ))+ is already installed and '
@@ -18,4 +18,4 @@ def match(command):
 
 
 def get_new_command(command):
-    return command.script.replace('install', 'reinstall')
+    return replace_argument(command.script, 'install', 'reinstall')

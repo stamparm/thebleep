@@ -22,6 +22,7 @@ def test_not_match(script, output):
 @pytest.mark.parametrize('script, output, new_command', [
     ('terraform appyl', 'Terraform has no command named "appyl". Did you mean "apply"?', 'terraform apply',),
     ('terraform destory --some-other-option', 'Terraform has no command named "destory". Did you mean "destroy"?', 'terraform destroy --some-other-option',),
+    ('terraform -chdir="appyl" appyl', 'Terraform has no command named "appyl". Did you mean "apply"?', 'terraform -chdir="appyl" apply',),
 ])
 def test_get_new_command(script, output, new_command):
     assert get_new_command(Command(script, output)) == new_command

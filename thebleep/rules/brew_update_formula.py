@@ -1,4 +1,4 @@
-from thebleep.utils import for_app
+from thebleep.utils import for_app, replace_argument
 
 
 @for_app('brew', at_least=2)
@@ -9,4 +9,4 @@ def match(command):
 
 
 def get_new_command(command):
-    return command.script.replace('update', 'upgrade')
+    return replace_argument(command.script, 'update', 'upgrade')

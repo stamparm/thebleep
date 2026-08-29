@@ -1,5 +1,5 @@
 import re
-from thebleep.utils import for_app
+from thebleep.utils import for_app, replace_argument
 
 MISTAKE = r'(?<=Terraform has no command named ")([^"]+)(?="\.)'
 FIX = r'(?<=Did you mean ")([^"]+)(?="\?)'
@@ -13,4 +13,4 @@ def match(command):
 def get_new_command(command):
     mistake = re.search(MISTAKE, command.output).group(0)
     fix = re.search(FIX, command.output).group(0)
-    return command.script.replace(mistake, fix)
+    return replace_argument(command.script, mistake, fix)
