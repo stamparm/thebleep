@@ -20,6 +20,7 @@ _PORT_IN_COMMAND = re.compile(
     r'(?:--?port(?:=|\s+)|\s-p(?:\s+|=))([0-9]{1,5})\b', re.IGNORECASE)
 _MODULE = re.compile(
     r"(?:ModuleNotFoundError: )?No module named ['\"]([^'\"]+)['\"]")
+_DNS_HOST = re.compile(r'could not resolve host:\s*([^\s]+)', re.IGNORECASE)
 
 
 def _port(script, output):
@@ -161,6 +162,27 @@ def _missing_module(script, output, platform_name):
     }
 
 
+def _dns_failure(script, output, platform_name):
+    match = _DNS_HOST.search(output)
+    if not match:
+        return None
+
+    host = match.group(1).rstrip('.,;')
+    if not host:
+        return None
+    return {
+        'kind': 'dns_failure',
+        'summary': 'The hostname could not be resolved.',
+        'evidence': ['could not resolve host: {}'.format(host)],
+        'next_steps': [_step(
+            _shell_command(
+                'getent hosts {}'.format(_quote(host, platform_name)),
+                'Resolve-DnsName {}'.format(_quote(host, platform_name)),
+                platform_name),
+            'check whether DNS can resolve the hostname')],
+    }
+
+
 def _dubious_ownership(script, output, platform_name):
     if not re.search(r'detected dubious ownership', output, re.IGNORECASE):
         return None
@@ -177,7 +199,7 @@ def _dubious_ownership(script, output, platform_name):
 
 _DETECTORS = (_address_in_use, _permission_denied, _certificate_expired,
               _disk_full, _connection_refused, _missing_module,
-              _dubious_ownership)
+              _dubious_ownership, _dns_failure)
 
 
 def diagnose(script, output=None, platform_name=None):

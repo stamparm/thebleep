@@ -32,6 +32,10 @@
 
 ### Fixed
 
+- **`--why` now recognises DNS resolution failures.** A captured curl error
+  such as `Could not resolve host: example.invalid` is explained with the
+  hostname and a quoted, read-only lookup for the current platform.
+
 - **`--why` suggested Linux-only checks on Windows.** Deterministic follow-up
   commands now match the target platform, including PowerShell clock and
   filesystem checks and a Windows-compatible port lookup.

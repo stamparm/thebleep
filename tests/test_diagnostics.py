@@ -4,7 +4,8 @@
 
 The examples below are the final lines captured from real commands: Python's
 second bind to an occupied local port, importing a missing Python module,
-``df``/filesystem failures, a refused TCP connection, and TLS verification.
+``df``/filesystem failures, a refused TCP connection, TLS verification, and a
+DNS resolution failure from curl 8.5.0.
 Only the stable wording is kept; paths, tracebacks and host-specific details
 are intentionally not part of the contract.
 """
@@ -32,6 +33,34 @@ def test_address_in_use_extracts_port_and_offers_read_only_next_step():
                 'command': 'lsof -nP -iTCP:5432 -sTCP:LISTEN',
                 'reason': 'find the process listening on this port',
                 'risk': 'read-only'}]}]}
+
+
+def test_dns_failure_extracts_host_and_offers_read_only_next_step():
+    result = diagnostics.diagnose(
+        'curl http://this-host-does-not-exist.invalid/',
+        'curl: (6) Could not resolve host: '
+        'this-host-does-not-exist.invalid\n',
+        platform_name='posix')
+
+    assert result['diagnoses'] == [{
+        'kind': 'dns_failure',
+        'summary': 'The hostname could not be resolved.',
+        'evidence': ['could not resolve host: '
+                     'this-host-does-not-exist.invalid'],
+        'next_steps': [{
+            'command': 'getent hosts this-host-does-not-exist.invalid',
+            'reason': 'check whether DNS can resolve the hostname',
+            'risk': 'read-only'}]}]
+
+
+def test_dns_failure_quotes_host_for_powershell():
+    result = diagnostics.diagnose(
+        'curl https://example.test',
+        'Could not resolve host: example.test;',
+        platform_name='nt')
+
+    assert result['diagnoses'][0]['next_steps'][0]['command'] == (
+        "Resolve-DnsName 'example.test'")
 
 
 @pytest.mark.parametrize('kind, script, output, command', [
