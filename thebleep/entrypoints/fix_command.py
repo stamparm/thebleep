@@ -1,9 +1,11 @@
 import os
 import sys
+from contextlib import contextmanager
 from .. import logs, types, const
 from ..conf import settings
 from ..corrector import get_corrected_commands
 from ..exceptions import EmptyCommand
+from .. import failure_store
 from ..ui import select_command
 from ..utils import get_alias, get_all_executables
 
@@ -34,6 +36,32 @@ def _get_raw_command(known_args):
     return []
 
 
+@contextmanager
+def _picked_failure(number):
+    """Yields a stored command and temporarily restores its working directory."""
+    entries = failure_store.load()
+    if number == 0:
+        failure_store.print_recent(entries)
+        yield None
+        return
+    if number < 1 or number > len(entries):
+        logs.failed('No recorded failure {}'.format(number))
+        yield None
+        return
+
+    entry = entries[number - 1]
+    previous = os.getcwd()
+    try:
+        try:
+            os.chdir(entry['cwd'])
+        except OSError:
+            logs.warn('Could not restore {}; using {}'.format(
+                entry['cwd'], previous))
+        yield types.Command(entry['script'], entry['output'])
+    finally:
+        os.chdir(previous)
+
+
 def fix_command(known_args):
     """Fixes previous command. Used when `thebleep` called without arguments."""
     settings.init(known_args)
@@ -47,6 +75,16 @@ def fix_command(known_args):
 
             logs.debug(u'Run with settings: {}'.format(
                 pformat(redacted(settings))))
+        picked = getattr(known_args, 'pick', None)
+        if type(picked) is not int:
+            picked = None
+        if picked is not None:
+            with _picked_failure(picked) as command:
+                if command is None:
+                    return
+                _fix_command(known_args, command)
+            return
+
         raw_command = _get_raw_command(known_args)
 
         try:
@@ -55,27 +93,36 @@ def fix_command(known_args):
             logs.debug('Empty command, nothing to do')
             return
 
-        if getattr(known_args, 'why', False):
-            from .. import diagnostics
+        failure_store.record(command.script, command.output,
+                             os.environ.get('TB_EXIT'), os.getcwd(),
+                             os.environ.get('TB_SHELL'))
+        _fix_command(known_args, command)
 
-            print(diagnostics.format_human(
-                diagnostics.diagnose(command.script, command.output)))
-            return
 
-        corrected_commands = get_corrected_commands(command)
-        selected_command, action = select_command(corrected_commands, command)
+def _fix_command(known_args, command):
+    """Correct one already acquired command."""
 
-        if selected_command is None:
-            sys.exit(1)
-        elif action is const.ACTION_EDIT:
-            selected_command.edit()
-            # The shell alias reads this status and puts what is on stdout in
-            # the line editor. Nothing has been run.
-            from ..shells import shell
+    if getattr(known_args, 'why', False):
+        from .. import diagnostics
 
-            hint = shell.edit_hint()
-            if hint:
-                logs.edit_hint(hint)
-            sys.exit(const.EXIT_EDIT)
-        else:
-            selected_command.run(command)
+        print(diagnostics.format_human(
+            diagnostics.diagnose(command.script, command.output)))
+        return
+
+    corrected_commands = get_corrected_commands(command)
+    selected_command, action = select_command(corrected_commands, command)
+
+    if selected_command is None:
+        sys.exit(1)
+    elif action is const.ACTION_EDIT:
+        selected_command.edit()
+        # The shell alias reads this status and puts what is on stdout in
+        # the line editor. Nothing has been run.
+        from ..shells import shell
+
+        hint = shell.edit_hint()
+        if hint:
+            logs.edit_hint(hint)
+        sys.exit(const.EXIT_EDIT)
+    else:
+        selected_command.run(command)

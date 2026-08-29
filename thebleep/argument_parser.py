@@ -16,6 +16,7 @@ DEFAULTS = {'alias': None,
             'force_command': None,
             'help': False,
             'json': False,
+            'pick': None,
             'repeat': False,
             'shell': None,
             'shell_logger': None,
@@ -136,6 +137,13 @@ class Parser(object):
             '--why',
             action='store_true',
             help='explain the previous failure, or return one with --json')
+        self._parser.add_argument(
+            '--pick',
+            nargs='?',
+            const=0,
+            type=int,
+            metavar='NUMBER',
+            help='list recent failures, or select one by number')
         self._parser.add_argument(
             '--command',
             dest='command_text',

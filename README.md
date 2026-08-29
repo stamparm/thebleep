@@ -141,6 +141,10 @@ The rest of the reasons:
 - **Press `?` to be told why.** Which rule made the suggestion, what it saw,
   and whether accepting it does anything besides run the command.
   [Why am I being told this](#why-am-i-being-told-this).
+- **It remembers the last five failed commands.** `thebleep --pick` lists them;
+  `thebleep --pick 2` corrects one using its captured output and working
+  directory, without replaying it. The records are local, bounded and removed
+  by `--clear-cache`.
 - **A structured Python API.** IDEs and agents can supply a command and its
   captured output without asking The Bleep to run anything again.
   [Structured API](#structured-api).
@@ -163,22 +167,23 @@ contributors; their work and history remain fully credited.
 1. [Safe by default](#safe-by-default)
 2. [Edit before you run](#edit-before-you-run)
 3. [Why am I being told this](#why-am-i-being-told-this)
-4. [Structured API](#structured-api)
-5. [thebleep --doctor](#thebleep---doctor)
-6. [Coming from The Fuck](#coming-from-the-fuck)
-7. [What's fixed](#whats-fixed)
-8. [Supported everything](#supported-everything)
-9. [Installation](#installation)
-10. [Updating](#updating)
-11. [Uninstall](#uninstall)
-12. [How it works](#how-it-works)
-13. [Creating your own rules](#creating-your-own-rules)
-14. [Settings](#settings)
-15. [Third-party packages with rules](#third-party-packages-with-rules)
-16. [Experimental instant mode](#experimental-instant-mode)
-17. [Performance](#performance)
-18. [Developing](#developing)
-19. [License](#license-mit)
+4. [Recent failures](#recent-failures)
+5. [Structured API](#structured-api)
+6. [thebleep --doctor](#thebleep---doctor)
+7. [Coming from The Fuck](#coming-from-the-fuck)
+8. [What's fixed](#whats-fixed)
+9. [Supported everything](#supported-everything)
+10. [Installation](#installation)
+11. [Updating](#updating)
+12. [Uninstall](#uninstall)
+13. [How it works](#how-it-works)
+14. [Creating your own rules](#creating-your-own-rules)
+15. [Settings](#settings)
+16. [Third-party packages with rules](#third-party-packages-with-rules)
+17. [Experimental instant mode](#experimental-instant-mode)
+18. [Performance](#performance)
+19. [Developing](#developing)
+20. [License](#license-mit)
 
 ## Safe by default
 
@@ -391,6 +396,25 @@ rule had to be given a hand-written description for this to work — so a rule o
 your own, or one from a package, explains itself exactly as well as a bundled
 one does. A rule that works its condition out in a way this cannot read says so:
 `matched  a condition this rule works out for itself`.
+
+##### [Back to Contents](#contents)
+
+## Recent failures
+
+The alias records the last five non-zero failures with their command, captured
+output, shell, exit status and working directory. The record is capped at 1 MiB
+per failure and is only a local cache; command lines and output can contain
+sensitive data, so `thebleep --clear-cache` removes it with the other caches.
+
+```bash
+thebleep --pick       # list the failures
+thebleep --pick 2     # correct the second one, without replaying it
+```
+
+If its original directory no longer exists, correction continues from the
+current directory and says so. A stored failure is never executed merely by
+listing or selecting it; the normal confirmation and edit-before-run rules
+still apply.
 
 ##### [Back to Contents](#contents)
 

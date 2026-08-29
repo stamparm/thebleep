@@ -94,3 +94,35 @@ def test_why_prints_a_deterministic_diagnosis_without_correcting(
     assert 'Port 5432 is already in use.' in output
     assert 'lsof -nP -iTCP:5432 -sTCP:LISTEN' in output
     assert not correct.called
+
+
+def test_pick_uses_stored_output_without_replaying(mocker, settings):
+    stored = {'script': 'gti status', 'output': "gti: command not found",
+              'cwd': '.', 'shell': 'bash', 'exit': 127, 'saved_at': 1}
+    mocker.patch('thebleep.entrypoints.fix_command.failure_store.load',
+                 return_value=[stored])
+    mocker.patch('thebleep.entrypoints.fix_command.failure_store.record')
+    correct = mocker.patch(
+        'thebleep.entrypoints.fix_command.get_corrected_commands',
+        return_value=[])
+    select = mocker.patch(
+        'thebleep.entrypoints.fix_command.select_command',
+        return_value=(None, const.ACTION_ABORT))
+
+    with pytest.raises(SystemExit):
+        fix_command(Mock(command=[], force_command=None, repeat=False,
+                         debug=False, why=False, pick=1))
+
+    assert correct.call_args.args[0] == Command(
+        'gti status', "gti: command not found")
+    assert select.called
+
+
+def test_pick_lists_without_correcting(capsys, mocker, settings):
+    mocker.patch('thebleep.entrypoints.fix_command.failure_store.load',
+                 return_value=[])
+
+    fix_command(Mock(command=[], force_command=None, repeat=False,
+                     debug=False, why=False, pick=0))
+
+    assert capsys.readouterr().out == 'No recorded failures.\n'

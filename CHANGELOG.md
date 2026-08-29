@@ -4,6 +4,10 @@
 
 ### Added
 
+- **Recent failure history** — `thebleep --pick` lists the last five failed
+  commands, and `thebleep --pick 2` corrects one from its bounded local record
+  without replaying it.
+
 - **`bun_script_not_found`** — `bun run buidl` -> `bun run build`, and
   `bun instal` -> `bun install`. bun reports an unknown word as a missing
   *script* whether or not `run` was typed, and offers no suggestion of its own:

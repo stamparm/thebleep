@@ -7,6 +7,7 @@ def _args(**override):
     args = {'alias': None, 'alias_loader': None, 'clear_cache': False,
             'command': [], 'command_text': None, 'yes': False,
             'help': False, 'version': False, 'debug': False, 'json': False,
+            'pick': None,
             'force_command': None, 'repeat': False, 'edit': False,
             'doctor': False, 'explain': False,
             'enable_experimental_instant_mode': False,
@@ -51,6 +52,8 @@ def _args(**override):
      _args(json=True, command_text='gti status')),
     (['thebleep', '--json', '--why', '--command', 'python app.py'],
      _args(json=True, why=True, command_text='python app.py')),
+    (['thebleep', '--pick'], _args(pick=0)),
+    (['thebleep', '--pick', '2'], _args(pick=2)),
     (['thebleep', 'git', 'branch', ARGUMENT_PLACEHOLDER, '--explain'],
      _args(command=['git', 'branch'], explain=True))])
 def test_parse(argv, result):

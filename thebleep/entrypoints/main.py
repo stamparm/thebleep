@@ -86,7 +86,7 @@ def _main():
     elif known_args.command_text is not None:
         logs.failed('--command needs --json')
         sys.exit(2)
-    elif known_args.why:
+    elif known_args.why or getattr(known_args, 'pick', None) is not None:
         from .fix_command import fix_command
 
         fix_command(known_args)
