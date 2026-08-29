@@ -95,6 +95,12 @@ def test_an_option_between_the_two_is_stepped_over():
     assert 'git notes add' in offered
 
 
+def test_global_options_are_preserved():
+    command = Command('git -C worktree remote ad origin x', REMOTE)
+    assert get_new_command(command)[0] == \
+        'git -C worktree remote add origin x'
+
+
 class TestWhenItSaysNothing(object):
     @pytest.mark.parametrize('output', [
         '',

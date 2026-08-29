@@ -10,11 +10,11 @@ def match(command):
             and 'git push --set-upstream' in command.output)
 
 
-def _get_upstream_option_index(command_parts):
-    if '--set-upstream' in command_parts:
-        return command_parts.index('--set-upstream')
-    elif '-u' in command_parts:
-        return command_parts.index('-u')
+def _get_upstream_option_index(command_parts, start):
+    for index, part in enumerate(command_parts[start:], start):
+        if part in ('--set-upstream', '-u'):
+            return index
+
     else:
         return None
 
@@ -25,7 +25,9 @@ def get_new_command(command):
     # because the remaining arguments are concatenated onto the command suggested
     # by git, which includes --set-upstream and its argument
     command_parts = command.script_parts[:]
-    upstream_option_index = _get_upstream_option_index(command_parts)
+    push_index = git_subcommand_index(command_parts)
+    upstream_option_index = _get_upstream_option_index(command_parts,
+                                                       push_index + 1)
 
     if upstream_option_index is not None:
         command_parts.pop(upstream_option_index)
@@ -36,7 +38,7 @@ def get_new_command(command):
     else:
         # the only non-qualified permitted options are the repository and refspec; git's
         # suggestion include them, so they won't be lost, but would be duplicated otherwise.
-        push_idx = command_parts.index('push') + 1
+        push_idx = git_subcommand_index(command_parts) + 1
         while len(command_parts) > push_idx and command_parts[len(command_parts) - 1][0] != '-':
             command_parts.pop(len(command_parts) - 1)
 

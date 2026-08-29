@@ -33,7 +33,7 @@ Captured from git 2.43.
 import re
 from thebleep import matching
 from thebleep.shells import shell
-from thebleep.specific.git import git_support
+from thebleep.specific.git import git_subcommand_index, git_support
 from thebleep.utils import memoize, replace_argument
 
 # ``error: unknown subcommand: `ad' `` -- git's own quoting, a backtick and a
@@ -89,17 +89,13 @@ def _typo_and_answers(command):
         return None
 
     parts = command.script_parts
-    if len(parts) < 3:
+    index = git_subcommand_index(parts)
+    if index + 1 >= len(parts):
         return None
 
     # The command that dispatched, which is the first word after `git` that is
     # not an option.
-    for word in parts[1:]:
-        if not word.startswith('-'):
-            dispatcher = word
-            break
-    else:
-        return None
+    dispatcher = parts[index]
 
     answers = _subcommands(command.output, dispatcher)
     typo = named.group(1)

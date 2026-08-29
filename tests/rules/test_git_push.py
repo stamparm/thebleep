@@ -83,3 +83,14 @@ def test_not_match(output, script, branch_name):
      'git push --set-upstream origin master --force-with-lease')])
 def test_get_new_command(output, script, branch_name, new_command):
     assert get_new_command(Command(script, output)) == new_command
+
+
+def test_global_options_and_upstream_flags_are_parsed_in_their_context():
+    output = '''fatal: The current branch master has no upstream branch.
+To push the current branch and set the remote as upstream, use
+
+    git push --set-upstream origin master
+'''
+    command = Command('git -C worktree push -u origin', output)
+    assert get_new_command(command) == \
+        'git -C worktree push --set-upstream origin master'
