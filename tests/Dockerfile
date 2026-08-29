@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION
+ARG PYTHON_VERSION=3
 FROM python:${PYTHON_VERSION}
 RUN apt-get update -y
 RUN apt-get install -yy --no-install-recommends --no-install-suggests fish tcsh zsh curl ca-certificates
