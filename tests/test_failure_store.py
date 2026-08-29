@@ -77,6 +77,15 @@ def test_output_is_bounded_at_both_ends():
     assert '[output clipped]' in result
 
 
+def test_output_limit_counts_utf8_bytes():
+    output = '\N{SNOWMAN}' * (failure_store.MAX_OUTPUT // 2)
+
+    result = failure_store._clip_output(output)
+
+    assert len(result.encode('utf-8')) <= failure_store.MAX_OUTPUT
+    assert '[output clipped]' in result
+
+
 def test_load_discards_malformed_entries(mocker):
     valid = {'script': 'gti', 'output': '', 'cwd': 'project', 'shell': 'bash',
              'exit': 127, 'saved_at': 1}
@@ -90,6 +99,16 @@ def test_load_discards_oversized_entries(mocker):
     valid = {'script': 'gti', 'output': '', 'cwd': 'project', 'shell': 'bash',
              'exit': 127, 'saved_at': 1}
     oversized = dict(valid, script='x' * (failure_store.MAX_SCRIPT + 1))
+    mocker.patch('thebleep.failure_store.cachefile.load',
+                 return_value=[oversized, valid])
+
+    assert failure_store.load() == [valid]
+
+
+def test_load_discards_oversized_utf8_output(mocker):
+    valid = {'script': 'gti', 'output': '', 'cwd': 'project', 'shell': 'bash',
+             'exit': 127, 'saved_at': 1}
+    oversized = dict(valid, output='\N{SNOWMAN}' * (failure_store.MAX_OUTPUT // 2))
     mocker.patch('thebleep.failure_store.cachefile.load',
                  return_value=[oversized, valid])
 

@@ -19,14 +19,22 @@ MAX_CWD = 4096
 MAX_SHELL = 64
 
 
+def _byte_length(value):
+    """Return the size of text as it will be stored on disk."""
+    return len(value.encode('utf-8'))
+
+
 def _clip_output(output):
     """Keep the beginning and end of output while bounding the record."""
-    if not isinstance(output, str) or len(output) <= MAX_OUTPUT:
+    if not isinstance(output, str) or _byte_length(output) <= MAX_OUTPUT:
         return output if isinstance(output, str) else ''
     marker = '\n...[output clipped]...\n'
-    size = MAX_OUTPUT - len(marker)
+    size = MAX_OUTPUT - _byte_length(marker)
     head = size // 2
-    return output[:head] + marker + output[-(size - head):]
+    raw = output.encode('utf-8')
+    beginning = raw[:head].decode('utf-8', 'ignore')
+    ending = raw[-(size - head):].decode('utf-8', 'ignore')
+    return beginning + marker + ending
 
 
 def _valid(entry):
@@ -36,7 +44,7 @@ def _valid(entry):
             and entry['script'].strip()
             and len(entry['script']) <= MAX_SCRIPT
             and isinstance(entry.get('output'), str)
-            and len(entry['output']) <= MAX_OUTPUT
+            and _byte_length(entry['output']) <= MAX_OUTPUT
             and isinstance(entry.get('cwd'), str)
             and len(entry['cwd']) <= MAX_CWD
             and isinstance(entry.get('shell'), str)
