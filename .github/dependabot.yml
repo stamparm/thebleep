@@ -8,3 +8,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # setuptools 84 dropped Python 3.9, which remains a supported runtime.
+      # Review a major bump manually when the support floor moves.
+      - dependency-name: setuptools
+        update-types: [version-update:semver-major]
