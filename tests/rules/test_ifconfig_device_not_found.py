@@ -17,6 +17,8 @@ wlp2s0    Link encap:Ethernet  HWaddr 5c:51:4f:7c:58:5d
           RX bytes:16148429061 (16.1 GB)  TX bytes:7067533695 (7.0 GB)
 '''
 
+BSD_OUTPUT = 'ifconfig: interface wlan0 does not exist'
+
 
 @pytest.fixture(autouse=True)
 def ifconfig(mocker):
@@ -29,6 +31,7 @@ def ifconfig(mocker):
 @pytest.mark.parametrize('script, output', [
     ('ifconfig wlan0', output.format('wlan0')),
     ('ifconfig -s eth0', output.format('eth0')),
+    ('ifconfig wlan0', BSD_OUTPUT),
 ])
 def test_match(script, output):
     assert match(Command(script, output))
@@ -51,3 +54,8 @@ def test_get_new_comman(script, result):
     new_command = get_new_command(
         Command(script, output.format('wlan0')))
     assert new_command == result
+
+
+def test_get_new_command_from_bsd_error():
+    new_command = get_new_command(Command('ifconfig wlan0', BSD_OUTPUT))
+    assert new_command == ['ifconfig wlp2s0']
