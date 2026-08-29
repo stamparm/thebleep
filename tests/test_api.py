@@ -84,7 +84,8 @@ def test_suggest_keeps_action_details_labeled(mocker):
 
 def test_why_returns_the_versioned_diagnosis_contract():
     assert api.why('python app.py',
-                   "ModuleNotFoundError: No module named 'tomli'") == {
+                   "ModuleNotFoundError: No module named 'tomli'",
+                   platform_name='posix') == {
         'schema': 1,
         'command': 'python app.py',
         'output_supplied': True,
