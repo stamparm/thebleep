@@ -211,6 +211,15 @@ def test_replace_argument_prefix_changes_only_the_task(script, result):
                                    result.split()[-1].split(':')[0]) == result
 
 
+def test_remove_argument_sequence_ignores_quoted_words():
+    from thebleep.utils import remove_argument_sequence
+
+    assert remove_argument_sequence(
+        'git clone "keep git clone here" git clone foo',
+        ('git', 'clone'), start=2) == \
+        'git clone "keep git clone here" foo'
+
+
 # Kept before anything patches them, so that the tests which are *about* the
 # disk cache can put the real thing back.
 REAL_CACHEFILE = (cachefile.load, cachefile.save)

@@ -22,3 +22,10 @@ def test_not_match():
 
 def test_get_new_command():
     assert get_new_command(Command('git clone git clone foo', output_clean)) == 'git clone foo'
+
+
+def test_get_new_command_does_not_rewrite_a_quoted_argument():
+    command = Command('git clone "keep git clone here" git clone foo',
+                      output_clean)
+
+    assert get_new_command(command) == 'git clone "keep git clone here" foo'

@@ -677,6 +677,35 @@ def replace_argument_prefix(script, from_, to, separator=':'):
     return script
 
 
+def remove_argument_sequence(script, arguments, start=0):
+    """Removes an exact sequence of shell arguments outside quotes.
+
+    The sequence is matched as shell words, not as raw text, so a phrase in a
+    quoted value is left alone. Whitespace around the removed words is folded
+    to one separator when another argument remains on both sides.
+    """
+    arguments = tuple(arguments)
+    if not arguments:
+        return script
+
+    spans = list(_argument_spans(script))
+    words = [script[start:end] for start, end in spans]
+    length = len(arguments)
+    for token_number in range(start, len(words) - length + 1):
+        if tuple(words[token_number:token_number + length]) != arguments:
+            continue
+
+        first = spans[token_number][0]
+        last = spans[token_number + length - 1][1]
+        left = script[:first].rstrip()
+        right = script[last:].lstrip()
+        if left and right:
+            return left + u' ' + right
+        return left + right
+
+    return script
+
+
 def _argument_spans(script):
     """Returns raw spans for shell words, without splitting quoted values."""
     token_start = None
