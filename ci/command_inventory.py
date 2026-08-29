@@ -46,6 +46,8 @@ PROBES = {
     'ifconfig': [['thebleep-no-such-interface']],
     'java': [['-version']],
     'kubectl': [['version', '--client']],
+    'ln': [{'arguments': ['-s', 'missing', 'existing'],
+            'files': ['existing']}],
     'make': [['--version']],
     'mvn': [['--version']],
     'node': [['--version']],
@@ -185,7 +187,7 @@ def _duration(started):
     return round((time.monotonic() - started) * 1000, 1)
 
 
-def probe_commands(commands, cwd):
+def probe_commands(commands):
     """Probe installed commands while isolating home/configuration files."""
     by_name = {item['name'].casefold(): item['path'] for item in commands}
     with tempfile.TemporaryDirectory(prefix='thebleep-inventory-') as home:
@@ -197,14 +199,28 @@ def probe_commands(commands, cwd):
             path = by_name.get(name.casefold())
             if not path:
                 continue
-            for arguments in argument_sets:
-                result = run_probe(path, arguments, cwd, environment)
-                result.update({'command': name, 'path': path})
-                results.append(result)
+            for specification in argument_sets:
+                if isinstance(specification, dict):
+                    arguments = specification['arguments']
+                    files = specification.get('files', ())
+                else:
+                    arguments, files = specification, ()
+                with tempfile.TemporaryDirectory(
+                        prefix='thebleep-probe-') as probe_directory:
+                    for filename in files:
+                        Path(probe_directory).joinpath(filename).touch()
+                    probe_environment = environment.copy()
+                    for variable in ('TMPDIR', 'TMP', 'TEMP'):
+                        probe_environment[variable] = probe_directory
+                    result = run_probe(
+                        path, arguments, Path(probe_directory),
+                        probe_environment)
+                    result.update({'command': name, 'path': path})
+                    results.append(result)
     return results
 
 
-def build_inventory(cwd):
+def build_inventory():
     commands = inventory_commands()
     return {
         'format': 1,
@@ -221,7 +237,7 @@ def build_inventory(cwd):
             'path_entries': _path_entries(),
         },
         'commands': commands,
-        'probes': probe_commands(commands, cwd),
+        'probes': probe_commands(commands),
     }
 
 
@@ -231,7 +247,7 @@ def main():
                         help='JSON path to write (default: %(default)s)')
     args = parser.parse_args()
     destination = Path(args.output)
-    inventory = build_inventory(Path.cwd())
+    inventory = build_inventory()
     destination.write_text(json.dumps(inventory, indent=2, sort_keys=True) +
                            '\n', encoding='utf-8')
     print('recorded {} commands and {} probes in {}'.format(
