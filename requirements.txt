@@ -3,7 +3,7 @@ pytest
 pytest-mock
 wheel
 build
-setuptools>=61
+setuptools>=84.0.0
 pexpect
 pytest-benchmark
 pytest-docker-pexpect
