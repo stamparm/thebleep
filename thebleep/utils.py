@@ -652,8 +652,16 @@ def replace_argument(script, from_, to):
     # The old `str.replace` path changed the first `word` and left the real
     # argument alone. Keep the original spelling of every other token and
     # replace only an exact, whitespace-delimited token outside quotes.
+    for token_number, (start, end) in enumerate(_argument_spans(script)):
+        if token_number and script[start:end] == from_:
+            return script[:start] + to + script[end:]
+
+    return script
+
+
+def _argument_spans(script):
+    """Returns raw spans for shell words, without splitting quoted values."""
     token_start = None
-    token_number = 0
     quote = None
     escaped = False
     for index, character in enumerate(script + u' '):
@@ -671,15 +679,10 @@ def replace_argument(script, from_, to):
             continue
         if character.isspace() and quote is None:
             if token_start is not None:
-                token = script[token_start:index]
-                if token_number and token == from_:
-                    return script[:token_start] + to + script[index:]
-                token_number += 1
+                yield token_start, index
                 token_start = None
         elif token_start is None:
             token_start = index
-
-    return script
 
 
 def replace_value(script, rejected, name):
@@ -711,8 +714,10 @@ def replace_value(script, rejected, name):
     quoted = shell.quote(name)
 
     glued = u'={}'.format(rejected)
-    if glued in script:
-        return script.replace(glued, u'={}'.format(quoted), 1)
+    for start, end in _argument_spans(script):
+        if script[start:end].endswith(glued):
+            value_start = end - len(rejected)
+            return script[:value_start] + quoted + script[end:]
 
     return replace_argument(script, rejected, quoted)
 

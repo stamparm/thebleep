@@ -11,6 +11,7 @@ from unittest.mock import Mock, call, patch
 from thebleep import cachefile
 from thebleep.utils import default_settings, \
     memoize, get_closest, get_all_executables, replace_argument, \
+    replace_value, \
     get_all_matched_commands, is_app, for_app, cache, \
     get_valid_history_without_current, get_close_matches, which, \
     without_control_sequences, format_raw_script
@@ -251,6 +252,12 @@ def test_get_all_executables_exclude_paths(path, pathsep, excluded, settings,
      'echo "keep instol here" install extra')])
 def test_replace_argument(args, result):
     assert replace_argument(*args) == result
+
+
+def test_replace_value_ignores_quoted_equals_values():
+    assert replace_value('tool "keep =nmae" --sort=nmae extra',
+                         'nmae', 'name') == \
+        'tool "keep =nmae" --sort=name extra'
 
 
 @pytest.mark.parametrize('stderr, result', [
