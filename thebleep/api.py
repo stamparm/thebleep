@@ -17,6 +17,9 @@ from .corrector import get_corrected_commands
 from .types import Command
 
 
+SCHEMA_VERSION = 1
+
+
 def _suggestion(corrected, command):
     rule = getattr(corrected, 'rule', None)
     explanation = explain_module.describe(corrected, command)
@@ -55,6 +58,7 @@ def suggest(script, output=None):
         _suggestion(corrected, command)
         for corrected in get_corrected_commands(command)]
     return {
+        'schema': SCHEMA_VERSION,
         'command': script,
         'output_supplied': output is not None,
         'decision': 'suggest' if suggestions else 'abstain',

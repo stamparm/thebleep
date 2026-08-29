@@ -17,6 +17,7 @@ def test_suggest_returns_structured_correction(mocker):
     result = api.suggest('gti status', 'command not found')
 
     assert result == {
+        'schema': 1,
         'command': 'gti status',
         'output_supplied': True,
         'decision': 'suggest',
