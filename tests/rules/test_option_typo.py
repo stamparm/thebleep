@@ -22,6 +22,9 @@ TAR = ("tar: unrecognized option '--extrat'\n"
 BSD_LS = ("ls: unrecognized option `--colr'\n"
           "usage: ls [-@ABCFGHILOPRSTUWXabcdefghiklmnopqrstuvwxy1%,] "
           "[--color=when] [-D format] [file ...]\n")
+WINDOWS_GREP = ("grep: unknown option -- verbsoe\n"
+                "Usage: grep [OPTION]... PATTERN [FILE]...\n"
+                "Try 'grep --help' for more information.\n")
 CURL = ('curl: option --verbse: is unknown\n'
         "curl: try 'curl --help' or 'curl --manual' for more information\n")
 
@@ -85,6 +88,11 @@ class TestAskingTheProgram(object):
         command = Command('ls --colr', BSD_LS)
         assert match(command)
         assert get_new_command(command)[0] == 'ls --color'
+
+    def test_windows_grep_wording(self):
+        command = Command('grep --verbsoe', WINDOWS_GREP)
+        assert match(command)
+        assert get_new_command(command)[0] == 'grep --verbose'
 
     def test_help_is_not_a_candidate(self, installed):
         """`Try 'ls --help'` puts `--help` in the output, and reading that as a

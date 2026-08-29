@@ -67,6 +67,8 @@ BROKEN = (
     re.compile(r"unrecognized option '?-{1,2}([A-Za-z0-9][\w-]*)'?"),
     # git, three different ways.
     re.compile(r"unknown option `-{0,2}([A-Za-z0-9][\w-]*)'"),
+    # Git for Windows' grep uses a double-dash separator.
+    re.compile(r'unknown option -- ([A-Za-z0-9][\w-]*)'),
     re.compile(r'(?:invalid|unknown) option: -{1,2}([A-Za-z0-9][\w-]*)'),
     re.compile(r'unrecognized argument: -{1,2}([A-Za-z0-9][\w-]*)'),
     # curl.
