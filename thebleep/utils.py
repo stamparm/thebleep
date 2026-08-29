@@ -644,14 +644,42 @@ def replace_argument(script, from_, to):
     value verbatim.
 
     """
-    replaced_in_the_end = re.sub(u' {}$'.format(re.escape(from_)),
-                                 lambda _: u' {}'.format(to),
-                                 script, count=1)
-    if replaced_in_the_end != script:
-        return replaced_in_the_end
-    else:
-        return script.replace(
-            u' {} '.format(from_), u' {} '.format(to), 1)
+    # Do not search the raw string. A value inside a quoted argument is data,
+    # not the argument a rule meant to replace:
+    #
+    #     echo "keep this word here" word
+    #
+    # The old `str.replace` path changed the first `word` and left the real
+    # argument alone. Keep the original spelling of every other token and
+    # replace only an exact, whitespace-delimited token outside quotes.
+    token_start = None
+    token_number = 0
+    quote = None
+    escaped = False
+    for index, character in enumerate(script + u' '):
+        if escaped:
+            escaped = False
+            continue
+        if character == u'\\' and quote != u"'":
+            escaped = True
+            continue
+        if character in (u"'", u'"'):
+            if quote == character:
+                quote = None
+            elif quote is None:
+                quote = character
+            continue
+        if character.isspace() and quote is None:
+            if token_start is not None:
+                token = script[token_start:index]
+                if token_number and token == from_:
+                    return script[:token_start] + to + script[index:]
+                token_number += 1
+                token_start = None
+        elif token_start is None:
+            token_start = index
+
+    return script
 
 
 def replace_value(script, rejected, name):

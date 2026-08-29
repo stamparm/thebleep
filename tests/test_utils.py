@@ -246,7 +246,9 @@ def test_get_all_executables_exclude_paths(path, pathsep, excluded, settings,
 
 @pytest.mark.parametrize('args, result', [
     (('apt-get instol vim', 'instol', 'install'), 'apt-get install vim'),
-    (('git brnch', 'brnch', 'branch'), 'git branch')])
+    (('git brnch', 'brnch', 'branch'), 'git branch'),
+    (('echo "keep instol here" instol extra', 'instol', 'install'),
+     'echo "keep instol here" install extra')])
 def test_replace_argument(args, result):
     assert replace_argument(*args) == result
 
