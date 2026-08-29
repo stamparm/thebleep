@@ -82,6 +82,8 @@ def test_corrects_unspaced_or_wrapped_compound_commands(mocker, script, expect):
      'if ! git status; then echo ok; fi'),
     ('while gti status; do echo ok; done',
      'while git status; do echo ok; done'),
+    ('(gti status) && echo ok',
+     '(git status) && echo ok'),
 ])
 def test_corrects_commands_inside_control_blocks(mocker, script, expect):
     mocker.patch('thebleep.rules.no_command.which', return_value=None)

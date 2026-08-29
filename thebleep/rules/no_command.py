@@ -72,8 +72,8 @@ _COMMAND_SEPARATORS = frozenset(('&&', '||', '|', '|&', ';', '&'))
 _ENVIRONMENT_ASSIGNMENT = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
 _SAFE_COMMAND_NAME = re.compile(r'^[A-Za-z0-9_@%+=:,./-]+$')
 _CONTROL_PREFIXES = frozenset(
-    ('if', 'then', 'else', 'elif', 'while', 'until', 'do', '!'))
-_CONTROL_ENDS = frozenset(('fi', 'done', 'end'))
+    ('if', 'then', 'else', 'elif', 'while', 'until', 'do', '!', '('))
+_CONTROL_ENDS = frozenset(('fi', 'done', 'end', ')'))
 
 
 def _compound_parts(command):
@@ -86,7 +86,7 @@ def _compound_parts(command):
     still kept as one argument and malformed input falls back to the shell's
     normal split.
     """
-    lexer = shlex.shlex(command.script, posix=True, punctuation_chars=';&|')
+    lexer = shlex.shlex(command.script, posix=True, punctuation_chars=';&|()')
     lexer.whitespace_split = True
     lexer.commenters = ''
     try:
@@ -101,6 +101,7 @@ def _command_indexes(parts):
     Shell control words are not commands themselves. Keeping the command
     boundary open after ``if`` and ``then`` lets an unknown command inside a
     conditional be corrected without mistaking ``if`` for the failed program.
+    Parentheses are handled as subshell boundaries for the same reason.
     The wrapper check comes first: ``env if`` executes a program named ``if``;
     it is not a shell conditional.
     """
