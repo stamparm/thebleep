@@ -133,8 +133,23 @@ def _missing_module(script, output):
     }
 
 
+def _dubious_ownership(script, output):
+    if not re.search(r'detected dubious ownership', output, re.IGNORECASE):
+        return None
+    match = re.search(r'detected dubious ownership', output, re.IGNORECASE)
+    return {
+        'kind': 'git_dubious_ownership',
+        'summary': 'Git refused to trust this repository ownership.',
+        'evidence': [match.group(0).lower()],
+        'next_steps': [_step(
+            'git config --show-origin --get-all safe.directory',
+            'inspect the configured trusted repositories')],
+    }
+
+
 _DETECTORS = (_address_in_use, _permission_denied, _certificate_expired,
-              _disk_full, _connection_refused, _missing_module)
+              _disk_full, _connection_refused, _missing_module,
+              _dubious_ownership)
 
 
 def diagnose(script, output=None):

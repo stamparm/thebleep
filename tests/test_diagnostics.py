@@ -47,6 +47,10 @@ def test_address_in_use_extracts_port_and_offers_read_only_next_step():
      'The target refused the connection on port 8080.'),
     ('python app.py', "ModuleNotFoundError: No module named 'tomli'",
      'missing_python_module', "Python could not import module 'tomli'."),
+    ('git status',
+     "fatal: detected dubious ownership in repository at '/tmp/project'",
+     'git_dubious_ownership',
+     'Git refused to trust this repository ownership.'),
 ])
 def test_known_failures_are_named_without_guessing(script, output, kind,
                                                    summary):
