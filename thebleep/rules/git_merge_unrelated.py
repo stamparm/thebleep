@@ -1,12 +1,17 @@
 from thebleep.specific.git import git_support
+from thebleep.utils import command_word_index, replace_argument
 
 
 @git_support
 def match(command):
-    return ('merge' in command.script
+    parts = command.script_parts
+    index = command_word_index(parts)
+    return (parts[index + 1:index + 2] == ['merge']
+            and '--allow-unrelated-histories' not in parts
             and 'fatal: refusing to merge unrelated histories' in command.output)
 
 
 @git_support
 def get_new_command(command):
-    return command.script + ' --allow-unrelated-histories'
+    return replace_argument(command.script, 'merge',
+                            'merge --allow-unrelated-histories')
