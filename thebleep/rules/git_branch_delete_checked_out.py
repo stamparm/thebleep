@@ -1,32 +1,37 @@
 import re
 from thebleep.shells import shell
 from thebleep.specific.git import git_subcommand_index, git_support
-from thebleep.utils import memoize, replace_argument, tool_output
+from thebleep.utils import command_word_index, memoize, replace_argument, tool_output
 
 # Where to move to before deleting the branch we are standing on. `master` is
 # only a guess, and a wrong one in any repository made since 2020.
 FALLBACK_BRANCH = 'master'
 
 
-def _git(*arguments):
+def _git(command, *arguments):
     # Through `tool_output`, which is where the timeout is: a `git` against a
     # repository on a stuck network mount answers when the mount does, and a
     # rule that never returns is The Bleep frozen at the prompt.
-    return tool_output(('git',) + arguments).strip()
+    parts = command.script_parts
+    index = git_subcommand_index(parts)
+    start = command_word_index(parts)
+    return tool_output(tuple(parts[start:index]) + arguments).strip()
 
 
 @memoize
-def _default_branch():
+def _default_branch(command):
     """The repository's own default branch, asked of the repository."""
     # What `git clone` would have checked out.
-    head = _git('symbolic-ref', '--short', 'refs/remotes/origin/HEAD')
+    head = _git(command, 'symbolic-ref', '--short',
+                'refs/remotes/origin/HEAD')
     if head:
         return head.rsplit('/', 1)[-1]
 
     # No remote, or no HEAD recorded for it, so fall back to whichever of the
     # usual names this repository actually has.
     for name in ('main', FALLBACK_BRANCH):
-        if _git('rev-parse', '--verify', '--quiet', 'refs/heads/' + name):
+        if _git(command, 'rev-parse', '--verify', '--quiet',
+                'refs/heads/' + name):
             return name
 
     return FALLBACK_BRANCH
@@ -57,6 +62,11 @@ def get_new_command(command):
     # The branch name is quoted: it comes from the repository, by way of
     # `origin/HEAD`, and git is happy for a branch to be called
     # `main;rm -rf ~`.
+    marker = '__bleep_checkout__'
+    checkout = replace_argument(command.script, 'branch',
+                                'checkout {}'.format(marker))
+    checkout = checkout[:checkout.index(marker)] + marker
+    checkout = checkout.replace(marker, shell.quote(_default_branch(command)), 1)
     return shell.and_(
-        u"git checkout {}".format(shell.quote(_default_branch())),
+        checkout,
         replace_argument(command.script, "-d", "-D"))

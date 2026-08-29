@@ -50,6 +50,13 @@ def test_get_new_command(script, new_command, output):
     assert get_new_command(Command(script, output)) == new_command
 
 
+def test_global_options_are_preserved(output):
+    command = Command('git -C worktree branch -d foo', output)
+    assert get_new_command(command) == (
+        'git -C worktree checkout master && '
+        'git -C worktree branch -D foo')
+
+
 @pytest.mark.usefixtures('no_memoize')
 def test_the_repositorys_own_default_branch_is_used(output, default_branch):
     """Checking out `master` fails in a repository that has never had one."""
