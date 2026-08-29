@@ -84,11 +84,30 @@ def test_corrects_unspaced_or_wrapped_compound_commands(mocker, script, expect):
      'while git status; do echo ok; done'),
     ('(gti status) && echo ok',
      '(git status) && echo ok'),
+    ('{ gti status; }', '{ git status; }'),
 ])
 def test_corrects_commands_inside_control_blocks(mocker, script, expect):
     mocker.patch('thebleep.rules.no_command.which', return_value=None)
 
     command = Command(script, 'bash: line 1: gti: command not found')
+
+    assert get_new_command(command)[0] == expect
+
+
+@pytest.mark.parametrize('script, expect', [
+    ('if ($true) { gti status }',
+     'if ($true) { git status }'),
+    ('try { gti status } catch { echo failed }',
+     'try { git status } catch { echo failed }'),
+])
+def test_corrects_commands_inside_powershell_blocks(mocker, script, expect):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+    mocker.patch('thebleep.rules.no_command._is_powershell', return_value=True)
+
+    command = Command(
+        script,
+        "gti: The term 'gti' is not recognized as a name of a cmdlet, "
+        'function, script file, or executable program.')
 
     assert get_new_command(command)[0] == expect
 

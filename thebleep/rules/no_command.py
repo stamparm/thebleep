@@ -72,8 +72,19 @@ _COMMAND_SEPARATORS = frozenset(('&&', '||', '|', '|&', ';', '&'))
 _ENVIRONMENT_ASSIGNMENT = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
 _SAFE_COMMAND_NAME = re.compile(r'^[A-Za-z0-9_@%+=:,./-]+$')
 _CONTROL_PREFIXES = frozenset(
-    ('if', 'then', 'else', 'elif', 'while', 'until', 'do', '!', '('))
-_CONTROL_ENDS = frozenset(('fi', 'done', 'end', ')'))
+    ('if', 'then', 'else', 'elif', 'while', 'until', 'do', '!', '(', '{'))
+_CONTROL_ENDS = frozenset(('fi', 'done', 'end', ')', '}'))
+_POWERSHELL_CONDITIONALS = frozenset(
+    ('if', 'elseif', 'while', 'until', 'for', 'foreach', 'switch'))
+_POWERSHELL_PREFIXES = frozenset(
+    ('else', 'try', 'catch', 'finally', 'function', 'filter', 'process',
+     'class', 'param'))
+
+
+def _is_powershell():
+    from thebleep.shells import shell
+
+    return type(shell).__name__ == 'Powershell'
 
 
 def _compound_parts(command):
@@ -86,7 +97,9 @@ def _compound_parts(command):
     still kept as one argument and malformed input falls back to the shell's
     normal split.
     """
-    lexer = shlex.shlex(command.script, posix=True, punctuation_chars=';&|()')
+    punctuation = ';&|(){}' if _is_powershell() else ';&|()'
+    lexer = shlex.shlex(command.script, posix=True,
+                        punctuation_chars=punctuation)
     lexer.whitespace_split = True
     lexer.commenters = ''
     try:
@@ -107,8 +120,34 @@ def _command_indexes(parts):
     """
     command_start = True
     segment_start = 0
+    powershell_condition = False
+    condition_depth = 0
+    powershell = _is_powershell()
     for index, part in enumerate(parts):
+        if powershell_condition:
+            if part == '(':
+                condition_depth = 1
+                powershell_condition = False
+            elif part == '{':
+                powershell_condition = False
+                command_start = True
+                segment_start = index
+            continue
+
+        if condition_depth:
+            if part == '(':
+                condition_depth += 1
+            elif part == ')':
+                condition_depth -= 1
+                if condition_depth == 0:
+                    command_start = True
+                    segment_start = index + 1
+            continue
+
         if part in _COMMAND_SEPARATORS:
+            command_start = True
+            segment_start = index + 1
+        elif part == '}':
             command_start = True
             segment_start = index + 1
         elif command_start:
@@ -132,6 +171,13 @@ def _command_indexes(parts):
                 command_start = False
                 continue
 
+            if powershell and word in _POWERSHELL_CONDITIONALS:
+                powershell_condition = True
+                segment_start = command_start_index + 1
+                continue
+            if powershell and word in _POWERSHELL_PREFIXES:
+                segment_start = command_start_index + 1
+                continue
             if word in _CONTROL_ENDS:
                 command_start = False
                 continue
