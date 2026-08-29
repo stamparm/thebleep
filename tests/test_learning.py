@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import json
+import os
+import stat
 
 import pytest
 
@@ -176,3 +178,23 @@ def test_print_entries_has_a_stable_empty_result(capsys, learning_home):
     learning.print_entries()
 
     assert capsys.readouterr().out == 'No learned corrections.\n'
+
+
+@pytest.mark.skipif(not hasattr(os, 'geteuid'),
+                    reason='Windows has no POSIX mode to check')
+def test_learning_store_is_private(learning_home):
+    _pending(learning_home)
+
+    assert stat.S_IMODE(os.stat(str(learning_home.join(
+        'learning-pending.json'))).st_mode) == 0o600
+
+
+def test_failed_exclusive_create_does_not_remove_an_existing_temp(
+        learning_home, mocker):
+    open_file = mocker.patch.object(
+        learning.os, 'open', side_effect=FileExistsError())
+    unlink = mocker.patch.object(learning.os, 'unlink')
+
+    assert not learning._write('probe.json', {'value': 1})
+    open_file.assert_called_once()
+    assert not unlink.called

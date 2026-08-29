@@ -30,6 +30,12 @@
   Thanks to [@TrixSec](https://github.com/TrixSec) for pointing at the
   ecosystem ([#6](https://github.com/stamparm/thebleep/pull/6)).
 
+### Security
+
+- **Learned corrections are written privately.** The local learning store is
+  created with mode `0600` and its temporary file cannot follow a symlink on
+  platforms that support `O_NOFOLLOW`.
+
 ### Fixed
 
 - **`--why` now recognises DNS resolution failures.** A captured curl error

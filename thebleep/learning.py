@@ -53,18 +53,24 @@ def _write(name, value):
     if path is None:
         return False
     import json
+    import time
 
     temp = None
+    created = False
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         temp = path.parent.joinpath('.thebleep-{}.{}.tmp'.format(
-            os.getpid(), id(value)))
-        with temp.open('w', encoding='utf-8') as handle:
+            os.getpid(), time.time_ns()))
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        flags |= getattr(os, 'O_NOFOLLOW', 0)
+        descriptor = os.open(str(temp), flags, 0o600)
+        created = True
+        with os.fdopen(descriptor, 'w', encoding='utf-8') as handle:
             json.dump(value, handle, ensure_ascii=False, sort_keys=True)
             handle.write('\n')
         os.replace(str(temp), str(path))
     except Exception:
-        if temp is not None:
+        if temp is not None and created:
             try:
                 os.unlink(str(temp))
             except OSError:
