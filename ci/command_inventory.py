@@ -25,7 +25,7 @@ PROBE_TIMEOUT = 3.0
 # invalid option.  They must remain a small allowlist: probing every executable
 # with --help is not read-only (some programs interpret it as a subcommand).
 PROBES = {
-    'awk': [['--version']],
+    'awk': [['--version'], ['{']],
     'bash': [['--version']],
     'brew': [['--version']],
     'bun': [['--version']],
@@ -37,11 +37,11 @@ PROBES = {
     'deno': [['--version']],
     'docker': [['--version']],
     'dotnet': [['--version']],
-    'find': [['--version']],
+    'find': [['--version'], ['thebleep-inventory-no-such-path', '-name', '*']],
     'fish': [['--version']],
     'git': [['--version']],
     'go': [['version']],
-    'grep': [['--version']],
+    'grep': [['--version'], ['--definitely-not-a-bleep-option']],
     'hg': [['--version']],
     'java': [['-version']],
     'kubectl': [['version', '--client']],
@@ -62,7 +62,7 @@ PROBES = {
     'python3': [['--version']],
     'ruby': [['--version']],
     'rustc': [['--version']],
-    'sed': [['--version']],
+    'sed': [['--version'], ['-e', 's/foo/bar']],
     'ssh': [['-V']],
     'svn': [['--version']],
     'tar': [['--version']],
@@ -145,7 +145,8 @@ def run_probe(path, arguments, cwd, environment):
             cwd=str(cwd),
             env=environment,
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL)
     except (OSError, ValueError) as error:
         return {'error': str(error), 'duration_ms': _duration(started)}
 
