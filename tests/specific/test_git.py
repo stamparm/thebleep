@@ -34,3 +34,21 @@ def test_git_support_match(command, is_git, output):
         return True
 
     assert fn(Command(command, output)) == is_git
+
+
+def test_git_support_does_not_rewrite_an_environment_assignment():
+    output = "trace: alias expansion: co => 'checkout'"
+
+    @git_support
+    def fn(command):
+        return command.script
+
+    assert fn(Command('CO=co git co', output)) == 'CO=co git checkout'
+
+
+def test_git_support_ignores_an_incomplete_trace_line():
+    @git_support
+    def fn(command):
+        return command.script
+
+    assert fn(Command('git co', 'trace: alias expansion:')) == 'git co'

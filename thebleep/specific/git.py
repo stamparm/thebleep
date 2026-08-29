@@ -1,5 +1,5 @@
 import re
-from ..utils import decorator, is_app
+from ..utils import decorator, is_app, replace_argument
 from ..shells import shell
 
 
@@ -16,6 +16,9 @@ def git_support(fn, command):
     if command.output and 'trace: alias expansion:' in command.output:
         search = re.search("trace: alias expansion: ([^ ]*) => ([^\n]*)",
                            command.output)
+        if not search:
+            return fn(command)
+
         alias = search.group(1)
 
         # by default git quotes everything, for example:
@@ -24,7 +27,7 @@ def git_support(fn, command):
         # eg. 'git commit'
         expansion = ' '.join(shell.quote(part)
                              for part in shell.split_command(search.group(2)))
-        new_script = re.sub(r"\b{}\b".format(alias), expansion, command.script)
+        new_script = replace_argument(command.script, alias, expansion)
 
         command = command.update(script=new_script)
 
