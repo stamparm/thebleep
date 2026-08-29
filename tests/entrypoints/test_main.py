@@ -25,6 +25,23 @@ def test_broken_pipe_is_not_an_error(main_module, mocker):
     assert close.call_args[0] == (42,)
 
 
+def test_exact_command_requires_json(main_module, mocker, capsys):
+    class Arguments(object):
+        alias = alias_loader = shell = shell_logger = None
+        command = []
+        command_text = 'git status'
+        clear_cache = doctor = edit = enable_experimental_instant_mode = False
+        help = json = repeat = version = yes = False
+
+    mocker.patch.object(main_module.Parser, 'parse', return_value=Arguments())
+
+    with pytest.raises(SystemExit) as exc_info:
+        main_module._main()
+
+    assert exc_info.value.code == 2
+    assert '--command needs --json' in capsys.readouterr().err
+
+
 class TestShellOverride(object):
     """`--shell`, for when working the shell out from the process tree fails."""
 

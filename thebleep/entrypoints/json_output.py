@@ -50,6 +50,11 @@ def json_output(args):
     if command_text is None and not args.command:
         logs.failed('--json needs a command after the options')
         return 2
+    script = (command_text if command_text is not None else
+              format_raw_script(args.command))
+    if not script.strip():
+        logs.failed('--json needs a non-empty command')
+        return 2
 
     output = _read_output(args.stderr)
     if output is False:
@@ -59,8 +64,6 @@ def json_output(args):
     try:
         if args.cwd:
             os.chdir(args.cwd)
-        script = (command_text if command_text is not None else
-                  format_raw_script(args.command))
         result = api.suggest(script, output)
     except OSError as error:
         logs.failed('Could not use {}: {}'.format(args.cwd, error))

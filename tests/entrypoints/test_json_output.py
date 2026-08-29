@@ -54,6 +54,12 @@ def test_json_output_rejects_both_command_forms(mocker, capsys):
     assert 'cannot be combined' in capsys.readouterr().err
 
 
+def test_json_output_rejects_an_empty_command(mocker, capsys):
+    _no_settings(mocker)
+    assert json_output(_args([], command_text='  ')) == 2
+    assert 'non-empty command' in capsys.readouterr().err
+
+
 def test_json_output_requires_a_command(mocker, capsys):
     _no_settings(mocker)
     assert json_output(_args([])) == 2

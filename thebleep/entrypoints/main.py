@@ -83,6 +83,9 @@ def _main():
         from .json_output import json_output
 
         sys.exit(json_output(known_args))
+    elif known_args.command_text is not None:
+        logs.failed('--command needs --json')
+        sys.exit(2)
     elif known_args.command or 'TB_HISTORY' in os.environ:
         from .fix_command import fix_command
 
