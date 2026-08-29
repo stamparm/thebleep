@@ -39,6 +39,9 @@
 
 ### Security
 
+- **Cache deserialization is bounded.** Oversized cache files are rejected
+  before their contents are handed to the marshal parser.
+
 - **Failure history is bounded and terminal-safe.** Oversized records are not
   stored or loaded, and `--pick` escapes control characters and line breaks
   before displaying commands and paths.

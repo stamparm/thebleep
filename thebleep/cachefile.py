@@ -15,6 +15,7 @@ import time
 from .system import expanduser, writable
 
 FORMAT = 3
+MAX_FILE = 16 * 1024 * 1024
 
 
 def directory():
@@ -46,7 +47,10 @@ def load(name, fingerprint, max_age=None):
     """
     try:
         with _open_for_read(path_for(name)) as handle:
-            cached = marshal.load(handle)
+            raw = handle.read(MAX_FILE + 1)
+        if len(raw) > MAX_FILE:
+            return None
+        cached = marshal.loads(raw)
     except Exception:
         return None
     if not isinstance(cached, dict) or cached.get('format') != FORMAT:

@@ -47,3 +47,16 @@ def test_load_rejects_a_symlinked_cache(cache_home):
     os.symlink(str(target), str(cache_home.join('linked.cache')))
 
     assert cachefile.load('linked', ()) is None
+
+
+def test_load_rejects_an_oversized_cache_before_deserializing(mocker):
+    handle = mocker.MagicMock()
+    handle.__enter__.return_value = handle
+    handle.read.return_value = b'x' * (cachefile.MAX_FILE + 1)
+    mocker.patch.object(cachefile, '_open_for_read', return_value=handle)
+    loads = mocker.patch.object(cachefile.marshal, 'loads')
+
+    assert cachefile.load('huge', ()) is None
+
+    handle.read.assert_called_once_with(cachefile.MAX_FILE + 1)
+    assert not loads.called
