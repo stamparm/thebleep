@@ -69,6 +69,11 @@ class TestWhatItReads(object):
         _log(tmpdir, (u'flaky', u'first'), (u'flaky', u'second'))
         assert read_log.get_output(u'flaky') == u'second'
 
+    def test_command_words_have_to_be_in_order(self, tmpdir, os_environ):
+        _log(tmpdir, (u'echo alpha beta', u'right'),
+             (u'echo beta alpha', u'wrong'))
+        assert read_log.get_output(u'echo alpha beta') == u'right'
+
     def test_a_command_that_printed_nothing(self, tmpdir, os_environ):
         """An empty answer is an answer, and must not be read as a failure."""
         _log(tmpdir, (u'true', u''))

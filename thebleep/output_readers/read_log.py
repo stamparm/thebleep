@@ -88,7 +88,13 @@ def _get_script_group_lines(grouped, script):
 
     for script_line, lines in reversed(grouped):
         joined = _wrapped_together(script_line, lines, width)
-        if all(part in joined for part in parts):
+        position = 0
+        for part in parts:
+            position = joined.find(part, position)
+            if position == -1:
+                break
+            position += len(part)
+        else:
             return lines
 
     raise ScriptNotInLog
