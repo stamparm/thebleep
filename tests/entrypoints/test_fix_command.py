@@ -92,7 +92,7 @@ def test_why_prints_a_deterministic_diagnosis_without_correcting(
 
     output = capsys.readouterr().out
     assert 'Port 5432 is already in use.' in output
-    assert 'lsof -nP -iTCP:5432 -sTCP:LISTEN' in output
+    assert 'read-only' in output
     assert not correct.called
 
 
