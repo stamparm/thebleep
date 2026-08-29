@@ -59,3 +59,16 @@ def test_get_new_comman(script, result):
 def test_get_new_command_from_bsd_error():
     new_command = get_new_command(Command('ifconfig wlan0', BSD_OUTPUT))
     assert new_command == ['ifconfig wlp2s0']
+
+
+def test_linux_truncated_error_uses_the_typed_interface(mocker):
+    replace = mocker.patch(
+        'thebleep.rules.ifconfig_device_not_found.replace_command',
+        return_value=[])
+    command = Command(
+        'ifconfig thebleep-no-such-interface',
+        'thebleep-no-suc: error fetching interface information: '
+        'Device not found')
+
+    assert get_new_command(command) == []
+    assert replace.call_args[0][1] == 'thebleep-no-such-interface'

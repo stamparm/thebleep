@@ -27,6 +27,14 @@ def get_new_command(command):
              or BSD_NOT_FOUND.search(command.output))
     if not found:
         return []
-    interface = found.group(1)
+    interface = _typed_interface(command, found.group(1))
     possible_interfaces = _get_possible_interfaces()
     return replace_command(command, interface, possible_interfaces)
+
+
+def _typed_interface(command, reported):
+    """Use the complete operand when Linux shortened it in its diagnostic."""
+    for part in command.script_parts[1:]:
+        if not part.startswith('-') and part.startswith(reported):
+            return part
+    return reported
