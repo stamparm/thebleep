@@ -126,3 +126,17 @@ def test_not_match(command):
      'grunt compass:all --color')])
 def test_get_new_command(command, result):
     assert get_new_command(command) == result
+
+
+def test_get_new_command_does_not_rewrite_an_earlier_argument(mocker):
+    command = Command('grunt --message "keep defualt" defualt',
+                      output('defualt'))
+    assert get_new_command(command) == (
+        'grunt --message "keep defualt" default')
+
+
+def test_get_new_command_abstains_when_no_task_is_close(mocker):
+    mocker.patch('thebleep.rules.grunt_task_not_found.get_closest',
+                 return_value=None)
+    command = Command('grunt zzzzz', output('zzzzz'))
+    assert get_new_command(command) == command.script

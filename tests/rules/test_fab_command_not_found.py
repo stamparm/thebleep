@@ -46,3 +46,10 @@ def test_not_match(command):
 def test_get_new_command(script, result):
     command = Command(script, output)
     assert get_new_command(command) == result
+
+
+def test_get_new_command_does_not_rewrite_an_earlier_argument():
+    command = Command('fab --message "keep extenson" extenson:version=2016',
+                      output)
+    assert get_new_command(command) == (
+        'fab --message "keep extenson" prepare_extension:version=2016')

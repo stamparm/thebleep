@@ -1,5 +1,6 @@
 from thebleep.shells import shell
-from thebleep.utils import eager, get_closest, for_app
+from thebleep.utils import (eager, get_closest, for_app,
+                            replace_argument_prefix)
 
 
 @for_app('fab')
@@ -40,7 +41,7 @@ def get_new_command(command):
 
         # Quoted: a fabric task name comes out of the project's `fabfile.py`
         # and the result goes back to the shell to be evaluated.
-        script = script.replace(' {}'.format(not_found),
-                                ' {}'.format(shell.quote(fix)))
+        script = replace_argument_prefix(
+            script, not_found, shell.quote(fix))
 
     return script

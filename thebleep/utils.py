@@ -660,6 +660,23 @@ def replace_argument(script, from_, to):
     return script
 
 
+def replace_argument_prefix(script, from_, to, separator=':'):
+    """Replaces an argument's prefix while preserving a task suffix.
+
+    Some task runners report ``task:target`` as one argument, while the
+    correction only changes ``task``. Like :func:`replace_argument`, this
+    changes only a complete argument outside quotes and never the command
+    name. ``to`` is inserted literally so callers can quote it first.
+    """
+    prefix = u'{}{}'.format(from_, separator)
+    for token_number, (start, end) in enumerate(_argument_spans(script)):
+        token = script[start:end]
+        if token_number and (token == from_ or token.startswith(prefix)):
+            return script[:start] + to + script[start + len(from_):]
+
+    return script
+
+
 def _argument_spans(script):
     """Returns raw spans for shell words, without splitting quoted values."""
     token_start = None

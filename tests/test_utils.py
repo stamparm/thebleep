@@ -198,6 +198,19 @@ def test_tool_lines_joins_the_reader_after_timeout(mocker):
     reader.join.assert_called_once_with(1)
 
 
+@pytest.mark.parametrize('script, result', [
+    ('fab "keep extenson" extenson:version=1',
+     'fab "keep extenson" prepare_extension:version=1'),
+    ('grunt "keep defualt" defualt',
+     'grunt "keep defualt" default'),
+])
+def test_replace_argument_prefix_changes_only_the_task(script, result):
+    from thebleep.utils import replace_argument_prefix
+
+    assert replace_argument_prefix(script, script.split()[-1].split(':')[0],
+                                   result.split()[-1].split(':')[0]) == result
+
+
 # Kept before anything patches them, so that the tests which are *about* the
 # disk cache can put the real thing back.
 REAL_CACHEFILE = (cachefile.load, cachefile.save)
