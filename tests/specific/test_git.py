@@ -1,5 +1,5 @@
 import pytest
-from thebleep.specific.git import git_support
+from thebleep.specific.git import git_subcommand_index, git_support
 from thebleep.types import Command
 
 
@@ -52,3 +52,16 @@ def test_git_support_ignores_an_incomplete_trace_line():
         return command.script
 
     assert fn(Command('git co', 'trace: alias expansion:')) == 'git co'
+
+
+@pytest.mark.parametrize('script, expected', [
+    ('git pull', 1),
+    ('CO=co git -C worktree pull', 4),
+    ('git -c test=test push', 3),
+    ('git --git-dir repo.git commit', 3),
+    ('git --git-dir=repo.git commit', 2),
+    ('git config --get-regexp pull', 1),
+    ('git --help pull', 3),
+])
+def test_git_subcommand_index(script, expected):
+    assert git_subcommand_index(Command(script, '').script_parts) == expected

@@ -1,13 +1,13 @@
-from thebleep.utils import command_word_index, eager, replace_argument
-from thebleep.specific.git import git_support
+from thebleep.utils import eager, replace_argument
+from thebleep.specific.git import git_subcommand_index, git_support
 
 
 @git_support
 def match(command):
     parts = command.script_parts
-    index = command_word_index(parts)
+    index = git_subcommand_index(parts)
     return (
-        parts[index + 1:index + 2] == ["commit"]
+        parts[index:index + 1] == ["commit"]
         and "no changes added to commit" in command.output
     )
 
