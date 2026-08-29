@@ -92,6 +92,28 @@ def drain(stream, sink):
         pass
 
 
+def kill_process_tree(process):
+    """Kill a timed-out helper and descendants, best effort."""
+    try:
+        from psutil import Process
+
+        proc = Process(process.pid)
+        children = proc.children(recursive=True)
+    except Exception:                                        # noqa: BLE001
+        children = []
+
+    for child in children:
+        try:
+            child.kill()
+        except Exception:                                    # noqa: BLE001
+            pass
+
+    try:
+        process.kill()
+    except Exception:                                        # noqa: BLE001
+        pass
+
+
 def tool_lines(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False,
                return_truncated=False):
     """The lines `arguments` printed on stdout, or `[]`.
@@ -147,7 +169,7 @@ def tool_lines(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False,
         try:
             process.wait(timeout=timeout)
         except TimeoutExpired:
-            process.kill()
+            kill_process_tree(process)
             try:
                 process.wait(timeout=1)
             except Exception:                                # noqa: BLE001

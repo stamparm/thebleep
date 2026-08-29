@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from importlib.metadata import PackageNotFoundError, version
+import io
 import pickle
 import pytest
 import os
@@ -167,6 +168,19 @@ def test_memoize_does_not_copy_the_output(mocker):
     assert counted(command) == 1
     assert counted(command) == 1
     assert not dumps.called
+
+
+def test_tool_lines_kills_a_timed_out_process_tree(mocker):
+    from subprocess import TimeoutExpired
+    from thebleep import utils
+
+    process = mocker.Mock(stdout=io.BytesIO())
+    process.wait.side_effect = [TimeoutExpired('helper', 1), 0]
+    kill_tree = mocker.patch.object(utils, 'kill_process_tree')
+    mocker.patch('subprocess.Popen', return_value=process)
+
+    assert utils.tool_lines(['helper'], timeout=1) == []
+    kill_tree.assert_called_once_with(process)
 
 
 # Kept before anything patches them, so that the tests which are *about* the

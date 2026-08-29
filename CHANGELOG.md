@@ -49,6 +49,9 @@
 - **Shell-logger responses are bounded.** An oversized or incomplete socket
   response is discarded before JSON parsing.
 
+- **Timed-out helper probes kill their process trees.** A helper that forks can
+  no longer outlive the timeout while retaining the output pipe.
+
 - **Explicit paths to dispatchers are no longer probed automatically.** A file
   named `git` or `cargo` can be an arbitrary executable, so it now requires
   replay confirmation like any other explicit path.
