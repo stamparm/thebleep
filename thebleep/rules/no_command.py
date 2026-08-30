@@ -131,6 +131,8 @@ def _command_indexes(parts):
     case_depth = 0
     case_pending = False
     case_pattern = False
+    function_pending = False
+    loop_pending = False
     powershell = _is_powershell()
     for index, part in enumerate(parts):
         if powershell_condition:
@@ -151,6 +153,20 @@ def _command_indexes(parts):
                 if condition_depth == 0:
                     command_start = True
                     segment_start = index + 1
+            continue
+
+        if function_pending:
+            if part == '{':
+                function_pending = False
+                command_start = True
+                segment_start = index + 1
+            continue
+
+        if loop_pending:
+            if part == 'do':
+                loop_pending = False
+                command_start = True
+                segment_start = index + 1
             continue
 
         if case_pending:
@@ -200,6 +216,19 @@ def _command_indexes(parts):
             if word == 'case':
                 case_depth += 1
                 case_pending = True
+                command_start = False
+                continue
+            if not powershell and word in ('for', 'select'):
+                loop_pending = True
+                command_start = False
+                continue
+            if not powershell and word == 'function':
+                function_pending = True
+                command_start = False
+                continue
+            if (not powershell and command_start_index + 1 < len(parts)
+                    and parts[command_start_index + 1] == '()'):
+                function_pending = True
                 command_start = False
                 continue
             if word in wrappers.WRAPPERS:
