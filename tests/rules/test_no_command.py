@@ -72,7 +72,8 @@ def test_corrects_a_command_inside_a_pipeline(mocker):
 @pytest.mark.parametrize('script, expect', [
     ('echo $(gti status)', 'echo $(git status)'),
     ('echo "$(gti status)"', 'echo "$(git status)"'),
-    ('echo $(true && gti status)', 'echo $(true && git status)')])
+    ('echo $(true && gti status)', 'echo $(true && git status)'),
+    ('echo `gti status`', 'echo `git status`')])
 def test_corrects_commands_inside_substitutions(mocker, script, expect):
     mocker.patch('thebleep.rules.no_command.which', return_value=None)
 
@@ -85,6 +86,14 @@ def test_does_not_treat_quoted_substitution_as_a_command(mocker):
     mocker.patch('thebleep.rules.no_command.which', return_value=None)
 
     command = Command("echo '$(gti status)'", 'bash: gti: command not found')
+
+    assert get_new_command(command) == []
+
+
+def test_does_not_treat_quoted_backtick_as_a_command(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command("echo '`gti status`'", 'bash: gti: command not found')
 
     assert get_new_command(command) == []
 

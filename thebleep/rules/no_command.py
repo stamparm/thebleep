@@ -231,7 +231,7 @@ def _is_available_command(word):
 
 
 def _substitution_ranges(script):
-    """Yield the bodies of ``$(...)`` expressions outside single quotes.
+    """Yield the bodies of ``$(...)`` and backtick substitutions.
 
     This is intentionally only the small piece of shell structure needed by
     the unknown-command rule. The shell still owns parsing and execution; the
@@ -239,25 +239,7 @@ def _substitution_ranges(script):
     command's arguments as executable words.
     """
     for start in range(len(script) - 1):
-        if script[start:start + 2] != '$(':
-            continue
-
-        quote = None
-        escaped = False
-        single_quoted = False
-        for character in script[:start]:
-            if escaped:
-                escaped = False
-            elif character == '\\' and quote != "'":
-                escaped = True
-            elif character in ("'", '"'):
-                if quote == character:
-                    quote = None
-                elif quote is None:
-                    quote = character
-        if quote == "'":
-            single_quoted = True
-        if single_quoted:
+        if script[start:start + 2] != '$(' or _in_single_quotes(script, start):
             continue
 
         depth = 1
@@ -284,6 +266,49 @@ def _substitution_ranges(script):
                     yield start + 2, index
                     break
             index += 1
+
+    for start, character in enumerate(script):
+        if (character != '`' or _in_single_quotes(script, start)
+                or _is_escaped(script, start)):
+            continue
+
+        escaped = False
+        for index in range(start + 1, len(script)):
+            character = script[index]
+            if escaped:
+                escaped = False
+            elif character == '\\':
+                escaped = True
+            elif character == '`':
+                yield start + 1, index
+                break
+
+
+def _in_single_quotes(script, end):
+    """Whether ``script[:end]`` ends inside a single-quoted word."""
+    quote = None
+    escaped = False
+    for character in script[:end]:
+        if escaped:
+            escaped = False
+        elif character == '\\' and quote != "'":
+            escaped = True
+        elif character in ("'", '"'):
+            if quote == character:
+                quote = None
+            elif quote is None:
+                quote = character
+    return quote == "'"
+
+
+def _is_escaped(script, index):
+    """Whether the character at ``index`` has an odd backslash prefix."""
+    backslashes = 0
+    index -= 1
+    while index >= 0 and script[index] == '\\':
+        backslashes += 1
+        index -= 1
+    return backslashes % 2 == 1
 
 
 def _unknown_in_substitution(command, output_required=True):
