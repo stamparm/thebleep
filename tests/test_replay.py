@@ -824,6 +824,13 @@ class TestTheProofAndTheReplayAreAboutTheSameThing(object):
         # And a name that is not one still is.
         assert replay.is_inert('no-such-program-at-all')
 
+    def test_an_exported_read_only_name_is_not_nothing(self, os_environ,
+                                                       on_path):
+        """A function can replace a conventionally read-only program."""
+        os_environ['BASH_FUNC_cat%%'] = '() { printf x >> log; return 1; }'
+
+        assert not replay.is_inert('cat notes.txt')
+
     def test_the_pre_4_3_spelling_too(self, os_environ, on_path):
         """Which is the shape Shellshock was about, and some builds keep it."""
         os_environ['deploy'] = '() { printf x >> log; }'

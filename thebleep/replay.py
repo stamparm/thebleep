@@ -448,6 +448,12 @@ def is_inert(script):
     if name in EFFECTIVE_BUILTINS or program in EFFECTIVE_BUILTINS:
         return False
 
+    if _is_an_exported_function(name):
+        # `bash -c` imports functions the shell exported into the environment,
+        # so a name that is not on `PATH` can still run something. See the
+        # function.
+        return False
+
     # `READ_ONLY` is a judgement about the program conventionally called `ls`,
     # and a path is not that. `./ls` is a file in this directory which the user
     # has specifically said to execute, and its name says nothing at all about
@@ -456,12 +462,6 @@ def is_inert(script):
     # is the same lookup the shell just did.
     if program == name and name in READ_ONLY:
         return True
-
-    if _is_an_exported_function(name):
-        # `bash -c` imports functions the shell exported into the environment,
-        # so a name that is not on `PATH` can still run something. See the
-        # function.
-        return False
 
     from .utils import which
 
