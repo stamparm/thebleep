@@ -44,6 +44,8 @@ def _write_all(fd, data):
             written = os.write(fd, data)
         except OSError:
             return False
+        if not written:
+            return False
         data = data[written:]
     return True
 
@@ -250,12 +252,19 @@ def shell_logger(output):
 
     _leave_on(signal.SIGHUP, signal.SIGTERM)
     try:
-        os.write(fd, b'\x00' * const.LOG_SIZE_IN_BYTES)
-        buffer = mmap.mmap(fd, const.LOG_SIZE_IN_BYTES,
-                           mmap.MAP_SHARED, mmap.PROT_WRITE)
-        return_code = _spawn(os.environ['SHELL'],
-                             partial(_record, buffer))
+        if not _write_all(fd, b'\x00' * const.LOG_SIZE_IN_BYTES):
+            logs.warn(u"Can't initialize the output log")
+            return_code = 1
+        else:
+            with mmap.mmap(fd, const.LOG_SIZE_IN_BYTES,
+                           mmap.MAP_SHARED, mmap.PROT_WRITE) as buffer:
+                return_code = _spawn(os.environ['SHELL'],
+                                     partial(_record, buffer))
     finally:
+        try:
+            os.close(fd)
+        except OSError:
+            pass
         # The recording belongs to the session that made it, and the session is
         # over. Removed here rather than only by the shell that started us,
         # because that shell is blocked waiting for this process and does not

@@ -107,6 +107,41 @@ class TestTheRecordingItself(object):
         assert b'FIRST' not in window[:]
 
 
+class TestWritingTheRecording(object):
+    def test_a_partial_write_is_completed(self, monkeypatch):
+        writes = []
+
+        def write(fd, data):
+            writes.append(data)
+            return min(2, len(data))
+
+        monkeypatch.setattr(logger.os, 'write', write)
+
+        assert logger._write_all(7, b'abcdef')
+        assert writes == [b'abcdef', b'cdef', b'ef']
+
+    def test_a_write_that_makes_no_progress_is_rejected(self, monkeypatch):
+        monkeypatch.setattr(logger.os, 'write', lambda fd, data: 0)
+
+        assert not logger._write_all(7, b'abcdef')
+
+    def test_a_failed_preallocation_does_not_start_a_shell(
+            self, tmpdir, os_environ, mocker):
+        path = str(tmpdir.join('recording'))
+        os_environ['SHELL'] = 'test-shell'
+        mocker.patch.object(logger, '_write_all', return_value=False)
+        spawn = mocker.patch.object(logger, '_spawn')
+        close = mocker.patch.object(logger.os, 'close')
+
+        with pytest.raises(SystemExit) as error:
+            logger.shell_logger(path)
+
+        assert error.value.code == 1
+        assert not spawn.called
+        assert close.called
+        assert not os.path.exists(path)
+
+
 class TestLeavingTheSession(object):
     def test_our_terminal_ending_ends_the_session(self, monkeypatch):
         """`pty._copy` waits on for a shell nobody can type at any more."""
