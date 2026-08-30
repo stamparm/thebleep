@@ -562,8 +562,10 @@ word appears in more than one command in a compound line, The Bleep abstains
 instead of changing the first textual match and potentially altering a command
 that did not fail. When a shell reports two independent missing commands from
 one semicolon-separated line, both are corrected in one source-preserving
-candidate; a command skipped by `&&`, or a word not named in the output, is
-left alone.
+candidate; app-specific rules also inspect each complete top-level pipeline
+member independently, so `echo ready && git chekout` fixes only the Git
+segment. A command skipped by `&&`, or a word not named in the output, is left
+alone.
 
 When the command itself is valid but failed, ask for a deterministic diagnosis
 from the same captured output:

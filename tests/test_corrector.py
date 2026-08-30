@@ -129,6 +129,10 @@ class TestCorrectionsBehindAWrapper(object):
         ('command git chekout master', 'command git checkout master'),
         ('setsid -f sudo -u root git chekout master',
          'setsid -f sudo -u root git checkout master'),
+        ('echo ready && git chekout master',
+         'echo ready && git checkout master'),
+        ('echo ready | sudo env DEBUG=1 git chekout master >git.log',
+         'echo ready | sudo env DEBUG=1 git checkout master >git.log'),
         ('sudo env DEBUG=1 git chekout master >git.log',
          'sudo env DEBUG=1 git checkout master >git.log'),
     ])
@@ -144,6 +148,11 @@ class TestCorrectionsBehindAWrapper(object):
     def test_a_wrapper_that_runs_something_else_is_left_alone(self, script):
         """These do not run the command, so it is not the one to correct."""
         assert 'git checkout master' not in ' '.join(self._corrections(script))
+
+    def test_repeated_output_word_in_compound_command_is_ambiguous(self):
+        script = 'git chekout master && git chekout other'
+
+        assert self._corrections(script) == []
 
 
 class TestSuggestionsWorthMaking(object):

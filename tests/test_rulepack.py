@@ -413,6 +413,9 @@ class TestDispatch(object):
         ('TERM=xterm-256color ssh example.com', {'ssh'}),
         ('GIT_TRACE=1 LANG=C git branch', {'git'}),
         ('TERM=1 sudo apt-get install vim', {'sudo', 'apt-get'}),
+        ('echo ready && git branch', {'echo', 'git'}),
+        ('echo ready | sudo env FOO=bar git branch',
+         {'echo', 'sudo', 'git'}),
         ('TERM=xterm-256color', set()),
     ])
     def test_command_apps(self, script, apps):

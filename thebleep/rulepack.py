@@ -438,11 +438,11 @@ def load_module(name, path, code_bytes):
 def command_apps(command):
     """The app names a command could plausibly be about.
 
-    The first word, and the command behind it when the first word is one of the
-    wrappers a command can be hidden behind -- `sudo`, `env FOO=bar`, `nice -n
-    10`, `nohup` and the rest of them; see `thebleep.wrappers`. Both, because a
-    rule may be about the wrapper (`sudo`, `no_command`) or about what it wraps,
-    and dispatch has to load either.
+    The first word of each complete top-level command, and the command behind it
+    when that word is one of the wrappers a command can be hidden behind --
+    `sudo`, `env FOO=bar`, `nice -n 10`, `nohup` and the rest of them; see
+    `thebleep.wrappers`. Both, because a rule may be about the wrapper (`sudo`,
+    `no_command`) or about what it wraps, and dispatch has to load either.
 
     Environment assignments in front of the command are skipped, exactly as
     `is_app` skips them, so that dispatch and the rules agree on what the
@@ -452,16 +452,35 @@ def command_apps(command):
     from .utils import command_word_index
     from . import wrappers
 
-    parts = command.script_parts or command.script.split()
-    parts = parts[command_word_index(parts):]
-    if not parts:
-        return frozenset()
+    def names(parts):
+        parts = parts[command_word_index(parts):]
+        if not parts:
+            return set()
 
-    apps = {os.path.basename(parts[0])}
-    wrapped = wrappers.wrapped_app(parts)
-    if wrapped:
-        apps.add(os.path.basename(wrapped))
-    return frozenset(apps)
+        found = {os.path.basename(parts[0])}
+        wrapped = wrappers.wrapped_app(parts)
+        if wrapped:
+            found.add(os.path.basename(wrapped))
+        return found
+
+    # A rule about a command in the second half of a pipeline must be loaded
+    # before the segment pass in corrector.py can ask it to match. The model is
+    # complete and source-preserving here, so slicing at its spans cannot make
+    # a quoted argument or redirection become a different word.
+    model = command.command_model
+    if model.complete and len(model.segments) > 1:
+        apps = set()
+        for segment in model.segments:
+            if segment.start == segment.end:
+                continue
+            from .types import Command
+
+            segment_script = command.script[segment.start:segment.end]
+            apps.update(names(Command(segment_script, command.output).script_parts))
+        return frozenset(apps)
+
+    parts = command.script_parts or command.script.split()
+    return frozenset(names(parts))
 
 
 def _is_enabled(name, entry):

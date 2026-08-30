@@ -185,6 +185,102 @@ def _corrections(rules, command):
             for corrected in rule.get_corrected_commands(command))
 
 
+def _corrections_in_segments(rules, command):
+    """Apply rules to each complete top-level command, then splice it back.
+
+    A rule still receives the command shape it was written for -- its segment,
+    not a reconstructed list of words -- so existing ``for_app`` rules can
+    work in a pipeline or after ``&&``. The correction is inserted at the
+    model's exact source span; separators, whitespace and neighboring commands
+    never pass through a rule.
+    """
+    model = command.command_model
+    if not model.complete or len(model.segments) < 2:
+        return
+
+    for segment in model.segments:
+        if segment.command is None or segment.start == segment.end:
+            continue
+
+        segment_script = command.script[segment.start:segment.end]
+        segment_command = command.update(script=segment_script)
+        segment_rules = (rule for rule in rules
+                         if not rule.requires_output
+                         or _segment_has_unique_output_evidence(
+                             command, segment))
+        for corrected in _corrections_for_one_command(segment_rules,
+                                                      segment_command):
+            script = command.script[:segment.start] + corrected.script + \
+                command.script[segment.end:]
+            yield type(corrected)(script=script,
+                                  side_effect=corrected.side_effect,
+                                  priority=corrected.priority,
+                                  rule=corrected.rule)
+
+
+def _segment_words_before_redirection(segment):
+    """Return ordinary words before a segment's first redirection."""
+    words = []
+    for token in segment.tokens:
+        if token.kind == 'redirection':
+            break
+        if token.kind == 'word':
+            words.append(token.text)
+    return words
+
+
+def _word_values(word):
+    """Return source and simple quoted forms of one shell word."""
+    values = [word]
+    if len(word) >= 2 and word[0] == word[-1] and word[0] in "'\"":
+        values.append(word[1:-1])
+    return values
+
+
+def _segment_has_unique_output_evidence(command, segment):
+    """Whether output names a non-command word in only this segment.
+
+    Output-dependent rules cannot safely be applied to every member after a
+    shell operator: ``git bad && git bad`` may have executed only the first
+    member. A reported argument that occurs in exactly one top-level segment is
+    useful evidence; no reported argument, or one repeated across segments,
+    leaves the correction to the whole-line rules, which already abstain when
+    their target is ambiguous.
+    """
+    if command.output is None:
+        return True
+
+    model = command.command_model
+    words_by_segment = [
+        _segment_words_before_redirection(item)[1:]
+        for item in model.segments]
+    current = _segment_words_before_redirection(segment)[1:]
+    evidence = {value for word in current for value in _word_values(word)
+                if len(value) >= 2 and value in command.output}
+    if not evidence:
+        return False
+
+    occurrences = {
+        value: sum(value in _word_values(word)
+                   for words in words_by_segment for word in words)
+        for value in evidence}
+    return any(occurrences[value] == 1 for value in evidence)
+
+
+def _corrections_for_one_command(rules, command):
+    """Return ordinary and wrapper-aware corrections for one command view."""
+    from . import wrappers
+
+    prefix, inner_script = wrappers.peel(command.script, command.script_parts)
+    if prefix is None:
+        return _corrections(rules, command)
+
+    logs.debug(u'Wrapped segment: {!r} behind {!r}'.format(
+        inner_script, prefix))
+    return _corrections_behind_the_wrapper(
+        rules, command, prefix, inner_script)
+
+
 def _corrections_behind_the_wrapper(rules, command, prefix, inner_script):
     """Corrections for the command underneath, each given its wrapper back.
 
@@ -233,21 +329,17 @@ def get_corrected_commands(command):
     """
     from itertools import chain
 
-    from . import learning, wrappers
+    from . import learning
 
     rules = get_rules(command)
     learned_commands = learning.corrections(command)
-    prefix, inner_script = wrappers.peel(command.script, command.script_parts)
-
-    if prefix is None:
-        corrected_commands = chain(learned_commands,
-                                   _corrections(rules, command))
-    else:
-        logs.debug(u'Wrapped command: {!r} behind {!r}'.format(
-            inner_script, prefix))
-        corrected_commands = chain(
-            learned_commands,
-            _corrections_behind_the_wrapper(rules, command, prefix,
-                                            inner_script))
+    # Keep the whole-line pass for compound-aware rules such as no_command,
+    # which can deliberately combine independent missing commands. The
+    # segment pass adds the app-specific rules that previously could not see
+    # anything after the first pipeline member.
+    corrected_commands = chain(
+        learned_commands,
+        _corrections_for_one_command(rules, command),
+        _corrections_in_segments(rules, command))
 
     return organize_commands(corrected_commands, command.script)

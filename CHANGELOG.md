@@ -12,6 +12,10 @@
   inline hint, a read-only `npm --help` probe can recover corrections such as
   `npm rn bulid` → `npm run bulid`.
 
+- **Rules now see commands inside complete pipelines and chains.** App-specific
+  corrections are applied to isolated source spans, preserving neighboring
+  commands, separators, arguments and redirections.
+
 - **`--why` explains executable launch failures.** Foreign binary formats and
   missing script interpreters now produce factual, read-only inspection steps.
 
