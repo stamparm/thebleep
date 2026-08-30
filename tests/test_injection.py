@@ -52,7 +52,7 @@ def canary(tmpdir):
                  'sh', 'env', 'rm', 'kill', 'ssh', 'ssh-keygen', 'vim',
                  'rails', 'kubectl', 'uv', 'ruff', 'gh', 'helm',
                  'black', 'cargo', 'prettier', 'pytest', 'mytool', 'bun',
-                 'heroku', 'hg', 'make', 'just', 'pnpm', 'task'):
+                 'heroku', 'hg', 'make', 'just', 'cmake', 'pnpm', 'task'):
         shutil.copy(str(stub), str(stubs.join(name)))
 
     work = tmpdir.mkdir('work')
@@ -183,6 +183,21 @@ class TestNamesFromSomewhereElse(object):
 
         suggestion = make_no_target.get_new_command(
             Command('make buil&touch', output))[0]
+        assert canary(suggestion) == []
+
+    def test_cmake_target_is_quoted(self, name, payload, canary, tmpdir,
+                                    monkeypatch):
+        """Static CMake target names are untrusted shell input too."""
+        project = tmpdir.mkdir('cmake-project')
+        project.join('CMakeLists.txt').write(
+            'add_custom_target("build&touch")\n')
+        monkeypatch.chdir(str(project))
+        output = "gmake: *** No rule to make target 'buil&touch'.  Stop."
+
+        from thebleep.rules import cmake_no_target
+
+        suggestion = cmake_no_target.get_new_command(
+            Command('cmake --build build --target buil&touch', output))[0]
         assert canary(suggestion) == []
 
     def test_pnpm_script_is_quoted(self, name, payload, canary, tmpdir,

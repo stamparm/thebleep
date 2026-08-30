@@ -584,9 +584,9 @@ $ thebleep --doctor
   Executable          ~/.local/bin/thebleep
   On PATH             yes
   Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
-  Rules               192 bundled, 3 of your own
+  Rules               193 bundled, 3 of your own
   Rule health         169 enabled, none raising
-  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (192 rules cached)
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (193 rules cached)
 - Replayless capture  available, not switched on
                       See --enable-experimental-instant-mode.
   Editing             supported by this shell (tab at the prompt)
@@ -767,7 +767,7 @@ nothing.
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
-| **Rules** | 192 of them, for git, docker, npm, pnpm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+| **Rules** | 193 of them, for git, docker, npm, pnpm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
@@ -1058,6 +1058,7 @@ The following rules are enabled by default:
 * `chmod_x` — adds execution bit;
 * `clap_suggestion` — corrects a mistyped subcommand **or option** in any tool built with [clap](https://docs.rs/clap/), from the tip clap itself prints — `ruff chekc .`, `uv syncc`, `cargo instal`, `ruff check --fixx`. Not one rule per tool: every clap program is covered, including ones released after this was written. Replaces the hand-written `cargo_no_command` and `uv_unknown_subcommand`;
 * `click_suggestion` — the same for [Click](https://click.palletsprojects.com/), which most Python tools use — `black --chekc .`;
+* `cmake_no_target` — corrects a mistyped CMake build target from static `add_custom_target`, `add_executable` or `add_library` declarations;
 * `choco_install` — appends common suffixes for chocolatey packages;
 * `cobra_suggestion` — the same for [cobra](https://cobra.dev/), which most Go tools use — `gh reop list`, `helm instal mychart`, `kubectl gat pods`. Replaces the hand-written `kubectl_unknown_command`;
 * `commander_suggestion` — the same for [commander.js](https://github.com/tj/commander.js), which most Node.js tools use — `prettier --chekc .`, `mytool bulid`;
@@ -1579,7 +1580,7 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches about a fifth of the 192 rules, and
+  running it. A typical command now reaches about a fifth of the 193 rules, and
   one for a tool with many rules of its own — `git` — under a quarter, instead of
   all of them. Rules that don't say what they are about are always loaded, so
   this makes corrections faster, never fewer.

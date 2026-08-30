@@ -178,3 +178,32 @@ def test_oversized_taskfiles_are_abstentions(tmpdir):
         'x' * (project_context.MAX_TASKFILE_BYTES + 1))
 
     assert project_context.task_names(str(project)) is None
+
+
+def test_cmake_targets_read_static_declarations_only(tmpdir):
+    project = tmpdir.mkdir('project')
+    project.join('CMakeLists.txt').write(
+        '# add_custom_target(commented)\n'
+        'add_custom_target(build)\n'
+        'add_executable(app main.c)\n'
+        'add_library("test lib" test.c)\n'
+        'add_custom_target(${DYNAMIC})\n')
+
+    assert project_context.cmake_targets(str(project)) == [
+        'build', 'app', 'test lib']
+
+
+def test_cmake_targets_distinguish_missing_and_empty_files(tmpdir):
+    empty = tmpdir.mkdir('empty')
+    assert project_context.cmake_targets(str(empty)) is None
+
+    empty.join('CMakeLists.txt').write('# declarations are optional\n')
+    assert project_context.cmake_targets(str(empty)) == []
+
+
+def test_oversized_cmake_lists_are_abstentions(tmpdir):
+    project = tmpdir.mkdir('project')
+    project.join('CMakeLists.txt').write(
+        'x' * (project_context.MAX_CMAKE_BYTES + 1))
+
+    assert project_context.cmake_targets(str(project)) is None
