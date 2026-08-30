@@ -1,4 +1,4 @@
-from thebleep.utils import for_app
+from thebleep.utils import for_app, raw_script_parts
 
 
 @for_app('brew', at_least=2)
@@ -10,7 +10,9 @@ def match(command):
 
 
 def get_new_command(command):
-    command_parts = command.script_parts[:]
+    command_parts = raw_script_parts(command.script)
+    if len(command_parts) != len(command.script_parts):
+        return []
     command_parts[1] = 'link'
     command_parts.insert(2, '--overwrite')
     command_parts.insert(3, '--dry-run')

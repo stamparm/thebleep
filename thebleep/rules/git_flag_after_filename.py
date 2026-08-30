@@ -27,6 +27,7 @@ Wordings captured from git 2.43.
 
 import re
 from thebleep.specific.git import git_support
+from thebleep.utils import raw_script_parts
 
 error_pattern = "fatal: bad flag '(.*?)' used after filename"
 error_pattern2 = "fatal: option '(.*?)' must come before non-option arguments"
@@ -74,7 +75,9 @@ def get_new_command(command):
         return []
 
     flag_index, filename_index = swap
-    command_parts = command.script_parts[:]
+    command_parts = raw_script_parts(command.script)
+    if len(command_parts) != len(command.script_parts):
+        return []
     command_parts[flag_index], command_parts[filename_index] = \
         command_parts[filename_index], command_parts[flag_index]
 

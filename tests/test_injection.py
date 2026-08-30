@@ -290,6 +290,51 @@ class TestNamesFromSomewhereElse(object):
 
         assert canary(ln_s_order.get_new_command(command)) == []
 
+    def test_git_flag_after_filename_preserves_a_quoted_argument(
+            self, name, payload, canary):
+        from thebleep.rules import git_flag_after_filename
+
+        command = Command(
+            u"git log 'a;>GITFLAG' -p",
+            u"fatal: bad flag '-p' used after filename")
+
+        assert canary(git_flag_after_filename.get_new_command(command)) == []
+
+    def test_systemctl_preserves_a_quoted_argument(self, name, payload, canary):
+        from thebleep.rules import systemctl
+
+        command = Command(
+            u"systemctl 'a;>SYSTEMCTL' start",
+            u"Unknown operation 'a'.")
+
+        assert canary(systemctl.get_new_command(command)) == []
+
+    def test_ls_lah_preserves_a_quoted_argument(self, name, payload, canary):
+        from thebleep.rules import ls_lah
+
+        command = Command(u"ls 'a;>LSLAH'", u'')
+
+        assert canary(ls_lah.get_new_command(command)) == []
+
+    def test_brew_uninstall_preserves_a_quoted_argument(
+            self, name, payload, canary):
+        from thebleep.rules import brew_uninstall
+
+        command = Command(
+            u"brew uninstall 'a;>BREWUNINSTALL'",
+            u"brew uninstall --force")
+
+        assert canary(brew_uninstall.get_new_command(command)) == []
+
+    def test_brew_link_preserves_a_quoted_argument(self, name, payload, canary):
+        from thebleep.rules import brew_link
+
+        command = Command(
+            u"brew link 'a;>BREWLINK'",
+            u"brew link --overwrite")
+
+        assert canary(brew_link.get_new_command(command)) == []
+
     def test_git_push_different_branch_names(self, name, payload, canary):
         """A whole `git push <remote> <branch>` line, repeated back."""
         from thebleep.rules import git_push_different_branch_names as rule

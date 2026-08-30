@@ -1,5 +1,7 @@
 # -*- encoding: utf-8 -*-
 
+import re
+
 # Appends -lah when ls ran but showed nothing hidden
 #
 # Example:
@@ -30,9 +32,7 @@ def match(command):
 
 
 def get_new_command(command):
-    command = command.script_parts[:]
-    command[0] = 'ls -lah'
-    return ' '.join(command)
+    return re.sub(r'^ls(?=\s|$)', 'ls -lah', command.script, count=1)
 
 
 # The error check above is the whole point now; without the output there is
