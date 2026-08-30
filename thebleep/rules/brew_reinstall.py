@@ -1,5 +1,5 @@
 import re
-from thebleep.utils import for_app, replace_argument
+from thebleep.utils import command_word_index, for_app, replace_argument
 
 
 warning_regex = re.compile(r'Warning: (?:.(?!is ))+ is already installed and '
@@ -12,7 +12,9 @@ message_regex = re.compile(r'To reinstall (?:(?!, ).)+, run:?\s*`?'
 
 @for_app('brew', at_least=2)
 def match(command):
-    return ('install' in command.script
+    parts = command.script_parts
+    start = command_word_index(parts)
+    return (parts[start + 1] == 'install'
             and warning_regex.search(command.output)
             and message_regex.search(command.output))
 

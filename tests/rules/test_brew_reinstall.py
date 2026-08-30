@@ -26,6 +26,10 @@ def test_not_match(script):
     assert not match(Command(script, ''))
 
 
+def test_reinstall_is_not_an_install_command():
+    assert not match(Command('brew reinstall thebleep', output))
+
+
 @pytest.mark.parametrize('script, formula, ', [
     ('brew install foo', 'foo'),
     ('brew install bar zap', 'bar zap')])
