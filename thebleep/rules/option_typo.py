@@ -69,6 +69,8 @@ BROKEN = (
     re.compile(r"unknown option `-{0,2}([A-Za-z0-9][\w-]*)'"),
     # Git for Windows' grep uses a double-dash separator.
     re.compile(r'unknown option -- ([A-Za-z0-9][\w-]*)'),
+    # BusyBox names the option after the colon, without repeating its dashes.
+    re.compile(r'unrecognized option: ([A-Za-z0-9][\w-]*)'),
     re.compile(r'(?:invalid|unknown) option: -{1,2}([A-Za-z0-9][\w-]*)'),
     re.compile(r'unrecognized argument: -{1,2}([A-Za-z0-9][\w-]*)'),
     # curl.

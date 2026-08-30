@@ -25,6 +25,32 @@ BSD_LS = ("ls: unrecognized option `--colr'\n"
 WINDOWS_GREP = ("grep: unknown option -- verbsoe\n"
                 "Usage: grep [OPTION]... PATTERN [FILE]...\n"
                 "Try 'grep --help' for more information.\n")
+BUSYBOX_LS = ("ls: unrecognized option: colr\n"
+              "BusyBox v1.37.0 (2026-01-10 15:38:28 UTC) multi-call binary.\n"
+              "\n"
+              "Usage: ls [-1AaCxdLHRFplinshrSXvctu] [-w WIDTH] [FILE]...\n"
+              "\n"
+              "List directory contents\n"
+              "\n"
+              "\t-1\tOne column output\n"
+              "\t-a\tInclude names starting with .\n"
+              "\t-A\tLike -a, but exclude . and ..\n"
+              "\t-x\tList by lines\n"
+              "\t-d\tList directory names, not contents\n"
+              "\t-L\tFollow symlinks on command line\n"
+              "\t-H\tFollow symlinks on command line\n"
+              "\t-R\tRecurse\n"
+              "\t-p\tAppend / to directory names\n"
+              "\t-F\tAppend indicator (one of */=@|) to names\n"
+              "\t-l\tLong format\n"
+              "\t-i\tList inode numbers\n"
+              "\t-n\tList numeric UIDs and GIDs\n"
+              "\t-s\tList allocated blocks\n"
+              "\t-lc\tList ctime\n"
+              "\t-lu\tList atime\n"
+              "\t--full-time\tList full date/time\n"
+              "\t--group-directories-first\n"
+              "\t--color[={always,never,auto}]\n")
 CURL = ('curl: option --verbse: is unknown\n'
         "curl: try 'curl --help' or 'curl --manual' for more information\n")
 
@@ -93,6 +119,11 @@ class TestAskingTheProgram(object):
         command = Command('grep --verbsoe', WINDOWS_GREP)
         assert match(command)
         assert get_new_command(command)[0] == 'grep --verbose'
+
+    def test_busybox_wording(self):
+        command = Command('ls --colr', BUSYBOX_LS)
+        assert match(command)
+        assert get_new_command(command)[0] == 'ls --color'
 
     def test_help_is_not_a_candidate(self, installed):
         """`Try 'ls --help'` puts `--help` in the output, and reading that as a
