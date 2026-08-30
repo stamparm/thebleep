@@ -265,7 +265,11 @@ def build_inventory():
             datetime.timezone.utc).isoformat(),
         'environment': {
             'runner_os': os.environ.get('RUNNER_OS'),
-            'runner_image': os.environ.get('ImageOS'),
+            # GitHub exposes ImageOS on hosted runners, but a container has
+            # no such variable. The workflow supplies its matrix
+            # label so an artifact remains self-describing.
+            'runner_image': (os.environ.get('THEBLEEP_INVENTORY_IMAGE') or
+                             os.environ.get('ImageOS')),
             'system': platform.system(),
             'release': platform.release(),
             'machine': platform.machine(),

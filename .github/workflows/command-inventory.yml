@@ -52,6 +52,7 @@ jobs:
         run: |
           docker pull '${{ matrix.image }}'
           docker run --rm \
+            -e THEBLEEP_INVENTORY_IMAGE='${{ matrix.image }}' \
             -v "$PWD:/src:ro" \
             -v "$RUNNER_TEMP:/out" \
             -w /src \

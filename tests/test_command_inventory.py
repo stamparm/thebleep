@@ -65,3 +65,15 @@ def test_platform_specific_probe_is_skipped(monkeypatch, source_root):
         'ls': [{'arguments': ['--invalid'], 'platforms': ('posix',)}]})
 
     assert module.probe_commands([{'name': 'ls', 'path': 'ls'}]) == []
+
+
+def test_inventory_records_explicit_image(monkeypatch, source_root):
+    module = _inventory_module(source_root)
+    monkeypatch.setenv('THEBLEEP_INVENTORY_IMAGE', 'python:3-alpine')
+    monkeypatch.delenv('ImageOS', raising=False)
+    monkeypatch.setattr(module, 'inventory_commands', lambda: [])
+    monkeypatch.setattr(module, 'probe_commands', lambda commands: [])
+
+    inventory = module.build_inventory()
+
+    assert inventory['environment']['runner_image'] == 'python:3-alpine'
