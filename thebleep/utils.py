@@ -578,10 +578,13 @@ def _scan_executables(paths, skip):
 
     # A name that appears in several directories on $PATH is one command as
     # far as anyone typing it is concerned, and comparing it to a typo more
-    # than once is work for nothing: nearly half the entries are repeats.
+    # than once is work for nothing: nearly half the entries are repeats. On
+    # Windows, the shell also treats case variants as that same command.
     found = []
     seen = set()
     extensions = _executable_extensions()
+    skip = {name.lower() if CASE_INSENSITIVE_NAMES else name
+            for name in skip}
     for path in paths:
         try:
             entries = list(os.scandir(path))
@@ -592,14 +595,15 @@ def _scan_executables(paths, skip):
             # Deduplicated before anything is asked of the filesystem: about
             # half the entries on a normal PATH are names seen in an earlier
             # directory, and each check is a syscall.
-            if name in skip or name in seen:
+            key = name.lower() if CASE_INSENSITIVE_NAMES else name
+            if key in skip or key in seen:
                 continue
             try:
                 if entry.is_dir() or not _is_invocable(entry, extensions):
                     continue
             except OSError:
                 continue
-            seen.add(name)
+            seen.add(key)
             found.append(name)
 
     cachefile.save('executables', fingerprint, '\0'.join(found))

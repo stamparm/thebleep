@@ -91,3 +91,23 @@ def test_scanning_reports_names_as_they_would_be_typed(tmpdir, os_environ,
     # `notes.txt` opens an editor. It used to be listed as a command.
     found = utils._scan_executables([str(bin_dir)], ())
     assert sorted(found) == ['PING', 'pnpm']
+
+
+def test_scanning_deduplicates_case_variants_on_windows(
+        tmpdir, os_environ, windows_names):
+    first = tmpdir.mkdir('first')
+    second = tmpdir.mkdir('second')
+    first.join('Git.EXE').write('')
+    second.join('git.exe').write('')
+
+    found = utils._scan_executables([str(first), str(second)], ())
+
+    assert found == ['Git']
+
+
+def test_scanning_skips_case_variants_of_reserved_names(
+        tmpdir, os_environ, windows_names):
+    bin_dir = tmpdir.mkdir('bin')
+    bin_dir.join('Bleep.EXE').write('')
+
+    assert utils._scan_executables([str(bin_dir)], ('bleep',)) == []
