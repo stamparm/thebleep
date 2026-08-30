@@ -48,6 +48,16 @@ def test_unrelated_command_is_not_a_match():
         'brew zzzzz', 'Error: Unknown command: zzzzz'))
 
 
+def test_brew_in_an_argument_is_not_a_match(brew_unknown_cmd):
+    assert not match(Command('echo brew inst', brew_unknown_cmd))
+
+
+def test_sudo_brew_keeps_sudo(brew_unknown_cmd):
+    assert match(Command('sudo brew inst', brew_unknown_cmd))
+    assert get_new_command(Command('sudo brew inst', brew_unknown_cmd)) == [
+        'sudo brew list', 'sudo brew install', 'sudo brew uninstall']
+
+
 class TestWhereTheCommandsAreLookedFor(object):
     """brew's own code lives under `brew --repository`, not `brew --prefix`.
 

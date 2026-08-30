@@ -1,6 +1,8 @@
 import os
 import re
+from thebleep.specific.sudo import sudo_support
 from thebleep.utils import get_closest, replace_command
+from thebleep.utils import for_app
 from thebleep.specific.brew import get_brew_repository, brew_available
 
 BREW_CMD_PATH = '/Library/Homebrew/cmd'
@@ -75,15 +77,15 @@ def _get_broken_command(command):
     return found and found.group(1)
 
 
+@sudo_support
+@for_app('brew')
 def match(command):
-    if 'brew' not in command.script:
-        return False
-
     broken_cmd = _get_broken_command(command)
     return bool(broken_cmd and get_closest(
         broken_cmd, _brew_commands(), fallback_to_first=False))
 
 
+@sudo_support
 def get_new_command(command):
     return replace_command(command, _get_broken_command(command),
                            _brew_commands())
