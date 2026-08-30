@@ -34,6 +34,10 @@ PROBES = {
     'choco': [['--version']],
     'cmake': [['--version']],
     'composer': [['--version']],
+    # Keep native Windows command-not-found wording in the artifact. These
+    # probes are harmless and only run where the corresponding executables
+    # exist; the unique name avoids colliding with a real command on PATH.
+    'cmd': [['/d', '/c', 'thebleep-inventory-no-such-command']],
     'cp': [{'arguments': ['thebleep-source', 'missing-dir/destination'],
             'files': ['thebleep-source']},
            ['missing-source', 'destination']],
@@ -67,10 +71,12 @@ PROBES = {
     'php': [['--version']],
     'pip': [['--version']],
     'podman': [['--version']],
-    'powershell': [['-NoProfile', '-Command',
-                    '$PSVersionTable.PSVersion.ToString()']],
-    'pwsh': [['-NoProfile', '-Command',
-              '$PSVersionTable.PSVersion.ToString()']],
+    'powershell': [
+        ['-NoProfile', '-Command', '$PSVersionTable.PSVersion.ToString()'],
+        ['-NoProfile', '-Command', 'thebleep-inventory-no-such-command']],
+    'pwsh': [
+        ['-NoProfile', '-Command', '$PSVersionTable.PSVersion.ToString()'],
+        ['-NoProfile', '-Command', 'thebleep-inventory-no-such-command']],
     'python': [['--version']],
     'python3': [['--version']],
     'ruby': [['--version']],
