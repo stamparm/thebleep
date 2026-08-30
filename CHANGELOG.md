@@ -4,6 +4,11 @@
 
 ### Added
 
+- **The OS command inventory now smoke-tests live rules.** The scheduled
+  GitHub matrix feeds real output from selected safe probes into the matching
+  rules on hosted Linux, macOS, Windows and container userlands, so wording
+  drift becomes a visible CI failure with the captured artifact beside it.
+
 - **A read-only MCP stdio server** — `thebleep --mcp` exposes deterministic
   `bleep_suggest` and `bleep_why` tools to IDEs and coding agents without
   replaying or executing their commands.
@@ -80,6 +85,11 @@
   writer.
 
 ### Fixed
+
+- **`mkdir` missed absolute executable paths in current runner output.** GNU
+  coreutils can report `/usr/bin/mkdir: ...` when invoked by an inventory or
+  wrapper; the correction now recognises that prefix without treating an
+  unrelated `rmdir` failure as its own.
 
 - **Compound corrections no longer edit an earlier command by accident.**
   Output-derived replacements now use the source-preserving command model and

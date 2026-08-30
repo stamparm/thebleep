@@ -14,6 +14,7 @@ from pathlib import Path
 import platform
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -39,7 +40,8 @@ PROBES = {
     # exist; the unique name avoids colliding with a real command on PATH.
     'cmd': [['/d', '/c', 'thebleep-inventory-no-such-command']],
     'cp': [{'arguments': ['thebleep-source', 'missing-dir/destination'],
-            'files': ['thebleep-source']},
+            'files': ['thebleep-source'],
+            'checks': ['cp_create_destination']},
            ['missing-source', 'destination']],
     'curl': [['--version']],
     'deno': [['--version']],
@@ -59,7 +61,8 @@ PROBES = {
     'ls': [{'arguments': ['--definitely-not-a-bleep-option'],
             'platforms': ('Darwin', 'Linux')}],
     'make': [['--version']],
-    'mkdir': [['missing-dir/destination']],
+    'mkdir': [{'arguments': ['missing-dir/destination'],
+               'checks': ['mkdir_p']}],
     'mv': [{'arguments': ['thebleep-source', 'missing-dir/destination'],
             'files': ['thebleep-source']},
            ['missing-source', 'destination']],
@@ -81,11 +84,12 @@ PROBES = {
     'python3': [['--version']],
     'ruby': [['--version']],
     'rustc': [['--version']],
-    'sed': [['--version'], ['-e', 's/foo/bar']],
+    'sed': [['--version'], {'arguments': ['-e', 's/foo/bar'],
+                            'checks': ['sed_unterminated_s']}],
     'ssh': [['-V']],
     'svn': [['--version']],
     'tar': [['--version']],
-    'touch': [['missing-dir/file']],
+    'touch': [{'arguments': ['missing-dir/file'], 'checks': ['touch']}],
     'terraform': [['version']],
     'tcsh': [['--version']],
     'uv': [['--version']],
@@ -226,7 +230,42 @@ def _temporary_directory(prefix):
     return _TemporaryDirectory(prefix)
 
 
-def probe_commands(commands):
+def _check_rules(name, arguments, output, cwd, expected):
+    """Check selected rules against output from this exact probe.
+
+    The probe directory is still alive here, which matters for BSD ``cp`` and
+    ``mv``: their wording is ambiguous unless the source operand really exists.
+    This is deliberately opt-in metadata on a handful of safe probes rather
+    than a claim that every command failure should have a correction.
+    """
+    from thebleep.api import suggest
+
+    script = ' '.join([name] + list(arguments))
+    previous = os.getcwd()
+    try:
+        os.chdir(str(cwd))
+        try:
+            result = suggest(script, output)
+        except Exception as error:                            # noqa: BLE001
+            return {
+                'expected_rules': list(expected),
+                'matched_rules': [],
+                'passed': False,
+                'error': str(error),
+            }
+    finally:
+        os.chdir(previous)
+
+    matched = [item['rule'] for item in result['suggestions']
+               if item.get('rule')]
+    return {
+        'expected_rules': list(expected),
+        'matched_rules': matched,
+        'passed': all(rule in matched for rule in expected),
+    }
+
+
+def probe_commands(commands, check_rules=False):
     """Probe installed commands while isolating home/configuration files."""
     by_name = {item['name'].casefold(): item['path'] for item in commands}
     with _temporary_directory('thebleep-inventory-') as home:
@@ -243,9 +282,11 @@ def probe_commands(commands):
                     arguments = specification['arguments']
                     files = specification.get('files', ())
                     platforms = specification.get('platforms')
+                    expected_rules = specification.get('checks', ())
                 else:
                     arguments, files = specification, ()
                     platforms = None
+                    expected_rules = ()
                 current_platform = platform.system()
                 if platforms and current_platform not in platforms:
                     continue
@@ -258,13 +299,20 @@ def probe_commands(commands):
                     result = run_probe(
                         path, arguments, Path(probe_directory),
                         probe_environment)
+                    if check_rules and expected_rules and not result.get(
+                            'timeout') and not result.get('output_truncated'):
+                        result['rule_check'] = _check_rules(
+                            name, arguments, result['output'],
+                            probe_directory, expected_rules)
                     result.update({'command': name, 'path': path})
                     results.append(result)
     return results
 
 
-def build_inventory():
+def build_inventory(check_rules=False):
     commands = inventory_commands()
+    probes = (probe_commands(commands, True) if check_rules
+              else probe_commands(commands))
     return {
         'format': 1,
         'generated_at': datetime.datetime.now(
@@ -284,7 +332,7 @@ def build_inventory():
             'path_entries': _path_entries(),
         },
         'commands': commands,
-        'probes': probe_commands(commands),
+        'probes': probes,
     }
 
 
@@ -292,14 +340,30 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', default='command-inventory.json',
                         help='JSON path to write (default: %(default)s)')
+    parser.add_argument('--check-rules', action='store_true',
+                        help='validate selected live probes against rules')
     args = parser.parse_args()
     destination = Path(args.output)
-    inventory = build_inventory()
+    inventory = build_inventory(args.check_rules)
     destination.write_text(json.dumps(inventory, indent=2, sort_keys=True) +
                            '\n', encoding='utf-8')
     print('recorded {} commands and {} probes in {}'.format(
         len(inventory['commands']), len(inventory['probes']), destination))
+    failures = [probe for probe in inventory['probes']
+                if probe.get('rule_check')
+                and not probe['rule_check']['passed']]
+    if failures:
+        for probe in failures:
+            check = probe['rule_check']
+            print('{} {} no longer matches {}; see {}'.format(
+                probe['command'], ' '.join(probe['arguments']),
+                ', '.join(check['expected_rules']), destination),
+                file=sys.stderr)
+            if check.get('error'):
+                print('  {}'.format(check['error']), file=sys.stderr)
+        return 1
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

@@ -30,11 +30,12 @@ from thebleep.utils import is_app
 # `-p`, however it was spelled. `mkdir -pv` counts too.
 PARENTS = re.compile(r'(?:^|\s)(?:--parents\b|-[a-zA-Z]*p[a-zA-Z]*(?=\s|$))')
 
-# A line that is mkdir's own complaint rather than something else's. Anchored to
-# the start of a line so that `rmdir: ... No such file or directory` -- which is
-# what `rmdir` prints, and which contains neither `mkdir:` at a line start nor
-# anything else this wants -- does not qualify.
-COMPLAINT = re.compile(r'(?m)^\s*mkdir:.*No such file or directory')
+# A line that is mkdir's own complaint rather than something else's. Some
+# runners execute the probe by absolute path, so current GNU coreutils prints
+# `/usr/bin/mkdir: ...`; accept that prefix while staying anchored so
+# `rmdir: ... No such file or directory` does not qualify.
+COMPLAINT = re.compile(
+    r'(?m)^\s*(?:[^\r\n]*[\\/])?mkdir:.*No such file or directory')
 
 
 def _makes_directories(command):

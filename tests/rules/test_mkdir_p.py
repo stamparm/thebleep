@@ -70,3 +70,8 @@ class TestWhatItUsedToAnswer(object):
     ])
     def test_and_mkdirs_own_complaint_still_matches(self, output):
         assert match(Command('mkdir foo/bar/baz', output))
+
+    def test_absolute_executable_path_in_error_still_matches(self):
+        output = ("/usr/bin/mkdir: cannot create directory "
+                  "'foo/bar/baz': No such file or directory")
+        assert match(Command('mkdir foo/bar/baz', output))

@@ -25,9 +25,12 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: '3.12'
+      - name: Install The Bleep for live rule checks
+        run: pip install -Ur requirements.txt -e .
       - name: Capture commands and safe probes
-        run: python ci/command_inventory.py --output command-inventory.json
+        run: python ci/command_inventory.py --check-rules --output command-inventory.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        if: always()
         with:
           name: command-inventory-${{ matrix.os }}
           path: command-inventory.json
@@ -51,15 +54,23 @@ jobs:
       - name: Capture commands and safe probes
         run: |
           docker pull '${{ matrix.image }}'
+          set +e
           docker run --rm \
             -e THEBLEEP_INVENTORY_IMAGE='${{ matrix.image }}' \
+            -e PYTHONPATH=/src \
             -v "$PWD:/src:ro" \
             -v "$RUNNER_TEMP:/out" \
             -w /src \
             '${{ matrix.image }}' \
-            python ci/command_inventory.py --output /out/command-inventory.json
+            sh -c 'python -m pip install --quiet psutil pyte && \
+              python ci/command_inventory.py --check-rules \
+                --output /out/command-inventory.json'
+          status=$?
+          set -e
           cp "$RUNNER_TEMP/command-inventory.json" command-inventory.json
+          exit "$status"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        if: always()
         with:
           name: command-inventory-${{ matrix.label }}
           path: command-inventory.json
