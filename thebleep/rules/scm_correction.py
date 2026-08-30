@@ -1,4 +1,7 @@
-from thebleep.utils import for_app, memoize
+import os
+
+from thebleep.utils import (command_word_index, for_app, memoize,
+                            raw_script_parts)
 from thebleep.system import Path
 
 path_to_scm = {
@@ -24,7 +27,8 @@ def _get_actual_scm():
 
 @for_app('git', 'hg')
 def match(command):
-    scm = command.script_parts[0]
+    parts = command.script_parts
+    scm = os.path.basename(parts[command_word_index(parts)])
     pattern = wrong_scm_patterns[scm]
 
     return pattern in command.output and _get_actual_scm()
@@ -32,5 +36,10 @@ def match(command):
 
 def get_new_command(command):
     scm = _get_actual_scm()
-    parts = command.script.split(None, 1)
-    return scm if len(parts) == 1 else u'{} {}'.format(scm, parts[1])
+    parts = raw_script_parts(command.script)
+    start = command_word_index(parts)
+    if start >= len(parts):
+        return scm
+
+    parts[start] = scm
+    return ' '.join(parts)
