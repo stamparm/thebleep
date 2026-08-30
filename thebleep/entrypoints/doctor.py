@@ -448,43 +448,33 @@ def _rule_pack(report):
 
 def _capture(report):
     """Whether a correction can read the output without running anything."""
-    from ..shells import shell
+    from ..output_readers import backends
 
-    if os.environ.get(const.SHELL_LOGGER_SOCKET_ENV):
-        # The variable can survive a logger that crashed, and a path can be an
-        # ordinary file (or a Windows named-pipe spelling) rather than a Unix
-        # socket. The correction path already checks this before connecting;
-        # doctor must report the same fact instead of promising a backend that
-        # is not there.
-        from ..output_readers import shell_logger
+    states = backends.status()
+    logger = next(item for item in states if item['name'] == 'shell-logger')
+    instant = next(item for item in states if item['name'] == 'instant-log')
+    if logger['configured'] and not logger['available']:
+        report.add(
+            'Replayless capture',
+            'external shell logger configured, but socket is unavailable',
+            WARN,
+            'Start the shell logger or unset SHELL_LOGGER_SOCKET;'
+            ' corrections will use another capture path.')
+    elif logger['available']:
+        report.add('Replayless capture',
+                   'external shell logger socket is present')
 
-        if shell_logger.is_available():
-            report.add('Replayless capture',
-                       'external shell logger socket is present')
-        else:
-            report.add(
-                'Replayless capture',
-                'external shell logger configured, but socket is unavailable',
-                WARN,
-                'Start the shell logger or unset SHELL_LOGGER_SOCKET;'
-                ' corrections will use another capture path.')
-
-        # A stale external logger setting does not prevent instant mode from
-        # answering. Keep describing that fallback instead of returning after
-        # the first, now-unusable backend.
-        if os.environ.get('THEBLEEP_INSTANT_MODE', '').lower() == 'true':
-            report.add('Replayless capture', 'instant mode is running')
-        return
-
-    if os.environ.get('THEBLEEP_INSTANT_MODE', '').lower() == 'true':
+    if instant['configured'] and instant['available']:
         report.add('Replayless capture', 'instant mode is running')
-        return
-
-    if shell.supports_instant_mode():
-        report.add('Replayless capture', 'available, not switched on', NOTE,
-                   'See --enable-experimental-instant-mode.')
-    else:
-        report.add('Replayless capture', 'not available for this shell', NOTE)
+    elif (not logger['configured'] and not logger['available']
+          and not instant['available']):
+        from ..shells import shell
+        if shell.supports_instant_mode():
+            report.add('Replayless capture', 'available, not switched on', NOTE,
+                       'See --enable-experimental-instant-mode.')
+        else:
+            report.add('Replayless capture', 'not available for this shell',
+                       NOTE)
 
 
 def _editing(report):

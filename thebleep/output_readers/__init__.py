@@ -1,6 +1,7 @@
 """Where the output of the command that failed comes from.
 
-Three readers. A correction normally uses one of them -- and in instant mode,
+Capture uses an ordered backend chain. A correction normally uses one of them --
+and in instant mode,
 where the recording turns out to hold no answer, falls through from that one to
 the replay path with its question intact. They used to all be
 imported here, so every correction paid for all three: `shell_logger` brings in
@@ -11,29 +12,18 @@ does, that was three readers' worth of imports to use one.
 
 So each arrives when it is chosen. The choice itself is made without importing
 anything: whether a shell logger is listening is a question about one
-environment variable and one path.
+environment variable and one path. Shell integrations can register another
+backend through `output_readers.backends.CaptureBackend`; a backend that cannot
+answer returns `None`, and the consent-gated replay backend remains last.
 """
 
-import os
-from .. import const
-from ..conf import settings
+from . import backends
 from ..utils import without_control_sequences
 
 
 def _shell_logger_available():
-    """Whether a shell logger is listening, asked without importing one.
-
-    `shell_logger.is_available()` is still what answers, and still the thing to
-    patch -- but it is only asked once the environment says a logger might be
-    there. Without that variable the answer is `False` and the module never
-    needs to be found, opened or executed.
-
-    """
-    if not os.environ.get(const.SHELL_LOGGER_SOCKET_ENV):
-        return False
-
-    from . import shell_logger
-    return shell_logger.is_available()
+    """Compatibility seam for callers and tests of the old chooser."""
+    return backends._shell_logger_available()
 
 
 def get_output(script, expanded):
@@ -63,36 +53,7 @@ def _read(script, expanded):
     :rtype: str | None
 
     """
-    if _shell_logger_available():
-        from . import shell_logger
-
-        output = shell_logger.get_output(script)
-        if output is not None:
-            return output
-        # The logger is an optimisation, and one that answers over a socket to
-        # a separate process: a daemon that died and left its socket file
-        # behind, one that accepts and then says nothing, a reply that is not
-        # the JSON expected. Returning its answer directly made every one of
-        # those the end of the correction. It is now a reader like the others,
-        # and a reader with no answer is fallen through.
-    if settings.instant_mode:
-        from . import read_log
-
-        output = read_log.get_output(script)
-        if output is not None:
-            return output
-        # The recording could not answer -- no mark in `PS1`, no recording, or
-        # the command is not in the window any more, each of which `read_log`
-        # has already said out loud. Instant mode is then simply not in play for
-        # this correction, so it takes the ordinary route, which is to ask
-        # before running anything a second time. Falling through rather than
-        # giving up is what makes "where it does not work, it does not go
-        # wrong" true; `replay.is_allowed` below is untouched, so nothing gained
-        # consent by this path that would not have had it anyway.
-
-    from .. import replay
-    if not replay.is_allowed(script, expanded):
-        return None
-
-    from . import rerun
-    return rerun.get_output(script, expanded)
+    # Backends are ordered shell logger -> instant log -> replay. A reader that
+    # cannot answer returns None, so the next one gets the same command and the
+    # replay backend remains the final, consent-gated fallback.
+    return backends.read(script, expanded, _shell_logger_available)

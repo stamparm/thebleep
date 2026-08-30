@@ -1450,6 +1450,12 @@ It is called experimental because it is, and it is worth being specific about
 which parts. This is what a real terminal was driven through, on bash 5.2,
 zsh 5.9 and fish 4.0.2:
 
+Output acquisition is an ordered backend chain: an external logger or instant
+recording is preferred, then the existing consent-gated replay path. Terminal
+integrations can add a backend without changing correction rules; a backend
+that cannot identify the requested command returns no answer and the chain
+continues safely.
+
 | | |
 | --- | --- |
 | A correction with no rerun and no question | works |
