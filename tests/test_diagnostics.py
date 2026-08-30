@@ -162,6 +162,24 @@ def test_posix_missing_path_is_quoted():
         "ls -ld '/tmp/a; touch /tmp/bleep-owned'")
 
 
+def test_git_conflict_offers_status_as_a_read_only_next_step():
+    result = diagnostics.diagnose(
+        'git merge feature',
+        'Auto-merging file.txt\n'
+        'CONFLICT (content): Merge conflict in file.txt\n'
+        'Automatic merge failed; fix conflicts and then commit the result.',
+        platform_name='posix')
+
+    assert result['diagnoses'] == [{
+        'kind': 'git_conflict',
+        'summary': 'Git stopped because changes conflict.',
+        'evidence': ['conflict (content): merge conflict in file.txt'],
+        'next_steps': [{
+            'command': 'git status --short',
+            'reason': 'list the files that need attention',
+            'risk': 'read-only'}]}]
+
+
 @pytest.mark.parametrize('kind, script, output, command', [
     ('address_in_use', 'python server.py --port 5432',
      'OSError: [WinError 10048] Address already in use',

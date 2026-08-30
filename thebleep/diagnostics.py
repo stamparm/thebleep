@@ -309,10 +309,26 @@ def _git_not_repository(script, output, platform_name):
     }
 
 
+def _git_conflict(script, output, platform_name):
+    match = re.search(
+        r'(?im)^(?:conflict \([^\r\n]+|automatic merge failed; '
+        r'fix conflicts)', output)
+    if not match:
+        return None
+    return {
+        'kind': 'git_conflict',
+        'summary': 'Git stopped because changes conflict.',
+        'evidence': [match.group(0).lower()],
+        'next_steps': [_step(
+            'git status --short',
+            'list the files that need attention')],
+    }
+
+
 _DETECTORS = (_address_in_use, _permission_denied, _certificate_expired,
               _disk_full, _connection_refused, _missing_module,
-              _missing_python_path, _git_not_repository, _dubious_ownership,
-              _dns_failure)
+              _missing_python_path, _git_not_repository, _git_conflict,
+              _dubious_ownership, _dns_failure)
 
 
 def diagnose(script, output=None, platform_name=None):
