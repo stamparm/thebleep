@@ -22,6 +22,8 @@ _PORT_IN_COMMAND = re.compile(
 _MODULE = re.compile(
     r"(?:ModuleNotFoundError: )?No module named ['\"]([^'\"]+)['\"]")
 _DNS_HOST = re.compile(r'could not resolve host:\s*([^\s]+)', re.IGNORECASE)
+_MISSING_INTERFACE = re.compile(
+    r'interface\s+(?P<name>[^\s:]+)\s+does not exist', re.IGNORECASE)
 _PYTHON_PATH_ERROR = re.compile(
     r'(?P<kind>FileNotFoundError|PermissionError): '
     r'\[(?:Errno|WinError) \d+\] '
@@ -347,10 +349,27 @@ def _git_conflict(script, output, platform_name):
     }
 
 
+def _missing_interface(script, output, platform_name):
+    if platform_name != 'posix':
+        return None
+    match = _MISSING_INTERFACE.search(output)
+    if not match:
+        return None
+    return {
+        'kind': 'missing_network_interface',
+        'summary': 'Network interface {!r} does not exist.'.format(
+            match.group('name')),
+        'evidence': [match.group(0).lower()],
+        'next_steps': [_step(
+            'ifconfig -a',
+            'list the available network interfaces')],
+    }
+
+
 _DETECTORS = (_address_in_use, _permission_denied, _certificate_expired,
               _disk_full, _connection_refused, _missing_module,
               _missing_python_path, _git_not_repository, _git_conflict,
-              _dubious_ownership, _dns_failure)
+              _dubious_ownership, _dns_failure, _missing_interface)
 
 
 def diagnose(script, output=None, platform_name=None):

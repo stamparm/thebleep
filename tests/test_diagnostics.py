@@ -63,6 +63,23 @@ def test_dns_failure_quotes_host_for_powershell():
         "Resolve-DnsName 'example.test'")
 
 
+def test_missing_network_interface_lists_available_interfaces():
+    result = diagnostics.diagnose(
+        'ifconfig thebleep-no-such-interface',
+        'ifconfig: interface thebleep-no-such-interface does not exist',
+        platform_name='posix')
+
+    assert result['diagnoses'] == [{
+        'kind': 'missing_network_interface',
+        'summary': "Network interface 'thebleep-no-such-interface' does not "
+                   'exist.',
+        'evidence': ['interface thebleep-no-such-interface does not exist'],
+        'next_steps': [{
+            'command': 'ifconfig -a',
+            'reason': 'list the available network interfaces',
+            'risk': 'read-only'}]}]
+
+
 def test_git_outside_a_repository_is_explained():
     result = diagnostics.diagnose(
         'git status',
