@@ -7,6 +7,10 @@
 - **`--why` explains executable launch failures.** Foreign binary formats and
   missing script interpreters now produce factual, read-only inspection steps.
 
+- **Compound missing-command output is corrected together.** When the shell
+  explicitly reports multiple independent typos, one conservative candidate
+  fixes them all without touching skipped or unnamed commands.
+
 - **Structured API candidates now use evidence-aware ordering.** Corrections
   backed by captured output or local learning rank ahead of command-only
   guesses; legacy rule priority remains the deterministic tie-breaker and the

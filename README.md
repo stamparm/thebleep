@@ -555,7 +555,10 @@ result, and never replay or execute the command. It speaks MCP protocol
 Output-derived replacements use those same command boundaries. If a reported
 word appears in more than one command in a compound line, The Bleep abstains
 instead of changing the first textual match and potentially altering a command
-that did not fail.
+that did not fail. When a shell reports two independent missing commands from
+one semicolon-separated line, both are corrected in one source-preserving
+candidate; a command skipped by `&&`, or a word not named in the output, is
+left alone.
 
 When the command itself is valid but failed, ask for a deterministic diagnosis
 from the same captured output:

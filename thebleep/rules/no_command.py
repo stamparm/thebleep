@@ -639,20 +639,32 @@ def _replace_command_at(script, command_index, old, replacement, command=None):
     return _replace_after_separator(script, old, replacement)
 
 
-def _combined_inline_command(command):
+def _combined_command(command, output_required=False):
     """Correct several independent top-level command typos, when provable.
 
-    Inline mode has no stderr, so it can inspect every command boundary in a
-    pipeline or compound command. A single pass is more useful than making the
-    user press the binding once for each typo, but combining guesses would turn
-    one uncertain answer into several. Only unambiguous, plausible replacements
-    are combined, and substitutions stay on the existing single-command path.
+    Without output this is the inline path: every unavailable command is a
+    candidate. With output, only names the shell explicitly reported as
+    missing are eligible. That keeps `&&` honest when its right side never
+    ran, while allowing a semicolon-separated command line to be fixed in one
+    pass when the shell reported both failures.
+
+    A single pass is more useful than making the user press the binding once
+    for each typo, but combining guesses would turn one uncertain answer into
+    several. Only unambiguous, plausible replacements are combined, and
+    substitutions stay on the existing single-command path.
 
     """
     parts = _compound_parts(command)
+    output = command.output or ''
+    has_failure_marker = (
+        'not found' in output or 'unknown command' in output.lower()
+        or 'is not recognized as' in output
+        or re.search(r'(?im)^env:.*no such file or directory', output))
     unknowns = [(index, parts[index])
                 for index in _command_indexes(parts)
-                if not _is_available_command(parts[index])]
+                if not _is_available_command(parts[index])
+                and (not output_required
+                     or has_failure_marker and parts[index] in output)]
     if len(unknowns) < 2:
         return None
 
@@ -678,14 +690,23 @@ def _combined_inline_command(command):
     return corrected if corrected != command.script else None
 
 
+def _combined_inline_command(command):
+    return _combined_command(command, output_required=False)
+
+
+def _combined_output_command(command):
+    return _combined_command(command, output_required=True)
+
+
 @sudo_support
 def get_new_command(command):
     unknown = _unknown_command(command, output_required=False)
     substitution = None
-    if command.output is None and unknown is not None:
-        combined = _combined_inline_command(command)
-        if combined is not None:
-            return [combined]
+    combined = (_combined_inline_command(command)
+                if command.output is None else
+                _combined_output_command(command))
+    if combined is not None:
+        return [combined]
 
     if unknown is None:
         substitution = _unknown_in_substitution(command, output_required=False)

@@ -80,6 +80,45 @@ def test_inline_corrects_each_unambiguous_command_in_a_pipeline(mocker):
         'cd project && git status | grep main']
 
 
+def test_captured_output_corrects_each_explicitly_reported_command(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+    mocker.patch('thebleep.rules.no_command.get_all_executables',
+                 return_value=['git', 'grep'])
+
+    command = Command(
+        'gti status; grpe main',
+        'bash: line 1: gti: command not found\n'
+        'bash: line 1: grpe: command not found\n')
+
+    assert get_new_command(command) == ['git status; grep main']
+
+
+def test_captured_output_does_not_guess_a_command_that_did_not_fail(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+    mocker.patch('thebleep.rules.no_command.get_all_executables',
+                 return_value=['git', 'grep'])
+
+    command = Command(
+        'gti status; grpe main',
+        'bash: line 1: gti: command not found\n')
+
+    assert get_new_command(command) == ['git status; grpe main']
+
+
+def test_captured_compound_fix_preserves_shell_spacing_and_quoting(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+    mocker.patch('thebleep.rules.no_command.get_all_executables',
+                 return_value=['git', 'grep'])
+
+    command = Command(
+        'gti  status ; grpe "main value" >log.txt',
+        'bash: line 1: gti: command not found\n'
+        'bash: line 1: grpe: command not found\n')
+
+    assert get_new_command(command) == [
+        'git  status ; grep "main value" >log.txt']
+
+
 def test_span_replacement_tracks_an_earlier_length_change():
     command = Command('gti && grpe', None)
 
