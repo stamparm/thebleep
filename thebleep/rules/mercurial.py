@@ -1,4 +1,5 @@
 import re
+from thebleep.shells import shell
 from thebleep.utils import get_closest, for_app, raw_script_parts
 
 
@@ -33,5 +34,5 @@ def get_new_command(command):
         # fires rather than one that stands aside.
         return []
 
-    script[1] = closest
+    script[1] = shell.quote(closest)
     return ' '.join(script)

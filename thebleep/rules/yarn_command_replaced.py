@@ -1,5 +1,5 @@
 import re
-from thebleep.utils import for_app
+from thebleep.utils import for_app, quote_words
 
 regex = re.compile(r'Run "(.*)" instead')
 
@@ -10,4 +10,4 @@ def match(command):
 
 
 def get_new_command(command):
-    return regex.findall(command.output)[0]
+    return quote_words(regex.findall(command.output)[0])

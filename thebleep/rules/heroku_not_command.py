@@ -1,5 +1,5 @@
 import re
-from thebleep.utils import for_app
+from thebleep.utils import for_app, quote_words
 
 
 @for_app('heroku')
@@ -8,4 +8,5 @@ def match(command):
 
 
 def get_new_command(command):
-    return re.findall('Run heroku _ to run ([^.]*)', command.output)[0]
+    return quote_words(re.findall('Run heroku _ to run ([^.]*)',
+                                  command.output)[0])

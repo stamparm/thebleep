@@ -16,6 +16,7 @@ stubs before anything runs, so a suggestion cannot do anything else either.
 """
 
 import json
+import importlib
 import os
 import shutil
 import subprocess
@@ -50,8 +51,8 @@ def canary(tmpdir):
     for name in ('git', 'az', 'composer', 'grunt', 'npm', 'yarn', 'gradle',
                  'sh', 'env', 'rm', 'kill', 'ssh', 'ssh-keygen', 'vim',
                  'rails', 'kubectl', 'uv', 'ruff', 'gh', 'helm',
-                 'black', 'cargo', 'prettier', 'pytest', 'mytool',
-                 'bun'):
+                 'black', 'cargo', 'prettier', 'pytest', 'mytool', 'bun',
+                 'heroku', 'hg'):
         shutil.copy(str(stub), str(stubs.join(name)))
 
     work = tmpdir.mkdir('work')
@@ -624,6 +625,26 @@ def test_cd_correction_quotes_hostile_dir(
 
     suggestion = cd_correction.get_new_command(Command('cd folder', ''))
     assert canary(suggestion) == []
+
+
+@pytest.mark.skipif(sys.platform == 'win32', reason='needs a POSIX shell')
+@pytest.mark.parametrize('name, command, output', [
+    ('yarn', Command('yarn install redux', ''),
+     'Run "yarn add redux;>YARN_REPLACED" instead.'),
+    ('heroku', Command('heroku log', ''),
+     'Run heroku _ to run heroku logs;>HEROKU.'),
+    ('hg', Command('hg brnch', ''),
+     "hg: unknown command 'brnch'\n"
+     '(did you mean one of branch;>HG?)')])
+def test_complete_suggestions_quote_output_words(name, command, output, canary):
+    module = importlib.import_module('thebleep.rules.' + {
+        'yarn': 'yarn_command_replaced',
+        'heroku': 'heroku_not_command',
+        'hg': 'mercurial'}[name])
+    command = Command(command.script, output)
+
+    assert module.match(command)
+    assert canary(module.get_new_command(command)) == []
 
 
 @pytest.mark.skipif(sys.platform == 'win32', reason='needs a POSIX shell')
