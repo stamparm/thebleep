@@ -82,6 +82,28 @@ def _wrapped_together(script_line, lines, width):
     return text
 
 
+_PROMPT_ENDS = '$#>%\u276f\u279c\u03bb\u2192\u00bb'
+
+
+def _starts_after_prompt(text, position):
+    """Whether a matched command word follows the shell prompt.
+
+    Looking for the command's words anywhere in a prompt line let `git status`
+    match the command `echo git status`. That was not merely an old output
+    being reused: a line from a different command could be presented as the
+    failure's output. Common prompts end in one of these shell markers; when a
+    custom prompt has no recognizable boundary, refusing the recorded answer
+    is safer than accepting an embedded command.
+    """
+    line_start = max(text.rfind('\n', 0, position),
+                     text.rfind('\r', 0, position)) + 1
+    prefix = text[line_start:position]
+    markers = [prefix.find(character) for character in _PROMPT_ENDS
+               if prefix.find(character) >= 0]
+    marker = min(markers, default=-1)
+    return marker >= 0 and not prefix[marker + 1:].strip()
+
+
 def _get_script_group_lines(grouped, script):
     def _word_continues(character):
         return bool(character) and not character.isspace() \
@@ -113,13 +135,17 @@ def _get_script_group_lines(grouped, script):
 
         searchable = without_control_sequences(joined)
         position = 0
+        first_position = None
         for part in parts:
             position = _find_word(searchable, part, position)
             if position == -1:
                 break
+            if first_position is None:
+                first_position = position
             position += len(part)
         else:
-            return lines
+            if _starts_after_prompt(searchable, first_position):
+                return lines
 
     raise ScriptNotInLog
 

@@ -85,6 +85,22 @@ class TestWhatItReads(object):
              (u'echo foo-bar', u'wrong'))
         assert read_log.get_output(u'echo foo') == u'right'
 
+    def test_command_words_must_start_after_the_prompt(self, tmpdir,
+                                                       os_environ):
+        _log(tmpdir, (u'git status', u'right'),
+             (u'echo git status', u'wrong'))
+        assert read_log.get_output(u'git status') == u'right'
+
+    def test_an_embedded_command_is_not_recorded_as_an_exact_match(
+            self, tmpdir, os_environ):
+        _log(tmpdir, (u'echo git status', u'wrong'))
+        assert read_log.get_output(u'git status') is None
+
+    def test_shell_syntax_before_an_embedded_command_is_not_a_prompt(
+            self, tmpdir, os_environ):
+        _log(tmpdir, (u'echo > git status', u'wrong'))
+        assert read_log.get_output(u'git status') is None
+
     def test_cursor_movement_between_words_does_not_hide_the_command(
             self, tmpdir, os_environ):
         # Fish's line editor redraws a command using carriage returns and
