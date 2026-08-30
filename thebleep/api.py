@@ -6,7 +6,9 @@ The command-line entry point is deliberately tied to shell state: it reads a
 previous command, may capture its output, and eventually prints text for the
 shell to execute. Editors, IDEs and agents need a smaller contract. They can
 hand The Bleep the command and any output they already have, then inspect plain
-Python data without starting a shell or accepting a correction.
+Python data without starting a shell or accepting a correction. Helper-process
+probes are disabled here too; an API caller never causes a program from the
+supplied command line to run.
 
 When `output` is omitted, only rules that do not require output can match. The
 engine is never asked to replay the command on behalf of this API.
@@ -16,6 +18,7 @@ from . import explain as explain_module
 from .corrector import get_corrected_commands
 from .types import Command
 from . import diagnostics, risk
+from .utils import tool_probes
 
 
 SCHEMA_VERSION = 1
@@ -65,9 +68,10 @@ def suggest(script, output=None):
     _check_output(output)
 
     command = Command(script, output)
-    suggestions = [
-        _suggestion(corrected, command)
-        for corrected in get_corrected_commands(command)]
+    with tool_probes(False):
+        suggestions = [
+            _suggestion(corrected, command)
+            for corrected in get_corrected_commands(command)]
     return {
         'schema': SCHEMA_VERSION,
         'command': script,

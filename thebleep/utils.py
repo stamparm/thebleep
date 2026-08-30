@@ -49,6 +49,39 @@ TOOL_OUTPUT = 4 * 1024 * 1024
 CHUNK = 64 * 1024
 
 
+_TOOL_PROBES = None
+
+
+def _tool_probe_state():
+    """Return the per-call switch for rules that ask tools for metadata."""
+    global _TOOL_PROBES
+    if _TOOL_PROBES is None:
+        from contextvars import ContextVar
+
+        _TOOL_PROBES = ContextVar('thebleep_tool_probes', default=True)
+    return _TOOL_PROBES
+
+
+class _ToolProbeScope(object):
+    """Temporarily allow or deny helper-process probes in this context."""
+
+    def __init__(self, enabled):
+        self.enabled = enabled
+        self.token = None
+
+    def __enter__(self):
+        self.token = _tool_probe_state().set(self.enabled)
+        return self
+
+    def __exit__(self, exception_type, exception, traceback):
+        _tool_probe_state().reset(self.token)
+
+
+def tool_probes(enabled):
+    """Return a scope controlling rules that ask installed tools for help."""
+    return _ToolProbeScope(enabled)
+
+
 class Tail(object):
     """The last `limit` bytes of everything appended to it.
 
@@ -144,6 +177,9 @@ def tool_lines(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False,
     is true, the return value is `(lines, truncated)`.
 
     """
+    if not _tool_probe_state().get():
+        return ([], False) if return_truncated else []
+
     from subprocess import PIPE, Popen, STDOUT, TimeoutExpired
 
     try:

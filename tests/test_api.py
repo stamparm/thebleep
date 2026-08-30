@@ -54,6 +54,21 @@ def test_suggest_does_not_collect_missing_output(mocker):
     assert result['suggestions'] == []
 
 
+def test_suggest_does_not_run_helper_probes(mocker):
+    from thebleep import utils
+
+    def corrections(_):
+        assert utils.tool_lines(['helper']) == []
+        return iter([])
+
+    mocker.patch.object(api, 'get_corrected_commands', side_effect=corrections)
+    process = mocker.patch('subprocess.Popen')
+
+    api.suggest('gti status', 'command not found')
+
+    process.assert_not_called()
+
+
 def test_suggest_requires_text():
     try:
         api.suggest(['gti', 'status'])

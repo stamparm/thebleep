@@ -198,6 +198,28 @@ def test_tool_lines_joins_the_reader_after_timeout(mocker):
     reader.join.assert_called_once_with(1)
 
 
+def test_tool_lines_can_be_disabled_without_starting_a_process(mocker):
+    from thebleep import utils
+
+    process = mocker.patch('subprocess.Popen')
+
+    with utils.tool_probes(False):
+        assert utils.tool_lines(['helper']) == []
+
+    process.assert_not_called()
+
+
+def test_tool_probe_scope_is_nested_and_restored():
+    from thebleep import utils
+
+    with utils.tool_probes(False):
+        with utils.tool_probes(True):
+            assert utils._tool_probe_state().get()
+        assert not utils._tool_probe_state().get()
+
+    assert utils._tool_probe_state().get()
+
+
 @pytest.mark.parametrize('script, result', [
     ('fab "keep extenson" extenson:version=1',
      'fab "keep extenson" prepare_extension:version=1'),
