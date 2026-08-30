@@ -103,7 +103,10 @@ def get_output(script):
                 lines = _get_output_lines(command.get('output') or '')
             except Exception:                                # noqa: BLE001
                 logs.debug(u'Shell logger output could not be rendered')
-                return None
+                # A damaged newest record must not hide an older valid record
+                # for the same command. The logger is a bounded history, so
+                # keep looking before giving the caller another reader.
+                continue
             return '\n'.join(lines).strip()
 
         logs.warn("Output isn't available in shell logger")

@@ -33,3 +33,16 @@ def test_shell_logger_rejects_an_oversized_response(mocker, monkeypatch):
 
     with pytest.raises(ValueError):
         shell_logger._get_last_n(5)
+
+
+def test_a_malformed_newest_record_does_not_hide_an_older_one(mocker):
+    mocker.patch.object(shell_logger, '_get_last_n', return_value=[
+        {'command': 'gti status', 'output': object()},
+        {'command': 'gti status', 'output': 'gti: command not found'},
+    ])
+    render = mocker.patch.object(
+        shell_logger, '_get_output_lines',
+        side_effect=[ValueError('bad output'), ['gti: command not found']])
+
+    assert shell_logger.get_output('gti status') == 'gti: command not found'
+    assert render.call_count == 2
