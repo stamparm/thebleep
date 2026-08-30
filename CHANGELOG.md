@@ -4,6 +4,11 @@
 
 ### Added
 
+- **Structured API candidates now use evidence-aware ordering.** Corrections
+  backed by captured output or local learning rank ahead of command-only
+  guesses; legacy rule priority remains the deterministic tie-breaker and the
+  interactive selector is unchanged.
+
 - **Structured corrections now include source edits.** API and MCP consumers
   can update a command buffer from exact `start`/`end` spans with the original
   text and replacement, including compound commands, without re-parsing shell

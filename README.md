@@ -523,6 +523,11 @@ For unusually large custom suggestions the API deliberately returns one whole
 command edit rather than spending unbounded time calculating a fine-grained
 diff.
 
+Structured API results order candidates by confidence score first: captured
+output and learned corrections outrank command-only guesses. The existing rule
+`priority` remains the deterministic tie-breaker, and the interactive CLI keeps
+its historical priority order.
+
 The same contract is available from the command line:
 
 ```bash

@@ -177,6 +177,24 @@ def test_suggest_marks_command_only_confidence(mocker):
         'basis': ['the rule matched the command or local context']}
 
 
+def test_structured_suggestions_rank_captured_evidence_first(mocker):
+    command_only = type('Rule', (), {
+        'name': 'command_only', 'requires_output': False})()
+    captured = Rule()
+    corrections = [
+        CorrectedCommand('git status', None, 10, rule=command_only),
+        CorrectedCommand('git checkout', None, 9999, rule=captured),
+    ]
+    mocker.patch.object(api, 'get_corrected_commands',
+                        return_value=iter(corrections))
+
+    suggestions = api.suggest('gti status', 'command not found')['suggestions']
+
+    assert [item['command'] for item in suggestions] == [
+        'git checkout', 'git status']
+    assert [item['priority'] for item in suggestions] == [9999, 10]
+
+
 def test_suggest_exposes_source_edits_for_compound_commands(mocker):
     correction = CorrectedCommand(
         'cd foo && git status | grep main', None, 1200, rule=Rule())

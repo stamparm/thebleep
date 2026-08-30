@@ -182,6 +182,20 @@ def _suggestion(corrected, command):
     }
 
 
+def _suggestion_order(suggestion):
+    """Rank structured candidates by evidence, then legacy priority.
+
+    The interactive selector still receives the correction engine's original
+    priority order. API and MCP callers have no selector context, so a
+    candidate backed by captured output should precede a command-only guess.
+    Unknown sources sort last, and stable priority ordering keeps ties
+    deterministic for existing consumers.
+    """
+    score = suggestion['confidence']['score']
+    return (score is None, -(score if score is not None else 0),
+            suggestion['priority'])
+
+
 def suggest(script, output=None):
     """Return deterministic correction data for ``script``.
 
@@ -215,6 +229,7 @@ def suggest(script, output=None):
         suggestions = [
             _suggestion(corrected, command)
             for corrected in get_corrected_commands(command)]
+    suggestions.sort(key=_suggestion_order)
     return {
         'schema': SCHEMA_VERSION,
         'command': script,
