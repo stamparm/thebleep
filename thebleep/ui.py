@@ -48,7 +48,8 @@ def _explain(corrected_command, command):
     """Why this suggestion is being made. Imported here: only asking pays."""
     from . import explain
 
-    logs.explanation(explain.describe(corrected_command, command))
+    logs.explanation(explain.describe(
+        corrected_command, command, include_assessment=True))
 
 
 class CommandSelector(object):

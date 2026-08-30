@@ -410,6 +410,11 @@ correction begins with `sudo` or `doas`. Having asked once, the arrow keys
 explain each suggestion as you walk them. `bleep --explain` starts that way, and
 `explain = True` in your settings makes it permanent.
 
+The interactive explanation also starts with the same ordinal confidence and
+conservative risk markers exposed by the structured API, so pressing `?` before
+Enter shows whether the candidate was backed by captured output and whether a
+known high-risk pattern was found.
+
 Everything there is a fact about the rule rather than a description of it: its
 name, which of the three places its file came from, whether it declares that it
 needs your command's output, whether it has a side effect — and then the two

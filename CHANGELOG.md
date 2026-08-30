@@ -11,6 +11,10 @@
   explicitly reports multiple independent typos, one conservative candidate
   fixes them all without touching skipped or unnamed commands.
 
+- **Interactive explanations show confidence and risk.** Pressing `?` now
+  exposes the same evidence-weighted confidence and conservative risk markers
+  already available through the structured API.
+
 - **Structured API candidates now use evidence-aware ordering.** Corrections
   backed by captured output or local learning rank ahead of command-only
   guesses; legacy rule priority remains the deterministic tie-breaker and the

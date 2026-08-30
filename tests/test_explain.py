@@ -160,6 +160,17 @@ class TestWhatItRead(object):
         assert 'not available' in described['read']
 
 
+def test_interactive_explanation_includes_confidence_and_risk():
+    described = _as_dict(explain.describe(
+        _suggestion('sudo rm -r cache', _rule()),
+        Command('rm cache', 'permission denied'),
+        include_assessment=True))
+
+    assert described['confidence'] == '95% high'
+    assert described['risk'] == ('high (privilege escalation, destructive '
+                                 'command)')
+
+
 class TestWhatAcceptingItDoes(object):
     def test_a_side_effect_is_called_out(self):
         described = _as_dict(explain.describe(

@@ -26,7 +26,23 @@ description for this to work.
 """
 
 import os
-from . import logs
+from . import logs, risk
+
+
+def confidence(rule, command=None):
+    """Return the ordinal confidence used by structured consumers."""
+    if rule is None:
+        return {'level': 'unknown', 'score': None,
+                'basis': ['the suggestion did not identify its rule']}
+    if getattr(rule, 'learned', False):
+        return {'level': 'high', 'score': 0.98,
+                'basis': ['a correction learned from the user']}
+    if rule.requires_output and command is not None \
+            and command.output is not None:
+        return {'level': 'high', 'score': 0.95,
+                'basis': ['the rule matched captured command output']}
+    return {'level': 'medium', 'score': 0.75,
+            'basis': ['the rule matched the command or local context']}
 
 
 def _origin(path):
@@ -115,7 +131,7 @@ def _listed(names):
     return u'{} or {}'.format(', '.join(names[:-1]), names[-1])
 
 
-def describe(corrected_command, command=None):
+def describe(corrected_command, command=None, include_assessment=False):
     """Why this correction is being offered, as label and value pairs.
 
     :type corrected_command: thebleep.types.CorrectedCommand
@@ -123,13 +139,28 @@ def describe(corrected_command, command=None):
 
     """
     rule = getattr(corrected_command, 'rule', None)
+    lines = []
+    if include_assessment:
+        assessed = confidence(rule, command)
+        score = assessed['score']
+        confidence_text = (
+            u'{}% {}'.format(round(score * 100), assessed['level'])
+            if score is not None else assessed['level'])
+        lines.append(('confidence', confidence_text))
+        assessed_risk = risk.assess(corrected_command)
+        risk_text = assessed_risk['level']
+        if assessed_risk['factors']:
+            risk_text += ' ({})'.format(', '.join(assessed_risk['factors']))
+        lines.append(('risk', risk_text))
     if rule is None:
-        return [('rule', 'unknown -- this suggestion came from somewhere'
-                         ' that did not say which rule made it')]
+        lines.append((
+            'rule', 'unknown -- this suggestion came from somewhere'
+            ' that did not say which rule made it'))
+        return lines
 
     metadata = _metadata(rule)
-    lines = [('rule', u'{} ({})'.format(rule.name, _origin(
-        getattr(rule, 'path', None))))]
+    lines.append(('rule', u'{} ({})'.format(rule.name, _origin(
+        getattr(rule, 'path', None)))))
 
     if getattr(rule, 'learned', False):
         lines.append(('matched', u'your {} learned correction for {}'.format(

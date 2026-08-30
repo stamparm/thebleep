@@ -39,29 +39,7 @@ def _confidence(rule, command):
     stronger than a rule match, and a captured tool error is stronger than a
     command-only guess.
     """
-    if rule is None:
-        return {
-            'level': 'unknown',
-            'score': None,
-            'basis': ['the suggestion did not identify its rule'],
-        }
-    if getattr(rule, 'learned', False):
-        return {
-            'level': 'high',
-            'score': 0.98,
-            'basis': ['a correction learned from the user'],
-        }
-    if rule.requires_output and command.output is not None:
-        return {
-            'level': 'high',
-            'score': 0.95,
-            'basis': ['the rule matched captured command output'],
-        }
-    return {
-        'level': 'medium',
-        'score': 0.75,
-        'basis': ['the rule matched the command or local context'],
-    }
+    return explain_module.confidence(rule, command)
 
 
 def _evidence_details(explanation):
