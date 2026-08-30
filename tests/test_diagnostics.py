@@ -114,6 +114,26 @@ def test_python_permission_path_gets_a_safe_inspection_step():
             'risk': 'read-only'}]}]
 
 
+def test_posix_permission_path_gets_a_safe_inspection_step():
+    result = diagnostics.diagnose(
+        'cat /proc/1/mem',
+        'cat: /proc/1/mem: Permission denied',
+        platform_name='posix')
+
+    assert result['diagnoses'][0]['next_steps'][0]['command'] == (
+        'ls -ld /proc/1/mem')
+
+
+def test_posix_permission_path_is_quoted():
+    result = diagnostics.diagnose(
+        'cat /tmp/config',
+        "cat: '/tmp/a; touch /tmp/bleep-owned': Permission denied",
+        platform_name='posix')
+
+    assert result['diagnoses'][0]['next_steps'][0]['command'] == (
+        "ls -ld '/tmp/a; touch /tmp/bleep-owned'")
+
+
 @pytest.mark.parametrize('kind, script, output, command', [
     ('address_in_use', 'python server.py --port 5432',
      'OSError: [WinError 10048] Address already in use',

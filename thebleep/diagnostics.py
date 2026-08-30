@@ -29,6 +29,12 @@ _PYTHON_PATH_ERROR = re.compile(
     r'(?P<quote>[\'\"])(?P<path>(?:\\.|(?!(?P=quote)).)*)(?P=quote)')
 
 
+_POSIX_PERMISSION_PATH = re.compile(
+    r'''(?im)^[^:\r\n]+:\s+(?:cannot [^'"\r\n]+ )?
+        (?P<quote>['"]?)(?P<path>[^'"\r\n]+?)(?P=quote):
+        \s*permission[ ]denied''', re.VERBOSE)
+
+
 def _port(script, output):
     """Returns a valid port explicitly present in the supplied context."""
     for source, pattern in ((output, _PORT_IN_OUTPUT),
@@ -64,6 +70,22 @@ def _python_error_path(output, kind):
         match.group('quote'), match.group('path'), match.group('quote'))
     try:
         path = ast.literal_eval(literal)
+    except (SyntaxError, ValueError):
+        return None
+    if not isinstance(path, str) or not path:
+        return None
+    return match, path
+
+
+def _posix_permission_path(output):
+    match = _POSIX_PERMISSION_PATH.search(output)
+    if not match:
+        return None
+
+    quote = match.group('quote')
+    literal = '{}{}{}'.format(quote, match.group('path'), quote)
+    try:
+        path = ast.literal_eval(literal) if quote else match.group('path')
     except (SyntaxError, ValueError):
         return None
     if not isinstance(path, str) or not path:
@@ -114,6 +136,8 @@ def _permission_denied(script, output, platform_name):
                       re.IGNORECASE)
     path_error = (_python_error_path(output, 'PermissionError')
                   if 'PermissionError' in output else None)
+    if not path_error and platform_name != 'nt':
+        path_error = _posix_permission_path(output)
     next_steps = []
     if path_error:
         next_steps.append(_step(
