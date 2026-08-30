@@ -24,9 +24,15 @@ def _zip_file(command):
                 return u'{}.zip'.format(c)
 
 
+def _has_destination_option(script_parts):
+    """Whether unzip was already given a destination directory option."""
+    return any(part == '-d' or part.startswith('-d')
+               for part in script_parts[1:])
+
+
 @for_app('unzip')
 def match(command):
-    if '-d' in command.script:
+    if _has_destination_option(command.script_parts):
         return False
 
     zip_file = _zip_file(command)

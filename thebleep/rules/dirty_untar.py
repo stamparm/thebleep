@@ -23,9 +23,16 @@ def _tar_file(cmd):
                 return (c, c[0:len(c) - len(ext)])
 
 
+def _has_change_directory_option(script_parts):
+    """Whether tar was already given a directory-changing option."""
+    return any(part == '-C' or part.startswith('-C')
+               or part == '--directory' or part.startswith('--directory=')
+               for part in script_parts[1:])
+
+
 @for_app('tar')
 def match(command):
-    return ('-C' not in command.script
+    return (not _has_change_directory_option(command.script_parts)
             and _is_tar_extract(command.script)
             and _tar_file(command.script_parts) is not None)
 

@@ -46,6 +46,11 @@ def test_match(zip_error, script, filename):
     assert match(Command(script, ''))
 
 
+def test_match_does_not_confuse_filename_with_destination_option(zip_error):
+    zip_error(u'foo-d.zip')
+    assert match(Command(u'unzip foo-d.zip', ''))
+
+
 def test_nothing_is_deleted_behind_the_suggestion(zip_error):
     """Accepting `unzip -d` used to delete every file named in the archive.
 
