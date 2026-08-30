@@ -98,6 +98,14 @@ def test_get_new_command_modern_npm(script, output, result):
     assert get_new_command(Command(script, output)) == result
 
 
+def test_prefixed_command_keeps_assignment():
+    script = 'NPM_CONFIG_COLOR=false npm nstall'
+    output = output_modern('nstall')
+    assert match(Command(script, output))
+    assert get_new_command(Command(script, output)) == \
+        ['NPM_CONFIG_COLOR=false npm install']
+
+
 def test_legacy_npm_does_not_fall_back_to_first_command():
     assert get_new_command(Command('npm zzzzz', output)) == []
 

@@ -1,17 +1,18 @@
-import re
 from thebleep.specific.apt import apt_available
-from thebleep.utils import for_app
+from thebleep.utils import command_word_index, for_app, replace_command_word
 
 enabled_by_default = apt_available
 
 
 @for_app('apt-get')
 def match(command):
-    return command.script.startswith('apt-get search')
+    start = command_word_index(command.script_parts)
+    return command.script_parts[start:start + 2] == ['apt-get', 'search']
 
 
 def get_new_command(command):
-    return re.sub(r'^apt-get', 'apt-cache', command.script)
+    return replace_command_word(
+        command.script, command_word_index(command.script_parts), 'apt-cache')
 
 
 # This rule never looks at what the command printed -- the command itself is

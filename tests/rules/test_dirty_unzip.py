@@ -46,6 +46,14 @@ def test_match(zip_error, script, filename):
     assert match(Command(script, ''))
 
 
+def test_prefixed_command_uses_archive_after_assignment(zip_error):
+    zip_error(u'foo.zip')
+    command = Command('UNZIP_DEBUG=1 unzip foo.zip', '')
+    assert match(command)
+    assert get_new_command(command) == \
+        "UNZIP_DEBUG=1 unzip foo.zip -d foo"
+
+
 def test_match_does_not_confuse_filename_with_destination_option(zip_error):
     zip_error(u'foo-d.zip')
     assert match(Command(u'unzip foo-d.zip', ''))

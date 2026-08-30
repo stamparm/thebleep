@@ -1,5 +1,5 @@
 import zipfile
-from thebleep.utils import for_app
+from thebleep.utils import command_word_index, for_app
 from thebleep.shells import shell
 
 
@@ -16,7 +16,8 @@ def _zip_file(command):
     # unzip [-flags] file[.zip] [file(s) ...] [-x file(s) ...]
     #                ^          ^ files to unzip from the archive
     #                archive to unzip
-    for c in command.script_parts[1:]:
+    start = command_word_index(command.script_parts)
+    for c in command.script_parts[start + 1:]:
         if not c.startswith('-'):
             if c.endswith('.zip'):
                 return c
@@ -26,8 +27,9 @@ def _zip_file(command):
 
 def _has_destination_option(script_parts):
     """Whether unzip was already given a destination directory option."""
+    start = command_word_index(script_parts)
     return any(part == '-d' or part.startswith('-d')
-               for part in script_parts[1:])
+               for part in script_parts[start + 1:])
 
 
 @for_app('unzip')

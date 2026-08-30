@@ -1,6 +1,5 @@
-import re
 from thebleep.specific.sudo import sudo_support
-from thebleep.utils import for_app
+from thebleep.utils import command_word_index, for_app, replace_command_word
 
 
 @sudo_support
@@ -12,4 +11,5 @@ def match(command):
 
 @sudo_support
 def get_new_command(command):
-    return re.sub(r'^cp', 'cp -a', command.script)
+    return replace_command_word(
+        command.script, command_word_index(command.script_parts), 'cp -a')

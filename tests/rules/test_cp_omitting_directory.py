@@ -20,3 +20,8 @@ def test_not_match(script, output):
 
 def test_get_new_command():
     assert get_new_command(Command('cp dir', '')) == 'cp -a dir'
+
+
+def test_prefixed_command_keeps_assignment():
+    command = Command('COPYFILE_DISABLE=1 cp dir', '')
+    assert get_new_command(command) == 'COPYFILE_DISABLE=1 cp -a dir'

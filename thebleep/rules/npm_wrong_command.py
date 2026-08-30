@@ -1,6 +1,7 @@
 import re
 from thebleep.specific.npm import npm_available
-from thebleep.utils import replace_argument, for_app, eager, get_closest
+from thebleep.utils import (command_word_index, replace_argument, for_app,
+                            eager, get_closest)
 from thebleep.specific.sudo import sudo_support
 from thebleep.shells import shell
 
@@ -18,7 +19,9 @@ SUGGESTION = re.compile(r'^\s+npm\s+(.+?)(?:\s+#.*)?$')
 
 
 def _get_wrong_command(script_parts):
-    commands = [part for part in script_parts[1:] if not part.startswith('-')]
+    start = command_word_index(script_parts)
+    commands = [part for part in script_parts[start + 1:]
+                if not part.startswith('-')]
     if commands:
         return commands[0]
 

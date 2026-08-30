@@ -32,6 +32,17 @@ def test_match_mocked(tool_lines, command):
     assert match(command)
 
 
+@patch('thebleep.specific.archlinux.utils.tool_lines')
+def test_prefixed_command_keeps_assignment(tool_lines):
+    tool_lines.return_value = PKGFILE_OUTPUT_LLC.splitlines()
+    command = Command('PACMAN_COLOR=0 pacman -S llc',
+                      'error: target not found: llc')
+    assert match(command)
+    assert get_new_command(command) == [
+        'PACMAN_COLOR=0 pacman -S extra/llvm',
+        'PACMAN_COLOR=0 pacman -S extra/llvm35']
+
+
 @pytest.mark.skipif(not getattr(pacman_not_found, 'enabled_by_default', True),
                     reason='Skip if pacman is not available')
 @pytest.mark.parametrize('command, fixed', [
