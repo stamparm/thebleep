@@ -158,6 +158,9 @@ class TestSuggestionsWorthMaking(object):
     def test_whitespace_does_not_make_it_a_different_command(self):
         assert self._organized(['git status '], '  git status') == []
 
+    def test_an_empty_suggestion_is_dropped(self):
+        assert self._organized(['', '   '], 'git status') == []
+
     def test_the_others_are_kept(self):
         assert self._organized(['git status', 'git stash'], 'git status') == \
             ['git stash']

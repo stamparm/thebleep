@@ -134,7 +134,12 @@ def _worth_offering(corrected, command):
     command afterwards is what makes it useful.
 
     """
-    return corrected.side_effect or corrected.script.strip() != command.strip()
+    # A blank string is not a command. Without this guard a rule that matched
+    # and then failed to find anything to replace could put an empty entry in
+    # the selector: it looked different from the failed command, so the
+    # unchanged-command check above did not catch it.
+    script = corrected.script.strip()
+    return corrected.side_effect or bool(script) and script != command.strip()
 
 
 def organize_commands(corrected_commands, script=''):
