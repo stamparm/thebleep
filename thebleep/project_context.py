@@ -14,7 +14,13 @@ import re
 
 MAX_JSON_BYTES = 1024 * 1024
 MAX_MAKEFILE_BYTES = 1024 * 1024
+MAX_JUSTFILE_BYTES = 1024 * 1024
 _MAKE_TARGET = re.compile(r'^(?![ \t])([^:#=\s][^:#]*?)\s*:(?!=)')
+_JUST_RECIPE = re.compile(
+    r'^(?:\[[^\]\r\n]+\]\s*)?'
+    r'([A-Za-z0-9_+!?-]+)(?:\s+[^:\r\n]*)?:(?!=)')
+_JUST_ALIAS = re.compile(
+    r'^alias\s+([A-Za-z0-9_./+!?-]+)\s*:?=')
 
 
 def find_up(filename, start=None):
@@ -144,5 +150,68 @@ def make_targets(start=None):
         for name in names:
             if _make_target_name(name) and name not in found:
                 found.append(name)
+
+    return found
+
+
+def _read_justfile(path):
+    try:
+        if os.path.getsize(path) > MAX_JUSTFILE_BYTES:
+            return None
+        with open(path, encoding='utf-8') as handle:
+            value = handle.read(MAX_JUSTFILE_BYTES + 1)
+    except (EnvironmentError, UnicodeError):
+        return None
+
+    return value if len(value.encode('utf-8')) <= MAX_JUSTFILE_BYTES else None
+
+
+def _justfile(start=None):
+    """Return the nearest Justfile using just's conventional names."""
+    directory = os.path.abspath(start or os.getcwd())
+    while True:
+        for filename in ('Justfile', 'justfile'):
+            candidate = os.path.join(directory, filename)
+            if os.path.isfile(candidate):
+                return candidate
+
+        parent = os.path.dirname(directory)
+        if parent == directory:
+            return None
+        directory = parent
+
+
+def _just_name(name):
+    """Whether a static recipe or alias is safe and useful as a candidate."""
+    return (bool(name) and '%' not in name and '$' not in name
+            and '\\' not in name and '\x00' not in name
+            and '\r' not in name and '\n' not in name)
+
+
+def just_recipes(start=None):
+    """Return static recipe and alias names from the nearest Justfile.
+
+    Justfiles can compute names through interpolation and imports can bring in
+    other files.  Those are deliberately outside this small parser: offering
+    only names visibly declared in one bounded file keeps correction local and
+    avoids executing or interpreting project code.
+    """
+    path = _justfile(start)
+    if path is None:
+        return None
+
+    source = _read_justfile(path)
+    if source is None:
+        return None
+
+    found = []
+    for line in source.splitlines():
+        match = _JUST_RECIPE.match(line)
+        name = match.group(1) if match else None
+        if name is None:
+            alias = _JUST_ALIAS.match(line)
+            name = alias.group(1) if alias else None
+        if name and _just_name(name) and name not in found:
+            found.append(name)
 
     return found

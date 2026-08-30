@@ -52,7 +52,7 @@ def canary(tmpdir):
                  'sh', 'env', 'rm', 'kill', 'ssh', 'ssh-keygen', 'vim',
                  'rails', 'kubectl', 'uv', 'ruff', 'gh', 'helm',
                  'black', 'cargo', 'prettier', 'pytest', 'mytool', 'bun',
-                 'heroku', 'hg', 'make'):
+                 'heroku', 'hg', 'make', 'just'):
         shutil.copy(str(stub), str(stubs.join(name)))
 
     work = tmpdir.mkdir('work')

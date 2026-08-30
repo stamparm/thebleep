@@ -70,3 +70,25 @@ def test_make_targets_distinguish_missing_and_empty_files(tmpdir):
 
     empty.join('Makefile').write('# comments only\nVAR := value\n')
     assert project_context.make_targets(str(empty)) == []
+
+
+def test_just_recipes_are_static_aliases_and_deduplicated(tmpdir):
+    root = tmpdir.mkdir('project')
+    nested = root.mkdir('src')
+    root.join('Justfile').write(
+        'set shell := ["bash", "-cu"]\n'
+        'build target:\n\t@echo built\n'
+        '[private] test:\n\t@echo tested\n'
+        'alias b := build\n'
+        'generated-{{name}}:\n\t@true\n')
+
+    assert project_context.just_recipes(str(nested)) == [
+        'build', 'test', 'b']
+
+
+def test_just_recipes_distinguish_missing_and_empty_files(tmpdir):
+    empty = tmpdir.mkdir('empty')
+    assert project_context.just_recipes(str(empty)) is None
+
+    empty.join('Justfile').write('# comments only\nset dotenv-load := true\n')
+    assert project_context.just_recipes(str(empty)) == []
