@@ -10,4 +10,8 @@ def match(command):
 
 
 def get_new_command(command):
-    return ' '.join(command.script_parts[1:])
+    # Preserve quoting in the command being unwrapped: `sudo echo 'a;...'`
+    # contains one literal argument, and rebuilding it from parsed words would
+    # expose the semicolon to the shell.
+    parts = command.script.split(None, 1)
+    return parts[1] if len(parts) > 1 else ''
