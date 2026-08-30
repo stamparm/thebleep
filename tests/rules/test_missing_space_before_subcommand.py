@@ -41,6 +41,12 @@ def test_get_new_command(script, result):
     assert get_new_command(Command(script, '')) == result
 
 
+def test_environment_assignment_is_preserved():
+    command = Command('NPM_CONFIG_USER_AGENT=1 npminstall webpack', '')
+    assert get_new_command(command) == \
+        'NPM_CONFIG_USER_AGENT=1 npm install webpack'
+
+
 def test_a_shell_builtin_is_a_command_already(mocker):
     """`command`, `time` and `builtin` are not on PATH and are still commands.
 

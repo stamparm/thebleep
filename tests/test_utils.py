@@ -12,6 +12,7 @@ from thebleep import cachefile
 from thebleep.utils import default_settings, \
     memoize, get_closest, get_all_executables, replace_argument, \
     replace_value, \
+    replace_command_word, \
     get_all_matched_commands, is_app, for_app, cache, \
     get_valid_history_without_current, get_close_matches, which, \
     without_control_sequences, format_raw_script
@@ -317,6 +318,16 @@ def test_get_all_executables_exclude_paths(path, pathsep, excluded, settings,
      'echo "keep instol here" install extra')])
 def test_replace_argument(args, result):
     assert replace_argument(*args) == result
+
+
+@pytest.mark.parametrize('script, index, replacement, result', [
+    ('VAR=git gitstatus', 1, 'git status', 'VAR=git git status'),
+    ('VAR="gitstatus" gitstatus', 1, 'git status',
+     'VAR="gitstatus" git status'),
+])
+def test_replace_command_word_preserves_assignments(script, index, replacement,
+                                                    result):
+    assert replace_command_word(script, index, replacement) == result
 
 
 def test_replace_value_ignores_quoted_equals_values():

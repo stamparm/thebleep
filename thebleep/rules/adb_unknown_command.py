@@ -1,4 +1,5 @@
-from thebleep.utils import is_app, get_closest, replace_argument
+from thebleep.utils import (command_word_index, get_closest, is_app,
+                            replace_argument)
 
 
 _ADB_COMMANDS = (
@@ -49,22 +50,30 @@ def match(command):
 
 
 def _get_closest_command(script_parts):
-    for idx, arg in enumerate(script_parts[1:]):
-        # allowed params to ADB are a/d/e/s/H/P/L where s, H, P and L take
-        # additional args, for example `adb -s 111 logcat`.
-        if not arg.startswith('-') and script_parts[idx] not in (
-                '-s', '-H', '-P', '-L'):
-            return get_closest(arg, _ADB_COMMANDS, fallback_to_first=False)
+    for arg in _command_arguments(script_parts):
+        return get_closest(arg, _ADB_COMMANDS, fallback_to_first=False)
+
+
+def _command_arguments(script_parts):
+    """Arguments after adb's options, with option values skipped."""
+    start = command_word_index(script_parts)
+    index = start + 1
+    while index < len(script_parts):
+        arg = script_parts[index]
+        if arg in ('-s', '-H', '-P', '-L'):
+            index += 2
+        elif arg.startswith('-'):
+            index += 1
+        else:
+            yield arg
+            index += 1
 
 
 def get_new_command(command):
-    for idx, arg in enumerate(command.script_parts[1:]):
-        if not arg.startswith('-') and command.script_parts[idx] not in (
-                '-s', '-H', '-P', '-L'):
-            adb_cmd = get_closest(arg, _ADB_COMMANDS,
-                                  fallback_to_first=False)
-            if adb_cmd is None:
-                return []
-            return replace_argument(command.script, arg, adb_cmd)
+    for arg in _command_arguments(command.script_parts):
+        adb_cmd = get_closest(arg, _ADB_COMMANDS, fallback_to_first=False)
+        if adb_cmd is None:
+            return []
+        return replace_argument(command.script, arg, adb_cmd)
 
     return []

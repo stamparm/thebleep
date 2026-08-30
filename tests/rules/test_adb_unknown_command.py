@@ -45,6 +45,11 @@ def test_get_new_command(script, output, new_command):
     assert get_new_command(Command(script, output)) == new_command
 
 
+def test_environment_assignment_is_supported(output):
+    assert get_new_command(
+        Command('ADB_TRACE=1 adb puhs', output)) == 'ADB_TRACE=1 adb push'
+
+
 def test_no_close_command_means_no_suggestion(output):
     assert get_new_command(Command('adb definitely-not-an-adb-command',
                                    output)) == []

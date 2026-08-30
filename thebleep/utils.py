@@ -696,6 +696,19 @@ def replace_argument(script, from_, to):
     return script
 
 
+def replace_command_word(script, word_index, replacement):
+    """Replace one shell word by token number, preserving every other word.
+
+    Matching the raw span keeps an identical value inside an assignment or a
+    quoted argument untouched.
+    """
+    for token_number, (start, end) in enumerate(_argument_spans(script)):
+        if token_number == word_index:
+            return script[:start] + replacement + script[end:]
+
+    return script
+
+
 def replace_argument_prefix(script, from_, to, separator=':'):
     """Replaces an argument's prefix while preserving a task suffix.
 

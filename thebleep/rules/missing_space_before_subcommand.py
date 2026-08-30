@@ -36,7 +36,8 @@ or a flag (`ls-la`) that lost its space.
 """
 
 from thebleep.shells import shell
-from thebleep.utils import get_all_executables, memoize
+from thebleep.utils import (command_word_index, get_all_executables, memoize,
+                            raw_script_parts, replace_command_word)
 
 # The shortest remainder worth splitting off. One character is `gitk`, `pipx`,
 # `lsd`, `duf` -- real programs, every one of them.
@@ -94,10 +95,12 @@ def _is_a_command_already(word):
 
 
 def match(command):
-    if not command.script_parts:
+    parts = command.script_parts
+    start = command_word_index(parts)
+    if start == len(parts):
         return False
 
-    word = command.script_parts[0]
+    word = parts[start]
     return (not _is_a_command_already(word)
             and not _known_name(word)
             # One edit from something you could type -- installed or a wrapper
@@ -151,11 +154,23 @@ def _one_edit_away(word):
 
 def split_at(command):
     """`command` with the space put back, or `None`."""
-    executable = _get_executable(command.script_parts[0])
+    parts = command.script_parts
+    start = command_word_index(parts)
+    if start == len(parts):
+        return None
+
+    word = parts[start]
+    executable = _get_executable(word)
     if not executable:
         return None
 
-    return command.script.replace(executable, u'{} '.format(executable), 1)
+    raw_parts = raw_script_parts(command.script)
+    if len(raw_parts) <= start:
+        return None
+
+    remainder = word[len(executable):]
+    return replace_command_word(command.script, start,
+                                u'{} {}'.format(executable, remainder))
 
 
 def certain(command):
@@ -167,7 +182,12 @@ def certain(command):
     easier to follow than two copies of it.
 
     """
-    word = command.script_parts[0]
+    parts = command.script_parts
+    start = command_word_index(parts)
+    if start == len(parts):
+        return False
+
+    word = parts[start]
     executable = _get_executable(word)
     if not executable:
         return False
