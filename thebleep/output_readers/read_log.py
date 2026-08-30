@@ -85,6 +85,22 @@ def _wrapped_together(script_line, lines, width):
 _PROMPT_ENDS = '$#>%\u276f\u279c\u03bb\u2192\u00bb'
 
 
+def _prompt_prefix():
+    """The literal part of the marked prompt, if it can be trusted."""
+    prompt = os.environ.get('PS1', '')
+    marker = prompt.find(const.USER_COMMAND_MARK)
+    if marker == -1:
+        return ''
+
+    from ..utils import without_control_sequences
+
+    prompt = without_control_sequences(
+        prompt[marker + len(const.USER_COMMAND_MARK):].lstrip('\b'))
+    # zsh wraps non-printing prompt text in `%{...%}`; the marker is inside
+    # that wrapper, so its closing delimiter follows the marker's backspaces.
+    return prompt[2:] if prompt.startswith('%}') else prompt
+
+
 def _starts_after_prompt(text, position):
     """Whether a matched command word follows the shell prompt.
 
@@ -98,6 +114,13 @@ def _starts_after_prompt(text, position):
     line_start = max(text.rfind('\n', 0, position),
                      text.rfind('\r', 0, position)) + 1
     prefix = text[line_start:position]
+    prompt = _prompt_prefix()
+    if prompt:
+        recorded_prompt = prefix.replace(const.USER_COMMAND_MARK, '', 1)
+        recorded_prompt = recorded_prompt.lstrip('\b')
+        if recorded_prompt.startswith(prompt):
+            return not recorded_prompt[len(prompt):].strip()
+
     markers = [prefix.find(character) for character in _PROMPT_ENDS
                if prefix.find(character) >= 0]
     marker = min(markers, default=-1)

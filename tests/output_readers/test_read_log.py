@@ -101,6 +101,25 @@ class TestWhatItReads(object):
         _log(tmpdir, (u'echo > git status', u'wrong'))
         assert read_log.get_output(u'git status') is None
 
+    def test_literal_custom_prompt_is_used_as_the_command_boundary(
+            self, tmpdir, os_environ):
+        raw = (u'{}custom: git status\r\nright\r\n'
+               u'{}custom: '.format(MARK, MARK))
+        _write(tmpdir, raw.encode('utf-8'))
+        os.environ['PS1'] = MARK + u'custom: '
+
+        assert read_log.get_output(u'git status') == u'right'
+
+    def test_zsh_prompt_wrapper_is_not_part_of_the_boundary(
+            self, tmpdir, os_environ):
+        raw = (u'{}custom: git status\r\nright\r\n'
+               u'{}custom: '.format(MARK, MARK))
+        _write(tmpdir, raw.encode('utf-8'))
+        os.environ['PS1'] = ('%{' + MARK + '\b' * len(MARK)
+                             + '%}custom: ')
+
+        assert read_log.get_output(u'git status') == u'right'
+
     def test_cursor_movement_between_words_does_not_hide_the_command(
             self, tmpdir, os_environ):
         # Fish's line editor redraws a command using carriage returns and
