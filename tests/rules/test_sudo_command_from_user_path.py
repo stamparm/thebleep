@@ -1,4 +1,5 @@
 import pytest
+from thebleep.shells import shell
 from thebleep.rules.sudo_command_from_user_path import match, get_new_command
 from thebleep.types import Command
 
@@ -37,3 +38,10 @@ def test_not_match(which, script, output, which_result):
      'sudo -u app env "PATH=$PATH" appcfg update .')])
 def test_get_new_command(script, output, result):
     assert get_new_command(Command(script, output)) == result
+
+
+def test_get_new_command_quotes_name_from_sudo_output():
+    command = Command('sudo {}'.format(shell.quote('branch;>SUDO')),
+                      output.format('branch;>SUDO'))
+    assert get_new_command(command) == \
+        "sudo env \"PATH=$PATH\" 'branch;>SUDO'"

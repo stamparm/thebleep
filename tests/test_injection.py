@@ -551,6 +551,16 @@ class TestNamesFromSomewhereElse(object):
         for suggestion in man.get_new_command(command):
             assert canary(suggestion) == []
 
+    def test_sudo_path_name_is_quoted(self, name, payload, canary, mocker):
+        from thebleep.rules import sudo_command_from_user_path
+        from thebleep.shells import shell
+
+        mocker.patch.object(sudo_command_from_user_path, 'which',
+                            return_value='/bin/{}'.format(payload))
+        output = u'sudo: {}: command not found'.format(payload)
+        command = Command(u'sudo {}'.format(shell.quote(payload)), output)
+        assert canary(sudo_command_from_user_path.get_new_command(command)) == []
+
 
 @pytest.mark.skipif(sys.platform == 'win32', reason='needs a POSIX shell')
 def test_learned_correction_quotes_its_replacement(

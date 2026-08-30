@@ -1,5 +1,6 @@
 import re
-from thebleep.utils import for_app, which, replace_argument
+from thebleep.shells import shell
+from thebleep.utils import for_app, raw_script_parts, which
 
 
 def _get_command_name(command):
@@ -19,5 +20,15 @@ def match(command):
 
 def get_new_command(command):
     command_name = _get_command_name(command)
-    return replace_argument(command.script, command_name,
-                            u'env "PATH=$PATH" {}'.format(command_name))
+    parts = command.script_parts
+    raw_parts = raw_script_parts(command.script)
+    if len(parts) != len(raw_parts):
+        return []
+
+    for index, part in enumerate(parts[1:], 1):
+        if part == command_name:
+            raw_parts[index] = u'env "PATH=$PATH" {}'.format(
+                shell.quote(command_name))
+            return u' '.join(raw_parts)
+
+    return []
