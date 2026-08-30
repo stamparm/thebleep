@@ -92,3 +92,22 @@ def test_just_recipes_distinguish_missing_and_empty_files(tmpdir):
 
     empty.join('Justfile').write('# comments only\nset dotenv-load := true\n')
     assert project_context.just_recipes(str(empty)) == []
+
+
+def test_cargo_bins_read_only_explicit_bin_blocks(tmpdir):
+    project = tmpdir.mkdir('project')
+    project.join('Cargo.toml').write(
+        '[package]\nname = "ignored-package-name"\n\n'
+        '[[bin]]\nname = "server"\npath = "src/server.rs"\n\n'
+        '[[bin]]\nname = \'worker\'\n\n'
+        '[workspace]\nname = "not-a-bin"\n')
+
+    assert project_context.cargo_bins(str(project)) == ['server', 'worker']
+
+
+def test_cargo_bins_distinguish_missing_and_empty_manifests(tmpdir):
+    empty = tmpdir.mkdir('empty')
+    assert project_context.cargo_bins(str(empty)) is None
+
+    empty.join('Cargo.toml').write('[package]\nname = "project"\n')
+    assert project_context.cargo_bins(str(empty)) == []

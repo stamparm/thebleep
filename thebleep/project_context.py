@@ -15,6 +15,7 @@ import re
 MAX_JSON_BYTES = 1024 * 1024
 MAX_MAKEFILE_BYTES = 1024 * 1024
 MAX_JUSTFILE_BYTES = 1024 * 1024
+MAX_CARGO_TOML_BYTES = 1024 * 1024
 _MAKE_TARGET = re.compile(r'^(?![ \t])([^:#=\s][^:#]*?)\s*:(?!=)')
 _JUST_RECIPE = re.compile(
     r'^(?:\[[^\]\r\n]+\]\s*)?'
@@ -213,5 +214,54 @@ def just_recipes(start=None):
             name = alias.group(1) if alias else None
         if name and _just_name(name) and name not in found:
             found.append(name)
+
+    return found
+
+
+def _read_cargo_toml(path):
+    try:
+        if os.path.getsize(path) > MAX_CARGO_TOML_BYTES:
+            return None
+        with open(path, encoding='utf-8') as handle:
+            value = handle.read(MAX_CARGO_TOML_BYTES + 1)
+    except (EnvironmentError, UnicodeError):
+        return None
+
+    return value if len(value.encode('utf-8')) <= MAX_CARGO_TOML_BYTES else None
+
+
+def cargo_bins(start=None):
+    """Return explicitly named binaries from the nearest Cargo.toml.
+
+    Cargo manifests are TOML, but importing a parser just for this optional
+    hint would add a runtime dependency.  This reads only simple ``[[bin]]``
+    blocks and quoted ``name`` assignments; workspace inheritance, generated
+    names and other TOML features are intentionally left to Cargo itself.
+    """
+    path = find_up('Cargo.toml', start)
+    if path is None:
+        return None
+
+    source = _read_cargo_toml(path)
+    if source is None:
+        return None
+
+    found = []
+    in_bin = False
+    for line in source.splitlines():
+        stripped = line.strip()
+        if stripped.startswith('[['):
+            in_bin = stripped.split(']]', 1)[0] == '[[bin'
+            continue
+        if stripped.startswith('['):
+            in_bin = False
+            continue
+        if not in_bin:
+            continue
+
+        match = re.match(r'name\s*=\s*([\"\'])([^\"\'\r\n]+)\1',
+                         stripped)
+        if match and _just_name(match.group(2)) and match.group(2) not in found:
+            found.append(match.group(2))
 
     return found

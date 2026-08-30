@@ -543,12 +543,13 @@ commands are selected for the
 current platform; callers using the Python API can pass `platform_name='nt'`
 when diagnosing output for a Windows target from another machine.
 
-Project-aware candidates are read from the nearest `package.json`, Makefile or
-Justfile when one is available. The npm and bun rules use declared script names
-directly, while `make_no_target` and `just_no_recipe` use static task names, so
-correction does not launch a project tool just to list vocabulary. These files
-are bounded and never executed; an unreadable source leaves the existing
-tool-output fallback or abstains safely.
+Project-aware candidates are read from the nearest `package.json`, Makefile,
+Justfile or Cargo.toml when one is available. The npm and bun rules use declared
+script names directly, while `make_no_target`, `just_no_recipe` and
+`cargo_no_bin` use static task or binary names, so correction does not launch a
+project tool just to list vocabulary. These files are bounded and never
+executed; an unreadable source leaves the existing tool-output fallback or
+abstains safely.
 
 The command-line form is:
 
@@ -580,9 +581,9 @@ $ thebleep --doctor
   Executable          ~/.local/bin/thebleep
   On PATH             yes
   Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
-  Rules               188 bundled, 3 of your own
+  Rules               189 bundled, 3 of your own
   Rule health         169 enabled, none raising
-  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (188 rules cached)
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (189 rules cached)
 - Replayless capture  available, not switched on
                       See --enable-experimental-instant-mode.
   Editing             supported by this shell (tab at the prompt)
@@ -763,7 +764,7 @@ nothing.
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
-| **Rules** | 188 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+| **Rules** | 189 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
@@ -1045,6 +1046,7 @@ The following rules are enabled by default:
 * `az_cli` — fixes misspelled commands like `az providers`;
 * `bun_script_not_found` — corrects a mistyped [bun](https://bun.com/) script or command — `bun run buidl`, `bun instal`. bun reports an unknown word as a missing script whether or not `run` was typed, and suggests nothing itself, so the candidates are the project's `package.json` scripts and bun's own commands;
 * `cargo` — runs `cargo build` instead of `cargo`;
+* `cargo_no_bin` — corrects a mistyped `cargo run --bin` target from the nearest project's static Cargo.toml binary list;
 * `cat_dir` — replaces `cat` with `ls` when you try to `cat` a directory;
 * `cd_correction` — spellchecks and corrects failed cd commands;
 * `cd_cs` — changes `cs` to `cd`;
@@ -1563,7 +1565,7 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches about a fifth of the 188 rules, and
+  running it. A typical command now reaches about a fifth of the 189 rules, and
   one for a tool with many rules of its own — `git` — under a quarter, instead of
   all of them. Rules that don't say what they are about are always loaded, so
   this makes corrections faster, never fewer.
