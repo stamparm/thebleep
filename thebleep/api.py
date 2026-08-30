@@ -14,6 +14,8 @@ When `output` is omitted, only rules that do not require output can match. The
 engine is never asked to replay the command on behalf of this API.
 """
 
+from difflib import SequenceMatcher
+
 from . import explain as explain_module
 from .corrector import get_corrected_commands
 from .types import Command
@@ -23,6 +25,10 @@ from .utils import tool_probes
 
 SCHEMA_VERSION = 2
 MAX_OUTPUT = 8 * 1024 * 1024
+# A pathological custom rule must not make a structured request spend an
+# unbounded amount of time finding a pretty diff. Large scripts still get a
+# correct, source-safe replacement; they simply do not get a fine-grained one.
+MAX_EDIT_DIFF = 64 * 1024
 
 
 def _confidence(rule, command):
@@ -82,6 +88,74 @@ def _check_script(script):
         raise ValueError('script must not contain NUL bytes')
 
 
+def _leaf_tokens(segments):
+    """Yield source tokens without also yielding their nested containers."""
+    for segment in segments:
+        for token in segment.tokens:
+            if token.children:
+                yield from _leaf_tokens(token.children)
+            else:
+                yield token
+
+
+def _apply_edits(original, edits):
+    """Apply edits from right to left, as an internal consistency check."""
+    result = original
+    for edit in reversed(edits):
+        result = result[:edit['start']] + edit['replacement'] + \
+            result[edit['end']:]
+    return result
+
+
+def _structured_edits(original, replacement, shell_name):
+    """Find edits at complete shell-token boundaries when possible."""
+    from .command_model import parse
+
+    before = parse(original, shell_name)
+    after = parse(replacement, shell_name)
+    if not before.complete or not after.complete:
+        return None
+
+    old_tokens = tuple(_leaf_tokens(before.segments))
+    new_tokens = tuple(_leaf_tokens(after.segments))
+    if len(old_tokens) != len(new_tokens) or any(
+            old.kind != new.kind for old, new in zip(old_tokens, new_tokens)):
+        return None
+
+    edits = [
+        {'start': old.start, 'end': old.end, 'source': old.text,
+         'replacement': new.text}
+        for old, new in zip(old_tokens, new_tokens)
+        if old.text != new.text
+    ]
+    return edits if _apply_edits(original, edits) == replacement else None
+
+
+def _edits(original, replacement, shell_name='posix'):
+    """Return deterministic source edits for an editor or agent.
+
+    Each edit is independently applicable to ``original``. Including the
+    original slice makes stale-buffer checks possible without re-parsing shell
+    syntax. The bounded fallback is intentional: a whole-command replacement
+    is safer than an expensive diff for an unusually large custom suggestion.
+    """
+    if max(len(original), len(replacement)) > MAX_EDIT_DIFF:
+        return [{'start': 0, 'end': len(original),
+                 'source': original, 'replacement': replacement}]
+
+    structured = _structured_edits(original, replacement, shell_name)
+    if structured is not None:
+        return structured
+
+    matcher = SequenceMatcher(a=original, b=replacement, autojunk=False)
+    return [
+        {'start': start, 'end': end, 'source': original[start:end],
+         'replacement': replacement[new_start:new_end]}
+        for tag, start, end, new_start, new_end in matcher.get_opcodes()
+        if tag != 'equal'
+    ]
+
+
 def _suggestion(corrected, command):
     rule = getattr(corrected, 'rule', None)
     explanation = explain_module.describe(corrected, command)
@@ -89,6 +163,8 @@ def _suggestion(corrected, command):
     confidence = _confidence(rule, command)
     return {
         'command': corrected.script,
+        'edits': _edits(command.script, corrected.script,
+                        command.command_model.shell),
         'rule': rule.name if rule is not None else None,
         'priority': corrected.priority,
         'confidence': confidence,

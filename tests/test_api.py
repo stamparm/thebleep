@@ -36,6 +36,8 @@ def test_suggest_returns_structured_correction(mocker):
         'decision': 'suggest',
         'suggestions': [{
             'command': 'git status',
+            'edits': [{'start': 0, 'end': 3, 'source': 'gti',
+                       'replacement': 'git'}],
             'rule': 'test_rule',
             'priority': 1200,
             'confidence': {
@@ -160,6 +162,34 @@ def test_suggest_marks_command_only_confidence(mocker):
         'level': 'medium',
         'score': 0.75,
         'basis': ['the rule matched the command or local context']}
+
+
+def test_suggest_exposes_source_edits_for_compound_commands(mocker):
+    correction = CorrectedCommand(
+        'cd foo && git status | grep main', None, 1200, rule=Rule())
+    mocker.patch.object(api, 'get_corrected_commands',
+                        return_value=iter([correction]))
+
+    result = api.suggest('cd foo && gti status | grep main', 'error')
+
+    assert result['suggestions'][0]['edits'] == [{
+        'start': 10,
+        'end': 13,
+        'source': 'gti',
+        'replacement': 'git',
+    }]
+
+
+def test_large_suggestion_uses_one_bounded_source_edit():
+    original = 'x' * (api.MAX_EDIT_DIFF + 1)
+    replacement = 'y' * (api.MAX_EDIT_DIFF + 1)
+
+    assert api._edits(original, replacement) == [{
+        'start': 0,
+        'end': len(original),
+        'source': original,
+        'replacement': replacement,
+    }]
 
 
 def test_suggest_marks_explicitly_risky_corrections(mocker):

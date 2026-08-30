@@ -4,6 +4,11 @@
 
 ### Added
 
+- **Structured corrections now include source edits.** API and MCP consumers
+  can update a command buffer from exact `start`/`end` spans with the original
+  text and replacement, including compound commands, without re-parsing shell
+  punctuation. Large custom suggestions use one bounded whole-command edit.
+
 - **The OS command inventory now smoke-tests live rules.** The scheduled
   GitHub matrix feeds real output from selected safe probes into the matching
   rules on hosted Linux, macOS, Windows and container userlands, so wording

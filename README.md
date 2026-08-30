@@ -486,7 +486,7 @@ for item in result['suggestions']:
 The result includes `schema: 2` for contract versioning, the original command,
 whether output was supplied, and a `decision`: `suggest` when a candidate passed
 the rules, or `abstain` when no candidate was verified. Each suggestion contains
-its command, rule, priority,
+its command, exact source edits, rule, priority,
 side-effect flag, ordinal confidence, conservative risk markers and evidence.
 The top-level `structure` is a source-preserving view of the command: its
 segments, separators, redirections, nested substitutions and source spans are
@@ -508,6 +508,15 @@ that no known high-risk marker was found; it is not a safety guarantee. The
 matched output from the read requirement, side effect or privilege change
 without parsing prose. If output is omitted, output-dependent rules are
 skipped; the API never replays a command to fill it in.
+
+Each suggestion's `edits` is a source-preserving patch: every item gives
+`start`, `end`, the original `source` slice and its `replacement`. Apply edits
+against the command supplied in the result, from the end of the string toward
+the beginning, or reject them if the source slice no longer matches. This lets
+an editor update one command in a pipeline without reconstructing shell syntax.
+For unusually large custom suggestions the API deliberately returns one whole
+command edit rather than spending unbounded time calculating a fine-grained
+diff.
 
 The same contract is available from the command line:
 
