@@ -212,10 +212,7 @@ def _corrections_in_segments(rules, command):
                                                       segment_command):
             script = command.script[:segment.start] + corrected.script + \
                 command.script[segment.end:]
-            yield type(corrected)(script=script,
-                                  side_effect=corrected.side_effect,
-                                  priority=corrected.priority,
-                                  rule=corrected.rule)
+            yield corrected.with_script(script)
 
 
 def _segment_words_before_redirection(segment):

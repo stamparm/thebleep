@@ -565,6 +565,11 @@ last returns the bounded local failure ring. All three return structured data
 and never replay or execute a command. It speaks MCP protocol
 `2025-06-18`; stdout is reserved for newline-delimited JSON-RPC messages.
 
+Suggestions include a confidence score, conservative risk assessment and
+evidence. Rules may return the optional `Suggestion` string-compatible value
+to attach their own proof, so existing third-party rules continue to work
+without changes while tool-provided hints can say exactly what they relied on.
+
 Output-derived replacements use those same command boundaries. If a reported
 word appears in more than one command in a compound line, The Bleep abstains
 instead of changing the first textual match and potentially altering a command
@@ -1317,6 +1322,25 @@ get_new_command(command: Command) -> str | list[str]
 Rules can also contain the optional variables `enabled_by_default`,
 `requires_output` and `priority`.
 
+Rules that have stronger proof can return `Suggestion` values instead of plain
+strings. They still behave like strings to old callers, but can attach bounded
+evidence and an ordinal confidence score:
+
+```python
+from thebleep.types import Suggestion
+
+
+def get_new_command(command):
+    return Suggestion(
+        'git checkout feature',
+        confidence=0.98,
+        evidence=('git named the replacement in its error',))
+```
+
+The engine calculates risk itself from the final command. Evidence is shown by
+the structured API and by `?`; it does not grant a rule permission to execute
+anything.
+
 `Command` has three attributes: `script`, `output` and `script_parts`.
 Your rule should not change `Command`.
 
@@ -1352,8 +1376,9 @@ requires_output = True    # do not even try me without the command's output
 priority = 1000           # lower is matched first
 ```
 
-That is the whole interface. A rule reads a command and returns a string — or a
-list of strings, to offer several — and the one you accept is the one that runs.
+That is the whole interface. A rule reads a command and returns a string,
+`Suggestion`, or a list of them, to offer several — and the one you accept is
+the one that runs.
 
 ### side_effect, and why to think twice
 

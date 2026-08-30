@@ -38,6 +38,7 @@ so nothing to suggest.
 """
 
 import re
+from thebleep.types import Suggestion
 from thebleep.utils import replace_command
 
 # `unknown command "reop" for "gh"`, with or without an `Error:`/`error:` in
@@ -95,5 +96,7 @@ def match(command):
 
 
 def get_new_command(command):
-    return replace_command(command, _broken(command.output),
-                           _suggestions(command.output))
+    return [Suggestion(fixed, confidence=0.98, evidence=(
+        'cobra named this replacement in the command error',))
+        for fixed in replace_command(command, _broken(command.output),
+                                     _suggestions(command.output))]

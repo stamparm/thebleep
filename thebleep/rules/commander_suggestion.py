@@ -31,6 +31,7 @@ Captured from commander 13.1.0.
 """
 
 import re
+from thebleep.types import Suggestion
 from thebleep.utils import replace_command
 
 # The command or option Commander did not recognise.
@@ -66,5 +67,7 @@ def match(command):
 
 
 def get_new_command(command):
-    return replace_command(command, _broken(command.output),
-                           _suggestions(command.output))
+    return [Suggestion(fixed, confidence=0.98, evidence=(
+        'commander named this replacement in the command error',))
+        for fixed in replace_command(command, _broken(command.output),
+                                     _suggestions(command.output))]

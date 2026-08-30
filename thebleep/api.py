@@ -31,7 +31,7 @@ MAX_OUTPUT = 8 * 1024 * 1024
 MAX_EDIT_DIFF = 64 * 1024
 
 
-def _confidence(rule, command):
+def _confidence(corrected, rule, command):
     """Return a useful score alongside the human-readable confidence tier.
 
     The number is an ordinal heuristic, not a probability. It deliberately
@@ -39,7 +39,7 @@ def _confidence(rule, command):
     stronger than a rule match, and a captured tool error is stronger than a
     command-only guess.
     """
-    return explain_module.confidence(rule, command)
+    return explain_module.confidence(rule, command, corrected)
 
 
 def _evidence_details(explanation):
@@ -138,7 +138,12 @@ def _suggestion(corrected, command):
     rule = getattr(corrected, 'rule', None)
     explanation = explain_module.describe(corrected, command)
     assessment = risk.assess(corrected)
-    confidence = _confidence(rule, command)
+    confidence = _confidence(corrected, rule, command)
+    explicit_evidence = [value for value in getattr(corrected, 'evidence', ())
+                         if value]
+    evidence = explicit_evidence or [
+        value for label, value in explanation if label in ('matched', 'read')]
+    evidence_details = _evidence_details(explanation)
     return {
         'command': corrected.script,
         'edits': _edits(command.script, corrected.script,
@@ -150,10 +155,8 @@ def _suggestion(corrected, command):
         'risk': assessment['level'],
         'risk_factors': assessment['factors'],
         'requires_output': bool(rule and rule.requires_output),
-        'evidence': [
-            value for label, value in explanation
-            if label in ('matched', 'read')],
-        'evidence_details': _evidence_details(explanation),
+        'evidence': evidence,
+        'evidence_details': evidence_details,
         'explanation': [
             {'label': label, 'value': value}
             for label, value in explanation],

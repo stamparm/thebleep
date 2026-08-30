@@ -8,10 +8,28 @@ from tests.utils import CorrectedCommand, Rule
 from thebleep import const
 from thebleep.exceptions import EmptyCommand
 from thebleep.system import Path
-from thebleep.types import Command
+from thebleep.types import Command, Suggestion
 
 
 class TestCorrectedCommand(object):
+
+    def test_suggestion_keeps_old_string_contract_and_new_metadata(self):
+        suggested = Suggestion('git status', confidence=0.98,
+                               evidence=('git named the command',))
+
+        assert isinstance(suggested, str)
+        assert suggested == 'git status'
+        assert suggested.confidence == 0.98
+        assert suggested.evidence == ('git named the command',)
+
+    @pytest.mark.parametrize('kwargs, message', [
+        ({'confidence': 2}, 'between 0 and 1'),
+        ({'evidence': ['proof'] * 9}, 'too many entries'),
+        ({'evidence': ['x' * 513]}, 'too long'),
+    ])
+    def test_suggestion_metadata_is_bounded(self, kwargs, message):
+        with pytest.raises((TypeError, ValueError), match=message):
+            Suggestion('git status', **kwargs)
 
     def test_equality(self):
         assert (CorrectedCommand('ls', None, 100) ==
@@ -142,6 +160,17 @@ class TestRule(object):
                     priority=100)
         assert (list(rule.get_corrected_commands(Command('test', '')))
                 == [CorrectedCommand(script='test!', priority=100)])
+
+    def test_get_corrected_commands_keeps_suggestion_metadata(self):
+        rule = Rule(get_new_command=lambda _: Suggestion(
+            'git status', confidence=0.98,
+            evidence=('the tool named the replacement',)), priority=100)
+
+        corrected = list(rule.get_corrected_commands(Command('gti status', '')))
+
+        assert corrected[0].script == 'git status'
+        assert corrected[0].confidence == 0.98
+        assert corrected[0].evidence == ('the tool named the replacement',)
 
     def test_a_rule_that_raises_is_that_rule_s_problem(self, mocker):
         """It used to be everybody's.

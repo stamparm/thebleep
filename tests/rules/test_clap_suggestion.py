@@ -115,7 +115,11 @@ class TestCorrecting(object):
         ('cargo buid', CARGO_OLD, 'cargo build'),
     ])
     def test_a_subcommand(self, script, output, expected):
-        assert get_new_command(Command(script, output))[0] == expected
+        suggestion = get_new_command(Command(script, output))[0]
+        assert suggestion == expected
+        assert suggestion.confidence == 0.98
+        assert suggestion.evidence == (
+            'clap named this replacement in the command error',)
 
     @pytest.mark.parametrize('script, output, expected', [
         ('ruff check --fixx .', RUFF_OPTION, 'ruff check --fix .'),

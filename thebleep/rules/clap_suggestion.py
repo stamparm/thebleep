@@ -58,6 +58,7 @@ Wordings captured from ruff 0.14.5, uv 0.12.5, cargo 1.97.1 and deno 2.1.4.
 """
 
 import re
+from thebleep.types import Suggestion
 from thebleep.utils import command_word_index, replace_command
 
 # What clap says it did not recognise. A subcommand is quoted plainly; an
@@ -132,5 +133,7 @@ def match(command):
 
 
 def get_new_command(command):
-    return replace_command(command, _broken(command),
-                           _suggestions(command.output))
+    return [Suggestion(fixed, confidence=0.98, evidence=(
+        'clap named this replacement in the command error',))
+        for fixed in replace_command(command, _broken(command),
+                                     _suggestions(command.output))]

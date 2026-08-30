@@ -27,10 +27,20 @@ description for this to work.
 
 import os
 from . import logs, risk
+from .utils import without_control_sequences
 
 
-def confidence(rule, command=None):
+def confidence(rule, command=None, corrected_command=None):
     """Return the ordinal confidence used by structured consumers."""
+    explicit = getattr(corrected_command, 'confidence', None)
+    if explicit is not None:
+        return {
+            'level': 'high' if explicit >= 0.9
+            else 'medium' if explicit >= 0.7 else 'low',
+            'score': explicit,
+            'basis': list(getattr(corrected_command, 'evidence', ()))
+            or ['the rule supplied an explicit confidence'],
+        }
     if rule is None:
         return {'level': 'unknown', 'score': None,
                 'basis': ['the suggestion did not identify its rule']}
@@ -141,7 +151,7 @@ def describe(corrected_command, command=None, include_assessment=False):
     rule = getattr(corrected_command, 'rule', None)
     lines = []
     if include_assessment:
-        assessed = confidence(rule, command)
+        assessed = confidence(rule, command, corrected_command)
         score = assessed['score']
         confidence_text = (
             u'{}% {}'.format(round(score * 100), assessed['level'])
@@ -179,6 +189,9 @@ def describe(corrected_command, command=None, include_assessment=False):
                 ' and '.join(said))))
         else:
             lines.append(('matched', u'a condition this rule works out for itself'))
+
+    for evidence in getattr(corrected_command, 'evidence', ()):
+        lines.append(('evidence', _short(without_control_sequences(evidence))))
 
     if rule.requires_output:
         if command is not None and command.output is None:

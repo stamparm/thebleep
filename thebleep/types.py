@@ -9,6 +9,43 @@ from .utils import get_alias, format_raw_script
 from .output_readers import get_output
 
 
+class Suggestion(str):
+    """A command with optional proof supplied by the rule.
+
+    This deliberately remains a ``str`` subclass. Existing rules and third
+    party callers can compare or join returned commands exactly as before,
+    while newer rules can carry evidence through the correction engine.
+    """
+
+    def __new__(cls, command, confidence=None, evidence=()):
+        if not isinstance(command, str):
+            raise TypeError('suggestion command must be a string')
+        if confidence is not None and (
+                isinstance(confidence, bool)
+                or not isinstance(confidence, (int, float))
+                or not 0 <= confidence <= 1):
+            raise ValueError('suggestion confidence must be between 0 and 1')
+        if isinstance(evidence, str):
+            evidence = (evidence,)
+        try:
+            from itertools import islice
+
+            evidence = tuple(islice(evidence, 9))
+        except TypeError:
+            raise TypeError('suggestion evidence must be a sequence')
+        if any(not isinstance(item, str) for item in evidence):
+            raise TypeError('suggestion evidence must contain strings')
+        if len(evidence) > 8:
+            raise ValueError('suggestion evidence has too many entries')
+        if any(len(item) > 512 for item in evidence):
+            raise ValueError('suggestion evidence entry is too long')
+
+        result = str.__new__(cls, command)
+        result.confidence = confidence
+        result.evidence = evidence
+        return result
+
+
 class Command(object):
     """Command that should be fixed."""
 
@@ -261,16 +298,24 @@ class Rule(object):
                             self.name, type(new_command).__name__))
                 continue
 
-            yield CorrectedCommand(script=new_command,
+            if isinstance(new_command, Suggestion):
+                confidence = new_command.confidence
+                evidence = new_command.evidence
+            else:
+                confidence = None
+                evidence = ()
+            yield CorrectedCommand(script=str(new_command),
                                    side_effect=self.side_effect,
                                    priority=(n + 1) * self.priority,
-                                   rule=self)
+                                   rule=self, confidence=confidence,
+                                   evidence=evidence)
 
 
 class CorrectedCommand(object):
     """Corrected by rule command."""
 
-    def __init__(self, script, side_effect, priority, rule=None):
+    def __init__(self, script, side_effect, priority, rule=None,
+                 confidence=None, evidence=()):
         """Initializes instance with given fields.
 
         :type script: basestring
@@ -286,6 +331,8 @@ class CorrectedCommand(object):
         # `__hash__` for the same reason `priority` is: two rules arriving at
         # the same command are one suggestion, and it is offered once.
         self.rule = rule
+        self.confidence = confidence
+        self.evidence = tuple(evidence)
 
     def __eq__(self, other):
         """Ignores `priority` field."""
@@ -312,7 +359,18 @@ class CorrectedCommand(object):
         return CorrectedCommand(script=prefix + self.script,
                                 side_effect=self.side_effect,
                                 priority=self.priority,
-                                rule=self.rule)
+                                rule=self.rule,
+                                confidence=self.confidence,
+                                evidence=self.evidence)
+
+    def with_script(self, script):
+        """Return this correction with a source-preserving script change."""
+        return CorrectedCommand(script=script,
+                                side_effect=self.side_effect,
+                                priority=self.priority,
+                                rule=self.rule,
+                                confidence=self.confidence,
+                                evidence=self.evidence)
 
     def _get_script(self):
         """Returns fixed commands script.

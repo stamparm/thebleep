@@ -190,6 +190,23 @@ def test_suggest_marks_command_only_confidence(mocker):
         'basis': ['the rule matched the command or local context']}
 
 
+def test_suggest_preserves_rule_supplied_evidence_and_confidence(mocker):
+    correction = CorrectedCommand(
+        'git status', None, 1200, rule=Rule(), confidence=0.98,
+        evidence=('git named the replacement',))
+    mocker.patch.object(api, 'get_corrected_commands',
+                        return_value=iter([correction]))
+
+    suggestion = api.suggest('gti status', 'git: unknown command')['suggestions'][0]
+
+    assert suggestion['confidence'] == {
+        'level': 'high', 'score': 0.98,
+        'basis': ['git named the replacement']}
+    assert suggestion['evidence'] == ['git named the replacement']
+    assert {'kind': 'evidence', 'text': 'git named the replacement'} \
+        in suggestion['evidence_details']
+
+
 def test_structured_suggestions_rank_captured_evidence_first(mocker):
     command_only = type('Rule', (), {
         'name': 'command_only', 'requires_output': False})()

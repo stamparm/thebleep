@@ -24,6 +24,7 @@ Captured from black 25.9.0 (Click 8.x).
 """
 
 import re
+from thebleep.types import Suggestion
 from thebleep.utils import replace_command
 
 # The option Click did not recognise, and the ones it put forward. Both are in
@@ -64,4 +65,6 @@ def match(command):
 
 def get_new_command(command):
     broken, suggestions = _read(command.output)
-    return replace_command(command, broken, suggestions)
+    return [Suggestion(fixed, confidence=0.98, evidence=(
+        'click named this replacement in the command error',))
+        for fixed in replace_command(command, broken, suggestions)]
