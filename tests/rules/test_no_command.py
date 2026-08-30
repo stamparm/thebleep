@@ -69,6 +69,17 @@ def test_corrects_a_command_inside_a_pipeline(mocker):
         'cd project && git status | grpe main')
 
 
+def test_inline_corrects_each_unambiguous_command_in_a_pipeline(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+    mocker.patch('thebleep.rules.no_command.get_all_executables',
+                 return_value=['git', 'grep'])
+
+    command = Command('cd project && gti status | grpe main', None)
+
+    assert get_new_command(command) == [
+        'cd project && git status | grep main']
+
+
 def test_corrects_a_command_inside_a_case_body(mocker):
     mocker.patch('thebleep.rules.no_command.which', return_value=None)
 

@@ -621,10 +621,61 @@ def _used_executables(command):
             for script in get_valid_history_without_current(command)}
 
 
+def _replace_command_at(script, command_index, old, replacement):
+    """Replace one identified command word without touching its arguments."""
+    if command_index == 0 or script.count(old) == 1:
+        return script.replace(old, replacement, 1)
+    return _replace_after_separator(script, old, replacement)
+
+
+def _combined_inline_command(command):
+    """Correct several independent top-level command typos, when provable.
+
+    Inline mode has no stderr, so it can inspect every command boundary in a
+    pipeline or compound command. A single pass is more useful than making the
+    user press the binding once for each typo, but combining guesses would turn
+    one uncertain answer into several. Only unambiguous, plausible replacements
+    are combined, and substitutions stay on the existing single-command path.
+
+    """
+    parts = _compound_parts(command)
+    unknowns = [(index, parts[index])
+                for index in _command_indexes(parts)
+                if not _is_available_command(parts[index])]
+    if len(unknowns) < 2:
+        return None
+
+    if any(_substitution_ranges(command.script)):
+        return None
+
+    from thebleep.shells import shell
+
+    corrected = command.script
+    for command_index, old_command in unknowns:
+        scored = _ranked(old_command)
+        plausible = matching.plausible_slips(old_command, scored)
+        if len(plausible) != 1:
+            return None
+
+        replacement = (plausible[0] if _SAFE_COMMAND_NAME.match(plausible[0])
+                       else shell.quote(plausible[0]))
+        corrected = _replace_command_at(
+            corrected, command_index, old_command, replacement)
+        if corrected is None:
+            return None
+
+    return corrected if corrected != command.script else None
+
+
 @sudo_support
 def get_new_command(command):
     unknown = _unknown_command(command, output_required=False)
     substitution = None
+    if command.output is None and unknown is not None:
+        combined = _combined_inline_command(command)
+        if combined is not None:
+            return [combined]
+
     if unknown is None:
         substitution = _unknown_in_substitution(command, output_required=False)
         if substitution is None:
@@ -695,18 +746,14 @@ def get_new_command(command):
             script = _replace_substitution_command(
                 command.script, start, end, command_index,
                 old_command, replacement)
-        elif command_index == 0:
-            script = command.script.replace(old_command, replacement, 1)
-        elif command.script.count(old_command) != 1:
-            script = _replace_after_separator(command.script, old_command,
-                                              replacement)
+        else:
+            script = _replace_command_at(
+                command.script, command_index, old_command, replacement)
             if script is None:
                 # String replacement cannot identify the right token when the
                 # failed command also appears as an argument. Abstain rather
                 # than rewrite the wrong occurrence.
                 continue
-        else:
-            script = command.script.replace(old_command, replacement, 1)
         if script is not None and script != command.script:
             corrected.append(script)
 
