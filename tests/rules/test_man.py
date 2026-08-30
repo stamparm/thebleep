@@ -68,3 +68,9 @@ def test_the_command_is_not_modified_on_the_way_through():
     command = Command('man ls', '')
     get_new_command(command)
     assert command.script_parts == ['man', 'ls']
+
+
+def test_section_suggestions_preserve_quoted_page():
+    command = Command('man "page name"', 'some other output')
+    assert get_new_command(command) == [
+        'man 3 "page name"', 'man 2 "page name"']

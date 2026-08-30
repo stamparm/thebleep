@@ -94,3 +94,14 @@ To push the current branch and set the remote as upstream, use
     command = Command('git -C worktree push -u origin', output)
     assert get_new_command(command) == \
         'git -C worktree push --set-upstream origin master'
+
+
+def test_global_option_quoting_is_preserved():
+    output = '''fatal: The current branch master has no upstream branch.
+To push the current branch and set the remote as upstream, use
+
+    git push --set-upstream origin master
+'''
+    command = Command('git -c "user.name=Jane Doe" push', output)
+    assert get_new_command(command) == \
+        'git -c "user.name=Jane Doe" push --set-upstream origin master'

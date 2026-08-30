@@ -531,6 +531,26 @@ class TestNamesFromSomewhereElse(object):
                           u'usage: git stash list [<options>]')
         assert canary(git_fix_stash.get_new_command(command)) == []
 
+    def test_git_push_preserves_a_quoted_global_option(self, name, payload,
+                                                       canary):
+        from thebleep.rules import git_push
+        from thebleep.shells import shell
+
+        output = (u'fatal: The current branch master has no upstream branch.\n'
+                  u'    git push --set-upstream origin master\n')
+        command = Command(u'git -c {}'.format(shell.quote(
+            u'user.name=' + payload)) + u' push', output)
+        assert canary(git_push.get_new_command(command)) == []
+
+    def test_man_preserves_a_quoted_page(self, name, payload, canary):
+        from thebleep.rules import man
+        from thebleep.shells import shell
+
+        command = Command(u'man {}'.format(shell.quote(payload)),
+                          u'some other output')
+        for suggestion in man.get_new_command(command):
+            assert canary(suggestion) == []
+
 
 @pytest.mark.skipif(sys.platform == 'win32', reason='needs a POSIX shell')
 def test_learned_correction_quotes_its_replacement(

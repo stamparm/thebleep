@@ -1,6 +1,6 @@
 import re
 from thebleep.shells import shell
-from thebleep.utils import for_app, which
+from thebleep.utils import for_app, raw_script_parts, which
 
 # The manual sections a page is most often in the other one of: system calls and
 # library functions.
@@ -25,12 +25,15 @@ def get_new_command(command):
     # anywhere in the script, which is what this used to do, turned
     # `man python3` into `man python2` and `man ls3` into `man ls2`.
     parts = list(command.script_parts)
+    raw_parts = raw_script_parts(command.script)
+    if len(raw_parts) != len(parts):
+        return []
 
     for index, part in enumerate(parts[1:], 1):
         found = SECTION.match(part)
         if found:
-            parts[index] = (found.group(1) or '') + SECTIONS[found.group(2)]
-            return u' '.join(parts)
+            raw_parts[index] = (found.group(1) or '') + SECTIONS[found.group(2)]
+            return u' '.join(raw_parts)
 
     # A copy: `parts` used to be `command.script_parts` itself, and inserting
     # into it left every rule consulted afterwards looking at a command whose
@@ -51,6 +54,6 @@ def get_new_command(command):
     if command.output.strip() == u'No manual entry for ' + last_arg:
         return [help_command] if help_command else []
 
-    sections = [u' '.join([parts[0], '3'] + parts[1:]),
-                u' '.join([parts[0], '2'] + parts[1:])]
+    sections = [u' '.join([raw_parts[0], '3'] + raw_parts[1:]),
+                u' '.join([raw_parts[0], '2'] + raw_parts[1:])]
     return sections + [help_command] if help_command else sections
