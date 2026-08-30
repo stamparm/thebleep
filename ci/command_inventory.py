@@ -97,7 +97,10 @@ PROBES = {
     'winget': [['--version']],
     'yarn': [['--version']],
     'zsh': [['--version']],
-    'zypper': [['--version'], ['isntall', 'vim']],
+    'zypper': [['--version'],
+               {'arguments': ['isntall', 'vim'],
+                'checks': ['zypper_no_such_command'],
+                'helper_checks': True}],
 }
 
 
@@ -233,7 +236,7 @@ def _temporary_directory(prefix):
 
 
 def _check_rules(name, arguments, output, cwd, expected,
-                 expected_diagnoses=()):
+                 expected_diagnoses=(), helper_checks=False):
     """Check selected corrections and diagnoses against one real probe.
 
     The probe directory is still alive here, which matters for BSD ``cp`` and
@@ -248,7 +251,22 @@ def _check_rules(name, arguments, output, cwd, expected,
     try:
         os.chdir(str(cwd))
         try:
-            result = suggest(script, output)
+            if helper_checks:
+                from thebleep.corrector import get_corrected_commands
+                from thebleep.types import Command
+                from thebleep.utils import tool_probes
+
+                # Only explicitly selected probes may take this path. The
+                # helper calls are still bounded by the rule utility, and the
+                # failing command itself is never replayed.
+                with tool_probes(True):
+                    corrections = get_corrected_commands(
+                        Command(script, output))
+                result = {'suggestions': [
+                    {'rule': getattr(item.rule, 'name', None)}
+                    for item in corrections]}
+            else:
+                result = suggest(script, output)
         except Exception as error:                            # noqa: BLE001
             return {
                 'expected_rules': list(expected),
@@ -312,11 +330,13 @@ def probe_commands(commands, check_rules=False):
                     platforms = specification.get('platforms')
                     expected_rules = specification.get('checks', ())
                     expected_diagnoses = specification.get('diagnoses', ())
+                    helper_checks = specification.get('helper_checks', False)
                 else:
                     arguments, files = specification, ()
                     platforms = None
                     expected_rules = ()
                     expected_diagnoses = ()
+                    helper_checks = False
                 current_platform = platform.system()
                 if platforms and current_platform not in platforms:
                     continue
@@ -335,7 +355,7 @@ def probe_commands(commands, check_rules=False):
                         result['rule_check'] = _check_rules(
                             name, arguments, result['output'],
                             probe_directory, expected_rules,
-                            expected_diagnoses)
+                            expected_diagnoses, helper_checks)
                     result.update({'command': name, 'path': path})
                     results.append(result)
     return results

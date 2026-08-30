@@ -19,7 +19,9 @@ smoke test, not a claim that every failure deserves a correction: if a selected
 rule stops matching current output, the OS job fails and the captured artifact
 shows the wording that changed. Ambiguous output, such as BusyBox `mv`'s
 source/destination error, is intentionally left out and must continue to
-abstain.
+abstain. A small number of explicitly marked checks may also ask the installed
+tool for bounded metadata, such as zypper's command list; the failing command
+itself is never replayed.
 
 macOS provides the Darwin/BSD-derived userland here. Linux containers cover
 the additional GNU, BusyBox, slim and openSUSE userland variations; Docker

@@ -93,7 +93,8 @@
 - **The compatibility lab now includes openSUSE Tumbleweed.** It installs the
   runner's current Python tooling and captures real `zypper` output alongside
   the existing GNU, BusyBox, slim, macOS and Windows probes. The artifact keeps
-  helper-dependent rules separate from the API-only live checks.
+  helper-dependent rules explicit, and the zypper rule is now checked with its
+  bounded live help output.
 
 - **`sed` follows current GNU wording.** The correction now recognises the
   single-quoted `unterminated 's' command` emitted by current GNU sed as well

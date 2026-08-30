@@ -5,6 +5,8 @@ import io
 import os
 from pathlib import Path
 
+from thebleep.types import CorrectedCommand
+
 
 def _inventory_module(source_root):
     path = source_root.joinpath('ci', 'command_inventory.py')
@@ -103,4 +105,22 @@ def test_live_diagnosis_check_uses_the_real_probe_directory(source_root,
 
     assert result['expected_diagnoses'] == ['missing_path']
     assert 'missing_path' in result['matched_diagnoses']
+    assert result['passed'] is True
+
+
+def test_helper_rule_check_can_use_bounded_tool_metadata(monkeypatch,
+                                                         source_root,
+                                                         tmpdir):
+    module = _inventory_module(source_root)
+    rule = type('Rule', (), {'name': 'zypper_no_such_command'})()
+    monkeypatch.setattr(
+        'thebleep.corrector.get_corrected_commands',
+        lambda command: iter([CorrectedCommand(
+            'zypper install vim', None, 1000, rule=rule)]))
+
+    result = module._check_rules(
+        'zypper', ['isntall', 'vim'], "Unknown command 'isntall'\n",
+        str(tmpdir), ['zypper_no_such_command'], helper_checks=True)
+
+    assert result['matched_rules'] == ['zypper_no_such_command']
     assert result['passed'] is True
