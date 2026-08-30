@@ -132,3 +132,11 @@ def test_extract_possibilities(command, possibilities):
 ])
 def test_get_new_command(command, new_command):
     assert get_new_command(command) == new_command
+
+
+def test_get_new_command_preserves_quoted_arguments():
+    command = Command('hg branchch "feature name"', (
+        "hg: unknown command 'branchch'"
+        '\n(did you mean one of branch, branches?)'))
+
+    assert get_new_command(command) == 'hg branch "feature name"'

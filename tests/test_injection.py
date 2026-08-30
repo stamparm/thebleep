@@ -512,6 +512,25 @@ class TestNamesFromSomewhereElse(object):
         for suggestion in argparse_invalid_choice.get_new_command(command):
             assert canary(suggestion) == []
 
+    def test_mercurial_preserves_a_quoted_argument(self, name, payload,
+                                                   canary):
+        from thebleep.rules import mercurial
+        from thebleep.shells import shell
+
+        output = (u"hg: unknown command 'brnch'\n"
+                  u'(did you mean one of branch, branches?)')
+        command = Command(u'hg brnch {}'.format(shell.quote(payload)), output)
+        assert canary(mercurial.get_new_command(command)) == []
+
+    def test_git_stash_preserves_a_quoted_argument(self, name, payload,
+                                                   canary):
+        from thebleep.rules import git_fix_stash
+        from thebleep.shells import shell
+
+        command = Command(u'git stash {}'.format(shell.quote(payload)),
+                          u'usage: git stash list [<options>]')
+        assert canary(git_fix_stash.get_new_command(command)) == []
+
 
 @pytest.mark.skipif(sys.platform == 'win32', reason='needs a POSIX shell')
 def test_learned_correction_quotes_its_replacement(

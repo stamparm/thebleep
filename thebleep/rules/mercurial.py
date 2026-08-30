@@ -1,5 +1,5 @@
 import re
-from thebleep.utils import get_closest, for_app
+from thebleep.utils import get_closest, for_app, raw_script_parts
 
 
 def extract_possibilities(command):
@@ -21,12 +21,13 @@ def match(command):
 
 
 def get_new_command(command):
-    script = command.script_parts[:]
-    if len(script) < 2:
+    parsed = command.script_parts
+    script = raw_script_parts(command.script)
+    if len(parsed) < 2 or len(script) != len(parsed):
         return []
 
     possibilities = extract_possibilities(command)
-    closest = get_closest(script[1], possibilities)
+    closest = get_closest(parsed[1], possibilities)
     if closest is None:
         # `' '.join` on a `None` is a `TypeError`, which is a rule that never
         # fires rather than one that stands aside.

@@ -24,7 +24,7 @@ Wordings captured from git 2.43.
 
 import re
 from thebleep import utils
-from thebleep.utils import replace_argument
+from thebleep.utils import raw_script_parts, replace_argument
 from thebleep.specific.git import git_subcommand_index, git_support
 
 # git 2.x: the token it could not read, named.
@@ -87,6 +87,9 @@ def get_new_command(command):
 
     # Not a misspelt subcommand, so it was meant as a message -- which is what
     # `git stash save` takes.
-    cmd = command.script_parts[:]
-    cmd.insert(git_subcommand_index(cmd) + 1, 'save')
+    parsed = command.script_parts
+    cmd = raw_script_parts(command.script)
+    if len(cmd) != len(parsed):
+        return []
+    cmd.insert(git_subcommand_index(parsed) + 1, 'save')
     return ' '.join(cmd)

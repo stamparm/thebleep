@@ -73,3 +73,8 @@ class TestAgainstCurrentGit(object):
         assert match(command)
         assert get_new_command(command) == \
             'git -C worktree stash save Some message'
+
+    def test_quoted_message_is_preserved_when_inserting_save(self):
+        command = Command('git stash "Some message"', MODERN('Some'))
+        assert match(command)
+        assert get_new_command(command) == 'git stash save "Some message"'
