@@ -24,7 +24,9 @@ def match(command):
 
 
 def get_new_command(command):
-    closest_subcommand = get_closest(command.script_parts[1], get_golang_commands())
+    closest_subcommand = get_closest(
+        command.script_parts[1], get_golang_commands(),
+        fallback_to_first=False)
     if closest_subcommand is None:
         return []
     return replace_argument(command.script, command.script_parts[1],

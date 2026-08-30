@@ -85,3 +85,11 @@ def test_no_completion_means_no_suggestion(build_misspelled_output, mocker):
     mocker.patch('thebleep.rules.go_unknown_command.get_golang_commands',
                  return_value=[])
     assert get_new_command(Command('go bulid', build_misspelled_output)) == []
+
+
+def test_unrelated_command_does_not_use_first_completion(
+        build_misspelled_output, mocker):
+    mocker.patch('thebleep.rules.go_unknown_command.get_golang_commands',
+                 return_value=['build'])
+    command = Command('go zzzzz', build_misspelled_output)
+    assert get_new_command(command) == []

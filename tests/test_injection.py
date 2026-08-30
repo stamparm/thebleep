@@ -584,8 +584,8 @@ class TestNamesFromSomewhereElse(object):
     def test_go_suggestion_is_quoted(self, name, payload, canary, mocker):
         from thebleep.rules import go_unknown_command
 
-        mocker.patch.object(go_unknown_command, 'get_golang_commands',
-                            return_value=[payload])
+        mocker.patch.object(go_unknown_command, 'get_closest',
+                            return_value=payload)
         command = Command(u'go bulid', u'go bulid: unknown command')
         assert canary(go_unknown_command.get_new_command(command)) == []
 

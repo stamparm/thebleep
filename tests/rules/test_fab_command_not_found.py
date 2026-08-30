@@ -53,3 +53,8 @@ def test_get_new_command_does_not_rewrite_an_earlier_argument():
                       output)
     assert get_new_command(command) == (
         'fab --message "keep extenson" prepare_extension:version=2016')
+
+
+def test_get_new_command_does_not_fall_back_to_first_task():
+    command = Command('fab zzzzz', output.replace('extenson', 'zzzzz'))
+    assert get_new_command(command) == command.script

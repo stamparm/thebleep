@@ -80,7 +80,8 @@ def match(command):
         return False
 
     broken_cmd = _get_broken_command(command)
-    return bool(broken_cmd and get_closest(broken_cmd, _brew_commands()))
+    return bool(broken_cmd and get_closest(
+        broken_cmd, _brew_commands(), fallback_to_first=False))
 
 
 def get_new_command(command):

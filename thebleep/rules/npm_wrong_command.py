@@ -83,7 +83,8 @@ def get_new_command(command):
                 for suggestion in suggested]
 
     npm_commands = _get_available_commands(command.output)
-    fixed = get_closest(wrong_command, npm_commands)
+    fixed = get_closest(wrong_command, npm_commands,
+                        fallback_to_first=False)
     if fixed is None:
         # npm 7 and later print no command listing, and when they have nothing
         # to suggest they print no suggestion either -- so there is nothing to

@@ -43,6 +43,11 @@ def test_not_match_without_a_command_name():
     assert not match(Command('brew inst', 'Unknown command\n'))
 
 
+def test_unrelated_command_is_not_a_match():
+    assert not match(Command(
+        'brew zzzzz', 'Error: Unknown command: zzzzz'))
+
+
 class TestWhereTheCommandsAreLookedFor(object):
     """brew's own code lives under `brew --repository`, not `brew --prefix`.
 

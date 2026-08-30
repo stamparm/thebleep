@@ -34,7 +34,7 @@ def get_new_command(command):
     tasks = _get_all_tasks()
     # The task name is quoted: it is a key in the repository's Gruntfile, so
     # it can be any string at all, and the result goes back to the shell.
-    fixed = get_closest(misspelled_task, tasks)
+    fixed = get_closest(misspelled_task, tasks, fallback_to_first=False)
     if fixed is None:
         return command.script
     return replace_argument_prefix(command.script, misspelled_task,

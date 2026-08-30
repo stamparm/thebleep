@@ -33,7 +33,8 @@ def get_new_command(command):
 
     script = command.script
     for not_found in not_found_commands:
-        fix = get_closest(not_found, possible_commands)
+        fix = get_closest(not_found, possible_commands,
+                          fallback_to_first=False)
         if fix is None:
             # Nothing close enough, and `' {}'.format(None)` put the word
             # `None` into the command.

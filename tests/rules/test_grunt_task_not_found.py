@@ -140,3 +140,8 @@ def test_get_new_command_abstains_when_no_task_is_close(mocker):
                  return_value=None)
     command = Command('grunt zzzzz', output('zzzzz'))
     assert get_new_command(command) == command.script
+
+
+def test_get_new_command_does_not_fall_back_to_first_task():
+    command = Command('grunt zzzzz', output('zzzzz'))
+    assert get_new_command(command) == command.script

@@ -98,6 +98,10 @@ def test_get_new_command_modern_npm(script, output, result):
     assert get_new_command(Command(script, output)) == result
 
 
+def test_legacy_npm_does_not_fall_back_to_first_command():
+    assert get_new_command(Command('npm zzzzz', output)) == []
+
+
 def test_how_to_list_them_all_is_not_a_suggestion(script='npm nstall'):
     """The line after the suggestions tells you to run `npm help`."""
     assert 'npm help' not in get_new_command(
