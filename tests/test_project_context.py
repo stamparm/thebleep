@@ -111,3 +111,24 @@ def test_cargo_bins_distinguish_missing_and_empty_manifests(tmpdir):
 
     empty.join('Cargo.toml').write('[package]\nname = "project"\n')
     assert project_context.cargo_bins(str(empty)) == []
+
+
+def test_poetry_scripts_read_both_supported_static_sections(tmpdir):
+    project = tmpdir.mkdir('project')
+    project.join('pyproject.toml').write(
+        '[project.scripts]\nserver = "demo:main"\n'
+        '"worker-task" = "demo:main"\n\n'
+        '[tool.poetry.scripts]\nserver = "demo:main"\n'
+        'ignored = { reference = "not parsed" }\n\n'
+        '[tool.other.scripts]\nnot-a-command = "demo:main"\n')
+
+    assert project_context.poetry_scripts(str(project)) == [
+        'server', 'worker-task', 'ignored']
+
+
+def test_poetry_scripts_distinguish_missing_and_empty_manifests(tmpdir):
+    empty = tmpdir.mkdir('empty')
+    assert project_context.poetry_scripts(str(empty)) is None
+
+    empty.join('pyproject.toml').write('[project]\nname = "project"\n')
+    assert project_context.poetry_scripts(str(empty)) == []

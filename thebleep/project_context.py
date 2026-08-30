@@ -16,6 +16,7 @@ MAX_JSON_BYTES = 1024 * 1024
 MAX_MAKEFILE_BYTES = 1024 * 1024
 MAX_JUSTFILE_BYTES = 1024 * 1024
 MAX_CARGO_TOML_BYTES = 1024 * 1024
+MAX_PYPROJECT_BYTES = 1024 * 1024
 _MAKE_TARGET = re.compile(r'^(?![ \t])([^:#=\s][^:#]*?)\s*:(?!=)')
 _JUST_RECIPE = re.compile(
     r'^(?:\[[^\]\r\n]+\]\s*)?'
@@ -263,5 +264,46 @@ def cargo_bins(start=None):
                          stripped)
         if match and _just_name(match.group(2)) and match.group(2) not in found:
             found.append(match.group(2))
+
+    return found
+
+
+def _read_pyproject(path):
+    try:
+        if os.path.getsize(path) > MAX_PYPROJECT_BYTES:
+            return None
+        with open(path, encoding='utf-8') as handle:
+            value = handle.read(MAX_PYPROJECT_BYTES + 1)
+    except (EnvironmentError, UnicodeError):
+        return None
+
+    return value if len(value.encode('utf-8')) <= MAX_PYPROJECT_BYTES else None
+
+
+def poetry_scripts(start=None):
+    """Return static script names from the nearest Poetry-style pyproject."""
+    path = find_up('pyproject.toml', start)
+    if path is None:
+        return None
+
+    source = _read_pyproject(path)
+    if source is None:
+        return None
+
+    found = []
+    section = None
+    for line in source.splitlines():
+        stripped = line.strip()
+        if stripped.startswith('[') and stripped.endswith(']'):
+            section = stripped.strip('[]')
+            continue
+        if section not in ('project.scripts', 'tool.poetry.scripts'):
+            continue
+
+        match = re.match(
+            r'(?:"([^"\r\n]+)"|([A-Za-z0-9_.-]+))\s*=', stripped)
+        name = (match.group(1) or match.group(2)) if match else None
+        if name and _usable_name(name) and name not in found:
+            found.append(name)
 
     return found
