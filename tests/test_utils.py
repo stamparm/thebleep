@@ -11,6 +11,7 @@ from unittest.mock import Mock, call, patch
 from thebleep import cachefile
 from thebleep.utils import default_settings, \
     memoize, get_closest, get_all_executables, replace_argument, \
+    replace_argument_in_command, \
     replace_value, \
     replace_command_word, \
     get_all_matched_commands, is_app, for_app, cache, \
@@ -318,6 +319,22 @@ def test_get_all_executables_exclude_paths(path, pathsep, excluded, settings,
      'echo "keep instol here" install extra')])
 def test_replace_argument(args, result):
     assert replace_argument(*args) == result
+
+
+def test_replace_argument_in_command_preserves_an_earlier_same_word():
+    command = Command(
+        'echo buld && make buld',
+        "make: *** No rule to make target 'buld'.  Stop.")
+
+    assert replace_argument_in_command(command, 'make', 'buld', 'build') == (
+        'echo buld && make build')
+
+
+def test_replace_argument_in_command_abstains_when_target_is_ambiguous():
+    command = Command('make buld buld', 'output')
+
+    assert replace_argument_in_command(command, 'make', 'buld', 'build') == (
+        'make buld buld')
 
 
 @pytest.mark.parametrize('script, index, replacement, result', [

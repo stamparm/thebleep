@@ -700,6 +700,47 @@ def replace_argument(script, from_, to):
     return script
 
 
+def replace_argument_in_command(command, command_name, from_, to):
+    """Replace an argument in the named command inside a compound line.
+
+    Output-dependent rules know which program failed, but a plain
+    ``replace_argument`` cannot know which repeated word belongs to it:
+
+        echo buld && make buld
+
+    The source-preserving command model supplies that boundary. An ambiguous
+    match is left unchanged; if the model cannot identify the command, the
+    historical helper remains the fallback for wrappers and custom shells.
+    ``to`` is expected to be shell-quoted, like ``replace_argument``.
+    """
+    from .command_model import replace_span
+
+    def basename(value):
+        return value.rsplit('/', 1)[-1].rsplit('\\', 1)[-1]
+
+    matches = []
+
+    def visit(segments):
+        for segment in segments:
+            words = segment.words
+            for index, word in enumerate(words):
+                if basename(word.text) != command_name:
+                    continue
+                matches.extend(candidate for candidate in words[index + 1:]
+                               if candidate.text == from_)
+            for token in segment.tokens:
+                for child in token.children:
+                    visit(child.children)
+
+    model = command.command_model
+    visit(model.segments)
+    if len(matches) == 1:
+        return replace_span(command.script, matches[0], to)
+    if len(matches) > 1:
+        return command.script
+    return replace_argument(command.script, from_, to)
+
+
 def replace_command_word(script, word_index, replacement):
     """Replace one shell word by token number, preserving every other word.
 

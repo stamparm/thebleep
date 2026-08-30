@@ -26,6 +26,16 @@ def test_declared_cmake_target_is_suggested(tmpdir, monkeypatch):
             'cmake --build build --target build']
 
 
+def test_compound_command_replaces_the_cmake_target_not_prior_output_arg(
+        tmpdir, monkeypatch):
+    tmpdir.join('CMakeLists.txt').write('add_custom_target(build)\n')
+    monkeypatch.chdir(tmpdir)
+
+    assert get_new_command(Command(
+        'echo buil && cmake --build build --target buil', OUTPUT)) == [
+            'echo buil && cmake --build build --target build']
+
+
 def test_static_target_declarations_are_read_without_running_cmake(
         tmpdir, monkeypatch):
     tmpdir.join('CMakeLists.txt').write(

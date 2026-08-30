@@ -15,7 +15,7 @@ import re
 
 from thebleep import matching, project_context
 from thebleep.shells import shell
-from thebleep.utils import for_app, replace_argument
+from thebleep.utils import for_app, replace_argument_in_command
 
 
 MISSING = re.compile(r"No rule to make target ['\"]([^'\"]+)['\"]")
@@ -33,5 +33,7 @@ def get_new_command(command):
     if not targets:
         return []
 
-    return [replace_argument(command.script, broken, shell.quote(target))
-            for target in matching.rank(broken, targets, limit=3)]
+    return [
+        replace_argument_in_command(command, 'make', broken,
+                                    shell.quote(target))
+        for target in matching.rank(broken, targets, limit=3)]

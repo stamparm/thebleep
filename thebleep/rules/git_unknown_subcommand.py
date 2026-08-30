@@ -34,7 +34,7 @@ import re
 from thebleep import matching
 from thebleep.shells import shell
 from thebleep.specific.git import git_subcommand_index, git_support
-from thebleep.utils import memoize, replace_argument
+from thebleep.utils import memoize, replace_argument_in_command
 
 # ``error: unknown subcommand: `ad' `` -- git's own quoting, a backtick and a
 # quote.
@@ -116,5 +116,6 @@ def get_new_command(command):
     typo, answers = _typo_and_answers(command)
 
     # Quoted: read out of git's output, and handed back to the shell.
-    return [replace_argument(command.script, typo, shell.quote(name))
-            for name in matching.order(typo, answers, limit=3)]
+    return [
+        replace_argument_in_command(command, 'git', typo, shell.quote(name))
+        for name in matching.order(typo, answers, limit=3)]

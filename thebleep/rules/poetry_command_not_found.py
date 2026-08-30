@@ -6,7 +6,7 @@ import re
 
 from thebleep import matching, project_context
 from thebleep.shells import shell
-from thebleep.utils import for_app, replace_argument
+from thebleep.utils import for_app, replace_argument_in_command
 
 
 MISSING = re.compile(r'Command not found:\s*([^\s\r\n]+)', re.IGNORECASE)
@@ -24,5 +24,7 @@ def get_new_command(command):
     if not scripts:
         return []
 
-    return [replace_argument(command.script, broken, shell.quote(script))
-            for script in matching.rank(broken, scripts, limit=3)]
+    return [
+        replace_argument_in_command(command, 'poetry', broken,
+                                    shell.quote(script))
+        for script in matching.rank(broken, scripts, limit=3)]

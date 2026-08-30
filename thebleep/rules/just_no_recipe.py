@@ -6,7 +6,7 @@ import re
 
 from thebleep import matching, project_context
 from thebleep.shells import shell
-from thebleep.utils import for_app, replace_argument
+from thebleep.utils import for_app, replace_argument_in_command
 
 
 MISSING = re.compile(r'[Jj]ustfile does not contain recipe [`\']([^`\'\r\n]+)')
@@ -23,5 +23,7 @@ def get_new_command(command):
     if not recipes:
         return []
 
-    return [replace_argument(command.script, broken, shell.quote(recipe))
-            for recipe in matching.rank(broken, recipes, limit=3)]
+    return [
+        replace_argument_in_command(command, 'just', broken,
+                                    shell.quote(recipe))
+        for recipe in matching.rank(broken, recipes, limit=3)]

@@ -6,7 +6,7 @@ import re
 
 from thebleep import matching, project_context
 from thebleep.shells import shell
-from thebleep.utils import for_app, replace_argument
+from thebleep.utils import for_app, replace_argument_in_command
 
 
 MISSING = re.compile(r'Task "([^"\r\n]+)" does not exist')
@@ -27,5 +27,7 @@ def get_new_command(command):
         candidates += [name for name in matching.rank(broken, tasks, limit=3)
                        if name not in candidates]
 
-    return [replace_argument(command.script, broken, shell.quote(candidate))
-            for candidate in candidates]
+    return [
+        replace_argument_in_command(command, 'task', broken,
+                                    shell.quote(candidate))
+        for candidate in candidates]
