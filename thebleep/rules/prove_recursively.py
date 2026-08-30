@@ -1,4 +1,5 @@
 import os
+import re
 from thebleep.utils import for_app
 
 
@@ -22,6 +23,4 @@ def match(command):
 
 
 def get_new_command(command):
-    parts = command.script_parts[:]
-    parts.insert(1, '-r')
-    return u' '.join(parts)
+    return re.sub(r'^prove(?=\s|$)', 'prove -r', command.script, count=1)

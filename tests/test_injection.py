@@ -226,6 +226,39 @@ class TestNamesFromSomewhereElse(object):
 
         assert canary(unsudo.get_new_command(command)) == []
 
+    def test_scm_correction_preserves_a_quoted_argument(self, name, payload,
+                                                        canary, mocker):
+        from thebleep.rules import scm_correction
+
+        mocker.patch.object(scm_correction, '_get_actual_scm', return_value='hg')
+        command = Command(u"git log 'a;>SCM'", u'')
+
+        assert canary(scm_correction.get_new_command(command)) == []
+
+    def test_gradle_wrapper_preserves_a_quoted_argument(self, name, payload,
+                                                        canary):
+        from thebleep.rules import gradle_wrapper
+
+        command = Command(u"gradle 'a;>GRADLE'", u'')
+
+        assert canary(gradle_wrapper.get_new_command(command)) == []
+
+    def test_prove_recursively_preserves_a_quoted_argument(self, name, payload,
+                                                           canary):
+        from thebleep.rules import prove_recursively
+
+        command = Command(u"prove 'a;>PROVE'", u'')
+
+        assert canary(prove_recursively.get_new_command(command)) == []
+
+    def test_npm_run_script_preserves_a_quoted_argument(self, name, payload,
+                                                        canary):
+        from thebleep.rules import npm_run_script
+
+        command = Command(u"npm 'a;>NPM'", u'')
+
+        assert canary(npm_run_script.get_new_command(command)) == []
+
     def test_git_push_different_branch_names(self, name, payload, canary):
         """A whole `git push <remote> <branch>` line, repeated back."""
         from thebleep.rules import git_push_different_branch_names as rule

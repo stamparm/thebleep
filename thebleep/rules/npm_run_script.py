@@ -1,3 +1,5 @@
+import re
+
 from thebleep.specific.npm import npm_available, get_scripts
 from thebleep.utils import for_app
 
@@ -15,6 +17,4 @@ def match(command):
 
 
 def get_new_command(command):
-    parts = command.script_parts[:]
-    parts.insert(1, 'run-script')
-    return ' '.join(parts)
+    return re.sub(r'^npm(?=\s|$)', 'npm run-script', command.script, count=1)

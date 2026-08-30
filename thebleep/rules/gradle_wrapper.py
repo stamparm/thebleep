@@ -10,4 +10,6 @@ def match(command):
 
 
 def get_new_command(command):
-    return u'./gradlew {}'.format(' '.join(command.script_parts[1:]))
+    parts = command.script.split(None, 1)
+    return u'./gradlew' if len(parts) == 1 \
+        else u'./gradlew {}'.format(parts[1])

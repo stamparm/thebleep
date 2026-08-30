@@ -32,4 +32,5 @@ def match(command):
 
 def get_new_command(command):
     scm = _get_actual_scm()
-    return u' '.join([scm] + command.script_parts[1:])
+    parts = command.script.split(None, 1)
+    return scm if len(parts) == 1 else u'{} {}'.format(scm, parts[1])
