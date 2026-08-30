@@ -1,4 +1,5 @@
 import re
+from thebleep import project_context
 from thebleep.utils import (for_app, eager, replace_command, replace_argument,
                             cache, which, tool_lines)
 
@@ -38,4 +39,8 @@ def get_new_command(command):
         return replace_argument(command.script, misspelled_task, yarn_command)
     else:
         tasks = _get_all_tasks()
+        project_scripts = project_context.package_scripts()
+        if project_scripts is not None:
+            tasks = project_scripts + [task for task in tasks
+                                       if task not in project_scripts]
         return replace_command(command, misspelled_task, tasks)

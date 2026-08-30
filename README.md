@@ -544,10 +544,11 @@ current platform; callers using the Python API can pass `platform_name='nt'`
 when diagnosing output for a Windows target from another machine.
 
 Project-aware candidates are read from the nearest `package.json`, Makefile,
-Justfile, Cargo.toml or Poetry-style `pyproject.toml` when one is available.
-The npm and bun rules use declared script names directly, while
-`make_no_target`, `just_no_recipe`, `cargo_no_bin` and
-`poetry_command_not_found` use static task, binary or script names, so
+Justfile, Taskfile, Cargo.toml or Poetry-style `pyproject.toml` when one is
+available. The npm, pnpm, bun and Yarn rules use declared script names
+directly, while `make_no_target`, `just_no_recipe`, `task_no_task`,
+`cargo_no_bin` and `poetry_command_not_found` use static task, binary or script
+names, so
 correction does not launch a project tool just to list vocabulary. These files
 are bounded and never executed; an unreadable source leaves the existing
 tool-output fallback or abstains safely.
@@ -582,9 +583,9 @@ $ thebleep --doctor
   Executable          ~/.local/bin/thebleep
   On PATH             yes
   Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
-  Rules               190 bundled, 3 of your own
+  Rules               192 bundled, 3 of your own
   Rule health         169 enabled, none raising
-  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (190 rules cached)
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (192 rules cached)
 - Replayless capture  available, not switched on
                       See --enable-experimental-instant-mode.
   Editing             supported by this shell (tab at the prompt)
@@ -765,7 +766,7 @@ nothing.
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
-| **Rules** | 190 of them, for git, docker, npm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+| **Rules** | 192 of them, for git, docker, npm, pnpm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
@@ -1166,6 +1167,7 @@ The following rules are enabled by default:
 * `pip_install` — adds `--user` when `pip install` failed for want of permission. It does not offer `sudo pip install`; where `--user` is not enough, `pip_externally_managed` below has the answer;
 * `pip_externally_managed` — offers `pipx` or a virtual environment when pip refuses to install into the system Python (PEP 668);
 * `pip_unknown_command` — fixes wrong `pip` commands, for example `pip instatl/pip install`;
+* `pnpm_missing_script` — corrects a mistyped pnpm script using pnpm's hint or the nearest package.json;
 * `php_s` — replaces `-s` by `-S` when trying to run a local php server;
 * `poetry_command_not_found` — corrects a mistyped `poetry run` script from the nearest project's static pyproject.toml script list;
 * `ping_url` — pings the host in a URL you pasted, not the URL;
@@ -1189,6 +1191,7 @@ The following rules are enabled by default:
 * `sudo_command_from_user_path` — runs commands from users `$PATH` with `sudo`;
 * `switch_lang` — switches command from your local layout to en;
 * `systemctl` — correctly orders parameters of confusing `systemctl`;
+* `task_no_task` — corrects a mistyped Go Task task from the nearest static Taskfile or Task's own suggestion;
 * `terraform_init` — runs `terraform init` before plan or apply;
 * `terraform_no_command` — fixes unrecognized `terraform` commands;
 * `test.py` — runs `pytest` instead of `test.py`;
@@ -1575,7 +1578,7 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches about a fifth of the 190 rules, and
+  running it. A typical command now reaches about a fifth of the 192 rules, and
   one for a tool with many rules of its own — `git` — under a quarter, instead of
   all of them. Rules that don't say what they are about are always loaded, so
   this makes corrections faster, never fewer.

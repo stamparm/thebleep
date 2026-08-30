@@ -132,3 +132,49 @@ def test_poetry_scripts_distinguish_missing_and_empty_manifests(tmpdir):
 
     empty.join('pyproject.toml').write('[project]\nname = "project"\n')
     assert project_context.poetry_scripts(str(empty)) == []
+
+
+def test_task_names_read_the_tasks_mapping_only(tmpdir):
+    project = tmpdir.mkdir('project')
+    project.join('Taskfile.yml').write(
+        'version: "3"\n'
+        'tasks:\n'
+        '  build:\n'
+        '    cmds:\n'
+        '      - echo build\n'
+        '  "deploy:prod":\n'
+        '    desc: deploy it\n'
+        '  generated-{{.ENV}}:\n'
+        '    cmds: []\n'
+        '  "generated-{{.OTHER}}":\n'
+        '    cmds: []\n'
+        '  test:\n'
+        '    vars:\n'
+        '      nested: true\n')
+
+    assert project_context.task_names(str(project)) == [
+        'build', 'deploy:prod', 'test']
+
+
+def test_task_names_find_parent_and_support_yaml_extension(tmpdir):
+    root = tmpdir.mkdir('project')
+    nested = root.mkdir('src')
+    root.join('Taskfile.yaml').write('tasks:\n    check:\n      cmds: []\n')
+
+    assert project_context.task_names(str(nested)) == ['check']
+
+
+def test_task_names_distinguish_missing_and_empty_files(tmpdir):
+    empty = tmpdir.mkdir('empty')
+    assert project_context.task_names(str(empty)) is None
+
+    empty.join('Taskfile.yml').write('version: "3"\nvars:\n  x: y\n')
+    assert project_context.task_names(str(empty)) == []
+
+
+def test_oversized_taskfiles_are_abstentions(tmpdir):
+    project = tmpdir.mkdir('project')
+    project.join('Taskfile.yml').write(
+        'x' * (project_context.MAX_TASKFILE_BYTES + 1))
+
+    assert project_context.task_names(str(project)) is None

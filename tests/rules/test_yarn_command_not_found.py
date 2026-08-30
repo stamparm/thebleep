@@ -115,3 +115,11 @@ def test_get_new_command(command, result):
         fixed_command = fixed_command[0]
 
     assert fixed_command == result
+
+
+def test_project_script_is_a_yarn_candidate(tmpdir, monkeypatch):
+    tmpdir.join('package.json').write('{"scripts": {"build": "true"}}')
+    monkeypatch.chdir(tmpdir)
+
+    command = Command('yarn buld', output('buld'))
+    assert get_new_command(command)[0] == 'yarn build'

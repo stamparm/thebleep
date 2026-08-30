@@ -17,6 +17,7 @@ MAX_MAKEFILE_BYTES = 1024 * 1024
 MAX_JUSTFILE_BYTES = 1024 * 1024
 MAX_CARGO_TOML_BYTES = 1024 * 1024
 MAX_PYPROJECT_BYTES = 1024 * 1024
+MAX_TASKFILE_BYTES = 1024 * 1024
 _MAKE_TARGET = re.compile(r'^(?![ \t])([^:#=\s][^:#]*?)\s*:(?!=)')
 _JUST_RECIPE = re.compile(
     r'^(?:\[[^\]\r\n]+\]\s*)?'
@@ -304,6 +305,90 @@ def poetry_scripts(start=None):
             r'(?:"([^"\r\n]+)"|([A-Za-z0-9_.-]+))\s*=', stripped)
         name = (match.group(1) or match.group(2)) if match else None
         if name and _usable_name(name) and name not in found:
+            found.append(name)
+
+    return found
+
+
+def _taskfile(start=None):
+    """Return the nearest Taskfile using Task's conventional names."""
+    directory = os.path.abspath(start or os.getcwd())
+    while True:
+        for filename in ('Taskfile.yml', 'Taskfile.yaml'):
+            candidate = os.path.join(directory, filename)
+            if os.path.isfile(candidate):
+                return candidate
+
+        parent = os.path.dirname(directory)
+        if parent == directory:
+            return None
+        directory = parent
+
+
+def _read_taskfile(path):
+    try:
+        if os.path.getsize(path) > MAX_TASKFILE_BYTES:
+            return None
+        with open(path, encoding='utf-8') as handle:
+            value = handle.read(MAX_TASKFILE_BYTES + 1)
+    except (EnvironmentError, UnicodeError):
+        return None
+
+    return value if len(value.encode('utf-8')) <= MAX_TASKFILE_BYTES else None
+
+
+_TASK_NAME = re.compile(
+    r'^(?:"([^"\r\n]+)"|\'([^\'\r\n]+)\'|'
+    r'([A-Za-z0-9_.:/+!?-]+))\s*:')
+
+
+def _task_name(name):
+    """Whether a Taskfile key is static and safe to rank."""
+    return (_just_name(name) and '{{' not in name and '}}' not in name)
+
+
+def task_names(start=None):
+    """Return static task names from the nearest Taskfile.
+
+    This is intentionally a small YAML reader. Taskfiles can include other
+    files and calculate task names, but the top-level ``tasks`` mapping is
+    plain enough to read without adding a YAML dependency or executing any
+    project code. Only keys at the mapping's own indentation are candidates;
+    nested ``cmds``, ``vars`` and dependency data cannot become task names.
+    """
+    path = _taskfile(start)
+    if path is None:
+        return None
+
+    source = _read_taskfile(path)
+    if source is None:
+        return None
+
+    found = []
+    in_tasks = False
+    task_indent = None
+    for line in source.splitlines():
+        if not line.strip() or line.lstrip().startswith('#'):
+            continue
+
+        indent = len(line) - len(line.lstrip(' '))
+        stripped = line.strip()
+        if indent == 0:
+            in_tasks = bool(re.match(r'^tasks\s*:\s*(?:#.*)?$', stripped))
+            task_indent = None
+            continue
+        if not in_tasks:
+            continue
+        if task_indent is None:
+            task_indent = indent
+        if indent != task_indent:
+            continue
+
+        match = _TASK_NAME.match(stripped)
+        if not match:
+            continue
+        name = next(value for value in match.groups() if value is not None)
+        if _task_name(name) and name not in found:
             found.append(name)
 
     return found

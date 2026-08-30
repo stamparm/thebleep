@@ -52,7 +52,7 @@ def canary(tmpdir):
                  'sh', 'env', 'rm', 'kill', 'ssh', 'ssh-keygen', 'vim',
                  'rails', 'kubectl', 'uv', 'ruff', 'gh', 'helm',
                  'black', 'cargo', 'prettier', 'pytest', 'mytool', 'bun',
-                 'heroku', 'hg', 'make', 'just'):
+                 'heroku', 'hg', 'make', 'just', 'pnpm', 'task'):
         shutil.copy(str(stub), str(stubs.join(name)))
 
     work = tmpdir.mkdir('work')
@@ -184,6 +184,54 @@ class TestNamesFromSomewhereElse(object):
         suggestion = make_no_target.get_new_command(
             Command('make buil&touch', output))[0]
         assert canary(suggestion) == []
+
+    def test_pnpm_script_is_quoted(self, name, payload, canary, tmpdir,
+                                   monkeypatch):
+        """A package script name is data, even when it contains `;`."""
+        from thebleep.rules import pnpm_missing_script
+
+        project = tmpdir.mkdir('pnpm-project')
+        project.join('package.json').write(
+            json.dumps({'scripts': {'buil;': 'true'}}))
+        monkeypatch.chdir(str(project))
+        output = '[ERR_PNPM_NO_SCRIPT] Missing script: buil'
+        suggestions = pnpm_missing_script.get_new_command(
+            Command('pnpm run buil', output))
+        assert suggestions
+        for suggestion in suggestions:
+            assert canary(suggestion) == []
+
+    def test_task_name_is_quoted(self, name, payload, canary, tmpdir,
+                                 monkeypatch):
+        """A Taskfile key is data, even when it contains `;`."""
+        from thebleep.rules import task_no_task
+
+        project = tmpdir.mkdir('task-project')
+        project.join('Taskfile.yml').write(
+            'tasks:\n  "buil;":\n    cmds: []\n')
+        monkeypatch.chdir(str(project))
+        output = 'task: Task "buil" does not exist'
+        suggestions = task_no_task.get_new_command(
+            Command('task buil', output))
+        assert suggestions
+        for suggestion in suggestions:
+            assert canary(suggestion) == []
+
+    def test_yarn_script_is_quoted(self, name, payload, canary, tmpdir,
+                                   monkeypatch):
+        """A package script used by Yarn is data, even when it contains `;`."""
+        from thebleep.rules import yarn_command_not_found
+
+        project = tmpdir.mkdir('yarn-project')
+        project.join('package.json').write(
+            json.dumps({'scripts': {'buil;': 'true'}}))
+        monkeypatch.chdir(str(project))
+        output = 'error Command "buil" not found.'
+        suggestions = yarn_command_not_found.get_new_command(
+            Command('yarn buil', output))
+        assert suggestions
+        for suggestion in suggestions:
+            assert canary(suggestion) == []
 
     def test_ssh_known_hosts(self, name, payload, canary):
         """The known_hosts path and host name come out of ssh's warning."""
