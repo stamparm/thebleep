@@ -134,6 +134,14 @@ def test_corrects_commands_inside_bash_and_zsh_process_substitutions(
         assert get_new_command(Command(script, None))[0] == expect
 
 
+def test_corrects_command_inside_wrapper_substitution(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command('echo $(command gti status)', None)
+
+    assert get_new_command(command)[0] == 'echo $(command git status)'
+
+
 def test_process_substitution_is_not_assumed_for_other_shells(
         mocker, set_shell):
     from thebleep.shells import Powershell

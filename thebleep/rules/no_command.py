@@ -482,7 +482,7 @@ def _replace_substitution_command(script, start, end, command_index, old,
         return script[:start + position] + replacement + \
             script[start + position + len(old):]
 
-    corrected = _replace_after_separator(body, old, replacement)
+    corrected = _replace_command_word(body, old, replacement)
     if corrected is None:
         return None
     return script[:start] + corrected + script[end:]
@@ -547,14 +547,13 @@ def _demote_impossible(ranked, arguments):
     return possible + impossible
 
 
-def _replace_after_separator(script, old, replacement):
-    """Replace one unquoted ``old`` that starts a separated command.
+def _word_spans(script, old, require_separator=False):
+    """Find standalone, unquoted occurrences of ``old`` in ``script``.
 
-    A raw occurrence is not enough to identify a command: ``echo gti && gti``
-    contains the same word as data and as a program. This small lexer only
-    considers occurrences outside quotes, immediately after shell separators;
-    when that still leaves more than one choice it returns ``None`` and the
-    caller abstains.
+    Requiring a separator identifies the command in ``echo gti && gti``;
+    allowing any standalone word handles a command behind a transparent
+    wrapper, such as ``command gti``. The returned source spans preserve the
+    spelling around the word for the replacement paths.
     """
     separators = frozenset(';&|(){}')
     spans = []
@@ -585,12 +584,29 @@ def _replace_after_separator(script, old, replacement):
                      or script[index + len(old)].isspace()
                      or script[index + len(old)] in separators)):
             before = script[:index].rstrip()
-            if before and before[-1] in separators:
+            if (not require_separator
+                    or (before and before[-1] in separators)):
                 spans.append((index, index + len(old)))
             index += len(old)
             continue
         index += 1
 
+    return spans
+
+
+def _replace_command_word(script, old, replacement):
+    """Replace one unquoted command word, or abstain if it is ambiguous."""
+    spans = _word_spans(script, old)
+    if len(spans) != 1:
+        return _replace_after_separator(script, old, replacement)
+
+    start, end = spans[0]
+    return script[:start] + replacement + script[end:]
+
+
+def _replace_after_separator(script, old, replacement):
+    """Replace one unquoted ``old`` that starts a separated command."""
+    spans = _word_spans(script, old, require_separator=True)
     if len(spans) != 1:
         return None
 
