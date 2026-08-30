@@ -43,6 +43,11 @@ _DNS_URL_IN_COMMAND = re.compile(
     r'\b(?:https?|ftp)://(?:[^/@\s]+@)?'
     r'(?P<host>\[[^\]]+\]|[^/:?\s]+)', re.IGNORECASE)
 _READ_ONLY_FS = re.compile(r'read[- ]only file system', re.IGNORECASE)
+_EXECUTABLE_FORMAT = re.compile(
+    r'(?:exec format error|cannot execute binary file)', re.IGNORECASE)
+_MISSING_INTERPRETER = re.compile(
+    r'(?:bad interpreter|cannot execute:\s+required file not found)',
+    re.IGNORECASE)
 _CONNECTION_TIMEOUT = re.compile(
     r'(?:connection timed out|connect(?:ion)? timeout|connect timed out|'
     r'connecttimeout)', re.IGNORECASE)
@@ -186,6 +191,73 @@ def _path_inspection(path, platform_name, permission=False):
     # BSD ls has no `--`; make a relative option-looking path explicit.
     displayed_path = './{}'.format(path) if path.startswith('-') else path
     return 'ls -ld {}'.format(_quote(displayed_path, platform_name))
+
+
+def _script_path(script, platform_name):
+    """Return a directly invoked path when the command makes one explicit."""
+    try:
+        parts = shlex.split(script, posix=platform_name != 'nt')
+    except ValueError:
+        return None
+    if not parts:
+        return None
+    path = parts[0]
+    if path.startswith(('/', './', '../')):
+        return path
+    if platform_name == 'nt' and re.match(r'^[A-Za-z]:[\\/]', path):
+        return path
+    return None
+
+
+def _executable_inspection(path, platform_name, interpreter=False):
+    if platform_name == 'nt':
+        command = 'Get-Content' if interpreter else 'Get-Item'
+        suffix = ' -TotalCount 1' if interpreter else ''
+        return '{} -LiteralPath {}{}'.format(
+            command, _quote(path, platform_name), suffix)
+
+    # Keep option-looking paths from becoming options. This also works on BSD
+    # systems, where `ls --` is not portable.
+    displayed_path = './{}'.format(path) if path.startswith('-') else path
+    if interpreter:
+        return 'head -n 1 {}'.format(_quote(displayed_path, platform_name))
+    return 'file {}'.format(_quote(displayed_path, platform_name))
+
+
+def _executable_format(script, output, platform_name):
+    match = _EXECUTABLE_FORMAT.search(output)
+    if not match:
+        return None
+    path = _script_path(script, platform_name)
+    next_steps = []
+    if path:
+        next_steps.append(_step(
+            _executable_inspection(path, platform_name),
+            'inspect the executable format and architecture'))
+    return {
+        'kind': 'executable_format',
+        'summary': 'The operating system cannot execute this file format.',
+        'evidence': [match.group(0).lower()],
+        'next_steps': next_steps,
+    }
+
+
+def _missing_interpreter(script, output, platform_name):
+    match = _MISSING_INTERPRETER.search(output)
+    if not match:
+        return None
+    path = _script_path(script, platform_name)
+    next_steps = []
+    if path:
+        next_steps.append(_step(
+            _executable_inspection(path, platform_name, interpreter=True),
+            'inspect the script interpreter declaration'))
+    return {
+        'kind': 'missing_interpreter',
+        'summary': 'The script interpreter could not be found.',
+        'evidence': [match.group(0).lower()],
+        'next_steps': next_steps,
+    }
 
 
 def _address_in_use(script, output, platform_name):
@@ -581,7 +653,8 @@ _DETECTORS = (_address_in_use, _permission_denied, _certificate_expired,
               _missing_python_path, _existing_path, _git_not_repository,
               _git_conflict,
               _dubious_ownership, _dns_failure, _docker_daemon,
-              _ssh_host_key, _missing_interface, _read_only_filesystem)
+              _ssh_host_key, _missing_interface, _read_only_filesystem,
+              _executable_format, _missing_interpreter)
 
 
 def diagnose(script, output=None, platform_name=None):

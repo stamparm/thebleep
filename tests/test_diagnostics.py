@@ -188,6 +188,47 @@ def test_read_only_filesystem_offers_only_a_mount_inspection():
             'risk': 'read-only'}]}]
 
 
+def test_exec_format_error_explains_a_directly_invoked_binary():
+    """Captured from bash running a validly executable, foreign-format file."""
+    result = diagnostics.diagnose(
+        './badbin',
+        'bash: ./badbin: cannot execute binary file: Exec format error',
+        platform_name='posix')
+
+    assert result['diagnoses'] == [{
+        'kind': 'executable_format',
+        'summary': 'The operating system cannot execute this file format.',
+        'evidence': ['cannot execute binary file'],
+        'next_steps': [{
+            'command': 'file ./badbin',
+            'reason': 'inspect the executable format and architecture',
+            'risk': 'read-only'}]}]
+
+
+def test_missing_interpreter_shows_the_script_declaration():
+    """Captured from bash running a script with a nonexistent shebang."""
+    result = diagnostics.diagnose(
+        './script',
+        'bash: ./script: cannot execute: required file not found',
+        platform_name='posix')
+
+    assert result['diagnoses'] == [{
+        'kind': 'missing_interpreter',
+        'summary': 'The script interpreter could not be found.',
+        'evidence': ['cannot execute: required file not found'],
+        'next_steps': [{
+            'command': 'head -n 1 ./script',
+            'reason': 'inspect the script interpreter declaration',
+            'risk': 'read-only'}]}]
+
+
+def test_launch_diagnoses_do_not_invent_an_inspection_target():
+    result = diagnostics.diagnose(
+        'python app.py', 'Exec format error', platform_name='posix')
+
+    assert result['diagnoses'][0]['next_steps'] == []
+
+
 def test_docker_daemon_failure_offers_only_a_read_only_check():
     result = diagnostics.diagnose(
         'docker compose ps',
@@ -470,6 +511,10 @@ def test_git_conflict_offers_status_as_a_read_only_next_step():
      r"FileNotFoundError: [WinError 2] The system cannot find the file "
      r"specified: 'C:\\missing\\config.ini'",
      r"Get-Item -LiteralPath 'C:\missing\config.ini'"),
+    ('executable_format', r'C:\tools\bad.exe',
+     'Exec format error', r"Get-Item -LiteralPath 'C:\tools\bad.exe'"),
+    ('missing_interpreter', r'C:\tools\script', 'bad interpreter',
+     r"Get-Content -LiteralPath 'C:\tools\script' -TotalCount 1"),
 ])
 def test_windows_diagnostics_offer_windows_read_only_next_steps(
         kind, script, output, command):

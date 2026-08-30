@@ -572,8 +572,8 @@ observed evidence, a short summary and read-only `next_steps`. It covers a
 small set of high-signal failures such as occupied ports, refused, reset or
 timed-out connections, unreachable networks, Docker daemon outages, changed
 SSH host keys, existing paths, read-only filesystems, missing
-network interfaces, DNS resolution failures, missing Python paths/modules and
-Git's repository/ownership refusals. It never
+network interfaces, DNS resolution failures, missing Python paths/modules,
+Git's repository/ownership refusals and executable launch failures. It never
 probes the machine or reruns the command. Unknown wording returns
 `decision: abstain`, because a plausible explanation is not proof. Follow-up
 commands are selected for the
