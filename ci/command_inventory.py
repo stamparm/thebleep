@@ -97,6 +97,7 @@ PROBES = {
     'winget': [['--version']],
     'yarn': [['--version']],
     'zsh': [['--version']],
+    'zypper': [['--version'], ['isntall', 'vim']],
 }
 
 

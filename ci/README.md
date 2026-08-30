@@ -22,5 +22,5 @@ source/destination error, is intentionally left out and must continue to
 abstain.
 
 macOS provides the Darwin/BSD-derived userland here. Linux containers cover
-the additional GNU, BusyBox and slim-userland variations; Docker cannot run a
-FreeBSD kernel/userland faithfully on a Linux GitHub runner.
+the additional GNU, BusyBox, slim and openSUSE userland variations; Docker
+cannot run a FreeBSD kernel/userland faithfully on a Linux GitHub runner.

@@ -45,10 +45,26 @@ jobs:
         include:
           - image: python:3
             label: python3
+            python: python
+            setup: ':'
+            pip_flags: ''
           - image: python:3-alpine
             label: python3-alpine
+            python: python
+            setup: ':'
+            pip_flags: ''
           - image: python:3-slim
             label: python3-slim
+            python: python
+            setup: ':'
+            pip_flags: ''
+          - image: opensuse/tumbleweed
+            label: opensuse-tumbleweed
+            python: python3
+            setup: >-
+              zypper --non-interactive --gpg-auto-import-keys install -y
+              python3 python3-pip
+            pip_flags: --break-system-packages
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Capture commands and safe probes
@@ -62,8 +78,10 @@ jobs:
             -v "$RUNNER_TEMP:/out" \
             -w /src \
             '${{ matrix.image }}' \
-            sh -c 'python -m pip install --quiet psutil pyte && \
-              python ci/command_inventory.py --check-rules \
+            sh -c '${{ matrix.setup }} && \
+              ${{ matrix.python }} -m pip install --quiet \
+                ${{ matrix.pip_flags }} psutil pyte && \
+              ${{ matrix.python }} ci/command_inventory.py --check-rules \
                 --output /out/command-inventory.json'
           status=$?
           set -e

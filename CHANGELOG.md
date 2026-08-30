@@ -90,6 +90,15 @@
   can report `/usr/bin/mkdir: ... No such file or directory`; Bleep now parses
   that wording while still offering a safe PowerShell inspection command.
 
+- **The compatibility lab now includes openSUSE Tumbleweed.** It installs the
+  runner's current Python tooling and captures real `zypper` output alongside
+  the existing GNU, BusyBox, slim, macOS and Windows probes. The artifact keeps
+  helper-dependent rules separate from the API-only live checks.
+
+- **`sed` follows current GNU wording.** The correction now recognises the
+  single-quoted `unterminated 's' command` emitted by current GNU sed as well
+  as the older backtick form.
+
 - **`mkdir` missed absolute executable paths in current runner output.** GNU
   coreutils can report `/usr/bin/mkdir: ...` when invoked by an inventory or
   wrapper; the correction now recognises that prefix without treating an

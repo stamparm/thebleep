@@ -7,6 +7,7 @@ from thebleep.utils import for_app
 def match(command):
     return any(message in command.output for message in (
         "unterminated `s' command",
+        "unterminated 's' command",
         'unescaped newline inside substitute pattern',
         "unmatched '/'"))
 

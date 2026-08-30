@@ -5,6 +5,7 @@ from thebleep.types import Command
 
 @pytest.fixture(params=[
     "sed: -e expression #1, char 9: unterminated `s' command",
+    "/usr/bin/sed: -e expression #1, char 9: unterminated 's' command",
     'sed: 1: "s/foo/bar": unescaped newline inside substitute pattern',
     "sed: unmatched '/'"])
 def sed_unterminated_s(request):
