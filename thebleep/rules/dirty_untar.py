@@ -7,13 +7,17 @@ tar_extensions = ('.tar', '.tar.Z', '.tar.bz2', '.tar.gz', '.tar.lz',
                   '.tgz', '.tlz', '.txz', '.tz')
 
 
-def _is_tar_extract(cmd):
-    if '--extract' in cmd:
+def _is_tar_extract(script_parts):
+    if len(script_parts) < 2:
+        return False
+
+    first_option = script_parts[1]
+    if first_option == '--extract' or first_option.startswith('--extract='):
         return True
 
-    cmd = cmd.split()
-
-    return len(cmd) > 1 and 'x' in cmd[1]
+    option_letters = first_option.lstrip('-')
+    return (bool(option_letters) and 'x' in option_letters
+            and all(character.isalpha() for character in option_letters))
 
 
 def _tar_file(cmd):
@@ -33,7 +37,7 @@ def _has_change_directory_option(script_parts):
 @for_app('tar')
 def match(command):
     return (not _has_change_directory_option(command.script_parts)
-            and _is_tar_extract(command.script)
+            and _is_tar_extract(command.script_parts)
             and _tar_file(command.script_parts) is not None)
 
 

@@ -61,6 +61,11 @@ def test_match_does_not_confuse_filename_with_change_directory_option(tar_error)
     assert match(Command('tar xvf foo-C.tar', ''))
 
 
+def test_match_does_not_confuse_archive_name_with_extract_option(tar_error):
+    tar_error('foo-x.tar')
+    assert not match(Command('tar foo-x.tar', ''))
+
+
 def test_nothing_is_deleted_behind_the_suggestion(tar_error):
     """See `test_dirty_unzip` for why the rollback could not be made safe."""
     assert not hasattr(dirty_untar, 'side_effect')
