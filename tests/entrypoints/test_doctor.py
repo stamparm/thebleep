@@ -337,6 +337,35 @@ class TestPerShell(object):
         _, output = _run(capsys)
         assert 'Replayless capture' in output
 
+    def test_a_stale_shell_logger_is_reported_as_unavailable(
+            self, home, os_environ, monkeypatch):
+        os_environ[const.SHELL_LOGGER_SOCKET_ENV] = 'stale-socket'
+        from thebleep.output_readers import shell_logger
+
+        monkeypatch.setattr(shell_logger, 'is_available', lambda: False)
+        report = Report()
+        doctor_module._capture(report)
+
+        assert report.lines == [(
+            'Replayless capture',
+            'external shell logger configured, but socket is unavailable',
+            WARN,
+            'Start the shell logger or unset SHELL_LOGGER_SOCKET;'
+            ' corrections will use another capture path.')]
+
+    def test_a_present_shell_logger_is_reported_as_a_socket(
+            self, home, os_environ, monkeypatch):
+        os_environ[const.SHELL_LOGGER_SOCKET_ENV] = 'live-socket'
+        from thebleep.output_readers import shell_logger
+
+        monkeypatch.setattr(shell_logger, 'is_available', lambda: True)
+        report = Report()
+        doctor_module._capture(report)
+
+        assert report.lines == [(
+            'Replayless capture', 'external shell logger socket is present',
+            OK, None)]
+
     def test_the_shell_source_is_named(self, capsys, home, os_environ):
         os_environ['TB_SHELL'] = 'bash'
         _, output = _run(capsys)

@@ -451,8 +451,29 @@ def _capture(report):
     from ..shells import shell
 
     if os.environ.get(const.SHELL_LOGGER_SOCKET_ENV):
-        report.add('Replayless capture', 'an external shell logger is'
-                   ' listening')
+        # The variable can survive a logger that crashed, and a path can be an
+        # ordinary file (or a Windows named-pipe spelling) rather than a Unix
+        # socket. The correction path already checks this before connecting;
+        # doctor must report the same fact instead of promising a backend that
+        # is not there.
+        from ..output_readers import shell_logger
+
+        if shell_logger.is_available():
+            report.add('Replayless capture',
+                       'external shell logger socket is present')
+        else:
+            report.add(
+                'Replayless capture',
+                'external shell logger configured, but socket is unavailable',
+                WARN,
+                'Start the shell logger or unset SHELL_LOGGER_SOCKET;'
+                ' corrections will use another capture path.')
+
+        # A stale external logger setting does not prevent instant mode from
+        # answering. Keep describing that fallback instead of returning after
+        # the first, now-unusable backend.
+        if os.environ.get('THEBLEEP_INSTANT_MODE', '').lower() == 'true':
+            report.add('Replayless capture', 'instant mode is running')
         return
 
     if os.environ.get('THEBLEEP_INSTANT_MODE', '').lower() == 'true':
