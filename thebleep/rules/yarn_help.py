@@ -1,11 +1,13 @@
 import re
-from thebleep.utils import for_app
+from thebleep.utils import command_word_index, for_app
 from thebleep.system import open_command
 
 
 @for_app('yarn', at_least=2)
 def match(command):
-    return (command.script_parts[1] == 'help'
+    parts = command.script_parts
+    start = command_word_index(parts)
+    return (parts[start + 1] == 'help'
             and 'for documentation about this command.' in command.output)
 
 

@@ -22,3 +22,10 @@ def test_match(command):
     (Command('yarn ls', output_list), 'yarn list')])
 def test_get_new_command(command, new_command):
     assert get_new_command(command) == new_command
+
+
+def test_environment_assignment_is_preserved():
+    command = Command('YARN_ENABLE_IMMUTABLE_INSTALLS=1 yarn rm',
+                      output_remove)
+    assert get_new_command(command) == (
+        'YARN_ENABLE_IMMUTABLE_INSTALLS=1 yarn remove')

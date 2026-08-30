@@ -28,3 +28,10 @@ def test_not_match(script):
     ('workon zzzz', 'mkvirtualenv zzzz')])
 def test_get_new_command(script, result):
     assert get_new_command(Command(script, ''))[0] == result
+
+
+def test_environment_assignment_is_preserved():
+    command = Command('WORKON_HOME=/tmp workon tehbleep', '')
+    assert match(command)
+    assert get_new_command(command)[0] == (
+        'WORKON_HOME=/tmp workon thebleep')

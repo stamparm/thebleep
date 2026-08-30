@@ -169,3 +169,11 @@ def test_get_operations():
 ])
 def test_get_new_command(script, output, result):
     assert get_new_command(Command(script, output))[0] == result
+
+
+@pytest.mark.usefixtures('no_memoize', 'yum_help')
+def test_environment_assignment_is_preserved():
+    script = 'YUM0=1 yum saerch asdf'
+    output = yum_invalid_op_text.format('saerch')
+    assert get_new_command(Command(script, output))[0] == (
+        'YUM0=1 yum search asdf')

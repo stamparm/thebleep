@@ -51,6 +51,10 @@ def test_match(command):
     assert match(command)
 
 
+def test_match_accepts_environment_assignments():
+    assert match(Command('YARN_SILENT=1 yarn help clean', output_clean))
+
+
 @pytest.mark.parametrize('command, url', [
     (Command('yarn help clean', output_clean),
      'https://yarnpkg.com/en/docs/cli/clean')])
