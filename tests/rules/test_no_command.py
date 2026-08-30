@@ -94,6 +94,31 @@ def test_corrects_commands_inside_bash_blocks(mocker, script, expect):
 
 
 @pytest.mark.parametrize('script, expect', [
+    ('echo <(gti status)', 'echo <(git status)'),
+    ('echo >(echo && gti status)', 'echo >(echo && git status)'),
+])
+def test_corrects_commands_inside_bash_process_substitutions(
+        mocker, set_shell, script, expect):
+    from thebleep.shells import Bash
+
+    set_shell(Bash)
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    assert get_new_command(Command(script, None))[0] == expect
+
+
+def test_process_substitution_is_not_assumed_for_other_shells(
+        mocker, set_shell):
+    from thebleep.shells import Powershell
+
+    set_shell(Powershell)
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    assert get_new_command(
+        Command('echo <(gti status)', None)) == []
+
+
+@pytest.mark.parametrize('script, expect', [
     ('echo $(gti status)', 'echo $(git status)'),
     ('echo "$(gti status)"', 'echo "$(git status)"'),
     ('echo $(true && gti status)', 'echo $(true && git status)'),

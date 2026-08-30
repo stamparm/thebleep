@@ -295,16 +295,21 @@ def _is_available_command(word):
     return word in shell.get_builtin_commands()
 
 
-def _substitution_ranges(script, allow_backticks=True):
-    """Yield the bodies of ``$(...)`` and backtick substitutions.
+def _substitution_ranges(script, allow_backticks=True,
+                         allow_process_substitution=False):
+    """Yield the bodies of command and supported process substitutions.
 
     This is intentionally only the small piece of shell structure needed by
     the unknown-command rule. The shell still owns parsing and execution; the
     ranges merely let us inspect a nested command without treating the outer
     command's arguments as executable words.
     """
+    openers = ['$(']
+    if allow_process_substitution:
+        openers.extend(('<(', '>('))
+
     for start in range(len(script) - 1):
-        if (script[start:start + 2] != '$('
+        if (script[start:start + 2] not in openers
                 or _in_single_quotes(script, start)
                 or _is_escaped(script, start)):
             continue
@@ -324,7 +329,7 @@ def _substitution_ranges(script, allow_backticks=True):
                     quote = None
             elif character in ("'", '"'):
                 quote = character
-            elif script[index:index + 2] == '$(':
+            elif script[index:index + 2] in openers:
                 depth += 1
                 index += 1
             elif character == ')':
@@ -385,9 +390,12 @@ def _unknown_in_substitution(command, output_required=True):
     """Find one unknown command in a command substitution, if unambiguous."""
     from thebleep.shells import shell
 
-    allow_backticks = type(shell).__name__ not in ('Powershell', 'Nushell')
+    shell_name = type(shell).__name__
+    allow_backticks = shell_name not in ('Powershell', 'Nushell')
+    allow_process_substitution = shell_name in ('Bash', 'Zsh')
     found = []
-    for start, end in _substitution_ranges(command.script, allow_backticks):
+    for start, end in _substitution_ranges(
+            command.script, allow_backticks, allow_process_substitution):
         inner = command.update(script=command.script[start:end])
         unknown = _unknown_command(inner, output_required=output_required)
         if unknown is not None:
