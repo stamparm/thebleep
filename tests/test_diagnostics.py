@@ -97,6 +97,23 @@ def test_python_missing_path_is_explained_and_quoted():
             'risk': 'read-only'}]}]
 
 
+def test_python_permission_path_gets_a_safe_inspection_step():
+    result = diagnostics.diagnose(
+        'python app.py',
+        "PermissionError: [Errno 13] Permission denied: "
+        "'/tmp/a; chmod 777 /tmp/bleep-owned'",
+        platform_name='posix')
+
+    assert result['diagnoses'] == [{
+        'kind': 'permission_denied',
+        'summary': 'The operating system denied the operation.',
+        'evidence': ['permission denied'],
+        'next_steps': [{
+            'command': "ls -ld '/tmp/a; chmod 777 /tmp/bleep-owned'",
+            'reason': 'inspect permissions on the denied path',
+            'risk': 'read-only'}]}]
+
+
 @pytest.mark.parametrize('kind, script, output, command', [
     ('address_in_use', 'python server.py --port 5432',
      'OSError: [WinError 10048] Address already in use',
@@ -108,6 +125,10 @@ def test_python_missing_path_is_explained_and_quoted():
      'certificate has expired', '[DateTime]::UtcNow'),
     ('disk_full', 'make', 'No space left on device',
      'Get-PSDrive -PSProvider FileSystem'),
+    ('permission_denied', 'python app.py',
+     r"PermissionError: [WinError 5] Access is denied: "
+     r"'C:\\private\\config.ini'",
+     r"Get-Acl -LiteralPath 'C:\private\config.ini'"),
     ('git_not_repository', 'git status',
      'fatal: not a git repository (or any of the parent directories): .git',
      'Get-Location'),
