@@ -24,6 +24,10 @@ def test_match(output, script):
     assert match(Command(script, output))
 
 
+def test_match_rejects_an_unrelated_command(output):
+    assert not match(Command('adb definitely-not-an-adb-command', output))
+
+
 @pytest.mark.parametrize('script', [
     'git branch foo',
     'abd push'])
@@ -39,3 +43,8 @@ def test_not_match(script):
     ('adb -e reboott', 'adb -e reboot')])
 def test_get_new_command(script, output, new_command):
     assert get_new_command(Command(script, output)) == new_command
+
+
+def test_no_close_command_means_no_suggestion(output):
+    assert get_new_command(Command('adb definitely-not-an-adb-command',
+                                   output)) == []

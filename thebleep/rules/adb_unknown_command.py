@@ -41,14 +41,30 @@ _ADB_COMMANDS = (
 
 
 def match(command):
-    return (is_app(command, 'adb')
-            and command.output.startswith('Android Debug Bridge version'))
+    if not (is_app(command, 'adb')
+            and command.output.startswith('Android Debug Bridge version')):
+        return False
+
+    return _get_closest_command(command.script_parts) is not None
+
+
+def _get_closest_command(script_parts):
+    for idx, arg in enumerate(script_parts[1:]):
+        # allowed params to ADB are a/d/e/s/H/P/L where s, H, P and L take
+        # additional args, for example `adb -s 111 logcat`.
+        if not arg.startswith('-') and script_parts[idx] not in (
+                '-s', '-H', '-P', '-L'):
+            return get_closest(arg, _ADB_COMMANDS, fallback_to_first=False)
 
 
 def get_new_command(command):
     for idx, arg in enumerate(command.script_parts[1:]):
-        # allowed params to ADB are a/d/e/s/H/P/L where s, H, P and L take additional args
-        # for example 'adb -s 111 logcat' or 'adb -e logcat'
-        if not arg[0] == '-' and not command.script_parts[idx] in ('-s', '-H', '-P', '-L'):
-            adb_cmd = get_closest(arg, _ADB_COMMANDS)
+        if not arg.startswith('-') and command.script_parts[idx] not in (
+                '-s', '-H', '-P', '-L'):
+            adb_cmd = get_closest(arg, _ADB_COMMANDS,
+                                  fallback_to_first=False)
+            if adb_cmd is None:
+                return []
             return replace_argument(command.script, arg, adb_cmd)
+
+    return []
