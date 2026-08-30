@@ -133,6 +133,8 @@ def _command_indexes(parts):
     case_pattern = False
     function_pending = False
     loop_pending = False
+    coproc_pending = False
+    coproc_candidate = None
     powershell = _is_powershell()
     for index, part in enumerate(parts):
         if powershell_condition:
@@ -168,6 +170,22 @@ def _command_indexes(parts):
                 command_start = True
                 segment_start = index + 1
             continue
+
+        if coproc_pending:
+            if coproc_candidate is None:
+                coproc_candidate = index
+                continue
+            if part == '{':
+                coproc_pending = False
+                coproc_candidate = None
+                command_start = True
+                segment_start = index + 1
+                continue
+            command_index = coproc_candidate
+            coproc_pending = False
+            coproc_candidate = None
+            command_start = False
+            yield command_index
 
         if case_pending:
             if part == 'in':
@@ -226,6 +244,10 @@ def _command_indexes(parts):
                 function_pending = True
                 command_start = False
                 continue
+            if not powershell and word == 'coproc':
+                coproc_pending = True
+                command_start = False
+                continue
             if (not powershell and command_start_index + 1 < len(parts)
                     and parts[command_start_index + 1] == '()'):
                 function_pending = True
@@ -257,6 +279,9 @@ def _command_indexes(parts):
 
             yield command_start_index
             command_start = False
+
+    if coproc_candidate is not None:
+        yield coproc_candidate
 
 
 def _unknown_command(command, output_required=True):

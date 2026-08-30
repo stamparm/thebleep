@@ -86,11 +86,21 @@ def test_corrects_a_command_inside_a_case_body(mocker):
      'select x in one; do git status; done'),
     ('f() { gti status; }', 'f() { git status; }'),
     ('function f { gti status; }', 'function f { git status; }'),
+    ('coproc gti status', 'coproc git status'),
+    ('coproc worker { gti status; }',
+     'coproc worker { git status; }'),
 ])
 def test_corrects_commands_inside_bash_blocks(mocker, script, expect):
     mocker.patch('thebleep.rules.no_command.which', return_value=None)
 
     assert get_new_command(Command(script, None))[0] == expect
+
+
+def test_named_coproc_without_a_brace_keeps_its_command_boundary(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    assert get_new_command(
+        Command('coproc worker gti status', None)) == []
 
 
 @pytest.mark.parametrize('script, expect', [
