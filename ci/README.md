@@ -5,6 +5,8 @@
 allowlist. The OS command vocabulary is different on a GitHub-hosted macOS or
 Windows runner, and the hosted images change over time, so the result is
 published as an artifact by the scheduled **OS command inventory** workflow.
+Selected real failures are also checked against deterministic diagnoses, so
+cross-platform wording changes can expose both correction and `--why` drift.
 
 The inventory is discovery data. It must not be copied into the hermetic
 correction corpus without checking the program and wording in a real

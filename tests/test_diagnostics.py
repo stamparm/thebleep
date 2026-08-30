@@ -292,6 +292,19 @@ def test_busybox_missing_paths_are_explained(output, path):
         'ls -ld {}'.format(path))
 
 
+def test_windows_posix_tool_missing_path_is_explained():
+    """Git for Windows emits POSIX utility errors on an NT host."""
+    result = diagnostics.diagnose(
+        'mkdir missing-dir/destination',
+        "/usr/bin/mkdir: cannot create directory 'missing-dir/destination': "
+        'No such file or directory\n',
+        platform_name='nt')
+
+    assert result['diagnoses'][0]['kind'] == 'missing_path'
+    assert result['diagnoses'][0]['next_steps'][0]['command'] == (
+        "Get-Item -LiteralPath 'missing-dir/destination'")
+
+
 def test_git_outside_a_repository_is_explained():
     result = diagnostics.diagnose(
         'git status',

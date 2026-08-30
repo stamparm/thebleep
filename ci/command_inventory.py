@@ -62,7 +62,8 @@ PROBES = {
             'platforms': ('Darwin', 'Linux')}],
     'make': [['--version']],
     'mkdir': [{'arguments': ['missing-dir/destination'],
-               'checks': ['mkdir_p']}],
+               'checks': ['mkdir_p'],
+               'diagnoses': ['missing_path']}],
     'mv': [{'arguments': ['thebleep-source', 'missing-dir/destination'],
             'files': ['thebleep-source']},
            ['missing-source', 'destination']],
@@ -230,15 +231,16 @@ def _temporary_directory(prefix):
     return _TemporaryDirectory(prefix)
 
 
-def _check_rules(name, arguments, output, cwd, expected):
-    """Check selected rules against output from this exact probe.
+def _check_rules(name, arguments, output, cwd, expected,
+                 expected_diagnoses=()):
+    """Check selected corrections and diagnoses against one real probe.
 
     The probe directory is still alive here, which matters for BSD ``cp`` and
     ``mv``: their wording is ambiguous unless the source operand really exists.
     This is deliberately opt-in metadata on a handful of safe probes rather
     than a claim that every command failure should have a correction.
     """
-    from thebleep.api import suggest
+    from thebleep.api import suggest, why
 
     script = ' '.join([name] + list(arguments))
     previous = os.getcwd()
@@ -250,6 +252,8 @@ def _check_rules(name, arguments, output, cwd, expected):
             return {
                 'expected_rules': list(expected),
                 'matched_rules': [],
+                'expected_diagnoses': list(expected_diagnoses),
+                'matched_diagnoses': [],
                 'passed': False,
                 'error': str(error),
             }
@@ -258,11 +262,34 @@ def _check_rules(name, arguments, output, cwd, expected):
 
     matched = [item['rule'] for item in result['suggestions']
                if item.get('rule')]
-    return {
+    check = {
         'expected_rules': list(expected),
         'matched_rules': matched,
         'passed': all(rule in matched for rule in expected),
     }
+    if expected_diagnoses:
+        try:
+            diagnosis_result = why(
+                script, output,
+                platform_name='nt' if os.name == 'nt' else 'posix')
+        except Exception as error:                            # noqa: BLE001
+            check.update({
+                'expected_diagnoses': list(expected_diagnoses),
+                'matched_diagnoses': [],
+                'passed': False,
+                'error': str(error),
+            })
+        else:
+            matched_diagnoses = [item['kind'] for item in
+                                 diagnosis_result['diagnoses']]
+            check.update({
+                'expected_diagnoses': list(expected_diagnoses),
+                'matched_diagnoses': matched_diagnoses,
+                'passed': check['passed'] and all(
+                    diagnosis in matched_diagnoses
+                    for diagnosis in expected_diagnoses),
+            })
+    return check
 
 
 def probe_commands(commands, check_rules=False):
@@ -283,10 +310,12 @@ def probe_commands(commands, check_rules=False):
                     files = specification.get('files', ())
                     platforms = specification.get('platforms')
                     expected_rules = specification.get('checks', ())
+                    expected_diagnoses = specification.get('diagnoses', ())
                 else:
                     arguments, files = specification, ()
                     platforms = None
                     expected_rules = ()
+                    expected_diagnoses = ()
                 current_platform = platform.system()
                 if platforms and current_platform not in platforms:
                     continue
@@ -299,11 +328,13 @@ def probe_commands(commands, check_rules=False):
                     result = run_probe(
                         path, arguments, Path(probe_directory),
                         probe_environment)
-                    if check_rules and expected_rules and not result.get(
+                    if check_rules and (expected_rules or expected_diagnoses) \
+                            and not result.get(
                             'timeout') and not result.get('output_truncated'):
                         result['rule_check'] = _check_rules(
                             name, arguments, result['output'],
-                            probe_directory, expected_rules)
+                            probe_directory, expected_rules,
+                            expected_diagnoses)
                     result.update({'command': name, 'path': path})
                     results.append(result)
     return results
@@ -355,9 +386,11 @@ def main():
     if failures:
         for probe in failures:
             check = probe['rule_check']
+            expected = check.get('expected_rules', []) + check.get(
+                'expected_diagnoses', [])
             print('{} {} no longer matches {}; see {}'.format(
                 probe['command'], ' '.join(probe['arguments']),
-                ', '.join(check['expected_rules']), destination),
+                ', '.join(expected), destination),
                 file=sys.stderr)
             if check.get('error'):
                 print('  {}'.format(check['error']), file=sys.stderr)

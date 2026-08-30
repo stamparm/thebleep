@@ -90,3 +90,17 @@ def test_live_rule_check_uses_the_real_probe_directory(source_root, tmpdir):
     assert result['expected_rules'] == ['mkdir_p']
     assert 'mkdir_p' in result['matched_rules']
     assert result['passed'] is True
+
+
+def test_live_diagnosis_check_uses_the_real_probe_directory(source_root,
+                                                            tmpdir):
+    module = _inventory_module(source_root)
+    result = module._check_rules(
+        'mkdir', ['missing-dir/destination'],
+        "/usr/bin/mkdir: cannot create directory 'missing-dir/destination': "
+        'No such file or directory\n',
+        str(tmpdir), [], ['missing_path'])
+
+    assert result['expected_diagnoses'] == ['missing_path']
+    assert 'missing_path' in result['matched_diagnoses']
+    assert result['passed'] is True

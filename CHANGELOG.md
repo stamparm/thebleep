@@ -86,6 +86,10 @@
 
 ### Fixed
 
+- **`--why` now understands POSIX tool output on Windows.** Git for Windows
+  can report `/usr/bin/mkdir: ... No such file or directory`; Bleep now parses
+  that wording while still offering a safe PowerShell inspection command.
+
 - **`mkdir` missed absolute executable paths in current runner output.** GNU
   coreutils can report `/usr/bin/mkdir: ...` when invoked by an inventory or
   wrapper; the correction now recognises that prefix without treating an

@@ -406,7 +406,10 @@ def _missing_module(script, output, platform_name):
 
 def _missing_python_path(script, output, platform_name):
     path_error = _python_error_path(output, 'FileNotFoundError')
-    if not path_error and platform_name != 'nt':
+    # The command's wording is independent from the follow-up shell. Git for
+    # Windows ships POSIX utilities, for example, while the safe inspection
+    # command still needs to be PowerShell-native.
+    if not path_error:
         path_error = _posix_missing_path(output)
     if not path_error:
         return None
