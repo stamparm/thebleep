@@ -63,6 +63,37 @@ def test_dns_failure_quotes_host_for_powershell():
         "Resolve-DnsName 'example.test'")
 
 
+def test_busybox_dns_failure_extracts_quoted_host():
+    """Captured from BusyBox ping 1.37.0 in current Alpine."""
+    result = diagnostics.diagnose(
+        'ping -c 1 thebleep-inventory-no-such.invalid',
+        "ping: bad address 'thebleep-inventory-no-such.invalid'\n",
+        platform_name='posix')
+
+    assert result['diagnoses'][0]['evidence'] == [
+        "bad address 'thebleep-inventory-no-such.invalid'"]
+    assert result['diagnoses'][0]['next_steps'][0]['command'] == (
+        'getent hosts thebleep-inventory-no-such.invalid')
+
+
+def test_read_only_filesystem_offers_only_a_mount_inspection():
+    """Captured from ``touch`` in a read-only Alpine container."""
+    result = diagnostics.diagnose(
+        'touch /thebleep-inventory-file',
+        'touch: /thebleep-inventory-file: Read-only file system\n',
+        platform_name='posix')
+
+    assert result['diagnoses'] == [{
+        'kind': 'read_only_filesystem',
+        'summary': 'The filesystem rejected the write because it is mounted '
+                   'read-only.',
+        'evidence': ['read-only file system'],
+        'next_steps': [{
+            'command': 'mount',
+            'reason': 'inspect filesystem mount or volume state',
+            'risk': 'read-only'}]}]
+
+
 def test_docker_daemon_failure_offers_only_a_read_only_check():
     result = diagnostics.diagnose(
         'docker compose ps',
@@ -137,7 +168,8 @@ def test_linux_ifconfig_missing_interface_is_explained():
 
     assert result['diagnoses'] == [{
         'kind': 'missing_network_interface',
-        'summary': "Network interface 'thebleep-no-suc' does not exist.",
+        'summary': "Network interface 'thebleep-no-such-interface' does not "
+                   'exist.',
         'evidence': ['thebleep-no-suc: error fetching interface information: '
                      'device not found'],
         'next_steps': [{

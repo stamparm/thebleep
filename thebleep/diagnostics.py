@@ -22,6 +22,11 @@ _PORT_IN_COMMAND = re.compile(
 _MODULE = re.compile(
     r"(?:ModuleNotFoundError: )?No module named ['\"]([^'\"]+)['\"]")
 _DNS_HOST = re.compile(r'could not resolve host:\s*([^\s]+)', re.IGNORECASE)
+_DNS_HOSTNAME = re.compile(
+    r'could not resolve hostname\s+([^:\s]+)', re.IGNORECASE)
+_DNS_BAD_ADDRESS = re.compile(
+    r"bad address ['\"]([^'\"\r\n]+)['\"]", re.IGNORECASE)
+_READ_ONLY_FS = re.compile(r'read[- ]only file system', re.IGNORECASE)
 _DOCKER_DAEMON = re.compile(
     r'(?:cannot connect to the docker daemon|'
     r'failed to connect to the docker api)', re.IGNORECASE)
@@ -356,22 +361,42 @@ def _existing_path(script, output, platform_name):
 
 def _dns_failure(script, output, platform_name):
     match = _DNS_HOST.search(output)
+    if match is None:
+        match = _DNS_HOSTNAME.search(output)
+    if match is None:
+        match = _DNS_BAD_ADDRESS.search(output)
     if not match:
         return None
 
     host = match.group(1).rstrip('.,;')
     if not host:
         return None
+    evidence = match.group(0).lower()
     return {
         'kind': 'dns_failure',
         'summary': 'The hostname could not be resolved.',
-        'evidence': ['could not resolve host: {}'.format(host)],
+        'evidence': [evidence],
         'next_steps': [_step(
             _shell_command(
                 'getent hosts {}'.format(_quote(host, platform_name)),
                 'Resolve-DnsName {}'.format(_quote(host, platform_name)),
                 platform_name),
             'check whether DNS can resolve the hostname')],
+    }
+
+
+def _read_only_filesystem(script, output, platform_name):
+    match = _READ_ONLY_FS.search(output)
+    if not match:
+        return None
+    return {
+        'kind': 'read_only_filesystem',
+        'summary': 'The filesystem rejected the write because it is mounted '
+                   'read-only.',
+        'evidence': [match.group(0).lower()],
+        'next_steps': [_step(
+            _shell_command('mount', 'Get-Volume', platform_name),
+            'inspect filesystem mount or volume state')],
     }
 
 
@@ -427,6 +452,19 @@ def _missing_interface(script, output, platform_name):
     if not match:
         return None
     name = match.group('name') or match.group('linux_name')
+    if match.group('linux_name'):
+        try:
+            parts = shlex.split(script, posix=platform_name != 'nt')
+        except ValueError:
+            parts = []
+        for index, part in enumerate(parts):
+            if part.rsplit('/', 1)[-1] != 'ifconfig':
+                continue
+            for candidate in parts[index + 1:]:
+                if not candidate.startswith('-') and candidate.startswith(name):
+                    name = candidate
+                    break
+            break
     return {
         'kind': 'missing_network_interface',
         'summary': 'Network interface {!r} does not exist.'.format(
@@ -443,7 +481,7 @@ _DETECTORS = (_address_in_use, _permission_denied, _certificate_expired,
               _missing_python_path, _existing_path, _git_not_repository,
               _git_conflict,
               _dubious_ownership, _dns_failure, _docker_daemon,
-              _ssh_host_key, _missing_interface)
+              _ssh_host_key, _missing_interface, _read_only_filesystem)
 
 
 def diagnose(script, output=None, platform_name=None):
