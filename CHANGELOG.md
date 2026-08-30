@@ -77,6 +77,11 @@
 
 ### Fixed
 
+- **Compound corrections no longer edit an earlier command by accident.**
+  Output-derived replacements now use the source-preserving command model and
+  abstain when the reported word appears in more than one command, instead of
+  replacing the first textual match.
+
 - **`--why` now recognises DNS resolution failures.** A captured curl error
   such as `Could not resolve host: example.invalid` is explained with the
   hostname and a quoted, read-only lookup for the current platform.

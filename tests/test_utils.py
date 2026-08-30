@@ -16,7 +16,7 @@ from thebleep.utils import default_settings, \
     replace_command_word, \
     get_all_matched_commands, is_app, for_app, cache, \
     get_valid_history_without_current, get_close_matches, which, \
-    without_control_sequences, format_raw_script
+    without_control_sequences, format_raw_script, replace_command
 from thebleep.types import Command
 
 
@@ -335,6 +335,31 @@ def test_replace_argument_in_command_abstains_when_target_is_ambiguous():
 
     assert replace_argument_in_command(command, 'make', 'buld', 'build') == (
         'make buld buld')
+
+
+def test_replace_command_abstains_when_compound_target_is_ambiguous():
+    """The output is from npm 11.19.0 in Node.js 26.8.1."""
+    command = Command(
+        'echo buld && npm run buld',
+        'npm error Missing script: "buld"\n'
+        'npm error\n'
+        'npm error Did you mean this?\n'
+        'npm error   npm run build # run the "build" package script\n')
+
+    assert replace_command(command, 'buld', ['build']) == []
+
+
+def test_replace_command_uses_the_only_model_argument_span():
+    command = Command('echo ready && npm run buld', 'output')
+
+    assert replace_command(command, 'buld', ['build']) == [
+        'echo ready && npm run build']
+
+
+def test_replace_command_counts_quoted_arguments_for_ambiguity():
+    command = Command('echo buld && npm run "buld"', 'output')
+
+    assert replace_command(command, 'buld', ['build']) == []
 
 
 @pytest.mark.parametrize('script, index, replacement, result', [

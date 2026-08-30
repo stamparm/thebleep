@@ -521,6 +521,11 @@ limit. The Python API applies the same 8 MiB output limit. `--command` preserves
 the exact command string, including compound
 syntax and quoting; the older positional form after `--` remains supported.
 
+Output-derived replacements use those same command boundaries. If a reported
+word appears in more than one command in a compound line, The Bleep abstains
+instead of changing the first textual match and potentially altering a command
+that did not fail.
+
 When the command itself is valid but failed, ask for a deterministic diagnosis
 from the same captured output:
 

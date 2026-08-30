@@ -915,6 +915,34 @@ def get_all_matched_commands(stderr, separator='Did you mean'):
                 yield line.strip()
 
 
+def _model_argument_matches(command, broken):
+    """Return complete-model argument matches, or ``None`` if incomplete."""
+    model = command.command_model
+    if not model.complete:
+        return None
+
+    def is_match(word):
+        if word.text == broken:
+            return True
+        return (len(word.text) >= 2
+                and word.text[0] == word.text[-1]
+                and word.text[0] in "'\""
+                and word.text[1:-1] == broken)
+
+    matches = []
+
+    def visit(segments):
+        for segment in segments:
+            matches.extend(word for word in segment.words[1:]
+                           if is_match(word))
+            for token in segment.tokens:
+                for child in token.children:
+                    visit(child.children)
+
+    visit(model.segments)
+    return matches
+
+
 def replace_command(command, broken, matched):
     """Helper for *_no_command rules.
 
@@ -926,8 +954,15 @@ def replace_command(command, broken, matched):
     the shell to be evaluated. Quoting a plain word leaves it exactly as it was,
     so this costs the ordinary case nothing.
 
+    When the command is a complete parse, the source-preserving model is used
+    to find the argument. If the same word occurs in more than one command in a
+    compound line, the helper abstains: the output does not prove which command
+    failed, and changing the first textual occurrence can alter an earlier
+    command instead.
+
     """
     from thebleep.shells import shell
+    from .command_model import replace_span
 
     # Still `difflib` here, deliberately. `thebleep.matching` is a better
     # measure of a typo and is what the `PATH` guess uses -- but the corpus has
@@ -935,9 +970,18 @@ def replace_command(command, broken, matched):
     # twenty pinned orderings on a hunch is how unmeasured churn gets in. The
     # first suggestion is the one that matters and it does not differ here.
     new_cmds = get_close_matches(broken, matched, cutoff=0.1)
-    return [replace_argument(command.script, broken,
-                             shell.quote(new_cmd.strip()))
-            for new_cmd in new_cmds]
+    model_matches = _model_argument_matches(command, broken)
+    result = []
+    for new_cmd in new_cmds:
+        replacement = shell.quote(new_cmd.strip())
+        if model_matches:
+            if len(model_matches) != 1:
+                continue
+            fixed = replace_span(command.script, model_matches[0], replacement)
+        else:
+            fixed = replace_argument(command.script, broken, replacement)
+        result.append(fixed)
+    return result
 
 
 # `FOO=bar command ...` runs `command` with `FOO` set for it; the assignments
