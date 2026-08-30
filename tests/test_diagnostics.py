@@ -63,6 +63,23 @@ def test_dns_failure_quotes_host_for_powershell():
         "Resolve-DnsName 'example.test'")
 
 
+def test_git_outside_a_repository_is_explained():
+    result = diagnostics.diagnose(
+        'git status',
+        'fatal: not a git repository (or any of the parent directories): .git',
+        platform_name='posix')
+
+    assert result['diagnoses'] == [{
+        'kind': 'git_not_repository',
+        'summary': 'Git could not find a repository here or in a parent '
+                   'directory.',
+        'evidence': ['not a git repository'],
+        'next_steps': [{
+            'command': 'pwd',
+            'reason': 'check the directory where the command is running',
+            'risk': 'read-only'}]}]
+
+
 @pytest.mark.parametrize('kind, script, output, command', [
     ('address_in_use', 'python server.py --port 5432',
      'OSError: [WinError 10048] Address already in use',
@@ -74,6 +91,9 @@ def test_dns_failure_quotes_host_for_powershell():
      'certificate has expired', '[DateTime]::UtcNow'),
     ('disk_full', 'make', 'No space left on device',
      'Get-PSDrive -PSProvider FileSystem'),
+    ('git_not_repository', 'git status',
+     'fatal: not a git repository (or any of the parent directories): .git',
+     'Get-Location'),
 ])
 def test_windows_diagnostics_offer_windows_read_only_next_steps(
         kind, script, output, command):
@@ -102,6 +122,10 @@ def test_windows_diagnostics_offer_windows_read_only_next_steps(
      "fatal: detected dubious ownership in repository at '/tmp/project'",
      'git_dubious_ownership',
      'Git refused to trust this repository ownership.'),
+    ('git status',
+     'fatal: not a git repository (or any of the parent directories): .git',
+     'git_not_repository',
+     'Git could not find a repository here or in a parent directory.'),
 ])
 def test_known_failures_are_named_without_guessing(script, output, kind,
                                                    summary):

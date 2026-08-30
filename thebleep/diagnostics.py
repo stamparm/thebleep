@@ -197,9 +197,24 @@ def _dubious_ownership(script, output, platform_name):
     }
 
 
+def _git_not_repository(script, output, platform_name):
+    if not re.search(r'not a git repository', output, re.IGNORECASE):
+        return None
+    match = re.search(r'not a git repository', output, re.IGNORECASE)
+    return {
+        'kind': 'git_not_repository',
+        'summary': 'Git could not find a repository here or in a parent '
+                   'directory.',
+        'evidence': [match.group(0).lower()],
+        'next_steps': [_step(
+            _shell_command('pwd', 'Get-Location', platform_name),
+            'check the directory where the command is running')],
+    }
+
+
 _DETECTORS = (_address_in_use, _permission_denied, _certificate_expired,
               _disk_full, _connection_refused, _missing_module,
-              _dubious_ownership, _dns_failure)
+              _git_not_repository, _dubious_ownership, _dns_failure)
 
 
 def diagnose(script, output=None, platform_name=None):
