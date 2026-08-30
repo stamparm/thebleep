@@ -1,3 +1,4 @@
+from thebleep.shells import shell
 from thebleep.utils import replace_argument
 from thebleep.specific.git import git_support
 
@@ -16,4 +17,4 @@ def match(command):
 @git_support
 def get_new_command(command):
     to = command.output.split('`')[1]
-    return replace_argument(command.script, to[1:], to)
+    return replace_argument(command.script, to[1:], shell.quote(to))

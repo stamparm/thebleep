@@ -561,6 +561,16 @@ class TestNamesFromSomewhereElse(object):
         command = Command(u'sudo {}'.format(shell.quote(payload)), output)
         assert canary(sudo_command_from_user_path.get_new_command(command)) == []
 
+    def test_git_two_dashes_quotes_the_option(self, name, payload, canary):
+        if ' ' in payload or '`' in payload:
+            return
+        from thebleep.rules import git_two_dashes
+
+        option = u'--{}'.format(payload)
+        output = u'error: did you mean `{}` (with two dashes)?'.format(option)
+        command = Command(u'git -{}'.format(payload), output)
+        assert canary(git_two_dashes.get_new_command(command)) == []
+
 
 @pytest.mark.skipif(sys.platform == 'win32', reason='needs a POSIX shell')
 def test_learned_correction_quotes_its_replacement(
