@@ -453,6 +453,9 @@ def _capture(report):
     states = backends.status()
     logger = next(item for item in states if item['name'] == 'shell-logger')
     instant = next(item for item in states if item['name'] == 'instant-log')
+    tmux = next(item for item in states if item['name'] == 'tmux')
+    if tmux['available']:
+        report.add('Replayless capture', 'tmux pane capture is available')
     if logger['configured'] and not logger['available']:
         report.add(
             'Replayless capture',

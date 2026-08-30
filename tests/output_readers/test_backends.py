@@ -18,7 +18,7 @@ def test_builtins_keep_replay_as_the_last_fallback(settings):
     assert [(item.name, item.replayless)
             for item in backends.builtins('gti status', 'error')] == [
                 ('shell-logger', True), ('instant-log', True),
-                ('replay', False)]
+                ('tmux', True), ('replay', False)]
 
 
 def test_a_registered_backend_runs_before_builtins(mocker):
@@ -56,15 +56,16 @@ def test_status_does_not_execute_a_command(settings, mocker):
     settings.instant_mode = False
 
     assert [item['name'] for item in backends.status()] == [
-        'shell-logger', 'instant-log', 'replay']
+        'shell-logger', 'instant-log', 'tmux', 'replay']
+    assert backends.status()[2]['configured'] is False
     assert not any(item['available'] for item in backends.status()
-                   if item['name'] != 'replay')
+                   if item['name'] not in ('replay',))
 
 
 def test_status_includes_registered_backend_health():
     backends.register(backends.CaptureBackend(
-        'tmux', True, lambda: False, lambda *_: None))
+        'custom', True, lambda: False, lambda *_: None))
 
     assert backends.status()[0] == {
-        'name': 'tmux', 'replayless': True,
+        'name': 'custom', 'replayless': True,
         'configured': True, 'available': False}
