@@ -33,9 +33,13 @@ def inline_command(args):
 
     # `None` is deliberate: Command.from_raw_script would acquire output by
     # running the command, which is exactly what an inline correction must not
-    # do. Rules requiring output are consequently not candidates.
-    corrected = next(iter(get_corrected_commands(types.Command(script, None))),
-                     None)
+    # do. Rules requiring output are consequently not candidates. An incomplete
+    # quote, substitution or escape is also not a command buffer to rewrite:
+    # its apparent words may belong to syntax the shell has not finished.
+    command = types.Command(script, None)
+    if not command.command_model.complete:
+        return 1
+    corrected = next(iter(get_corrected_commands(command)), None)
     if corrected is None:
         return 1
     print(corrected.script)

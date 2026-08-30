@@ -200,6 +200,17 @@ def suggest(script, output=None):
     _check_output(output)
 
     command = Command(script, output)
+    structure = command.command_model
+    if not structure.complete:
+        return {
+            'schema': SCHEMA_VERSION,
+            'command': script,
+            'structure': structure.as_dict(),
+            'output_supplied': output is not None,
+            'decision': 'abstain',
+            'suggestions': [],
+        }
+
     with tool_probes(False):
         suggestions = [
             _suggestion(corrected, command)
@@ -207,7 +218,7 @@ def suggest(script, output=None):
     return {
         'schema': SCHEMA_VERSION,
         'command': script,
-        'structure': command.command_model.as_dict(),
+        'structure': structure.as_dict(),
         'output_supplied': output is not None,
         'decision': 'suggest' if suggestions else 'abstain',
         'suggestions': suggestions,

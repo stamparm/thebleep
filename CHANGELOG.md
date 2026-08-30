@@ -91,6 +91,10 @@
 
 ### Fixed
 
+- **Inline and structured correction now abstain on incomplete shell syntax.**
+  Unclosed quotes, substitutions and escapes are preserved instead of being
+  handed to rules that could mistake their contents for command words.
+
 - **`--why` now understands POSIX tool output on Windows.** Git for Windows
   can report `/usr/bin/mkdir: ... No such file or directory`; Bleep now parses
   that wording while still offering a safe PowerShell inspection command.

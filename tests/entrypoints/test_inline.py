@@ -1,5 +1,7 @@
 from types import SimpleNamespace
 
+import pytest
+
 from thebleep import types
 from thebleep.entrypoints import inline
 from thebleep.shells import Generic
@@ -34,6 +36,18 @@ def test_inline_returns_one_when_it_has_no_correction(mocker, capsys):
 
     assert inline.inline_command(_args(command_text='gti status')) == 1
     assert capsys.readouterr().out == ''
+
+
+@pytest.mark.parametrize('command_text', ["echo 'unfinished", 'echo $(gti'])
+def test_inline_abstains_on_incomplete_shell_syntax(mocker, capsys,
+                                                    command_text):
+    mocker.patch.object(type(inline.settings), 'init')
+    corrections = mocker.patch.object(
+        inline, 'get_corrected_commands', return_value=[])
+
+    assert inline.inline_command(_args(command_text=command_text)) == 1
+    assert capsys.readouterr().out == ''
+    corrections.assert_not_called()
 
 
 def test_inline_rejects_ambiguous_and_empty_commands(mocker, capsys):

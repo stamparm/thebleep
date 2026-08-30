@@ -319,7 +319,8 @@ Inline correction has no command output to inspect, so rules that require
 stderr are skipped. The generic command lookup can still use your PATH, shell
 aliases and builtins, including a misspelled command inside `$(...)`. Use
 `--inline --command 'gti status'` to try the same non-executing lookup without
-a line editor.
+a line editor. Incomplete quotes, substitutions and escapes are left alone:
+the shell has not finished defining the command boundaries, so Bleep abstains.
 
 ### Which shells
 
@@ -508,6 +509,10 @@ that no known high-risk marker was found; it is not a safety guarantee. The
 matched output from the read requirement, side effect or privilege change
 without parsing prose. If output is omitted, output-dependent rules are
 skipped; the API never replays a command to fill it in.
+
+If the source-preserving structure is incomplete (`complete: false`), the API
+returns `decision: abstain` without loading or running correction rules. This
+keeps partial shell syntax out of editor and agent rewrites.
 
 Each suggestion's `edits` is a source-preserving patch: every item gives
 `start`, `end`, the original `source` slice and its `replacement`. Apply edits

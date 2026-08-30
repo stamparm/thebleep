@@ -78,6 +78,19 @@ def test_suggest_does_not_collect_missing_output(mocker):
     assert result['suggestions'] == []
 
 
+@pytest.mark.parametrize('script', ["echo 'unfinished", 'echo $(gti status'])
+def test_suggest_abstains_on_incomplete_shell_syntax(mocker, script):
+    corrections = mocker.patch.object(
+        api, 'get_corrected_commands', return_value=iter([]))
+
+    result = api.suggest(script)
+
+    assert result['structure']['complete'] is False
+    assert result['decision'] == 'abstain'
+    assert result['suggestions'] == []
+    corrections.assert_not_called()
+
+
 def test_suggest_does_not_run_helper_probes(mocker):
     from thebleep import utils
 
