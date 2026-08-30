@@ -33,6 +33,10 @@ _POSIX_PERMISSION_PATH = re.compile(
     r'''(?im)^[^:\r\n]+:\s+(?:cannot [^'"\r\n]+ )?
         (?P<quote>['"]?)(?P<path>[^'"\r\n]+?)(?P=quote):
         \s*permission[ ]denied''', re.VERBOSE)
+_POSIX_MISSING_PATH = re.compile(
+    r'''(?im)^[^:\r\n]+:\s+(?:cannot[ ](?:access|stat)[ ])?
+        (?P<quote>['"]?)(?P<path>[^'"\r\n]+?)(?P=quote):
+        \s*no[ ]such[ ]file[ ]or[ ]directory''', re.VERBOSE)
 
 
 def _port(script, output):
@@ -77,8 +81,8 @@ def _python_error_path(output, kind):
     return match, path
 
 
-def _posix_permission_path(output):
-    match = _POSIX_PERMISSION_PATH.search(output)
+def _posix_path(output, pattern):
+    match = pattern.search(output)
     if not match:
         return None
 
@@ -91,6 +95,14 @@ def _posix_permission_path(output):
     if not isinstance(path, str) or not path:
         return None
     return match, path
+
+
+def _posix_permission_path(output):
+    return _posix_path(output, _POSIX_PERMISSION_PATH)
+
+
+def _posix_missing_path(output):
+    return _posix_path(output, _POSIX_MISSING_PATH)
 
 
 def _path_inspection(path, platform_name, permission=False):
@@ -228,13 +240,19 @@ def _missing_module(script, output, platform_name):
 
 def _missing_python_path(script, output, platform_name):
     path_error = _python_error_path(output, 'FileNotFoundError')
+    if not path_error and platform_name != 'nt':
+        path_error = _posix_missing_path(output)
     if not path_error:
         return None
     match, path = path_error
     return {
         'kind': 'missing_path',
-        'summary': 'Python could not find the requested path.',
-        'evidence': [match.group('message').strip().lower()],
+        'summary': ('Python could not find the requested path.'
+                    if match.groupdict().get('message')
+                    else 'The requested path does not exist.'),
+        'evidence': [match.group('message').strip().lower()
+                     if match.groupdict().get('message')
+                     else 'no such file or directory'],
         'next_steps': [_step(
             _path_inspection(path, platform_name),
             'check whether the requested path exists')],

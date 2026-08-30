@@ -134,6 +134,34 @@ def test_posix_permission_path_is_quoted():
         "ls -ld '/tmp/a; touch /tmp/bleep-owned'")
 
 
+def test_posix_missing_path_gets_a_safe_inspection_step():
+    result = diagnostics.diagnose(
+        'ls /tmp/bleep-does-not-exist',
+        'ls: cannot access /tmp/bleep-does-not-exist: '
+        'No such file or directory',
+        platform_name='posix')
+
+    assert result['diagnoses'] == [{
+        'kind': 'missing_path',
+        'summary': 'The requested path does not exist.',
+        'evidence': ['no such file or directory'],
+        'next_steps': [{
+            'command': 'ls -ld /tmp/bleep-does-not-exist',
+            'reason': 'check whether the requested path exists',
+            'risk': 'read-only'}]}]
+
+
+def test_posix_missing_path_is_quoted():
+    result = diagnostics.diagnose(
+        'ls /tmp/config',
+        "ls: cannot access '/tmp/a; touch /tmp/bleep-owned': "
+        'No such file or directory',
+        platform_name='posix')
+
+    assert result['diagnoses'][0]['next_steps'][0]['command'] == (
+        "ls -ld '/tmp/a; touch /tmp/bleep-owned'")
+
+
 @pytest.mark.parametrize('kind, script, output, command', [
     ('address_in_use', 'python server.py --port 5432',
      'OSError: [WinError 10048] Address already in use',
