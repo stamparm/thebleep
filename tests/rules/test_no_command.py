@@ -129,6 +129,21 @@ def test_process_substitution_is_not_assumed_for_other_shells(
         Command('echo <(gti status)', None)) == []
 
 
+@pytest.mark.parametrize('script', [
+    'echo "<(gti status)"',
+    "echo '<(gti status)'",
+    r'echo \<(gti status)',
+])
+def test_quoted_process_substitutions_are_not_commands(
+        mocker, set_shell, script):
+    from thebleep.shells import Bash
+
+    set_shell(Bash)
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    assert get_new_command(Command(script, None)) == []
+
+
 @pytest.mark.parametrize('script, expect', [
     ('echo $(gti status)', 'echo $(git status)'),
     ('echo "$(gti status)"', 'echo "$(git status)"'),

@@ -334,8 +334,10 @@ def _substitution_ranges(script, allow_backticks=True,
         openers.extend(('<(', '>('))
 
     for start in range(len(script) - 1):
-        if (script[start:start + 2] not in openers
+        opener = script[start:start + 2]
+        if (opener not in openers
                 or _in_single_quotes(script, start)
+                or (opener != '$(' and _in_double_quotes(script, start))
                 or _is_escaped(script, start)):
             continue
 
@@ -384,8 +386,8 @@ def _substitution_ranges(script, allow_backticks=True,
                 break
 
 
-def _in_single_quotes(script, end):
-    """Whether ``script[:end]`` ends inside a single-quoted word."""
+def _in_quotes(script, end, wanted):
+    """Whether ``script[:end]`` ends inside the requested quote type."""
     quote = None
     escaped = False
     for character in script[:end]:
@@ -398,7 +400,17 @@ def _in_single_quotes(script, end):
                 quote = None
             elif quote is None:
                 quote = character
-    return quote == "'"
+    return quote == wanted
+
+
+def _in_single_quotes(script, end):
+    """Whether ``script[:end]`` ends inside a single-quoted word."""
+    return _in_quotes(script, end, "'")
+
+
+def _in_double_quotes(script, end):
+    """Whether ``script[:end]`` ends inside a double-quoted word."""
+    return _in_quotes(script, end, '"')
 
 
 def _is_escaped(script, index):
