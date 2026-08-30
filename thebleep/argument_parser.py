@@ -23,6 +23,7 @@ DEFAULTS = {'alias': None,
             'learn_last': None,
             'learned': False,
             'pick': None,
+            'platform_name': None,
             'repeat': False,
             'shell': None,
             'shell_logger': None,
@@ -197,6 +198,11 @@ class Parser(object):
             action='store',
             metavar='DIRECTORY',
             help='evaluate --json in DIRECTORY')
+        self._parser.add_argument(
+            '--platform',
+            dest='platform_name',
+            choices=('posix', 'nt'),
+            help='target platform for --why (posix or nt)')
         self._parser.add_argument(
             '--clear-cache',
             action='store_true',

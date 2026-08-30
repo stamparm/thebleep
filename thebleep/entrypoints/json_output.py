@@ -71,8 +71,9 @@ def json_output(args):
     try:
         if args.cwd:
             os.chdir(args.cwd)
-        result = api.why(script, output) if args.why \
-            else api.suggest(script, output)
+        result = api.why(
+            script, output, getattr(args, 'platform_name', None)) \
+            if args.why else api.suggest(script, output)
     except OSError as error:
         logs.failed('Could not use {}: {}'.format(args.cwd, error))
         return 2

@@ -530,6 +530,9 @@ The command-line form is:
 thebleep --json --why --stderr error.txt --command 'python app.py'
 ```
 
+Use `--platform nt` when diagnosing Windows output from another platform;
+`posix` is the default for POSIX output.
+
 ##### [Back to Contents](#contents)
 
 ## thebleep --doctor

@@ -58,7 +58,21 @@ def test_json_output_can_diagnose_captured_output(mocker, capsys):
     args.why = True
 
     assert json_output(args) == 0
-    why.assert_called_once_with('python app.py', None)
+    why.assert_called_once_with('python app.py', None, None)
+    assert json.loads(capsys.readouterr().out) == {'diagnoses': []}
+
+
+def test_json_output_passes_target_platform(mocker, capsys):
+    _no_settings(mocker)
+    why = mocker.patch(
+        'thebleep.entrypoints.json_output.api.why',
+        return_value={'diagnoses': []})
+    args = _args([], command_text='python app.py')
+    args.why = True
+    args.platform_name = 'nt'
+
+    assert json_output(args) == 0
+    why.assert_called_once_with('python app.py', None, 'nt')
     assert json.loads(capsys.readouterr().out) == {'diagnoses': []}
 
 
