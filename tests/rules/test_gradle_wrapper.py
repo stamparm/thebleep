@@ -36,3 +36,8 @@ def test_not_match(mocker, exists, command, gradlew, which):
 def test_get_new_command(script, result):
     command = Command(script, '')
     assert get_new_command(command) == result
+
+
+def test_environment_assignment_is_preserved():
+    command = Command('GRADLE_USER_HOME=/tmp gradle build', '')
+    assert get_new_command(command) == 'GRADLE_USER_HOME=/tmp ./gradlew build'

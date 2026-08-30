@@ -207,3 +207,10 @@ class TestTheTaskListItself(object):
      'gradle installDebug')])
 def test_get_new_command(command, result):
     assert get_new_command(command)[0] == result
+
+
+def test_environment_assignment_is_preserved(tasks):
+    command = Command('GRADLE_OPTS=-Xmx1g gradle instardebug',
+                      output_not_found('instardebug'))
+    assert get_new_command(command)[0] == (
+        'GRADLE_OPTS=-Xmx1g gradle installDebug')

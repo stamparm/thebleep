@@ -46,3 +46,11 @@ def test_a_host_with_a_space_in_it_is_quoted(set_shell):
     set_shell(Bash)
     assert get_new_command(Command("whois 'a.b c.example.com'", '')) == [
         "whois 'b c.example.com'", 'whois example.com', 'whois com']
+
+
+def test_environment_assignment_is_preserved():
+    command = Command('WHOIS_TIMEOUT=5 whois meta.unix.stackexchange.com', '')
+    assert get_new_command(command) == [
+        'WHOIS_TIMEOUT=5 whois unix.stackexchange.com',
+        'WHOIS_TIMEOUT=5 whois stackexchange.com',
+        'WHOIS_TIMEOUT=5 whois com']

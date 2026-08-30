@@ -37,3 +37,10 @@ def test_not_match(command, isdir):
 def test_get_new_command(command, new_command):
     isdir.return_value = True
     assert get_new_command(command) == new_command
+
+
+def test_environment_assignment_is_preserved(isdir):
+    isdir.return_value = True
+    command = Command('CAT_MODE=1 cat foo', 'cat: foo: Is a directory\n')
+    assert match(command)
+    assert get_new_command(command) == 'CAT_MODE=1 ls foo'

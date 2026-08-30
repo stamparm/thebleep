@@ -1,7 +1,19 @@
 # -*- encoding: utf-8 -*-
 from urllib.parse import urlparse
 from thebleep.shells import shell
-from thebleep.utils import for_app
+from thebleep.utils import command_word_index, for_app, raw_script_parts
+
+
+def _target(command):
+    parts = command.script_parts
+    return parts[command_word_index(parts) + 1]
+
+
+def _replace_target(command, target):
+    parts = raw_script_parts(command.script)
+    start = command_word_index(parts)
+    parts[start + 1] = shell.quote(target)
+    return ' '.join(parts)
 
 
 @for_app('whois', at_least=1)
@@ -26,20 +38,20 @@ def match(command):
     a slash nor a dot in it, and this used to match it and then hand back `None`
     as the correction, which is what the user was then shown.
     """
-    target = command.script_parts[1]
+    target = _target(command)
     return '/' in target or '.' in target
 
 
 def get_new_command(command):
     # Quoted: a host name is the user's own text, but it reaches the shell as a
     # command either way.
-    url = command.script_parts[1]
+    url = _target(command)
 
     if '/' in url:
-        return u'whois ' + shell.quote(urlparse(url).netloc)
+        return _replace_target(command, urlparse(url).netloc)
 
     path = urlparse(url).path.split('.')
-    return [u'whois ' + shell.quote('.'.join(path[n:]))
+    return [_replace_target(command, '.'.join(path[n:]))
             for n in range(1, len(path))]
 
 

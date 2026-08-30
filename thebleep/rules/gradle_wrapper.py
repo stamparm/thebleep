@@ -1,15 +1,18 @@
 import os
-from thebleep.utils import for_app, which
+from thebleep.utils import command_word_index, for_app, raw_script_parts, which
 
 
 @for_app('gradle')
 def match(command):
-    return (not which(command.script_parts[0])
+    parts = command.script_parts
+    start = command_word_index(parts)
+    return (not which(parts[start])
             and 'not found' in command.output
             and os.path.isfile('gradlew'))
 
 
 def get_new_command(command):
-    parts = command.script.split(None, 1)
-    return u'./gradlew' if len(parts) == 1 \
-        else u'./gradlew {}'.format(parts[1])
+    parts = raw_script_parts(command.script)
+    start = command_word_index(parts)
+    parts[start] = './gradlew'
+    return ' '.join(parts)
