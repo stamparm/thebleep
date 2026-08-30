@@ -1,9 +1,17 @@
+import os
+
 from thebleep.utils import for_app, replace_argument, which
+from thebleep.utils import command_word_index
 
 
 @for_app("choco", "cinst")
 def match(command):
-    return ((command.script.startswith('choco install') or 'cinst' in command.script_parts)
+    parts = command.script_parts
+    start = command_word_index(parts)
+    app = os.path.basename(parts[start]) if start < len(parts) else None
+    return ((len(parts) > start + 1 and
+             ((app == 'choco' and parts[start + 1] == 'install')
+              or app == 'cinst'))
             and 'Installing the following packages' in command.output)
 
 

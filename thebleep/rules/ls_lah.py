@@ -24,7 +24,8 @@ _FAILURES = ('cannot access',
 
 @for_app('ls')
 def match(command):
-    if not command.script_parts or 'ls -' in command.script:
+    if not command.script_parts or any(
+            part.startswith('-') for part in command.script_parts[1:]):
         return False
 
     return not any(failure in command.output

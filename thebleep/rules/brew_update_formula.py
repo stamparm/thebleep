@@ -1,9 +1,11 @@
-from thebleep.utils import for_app, replace_argument
+from thebleep.utils import command_word_index, for_app, replace_argument
 
 
 @for_app('brew', at_least=2)
 def match(command):
-    return ('update' in command.script
+    parts = command.script_parts
+    start = command_word_index(parts)
+    return (parts[start + 1] == 'update'
             and "Error: This command updates brew itself" in command.output
             and "Use `brew upgrade" in command.output)
 

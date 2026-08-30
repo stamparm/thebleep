@@ -71,6 +71,11 @@ def not_test_match(command):
     assert not match(command)
 
 
+def test_match_requires_the_install_subcommand():
+    assert not match(Command('choco installer logstitcher',
+                             package_not_found_error))
+
+
 @pytest.mark.parametrize('before, after', [
     ('choco install logstitcher', 'choco install logstitcher.install'),
     ('cinst logstitcher', 'cinst logstitcher.install'),

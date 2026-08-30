@@ -19,6 +19,10 @@ def test_not_match(script):
     assert not match(Command(script, ''))
 
 
+def test_match_does_not_confuse_a_command_name_with_update():
+    assert not match(Command('brew updater foo', output))
+
+
 @pytest.mark.parametrize('script, formula, ', [
     ('brew update foo', 'foo'),
     ('brew update bar zap', 'bar zap')])
