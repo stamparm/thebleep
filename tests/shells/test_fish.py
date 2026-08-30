@@ -115,6 +115,29 @@ class TestFish(object):
         assert 'functions -e bleep' in loader
         assert 'thebleep --alias bleep | source' in loader
 
+    def test_instant_mode_is_supported(self, shell):
+        assert shell.supports_instant_mode()
+
+    def test_instant_mode_starts_the_logger(self, shell, os_environ,
+                                            monkeypatch):
+        monkeypatch.setattr(
+            'thebleep.shells.fish.instant_log_path',
+            lambda: '/tmp/fish capture')
+        alias = shell.instant_mode_alias('bleep')
+        assert 'set -gx THEBLEEP_INSTANT_MODE True' in alias
+        assert "set -gx THEBLEEP_OUTPUT_LOG '/tmp/fish capture'" in alias
+        assert 'env SHELL=fish' in alias
+        assert '--shell-logger' in alias
+        assert 'fish_exit' in alias
+
+    def test_instant_mode_marks_the_fish_prompt(self, shell, os_environ):
+        os_environ['THEBLEEP_INSTANT_MODE'] = 'true'
+        alias = shell.instant_mode_alias('bleep')
+        assert 'functions --copy fish_prompt' in alias
+        assert 'function fish_prompt' in alias
+        assert 'printf' in alias
+        assert 'function bleep' in alias
+
     def test_app_alias_alter_history(self, settings, shell):
         settings.alter_history = True
         assert (

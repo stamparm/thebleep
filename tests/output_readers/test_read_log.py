@@ -85,6 +85,16 @@ class TestWhatItReads(object):
              (u'echo foo-bar', u'wrong'))
         assert read_log.get_output(u'echo foo') == u'right'
 
+    def test_cursor_movement_between_words_does_not_hide_the_command(
+            self, tmpdir, os_environ):
+        # Fish's line editor redraws a command using carriage returns and
+        # cursor movement. The movement's final `C` used to make `status` look
+        # like it was part of the preceding terminal control sequence.
+        raw = (u'{}$ gti \r\x1b[21Cstatus\r\n'
+               u'fish: Unknown command: gti\r\n{}$ '.format(MARK, MARK))
+        _write(tmpdir, raw.encode('utf-8'))
+        assert 'Unknown command: gti' in read_log.get_output('gti status')
+
     def test_a_command_that_printed_nothing(self, tmpdir, os_environ):
         """An empty answer is an answer, and must not be read as a failure."""
         _log(tmpdir, (u'true', u''))

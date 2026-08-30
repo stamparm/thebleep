@@ -5,18 +5,14 @@ from thebleep.entrypoints.alias import _checked, _get_alias, \
 
 
 @pytest.mark.parametrize(
-    'enable_experimental_instant_mode, which, is_instant', [
-        (True, True, True),
-        (False, True, False),
-        (True, False, False)])
-def test_get_alias(monkeypatch, mocker,
-                   enable_experimental_instant_mode,
-                   which, is_instant):
+    'enable_experimental_instant_mode, is_instant', [
+        (True, True),
+        (False, False)])
+def test_get_alias(monkeypatch, mocker, enable_experimental_instant_mode,
+                   is_instant):
     args = Mock(
         enable_experimental_instant_mode=enable_experimental_instant_mode,
         alias='bleep', )
-    # `alias` imports `which` only when instant mode asks for it.
-    mocker.patch('thebleep.utils.which', return_value=which)
     shell = Mock(app_alias=lambda _: 'app_alias',
                  instant_mode_alias=lambda _: 'instant_mode_alias')
     monkeypatch.setattr('thebleep.entrypoints.alias.shell', shell)

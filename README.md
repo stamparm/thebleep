@@ -1408,15 +1408,17 @@ thebleep_contrib_foo
 Correcting a command means knowing what it printed, which normally means running
 it again — the reason *The Bleep*
 [asks first](#reading-the-previous-command). Instant mode takes the other way
-out: it records your session with [script](https://en.wikipedia.org/wiki/Script_(Unix))
-as it happens and reads the log, so the previous command never runs twice and
-the question never comes up. It is the better answer where it works, and it is
+out: a small PTY logger bundled with The Bleep records your session as it
+happens and reads the log, so the previous command never runs twice and the
+question never comes up. It is the better answer where it works, and it is
 also the faster one.
 
-Currently, instant mode only supports bash and zsh. zsh's autocorrect function also needs to be disabled in order for thebleep to work properly.
+Currently, instant mode supports bash, zsh and fish. zsh's autocorrect function
+also needs to be disabled in order for thebleep to work properly.
 
 To enable instant mode, add `--enable-experimental-instant-mode`
-to the alias initialization in `.bashrc`, `.bash_profile` or `.zshrc`.
+to the alias initialization in `.bashrc`, `.bash_profile`, `.zshrc` or
+`~/.config/fish/config.fish`.
 
 For example:
 
@@ -1424,11 +1426,17 @@ For example:
 eval $(thebleep --alias --enable-experimental-instant-mode)
 ```
 
+For fish, preserve the generated multiline function with `string collect`:
+
+```fish
+eval (thebleep --alias --enable-experimental-instant-mode | string collect)
+```
+
 ### What it does, and where it stops
 
 It is called experimental because it is, and it is worth being specific about
-which parts. This is what a real terminal was driven through, on bash 5.2 and
-zsh 5.9:
+which parts. This is what a real terminal was driven through, on bash 5.2,
+zsh 5.9 and fish 4.0.2:
 
 | | |
 | --- | --- |

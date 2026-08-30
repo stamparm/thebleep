@@ -104,9 +104,17 @@ def _get_script_group_lines(grouped, script):
 
     for script_line, lines in reversed(grouped):
         joined = _wrapped_together(script_line, lines, width)
+        # A line editor redraws a command with cursor movement between words.
+        # Fish 4, for example, records `gti \r\x1b[21Cstatus`; searching that
+        # raw stream makes the `C` at the end of the movement look like part of
+        # the word before `status`. Strip presentation controls for matching,
+        # while keeping the original stream for pyte to render below.
+        from ..utils import without_control_sequences
+
+        searchable = without_control_sequences(joined)
         position = 0
         for part in parts:
-            position = _find_word(joined, part, position)
+            position = _find_word(searchable, part, position)
             if position == -1:
                 break
             position += len(part)

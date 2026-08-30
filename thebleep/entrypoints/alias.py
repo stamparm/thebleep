@@ -1,7 +1,7 @@
 import re
 import sys
 from ..conf import settings
-from ..logs import failed, warn
+from ..logs import failed
 from ..shells import shell
 
 # What may be used as the name of the alias.
@@ -32,12 +32,10 @@ def _get_alias(known_args):
     alias = shell.app_alias(name)
 
     if known_args.enable_experimental_instant_mode:
-        from ..utils import which
-
-        if not which('script'):
-            warn("Instant mode requires `script` app")
-        else:
-            return shell.instant_mode_alias(name)
+        # Capture is provided by The Bleep's own PTY logger. The old check for
+        # an external `script` executable made instant mode disappear on a
+        # perfectly usable POSIX machine that did not ship that optional tool.
+        return shell.instant_mode_alias(name)
 
     return alias
 

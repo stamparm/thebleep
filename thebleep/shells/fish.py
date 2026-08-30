@@ -3,9 +3,10 @@ import os
 import sys
 from .. import logs
 from ..conf import settings
-from ..const import ARGUMENT_PLACEHOLDER, EXIT_EDIT, get_alias
+from ..const import ARGUMENT_PLACEHOLDER, EXIT_EDIT, USER_COMMAND_MARK, \
+    get_alias
 from ..utils import cache, tool_lines, tool_output
-from .generic import Generic
+from .generic import Generic, instant_log_path
 
 
 @cache('~/.config/fish/config.fish', '~/.config/fish/functions')
@@ -48,6 +49,51 @@ class Fish(Generic):
         `set`, `and`, no `$?` -- so `sh` running a fish command line is not
         running the same command at all."""
         return self._posix_replay_argv(['fish', '-c', script])
+
+    def supports_instant_mode(self):
+        return True
+
+    def instant_mode_alias(self, alias_name):
+        if os.environ.get('THEBLEEP_INSTANT_MODE', '').lower() == 'true':
+            # Fish prompts are functions rather than PS1. Copy the user's
+            # prompt once, then put the same zero-width marker in front of it
+            # that the recorder already understands for bash and zsh.
+            # Backslashes are literal in a fish single-quoted string, so use a
+            # double-quoted printf format and let printf turn them into real
+            # backspaces. Putting them directly in the quote leaves them as
+            # the two visible characters `\\b` and the reader cannot find a
+            # mark.
+            mark = '"{}"'.format(
+                USER_COMMAND_MARK + r'\b' * len(USER_COMMAND_MARK))
+            return '''
+set -g __thebleep_prompt_mark (printf {mark})
+set -gx PS1 $__thebleep_prompt_mark
+if not functions -q __thebleep_original_prompt
+    if functions -q fish_prompt
+        functions --copy fish_prompt __thebleep_original_prompt
+    else
+        function __thebleep_original_prompt
+            printf '> '
+        end
+    end
+end
+function fish_prompt
+    printf '%s' $__thebleep_prompt_mark
+    __thebleep_original_prompt
+end
+{app_alias}
+'''.format(mark=mark, app_alias=self.app_alias(alias_name))
+
+        log_path = self.quote(instant_log_path())
+        return '''
+set -gx THEBLEEP_INSTANT_MODE True
+set -gx THEBLEEP_OUTPUT_LOG {log}
+function __thebleep_cleanup --on-event fish_exit
+    command rm -f -- {log}
+end
+env SHELL=fish {command} --shell-logger {log}
+exit
+'''.format(log=log_path, command=self._invocation())
 
     def _get_overridden_aliases(self):
         overridden = os.environ.get('THEBLEEP_OVERRIDDEN_ALIASES',
