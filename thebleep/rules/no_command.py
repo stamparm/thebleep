@@ -230,7 +230,7 @@ def _is_available_command(word):
     return word in shell.get_builtin_commands()
 
 
-def _substitution_ranges(script):
+def _substitution_ranges(script, allow_backticks=True):
     """Yield the bodies of ``$(...)`` and backtick substitutions.
 
     This is intentionally only the small piece of shell structure needed by
@@ -268,6 +268,9 @@ def _substitution_ranges(script):
                     yield start + 2, index
                     break
             index += 1
+
+    if not allow_backticks:
+        return
 
     for start, character in enumerate(script):
         if (character != '`' or _in_single_quotes(script, start)
@@ -315,8 +318,11 @@ def _is_escaped(script, index):
 
 def _unknown_in_substitution(command, output_required=True):
     """Find one unknown command in a command substitution, if unambiguous."""
+    from thebleep.shells import shell
+
+    allow_backticks = type(shell).__name__ not in ('Powershell', 'Nushell')
     found = []
-    for start, end in _substitution_ranges(command.script):
+    for start, end in _substitution_ranges(command.script, allow_backticks):
         inner = command.update(script=command.script[start:end])
         unknown = _unknown_command(inner, output_required=output_required)
         if unknown is not None:

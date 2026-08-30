@@ -106,6 +106,18 @@ def test_does_not_treat_quoted_backtick_as_a_command(mocker):
     assert get_new_command(command) == []
 
 
+def test_does_not_treat_powershell_backtick_as_a_command(mocker, set_shell):
+    from thebleep.shells import Powershell
+
+    set_shell(Powershell)
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command('Write-Output `gti status',
+                      'gti: command not found')
+
+    assert get_new_command(command) == []
+
+
 def test_inline_correction_works_inside_a_substitution(mocker):
     mocker.patch('thebleep.rules.no_command.which', return_value=None)
 
