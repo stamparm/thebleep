@@ -7,7 +7,8 @@ def match(command):
 
 
 def get_new_command(command):
-    return ' '.join(command.script_parts[1:])
+    parts = command.script.split(None, 1)
+    return parts[1] if len(parts) > 1 else ''
 
 
 # it should be rare enough to actually have to type twice the same word, so

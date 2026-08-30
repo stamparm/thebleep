@@ -28,6 +28,7 @@ else. Message wording captured from GNU coreutils 9.x.
 import os
 import re
 from thebleep.specific.sudo import sudo_support
+from thebleep.utils import raw_script_parts
 
 # `ln: failed to create symbolic link 'x': File exists` -- GNU's spelling.
 # macOS/BSD says `ln: x: File exists` instead. In both cases the name ln was
@@ -106,8 +107,12 @@ def get_new_command(command):
         return []
 
     source, destination = pair
-    parts = command.script_parts[:]
+    parts = raw_script_parts(command.script)
+    if len(parts) != len(command.script_parts):
+        return []
+
     # Swapped in place, so the flags stay exactly where they were written.
-    first, second = parts.index(source), parts.index(destination)
+    first, second = (command.script_parts.index(source),
+                     command.script_parts.index(destination))
     parts[first], parts[second] = parts[second], parts[first]
     return ' '.join(parts)

@@ -768,6 +768,38 @@ def _argument_spans(script):
             token_start = index
 
 
+def raw_script_parts(script):
+    """Return shell words with their original quoting and escaping intact."""
+    parts = []
+    token_start = None
+    quote = None
+    escaped = False
+
+    for index, character in enumerate(script + u' '):
+        if token_start is None:
+            if character.isspace():
+                continue
+            token_start = index
+
+        if escaped:
+            escaped = False
+            continue
+        if character == u'\\' and quote != u"'":
+            escaped = True
+            continue
+        if character in (u"'", u'"'):
+            if quote == character:
+                quote = None
+            elif quote is None:
+                quote = character
+            continue
+        if character.isspace() and quote is None:
+            parts.append(script[token_start:index])
+            token_start = None
+
+    return parts
+
+
 def replace_value(script, rejected, name):
     """`script` with an option's rejected *value* replaced by `name`, quoted.
 

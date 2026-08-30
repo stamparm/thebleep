@@ -259,6 +259,37 @@ class TestNamesFromSomewhereElse(object):
 
         assert canary(npm_run_script.get_new_command(command)) == []
 
+    def test_dry_preserves_a_quoted_argument(self, name, payload, canary):
+        from thebleep.rules import dry
+
+        command = Command(u"echo echo 'a;>DRY'", u'')
+
+        assert canary(dry.get_new_command(command)) == []
+
+    def test_grep_arguments_order_preserves_a_quoted_argument(
+            self, name, payload, canary, tmpdir, monkeypatch):
+        from thebleep.rules import grep_arguments_order
+
+        tmpdir.join('existing').write('')
+        monkeypatch.chdir(str(tmpdir))
+        command = Command(
+            u"grep 'a;>GREP' existing",
+            u'grep: existing: No such file or directory')
+
+        assert canary(grep_arguments_order.get_new_command(command)) == []
+
+    def test_ln_s_order_preserves_quoted_operands(
+            self, name, payload, canary, tmpdir, monkeypatch):
+        from thebleep.rules import ln_s_order
+
+        tmpdir.join('existing').write('')
+        monkeypatch.chdir(str(tmpdir))
+        command = Command(
+            u"ln -s 'a;>LN' existing",
+            u'ln: existing: File exists')
+
+        assert canary(ln_s_order.get_new_command(command)) == []
+
     def test_git_push_different_branch_names(self, name, payload, canary):
         """A whole `git push <remote> <branch>` line, repeated back."""
         from thebleep.rules import git_push_different_branch_names as rule

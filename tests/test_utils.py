@@ -220,6 +220,13 @@ def test_tool_probe_scope_is_nested_and_restored():
     assert utils._tool_probe_state().get()
 
 
+def test_raw_script_parts_keep_original_word_spelling():
+    from thebleep.utils import raw_script_parts
+
+    assert raw_script_parts("echo 'a b' c\\ d") == [
+        'echo', "'a b'", 'c\\ d']
+
+
 @pytest.mark.parametrize('script, result', [
     ('fab "keep extenson" extenson:version=1',
      'fab "keep extenson" prepare_extension:version=1'),

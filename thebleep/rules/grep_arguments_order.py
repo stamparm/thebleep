@@ -1,5 +1,5 @@
 import os
-from thebleep.utils import for_app
+from thebleep.utils import for_app, raw_script_parts
 
 
 def _get_actual_file(parts):
@@ -16,8 +16,12 @@ def match(command):
 
 def get_new_command(command):
     actual_file = _get_actual_file(command.script_parts)
-    parts = command.script_parts[::]
+    parts = raw_script_parts(command.script)
+    if actual_file is None or len(parts) != len(command.script_parts):
+        return []
+
+    actual_file_index = command.script_parts.index(actual_file)
     # Moves file to the end of the script:
-    parts.remove(actual_file)
-    parts.append(actual_file)
+    raw_file = parts.pop(actual_file_index)
+    parts.append(raw_file)
     return ' '.join(parts)
