@@ -1,0 +1,52 @@
+# -*- encoding: utf-8 -*-
+
+import json
+
+from thebleep import project_context
+
+
+def test_package_scripts_use_the_nearest_manifest(tmpdir):
+    root = tmpdir.mkdir('project')
+    nested = root.mkdir('packages').mkdir('web')
+    root.join('package.json').write(json.dumps(
+        {'scripts': {'root-task': 'true'}}))
+    nested.join('package.json').write(json.dumps(
+        {'scripts': {'build; rm -rf ~': 'true', 'test': 'true'}}))
+
+    assert project_context.package_scripts(str(nested)) == [
+        'build; rm -rf ~', 'test']
+
+
+def test_package_scripts_find_a_parent_manifest(tmpdir):
+    root = tmpdir.mkdir('project')
+    nested = root.mkdir('src').mkdir('deep')
+    root.join('package.json').write(json.dumps(
+        {'scripts': {'build': 'true'}}))
+
+    assert project_context.package_scripts(str(nested)) == ['build']
+
+
+def test_missing_manifest_is_distinct_from_empty_scripts(tmpdir):
+    empty = tmpdir.mkdir('empty')
+    assert project_context.package_scripts(str(empty)) is None
+
+    empty.join('package.json').write(json.dumps({'name': 'project'}))
+    assert project_context.package_scripts(str(empty)) == []
+
+
+def test_invalid_or_oversized_manifests_are_abstentions(tmpdir):
+    project = tmpdir.mkdir('project')
+    manifest = project.join('package.json')
+    manifest.write('{"scripts":')
+    assert project_context.package_scripts(str(project)) is None
+
+    manifest.write('x' * (project_context.MAX_JSON_BYTES + 1))
+    assert project_context.package_scripts(str(project)) is None
+
+
+def test_manifest_keys_must_be_usable_command_names(tmpdir):
+    project = tmpdir.mkdir('project')
+    project.join('package.json').write(json.dumps({'scripts': {
+        'ok': 'true', '\nnot-a-line': 'true', '\u0000bad': 'true'}}))
+
+    assert project_context.package_scripts(str(project)) == ['ok']

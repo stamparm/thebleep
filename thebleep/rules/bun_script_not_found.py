@@ -27,9 +27,9 @@ Wordings captured from bun 1.4.0.
 
 """
 
-import json
 import os
 import re
+from thebleep import project_context
 from thebleep.utils import cache, eager, for_app, replace_command, tool_lines
 from thebleep.utils import which
 
@@ -59,17 +59,7 @@ def _package_json():
     project's.
 
     """
-    directory = os.getcwd()
-    while True:
-        candidate = os.path.join(directory, 'package.json')
-        if os.path.isfile(candidate):
-            return candidate
-
-        parent = os.path.dirname(directory)
-        if parent == directory:
-            return None
-
-        directory = parent
+    return project_context.find_up('package.json')
 
 
 @eager
@@ -79,22 +69,11 @@ def _scripts():
     if not path:
         return
 
-    try:
-        with open(path, encoding='utf-8') as handle:
-            package = json.load(handle)
-    except (EnvironmentError, ValueError):
-        # Unreadable, or not JSON at all. A rule with no list has nothing to
-        # suggest, which is a rule that does not fire -- and a half-written
-        # `package.json` is a normal thing to have on disk while editing one.
+    scripts = project_context.package_scripts(os.path.dirname(path))
+    if scripts is None:
         return
 
-    scripts = package.get('scripts') if isinstance(package, dict) else None
-    if not isinstance(scripts, dict):
-        return
-
-    for name in scripts:
-        if isinstance(name, str) and name:
-            yield name
+    yield from scripts
 
 
 @eager

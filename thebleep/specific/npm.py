@@ -1,4 +1,5 @@
 import re
+from thebleep import project_context
 from thebleep.utils import memoize, eager, which, tool_lines
 
 npm_available = bool(which('npm'))
@@ -29,10 +30,32 @@ LIFECYCLE_HEADING = 'Lifecycle scripts included in'
 RUN_SCRIPT_HEADING = 'available via `npm run-script`:'
 NAME = re.compile(r'^ {2}(\S+)\s*$')
 
+# npm treats these names as lifecycle commands, so `npm test` and `npm start`
+# already dispatch to the project's script without `run-script`.  The
+# manifest provider has the authoritative names but not npm's dispatch rules;
+# keep that small, stable distinction here.
+LIFECYCLE_SCRIPTS = frozenset((
+    'prepublish', 'prepare', 'prepublishOnly', 'prepack', 'postpack',
+    'publish', 'postpublish', 'preinstall', 'install', 'postinstall',
+    'preversion', 'version', 'postversion', 'pretest', 'test', 'posttest',
+    'prestop', 'stop', 'poststop', 'prestart', 'start', 'poststart',
+    'prerestart', 'restart', 'postrestart', 'preshrinkwrap', 'shrinkwrap',
+    'postshrinkwrap', 'preuninstall', 'uninstall', 'postuninstall',
+    'dependencies'))
+
 
 @memoize
 def _sections():
     """`(lifecycle, run_script)`, as `npm run-script` lists them."""
+    scripts = project_context.package_scripts()
+    if scripts is not None:
+        lifecycle = [name for name in scripts if name in LIFECYCLE_SCRIPTS]
+        run_script = [name for name in scripts if name not in lifecycle]
+        return lifecycle, run_script
+
+    # A checkout without package.json still gets the historical behavior: npm
+    # may be resolving a workspace or another project-specific source that is
+    # not visible from this directory.
     found = {LIFECYCLE_HEADING: [], RUN_SCRIPT_HEADING: []}
     heading = None
 

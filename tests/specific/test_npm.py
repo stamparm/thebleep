@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from thebleep.specific.npm import get_scripts
 
@@ -23,3 +25,15 @@ def test_get_scripts(mocker):
         'thebleep.specific.npm.tool_lines',
         return_value=run_script_stdout.decode('utf-8').splitlines())
     assert get_scripts() == ['build', 'develop', 'watch-test']
+
+
+@pytest.mark.usefixtures('no_memoize')
+def test_get_scripts_reads_the_manifest_without_running_npm(
+        tmpdir, monkeypatch, mocker):
+    tmpdir.join('package.json').write(json.dumps({'scripts': {
+        'build': 'true', 'test': 'true', 'deploy': 'true'}}))
+    monkeypatch.chdir(tmpdir)
+    probe = mocker.patch('thebleep.specific.npm.tool_lines')
+
+    assert get_scripts() == ['build', 'deploy']
+    probe.assert_not_called()

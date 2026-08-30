@@ -542,6 +542,12 @@ commands are selected for the
 current platform; callers using the Python API can pass `platform_name='nt'`
 when diagnosing output for a Windows target from another machine.
 
+Project-aware candidates are read from the nearest `package.json` when one is
+available. The npm and bun rules use its declared script names directly, so a
+correction does not launch the package manager just to list the same scripts;
+the manifest is bounded, never executed, and an unreadable one leaves the
+existing tool-output fallback or abstains safely.
+
 The command-line form is:
 
 ```bash
@@ -1143,7 +1149,7 @@ The following rules are enabled by default:
 * `mkdir_p` — adds `-p` when you try to create a directory without a parent;
 * `mvn_no_command` — adds `clean package` to `mvn`;
 * `mvn_unknown_lifecycle_phase` — fixes misspelled life cycle phases with `mvn`;
-* `npm_missing_script` — fixes `npm` custom script name in `npm run-script <script>`;
+* `npm_missing_script` — fixes `npm` custom script name in `npm run-script <script>`, using the nearest `package.json` when available;
 * `npm_run_script` — adds missing `run-script` for custom `npm` scripts;
 * `npm_wrong_command` — fixes wrong npm commands like `npm urgrade`;
 * `no_command` — fixes wrong console commands, for example `vom/vim`;
