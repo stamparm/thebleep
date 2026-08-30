@@ -24,10 +24,24 @@ _PORT_IN_URL = re.compile(
 _MODULE = re.compile(
     r"(?:ModuleNotFoundError: )?No module named ['\"]([^'\"]+)['\"]")
 _DNS_HOST = re.compile(r'could not resolve host:\s*([^\s]+)', re.IGNORECASE)
+_DNS_GENERIC = re.compile(r'could not resolve host\b', re.IGNORECASE)
 _DNS_HOSTNAME = re.compile(
     r'could not resolve hostname\s+([^:\s]+)', re.IGNORECASE)
 _DNS_BAD_ADDRESS = re.compile(
     r"bad address ['\"]([^'\"\r\n]+)['\"]", re.IGNORECASE)
+_DNS_GETADDRINFO = re.compile(
+    r'getaddrinfo\s+(?:ENOTFOUND|EAI_AGAIN)\s+([^\s\]}]+)',
+    re.IGNORECASE)
+_DNS_UNABLE = re.compile(
+    r'unable to resolve host address[:\s]+([^\s]+)', re.IGNORECASE)
+_DNS_TEMPORARY = re.compile(
+    r'temporary failure in name resolution', re.IGNORECASE)
+_DNS_HOST_IN_COMMAND = re.compile(
+    r"(?:getaddrinfo|lookup|resolve)\s*\(\s*['\"]([^'\"\r\n]+)",
+    re.IGNORECASE)
+_DNS_URL_IN_COMMAND = re.compile(
+    r'\b(?:https?|ftp)://(?:[^/@\s]+@)?'
+    r'(?P<host>\[[^\]]+\]|[^/:?\s]+)', re.IGNORECASE)
 _READ_ONLY_FS = re.compile(r'read[- ]only file system', re.IGNORECASE)
 _CONNECTION_TIMEOUT = re.compile(
     r'(?:connection timed out|connect(?:ion)? timeout|connect timed out|'
@@ -429,28 +443,41 @@ def _existing_path(script, output, platform_name):
 
 
 def _dns_failure(script, output, platform_name):
-    match = _DNS_HOST.search(output)
-    if match is None:
-        match = _DNS_HOSTNAME.search(output)
-    if match is None:
-        match = _DNS_BAD_ADDRESS.search(output)
+    match = None
+    for pattern in (_DNS_HOST, _DNS_GENERIC, _DNS_HOSTNAME, _DNS_BAD_ADDRESS,
+                    _DNS_GETADDRINFO, _DNS_UNABLE, _DNS_TEMPORARY):
+        match = pattern.search(output)
+        if match:
+            break
     if not match:
         return None
 
-    host = match.group(1).rstrip('.,;')
+    host = match.group(1).rstrip('.,;') if match.lastindex else None
     if not host:
-        return None
+        command_match = _DNS_HOST_IN_COMMAND.search(script)
+        if command_match:
+            host = command_match.group(1)
+        else:
+            url_match = _DNS_URL_IN_COMMAND.search(script)
+            host = url_match.group('host') if url_match else None
+            if host and host.startswith('['):
+                host = host[1:host.find(']')]
+            elif host:
+                host = host.split(':', 1)[0]
     evidence = match.group(0).lower()
-    return {
-        'kind': 'dns_failure',
-        'summary': 'The hostname could not be resolved.',
-        'evidence': [evidence],
-        'next_steps': [_step(
+    next_steps = []
+    if host:
+        next_steps.append(_step(
             _shell_command(
                 'getent hosts {}'.format(_quote(host, platform_name)),
                 'Resolve-DnsName {}'.format(_quote(host, platform_name)),
                 platform_name),
-            'check whether DNS can resolve the hostname')],
+            'check whether DNS can resolve the hostname'))
+    return {
+        'kind': 'dns_failure',
+        'summary': 'The hostname could not be resolved.',
+        'evidence': [evidence],
+        'next_steps': next_steps,
     }
 
 

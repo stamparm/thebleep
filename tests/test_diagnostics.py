@@ -5,7 +5,7 @@
 The examples below are the final lines captured from real commands: Python's
 second bind to an occupied local port, importing a missing Python module,
 ``df``/filesystem failures, refused/reset/timed-out TCP connections, TLS
-verification, and a DNS resolution failure from curl 8.5.0.
+verification, and DNS resolution failures from curl, Node.js, and Python.
 Only the stable wording is kept; paths, tracebacks and host-specific details
 are intentionally not part of the contract.
 """
@@ -112,6 +112,49 @@ def test_dns_failure_quotes_host_for_powershell():
 
     assert result['diagnoses'][0]['next_steps'][0]['command'] == (
         "Resolve-DnsName 'example.test'")
+
+
+def test_node_getaddrinfo_failure_extracts_host():
+    """Captured from Node.js v26.8.1 resolving an invalid host."""
+    result = diagnostics.diagnose(
+        'node -e "dns.lookup(\'thebleep-inventory-no-such.invalid\')"',
+        'Error: getaddrinfo ENOTFOUND thebleep-inventory-no-such.invalid',
+        platform_name='posix')
+
+    assert result['diagnoses'][0]['evidence'] == [
+        'getaddrinfo enotfound thebleep-inventory-no-such.invalid']
+    assert result['diagnoses'][0]['next_steps'][0]['command'] == (
+        'getent hosts thebleep-inventory-no-such.invalid')
+
+
+def test_python_temporary_dns_failure_extracts_host_from_command():
+    """Captured from Python 3.14 in a container with networking disabled."""
+    result = diagnostics.diagnose(
+        'python -c "socket.getaddrinfo(\'example.test\', 80)"',
+        'socket.gaierror: [Errno -3] Temporary failure in name resolution',
+        platform_name='posix')
+
+    assert result['diagnoses'][0]['evidence'] == [
+        'temporary failure in name resolution']
+    assert result['diagnoses'][0]['next_steps'][0]['command'] == (
+        'getent hosts example.test')
+
+
+def test_dns_failure_does_not_invent_a_host():
+    result = diagnostics.diagnose(
+        'tool', 'temporary failure in name resolution', platform_name='posix')
+
+    assert result['diagnoses'][0]['next_steps'] == []
+
+
+def test_dns_failure_extracts_host_from_url_when_output_has_no_host():
+    result = diagnostics.diagnose(
+        'curl https://example.test/api',
+        'curl: (6) Could not resolve host',
+        platform_name='posix')
+
+    assert result['diagnoses'][0]['next_steps'][0]['command'] == (
+        'getent hosts example.test')
 
 
 def test_busybox_dns_failure_extracts_quoted_host():
