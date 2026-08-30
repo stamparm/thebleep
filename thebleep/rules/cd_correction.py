@@ -4,7 +4,8 @@ import os
 from thebleep.specific.sudo import sudo_support
 from thebleep.rules import cd_mkdir
 from thebleep.shells import shell
-from thebleep.utils import for_app, get_close_matches
+from thebleep.utils import (command_word_index, for_app, get_close_matches,
+                            replace_argument)
 
 __author__ = "mmussomele"
 
@@ -31,7 +32,8 @@ def get_new_command(command):
     defaults to the rules of cd_mkdir.
     Change sensitivity by changing MAX_ALLOWED_DIFF. Default value is 0.6
     """
-    dest = command.script_parts[1].split(os.sep)
+    start = command_word_index(command.script_parts)
+    dest = command.script_parts[start + 1].split(os.sep)
     if dest[-1] == '':
         dest = dest[:-1]
 
@@ -51,4 +53,6 @@ def get_new_command(command):
             cwd = os.path.join(cwd, best_matches[0])
         else:
             return cd_mkdir.get_new_command(command)
-    return u'cd {}'.format(shell.quote(cwd))
+    return replace_argument(command.script,
+                            command.script_parts[start + 1],
+                            shell.quote(cwd))

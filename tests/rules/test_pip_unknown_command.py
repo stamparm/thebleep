@@ -88,3 +88,14 @@ class TestWithoutPipsList(object):
         pip.return_value = []
         command = Command('pip x requests', UNKNOWN.format('x', 'a;id'))
         assert get_new_command(command) == ["pip 'a;id' requests"]
+
+    def test_environment_assignment_keeps_pips_interpreter(self, mocker):
+        interpreter = mocker.patch.object(
+            pip_unknown_command, '_interpreter', return_value='python3')
+        command = Command(
+            'PIP_DISABLE_PIP_VERSION_CHECK=1 pip instatl requests',
+            UNKNOWN.format('instatl', 'install'))
+
+        assert get_new_command(command)[0] == \
+            'PIP_DISABLE_PIP_VERSION_CHECK=1 pip install requests'
+        interpreter.assert_called_once_with(command)

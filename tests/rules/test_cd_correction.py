@@ -1,5 +1,5 @@
 import pytest
-from thebleep.rules.cd_correction import match
+from thebleep.rules.cd_correction import get_new_command, match
 from thebleep.types import Command
 
 
@@ -19,5 +19,11 @@ def test_not_match(command):
     assert not match(command)
 
 
-# Note that get_new_command uses local filesystem, so not testing it here.
-# Instead, see the functional test `functional.test_cd_correction`
+def test_environment_assignment_is_preserved(tmp_path, monkeypatch):
+    (tmp_path / 'foo').mkdir()
+    monkeypatch.chdir(str(tmp_path))
+    command = Command('CDPATH= cd fop',
+                      'cd: fop: No such file or directory')
+
+    assert get_new_command(command) == \
+        'CDPATH= cd {}'.format(tmp_path / 'foo')

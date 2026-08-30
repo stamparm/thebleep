@@ -38,7 +38,7 @@ See `thebleep.matching`.
 
 import re
 from thebleep import matching
-from thebleep.utils import for_app, memoize, replace_argument
+from thebleep.utils import command_word_index, for_app, memoize, replace_argument
 from thebleep.specific.sudo import sudo_support
 
 BROKEN = re.compile(r'unknown command "([^"]+)"')
@@ -76,7 +76,11 @@ def _interpreter(command):
     """
     from thebleep.utils import which
 
-    path = which(command.script_parts[0])
+    start = command_word_index(command.script_parts)
+    if start == len(command.script_parts):
+        return None
+
+    path = which(command.script_parts[start])
     if path is None:
         return None
 
