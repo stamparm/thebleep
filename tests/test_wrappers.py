@@ -48,6 +48,9 @@ def peel(script):
     ('env FOO=bar BAZ=qux npm sart', 'env FOO=bar BAZ=qux ', 'npm sart'),
     ('sudo FOO=bar npm sart', 'sudo FOO=bar ', 'npm sart'),
     ('env -i -u HOME cargo buld', 'env -i -u HOME ', 'cargo buld'),
+    ('sudo git status > out.txt', 'sudo ', 'git status > out.txt'),
+    ('sudo env DEBUG=1 npm run bulid >log.txt', 'sudo env DEBUG=1 ',
+     'npm run bulid >log.txt'),
     # `--` ends the options.
     ('sudo -- git chekout', 'sudo -- ', 'git chekout'),
     # And they nest.
@@ -95,7 +98,7 @@ def test_what_is_peeled(script, prefix, command):
     'echo x | sudo tee /etc/hosts',
     'sudo git status; rm -rf /tmp/x',
     'sudo git status && echo done',
-    'sudo git status > out.txt',
+    'sudo git > >(cat)',
     'sudo `id` git status',
     # A wrapper word that would have to be re-quoted to be handed back.
     "sudo -u 'my user' git status",

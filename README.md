@@ -1067,6 +1067,8 @@ sudo -u www-data git checkout main
 and `stdbuf` are peeled off — nested, in any combination — the command
 underneath is corrected by every rule as though you had typed it on its own,
 and the wrapper comes back in front of the suggestion exactly as you wrote it.
+Output redirections stay attached too, so `sudo env DEBUG=1 npm nstall >log`
+can be corrected without rebuilding the command line.
 That is one model applied to every rule, in place of the `sudo`-only decorator
 that 26 of them had to ask for individually — which is still there, and still
 works, for rules outside this repository.
@@ -1078,7 +1080,8 @@ the command underneath in a hat. Neither is an option it does not recognise —
 that option might take a value, and mistaking a value for the command is worse
 than not offering a correction. Nor is a script with shell syntax in it, where
 the first word is not the only command anyway, nor a wrapper whose words would
-have to be re-quoted to be handed back. `time`, `strace` and `valgrind` are
+have to be re-quoted to be handed back. Pipes, command separators and nested
+substitutions remain outside that boundary. `time`, `strace` and `valgrind` are
 transparent and still not peeled, because the output being corrected from is
 partly theirs: `time git stauts` prints git's error and `time`'s report, and a
 rule that picks a name out of a command's output would offer one of `time`'s

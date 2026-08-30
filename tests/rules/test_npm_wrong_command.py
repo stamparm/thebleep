@@ -106,6 +106,37 @@ def test_prefixed_command_keeps_assignment():
         ['NPM_CONFIG_COLOR=false npm install']
 
 
+def test_wrapper_and_redirection_are_preserved():
+    script = 'sudo npm nstall package >npm.log'
+    output = output_modern('nstall')
+
+    assert get_new_command(Command(script, output)) == [
+        'sudo npm install package >npm.log']
+
+
+def test_modern_npm_without_a_hint_reads_its_complete_help(mocker):
+    # Captured from npm 11.19.0. The blank line after the heading is part of
+    # the current output, not a separator before the command list.
+    mocker.patch('thebleep.rules.npm_wrong_command.tool_lines', return_value=[
+        'npm <command>', '', 'All commands:', '',
+        '    access, adduser, approve-scripts, audit, bugs, cache, ci,',
+        '    completion, config, dedupe, deny-scripts, deprecate, diff,',
+        '    dist-tag, docs, doctor, edit, exec, explain, explore,',
+        '    find-dupes, fund, get, help, help-search, init, install,',
+        '    install-ci-test, install-scripts, install-test, link, ll,',
+        '    login, logout, ls, org, outdated, owner, pack, ping, pkg,',
+        '    prefix, profile, prune, publish, query, rebuild, repo,',
+        '    restart, root, run, sbom, search, set, shrinkwrap, stage,',
+        '    star, stars, start, stop, team, test, token, trust,',
+        '    undeprecate, uninstall, unpublish, unstar, update, version,',
+        '    view, whoami', ''])
+
+    assert get_new_command(Command(
+        'npm rn bulid',
+        'Unknown command: "rn"\n\nTo see a list of supported npm commands, '
+        'run:\n  npm help\n')) == 'npm run bulid'
+
+
 def test_legacy_npm_does_not_fall_back_to_first_command():
     assert get_new_command(Command('npm zzzzz', output)) == []
 

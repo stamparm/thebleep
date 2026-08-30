@@ -1,7 +1,7 @@
 import re
 from thebleep.specific.npm import npm_available
 from thebleep.utils import (command_word_index, replace_argument, for_app,
-                            eager, get_closest)
+                            eager, get_closest, tool_lines)
 from thebleep.specific.sudo import sudo_support
 from thebleep.shells import shell
 
@@ -57,17 +57,29 @@ def match(command):
 @eager
 def _get_available_commands(stdout):
     commands_listing = False
+    found_commands = False
     for line in stdout.split('\n'):
-        if line.startswith('where <command> is one of:'):
+        if (line.startswith('where <command> is one of:')
+                or line.startswith('All commands:')):
             commands_listing = True
         elif commands_listing:
             if not line:
-                break
+                if found_commands:
+                    break
+                continue
 
             for command in line.split(', '):
                 stripped = command.strip()
                 if stripped:
+                    found_commands = True
                     yield stripped
+
+
+@eager
+def _help_commands():
+    """The complete command list from npm's read-only help output."""
+    return _get_available_commands('\n'.join(tool_lines(
+        ['npm', '--help'], merge_stderr=True)))
 
 
 @sudo_support
@@ -86,6 +98,12 @@ def get_new_command(command):
                 for suggestion in suggested]
 
     npm_commands = _get_available_commands(command.output)
+    if not npm_commands:
+        # npm 7+ normally gives neither a list nor a suggestion for a typo.
+        # Its `--help` output explicitly labels the complete command list, so
+        # asking for that read-only metadata is a justified fallback. The
+        # structured API disables tool probes and consequently abstains here.
+        npm_commands = _help_commands()
     fixed = get_closest(wrong_command, npm_commands,
                         fallback_to_first=False)
     if fixed is None:

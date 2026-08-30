@@ -43,9 +43,8 @@ ASSIGNMENT = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
 # `nice -10 cmd` is the old spelling of `nice -n 10 cmd`.
 NICENESS = re.compile(r'^-\d+$')
 
-# Shell syntax that makes the first word something other than the whole story:
-# with a pipe or a `;` in it the script is several commands, and the wrapper in
-# front of the first one says nothing about the rest.
+# Shell syntax that needs the source-preserving parser below. Redirections are
+# safe to leave in the wrapped command; separators and nested syntax are not.
 SHELL_SYNTAX = frozenset('|&;<>()`\n\r')
 
 
@@ -269,7 +268,7 @@ def peel(script, script_parts):
     if len(script_parts) < 2:
         return None, None
 
-    if any(character in script for character in SHELL_SYNTAX):
+    if _has_unsupported_syntax(script):
         return None, None
 
     consumed = _wrapper_words(script_parts)
@@ -281,6 +280,32 @@ def peel(script, script_parts):
         return None, None
 
     return _cut(script, prefix_words)
+
+
+def _has_unsupported_syntax(script):
+    """Whether syntax makes a wrapper boundary unsafe to infer.
+
+    A redirection belongs to the command it decorates and can be preserved
+    verbatim while the command behind a wrapper is corrected. A separator,
+    substitution or group creates another command, though, so peeling only
+    the first wrapper would give rules an incomplete view of the line.
+    """
+    if not any(character in script for character in SHELL_SYNTAX):
+        return False
+
+    from .command_model import parse
+    from .shells import shell
+
+    shell_name = 'powershell' if type(shell).__name__ == 'Powershell' else 'posix'
+    model = parse(script, shell_name)
+    if not model.complete or len(model.segments) != 1:
+        return True
+
+    segment = model.segments[0]
+    if segment.separator is not None:
+        return True
+    return any(token.kind not in ('word', 'redirection', 'comment')
+               for token in segment.tokens)
 
 
 def _cut(script, prefix_words):

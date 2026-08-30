@@ -4,6 +4,14 @@
 
 ### Added
 
+- **Wrapped redirections stay correctable.** Transparent wrappers now preserve
+  parsed output redirections while still abstaining on pipes, chains and
+  nested shell syntax.
+
+- **Modern npm command typos use npm's complete help list.** When npm gives no
+  inline hint, a read-only `npm --help` probe can recover corrections such as
+  `npm rn bulid` → `npm run bulid`.
+
 - **`--why` explains executable launch failures.** Foreign binary formats and
   missing script interpreters now produce factual, read-only inspection steps.
 

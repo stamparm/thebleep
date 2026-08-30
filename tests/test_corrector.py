@@ -129,6 +129,8 @@ class TestCorrectionsBehindAWrapper(object):
         ('command git chekout master', 'command git checkout master'),
         ('setsid -f sudo -u root git chekout master',
          'setsid -f sudo -u root git checkout master'),
+        ('sudo env DEBUG=1 git chekout master >git.log',
+         'sudo env DEBUG=1 git checkout master >git.log'),
     ])
     def test_the_wrapper_comes_back_with_the_correction(self, script,
                                                         corrected):
