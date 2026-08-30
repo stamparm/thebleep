@@ -22,6 +22,15 @@ _PORT_IN_COMMAND = re.compile(
 _MODULE = re.compile(
     r"(?:ModuleNotFoundError: )?No module named ['\"]([^'\"]+)['\"]")
 _DNS_HOST = re.compile(r'could not resolve host:\s*([^\s]+)', re.IGNORECASE)
+_DOCKER_DAEMON = re.compile(
+    r'(?:cannot connect to the docker daemon|'
+    r'failed to connect to the docker api)', re.IGNORECASE)
+_SSH_HOST_WARNING = re.compile(
+    r'WARNING: (?:REMOTE HOST IDENTIFICATION HAS CHANGED|'
+    r'POSSIBLE DNS SPOOFING DETECTED)!', re.IGNORECASE)
+_SSH_HOST = re.compile(
+    r"host key for ['\"]?([^'\"\s]+)['\"]? (?:has changed|differs)",
+    re.IGNORECASE)
 _MISSING_INTERFACE = re.compile(
     r'(?:interface\s+(?P<name>[^\s:]+)\s+does not exist|'
     r'(?P<linux_name>[^\s:]+):\s+error fetching interface information:'
@@ -253,6 +262,43 @@ def _connection_refused(script, output, platform_name):
     }
 
 
+def _docker_daemon(script, output, platform_name):
+    match = _DOCKER_DAEMON.search(output)
+    if not match:
+        return None
+    return {
+        'kind': 'docker_daemon_unavailable',
+        'summary': 'Docker could not reach its daemon.',
+        'evidence': [match.group(0).lower()],
+        'next_steps': [_step(
+            'docker info',
+            'check whether the Docker daemon is reachable')],
+    }
+
+
+def _ssh_host_key(script, output, platform_name):
+    warning = _SSH_HOST_WARNING.search(output)
+    if not warning:
+        return None
+
+    host = _SSH_HOST.search(output)
+    evidence = [warning.group(0).lower()]
+    next_steps = []
+    if host:
+        name = host.group(1)
+        evidence.append('host {}'.format(name))
+        next_steps.append(_step(
+            'ssh-keygen -F {}'.format(_quote(name, platform_name)),
+            'inspect the stored key before changing it'))
+
+    return {
+        'kind': 'ssh_host_key_changed',
+        'summary': 'SSH rejected the host key; verify the server identity.',
+        'evidence': evidence,
+        'next_steps': next_steps,
+    }
+
+
 def _missing_module(script, output, platform_name):
     match = _MODULE.search(output)
     if not match:
@@ -396,7 +442,8 @@ _DETECTORS = (_address_in_use, _permission_denied, _certificate_expired,
               _disk_full, _connection_refused, _missing_module,
               _missing_python_path, _existing_path, _git_not_repository,
               _git_conflict,
-              _dubious_ownership, _dns_failure, _missing_interface)
+              _dubious_ownership, _dns_failure, _docker_daemon,
+              _ssh_host_key, _missing_interface)
 
 
 def diagnose(script, output=None, platform_name=None):

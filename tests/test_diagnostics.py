@@ -63,6 +63,53 @@ def test_dns_failure_quotes_host_for_powershell():
         "Resolve-DnsName 'example.test'")
 
 
+def test_docker_daemon_failure_offers_only_a_read_only_check():
+    result = diagnostics.diagnose(
+        'docker compose ps',
+        'ERROR: Cannot connect to the Docker daemon at '
+        'unix:///tmp/thebleep-no-docker.sock. Is the docker daemon running?',
+        platform_name='posix')
+
+    assert result['diagnoses'] == [{
+        'kind': 'docker_daemon_unavailable',
+        'summary': 'Docker could not reach its daemon.',
+        'evidence': ['cannot connect to the docker daemon'],
+        'next_steps': [{
+            'command': 'docker info',
+            'reason': 'check whether the Docker daemon is reachable',
+            'risk': 'read-only'}]}]
+
+
+def test_ssh_host_key_failure_warns_before_any_key_removal():
+    result = diagnostics.diagnose(
+        'ssh user@example.test',
+        'WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!\n'
+        'Host key for example.test has changed.',
+        platform_name='posix')
+
+    assert result['diagnoses'] == [{
+        'kind': 'ssh_host_key_changed',
+        'summary': 'SSH rejected the host key; verify the server identity.',
+        'evidence': [
+            'warning: remote host identification has changed!',
+            'host example.test'],
+        'next_steps': [{
+            'command': 'ssh-keygen -F example.test',
+            'reason': 'inspect the stored key before changing it',
+            'risk': 'read-only'}]}]
+
+
+def test_ssh_host_name_is_quoted_in_the_inspection_step():
+    result = diagnostics.diagnose(
+        'ssh user@host',
+        'WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!\n'
+        'Host key for bad$(touch has changed.',
+        platform_name='posix')
+
+    assert result['diagnoses'][0]['next_steps'][0]['command'] == (
+        "ssh-keygen -F 'bad$(touch'")
+
+
 def test_missing_network_interface_lists_available_interfaces():
     result = diagnostics.diagnose(
         'ifconfig thebleep-no-such-interface',
@@ -316,6 +363,16 @@ def test_windows_diagnostics_offer_windows_read_only_next_steps(
      'fatal: not a git repository (or any of the parent directories): .git',
      'git_not_repository',
      'Git could not find a repository here or in a parent directory.'),
+    ('docker ps',
+     'Cannot connect to the Docker daemon at unix:///var/run/docker.sock. '
+     'Is the docker daemon running?',
+     'docker_daemon_unavailable',
+     'Docker could not reach its daemon.'),
+    ('ssh user@example.test',
+     'WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!\n'
+     'Host key for example.test has changed.',
+     'ssh_host_key_changed',
+     'SSH rejected the host key; verify the server identity.'),
 ])
 def test_known_failures_are_named_without_guessing(script, output, kind,
                                                    summary):
