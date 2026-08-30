@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import shutil
 import subprocess
 import tempfile
 import threading
@@ -197,10 +198,32 @@ def _duration(started):
     return round((time.monotonic() - started) * 1000, 1)
 
 
+class _TemporaryDirectory:
+    """Create a probe directory without failing on Windows handle races."""
+
+    def __init__(self, prefix):
+        self.name = tempfile.mkdtemp(prefix=prefix)
+
+    def __enter__(self):
+        return self.name
+
+    def __exit__(self, exception_type, exception, traceback):
+        try:
+            shutil.rmtree(self.name)
+        except OSError:
+            if os.name != 'nt' and exception_type is None:
+                raise
+        return False
+
+
+def _temporary_directory(prefix):
+    return _TemporaryDirectory(prefix)
+
+
 def probe_commands(commands):
     """Probe installed commands while isolating home/configuration files."""
     by_name = {item['name'].casefold(): item['path'] for item in commands}
-    with tempfile.TemporaryDirectory(prefix='thebleep-inventory-') as home:
+    with _temporary_directory('thebleep-inventory-') as home:
         environment = os.environ.copy()
         for variable in ('HOME', 'USERPROFILE', 'APPDATA', 'XDG_CONFIG_HOME'):
             environment[variable] = home
@@ -220,8 +243,7 @@ def probe_commands(commands):
                 current_platform = platform.system()
                 if platforms and current_platform not in platforms:
                     continue
-                with tempfile.TemporaryDirectory(
-                        prefix='thebleep-probe-') as probe_directory:
+                with _temporary_directory('thebleep-probe-') as probe_directory:
                     for filename in files:
                         Path(probe_directory).joinpath(filename).touch()
                     probe_environment = environment.copy()
