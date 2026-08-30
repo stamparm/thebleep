@@ -125,6 +125,18 @@ class TestAskingTheProgram(object):
         assert match(command)
         assert get_new_command(command)[0] == 'ls --color'
 
+    def test_environment_assignment_is_not_used_as_the_program(self, installed):
+        command = Command('LC_ALL=C ls --colour', GNU)
+        assert get_new_command(command)[0] == 'LC_ALL=C ls --color'
+        installed.assert_called_once_with('ls', None)
+
+    def test_environment_assignment_preserves_git_subcommand(self, installed):
+        command = Command('GIT_OPTIONAL_LOCKS=0 git status --shrot',
+                          GIT_STATUS)
+        assert get_new_command(command)[0] == \
+            'GIT_OPTIONAL_LOCKS=0 git status --short'
+        installed.assert_not_called()
+
     def test_help_is_not_a_candidate(self, installed):
         """`Try 'ls --help'` puts `--help` in the output, and reading that as a
         candidate is what made `--colour` answer `--help` at first."""

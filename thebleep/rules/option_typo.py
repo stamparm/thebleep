@@ -56,7 +56,8 @@ Wordings captured from GNU coreutils 9.x, tar 1.35, curl 8.x and git 2.47.3.
 import re
 from thebleep import matching
 from thebleep.shells import shell
-from thebleep.utils import memoize, replace_argument, which
+from thebleep.utils import (command_word_index, memoize, replace_argument,
+                            which)
 
 # Every way a program says it did not know a long option. The name is captured
 # with or without its dashes, because git reports `shrot` for `--shrot`.
@@ -158,13 +159,14 @@ def _candidates(command, broken):
         return []
 
     parts = command.script_parts
+    start = command_word_index(parts)
     subcommand = None
-    for part in parts[1:]:
+    for part in parts[start + 1:]:
         if not part.startswith('-'):
             subcommand = part
             break
 
-    return [name for name in _options_from_help(parts[0], subcommand)
+    return [name for name in _options_from_help(parts[start], subcommand)
             if name != broken and name not in BOILERPLATE]
 
 
@@ -175,7 +177,10 @@ def match(command):
              or 'unrecognized argument' in command.output
              or ': is unknown' in command.output)
             and bool(command.script_parts)
-            and bool(which(command.script_parts[0]))
+            and bool(command_word_index(command.script_parts)
+                     < len(command.script_parts))
+            and bool(which(command.script_parts[
+                command_word_index(command.script_parts)]))
             and bool(_broken(command.output))
             and bool(_as_typed(command.script_parts, _broken(command.output))))
 

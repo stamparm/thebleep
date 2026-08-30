@@ -1,7 +1,7 @@
 from thebleep.specific.apt import apt_available
 from thebleep.specific.sudo import sudo_support
-from thebleep.utils import (for_app, eager, replace_argument, replace_command,
-                            tool_lines)
+from thebleep.utils import (command_word_index, for_app, eager,
+                            replace_argument, replace_command, tool_lines)
 
 enabled_by_default = apt_available
 
@@ -63,5 +63,6 @@ def get_new_command(command):
         return [replace_argument(command.script, 'uninstall', 'remove')]
 
     else:
-        operations = _get_operations(command.script_parts[0])
+        start = command_word_index(command.script_parts)
+        operations = _get_operations(command.script_parts[start])
         return replace_command(command, invalid_operation, operations)

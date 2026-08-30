@@ -1,6 +1,7 @@
 import re
-from thebleep.utils import (cache, for_app, replace_argument, replace_command,
-                            which, tool_lines)
+from thebleep.utils import (cache, command_word_index, for_app,
+                            replace_argument, replace_command, which,
+                            tool_lines)
 
 
 # Spelled out in the decorator below rather than starred from this tuple: the
@@ -30,7 +31,8 @@ def get_new_command(command):
     matched = [replace_argument(command.script, broken, common_typo)
                for common_typo in COMMON_TYPOS.get(broken, [])]
 
-    app = command.script_parts[0]
+    start = command_word_index(command.script_parts)
+    app = command.script_parts[start]
     app_commands = cache(which(app))(get_app_commands)(app)
     matched.extend(replace_command(command, broken, app_commands))
     return matched

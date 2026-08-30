@@ -56,3 +56,15 @@ def test_not_match(script, output):
 ])
 def test_get_new_command(script, pyenv_cmd, output, result):
     assert result in get_new_command(Command(script, output))
+
+
+def test_environment_assignment_is_not_used_as_the_app(mocker):
+    get_commands = mocker.patch(
+        'thebleep.rules.omnienv_no_such_command.get_app_commands',
+        return_value=['global'])
+    command = Command(
+        'PYENV_ROOT=/tmp/pyenv pyenv globe',
+        "pyenv: no such command `globe'")
+
+    assert 'PYENV_ROOT=/tmp/pyenv pyenv global' in get_new_command(command)
+    get_commands.assert_called_once_with('pyenv')

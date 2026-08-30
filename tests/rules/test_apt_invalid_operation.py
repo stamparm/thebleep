@@ -185,3 +185,15 @@ def test_apt_3_gets_a_correction(mocker):
     assert get_new_command(
         Command('apt instal vim',
                 invalid_operation_apt3('instal')))[0] == 'apt install vim'
+
+
+def test_environment_assignment_is_not_used_as_the_app(mocker):
+    get_operations = mocker.patch(
+        'thebleep.rules.apt_invalid_operation._get_operations',
+        return_value=apt_operations)
+
+    assert get_new_command(
+        Command('DEBIAN_FRONTEND=noninteractive apt instal vim',
+                invalid_operation_apt3('instal')))[0] == \
+        'DEBIAN_FRONTEND=noninteractive apt install vim'
+    get_operations.assert_called_once_with('apt')
