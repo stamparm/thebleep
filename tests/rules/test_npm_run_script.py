@@ -63,6 +63,14 @@ def test_match(script):
 
 
 @pytest.mark.usefixtures('no_memoize')
+def test_environment_assignment_is_preserved_in_match_and_replacement():
+    command = Command('NPM_CONFIG_LOGLEVEL=warn npm watch-test', output)
+    assert match(command)
+    assert get_new_command(command) == (
+        'NPM_CONFIG_LOGLEVEL=warn npm run-script watch-test')
+
+
+@pytest.mark.usefixtures('no_memoize')
 @pytest.mark.parametrize('command, run_script_out', [
     (Command('npm test', 'TEST FAIL'), run_script_stdout),
     (Command('npm watch-test', 'TEST FAIL'), run_script_stdout),
