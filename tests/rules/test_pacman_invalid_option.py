@@ -30,6 +30,15 @@ def test_get_new_command(option):
     assert new_command == "pacman -{}v meat".format(option.upper())
 
 
+@pytest.mark.parametrize("option", "surqfdvt")
+def test_prefixed_command(option):
+    command = Command("PACMAN_COLOR=0 pacman -{}v meat".format(option),
+                      bad_output)
+    assert match(command)
+    assert get_new_command(command) == \
+        "PACMAN_COLOR=0 pacman -{}v meat".format(option.upper())
+
+
 def test_quoted_option_text_does_not_match():
     command = Command('pacman "keep -s" meat', bad_output)
 

@@ -34,7 +34,9 @@ def test_not_match(file_exists, file_access, script, output, exists, callable):
 
 @pytest.mark.parametrize('script, result', [
     ('./gradlew build', 'chmod +x gradlew && ./gradlew build'),
-    ('./install.sh --help', 'chmod +x install.sh && ./install.sh --help')])
+    ('./install.sh --help', 'chmod +x install.sh && ./install.sh --help'),
+    ('TRACE=1 ./install.sh --help',
+     'chmod +x install.sh && TRACE=1 ./install.sh --help')])
 def test_get_new_command(script, result):
     assert get_new_command(Command(script, '')) == result
 

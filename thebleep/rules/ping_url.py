@@ -17,7 +17,7 @@ Refs: nvbn/thefuck#1243
 
 """
 
-from thebleep.utils import for_app, replace_argument
+from thebleep.utils import command_word_index, for_app, replace_argument
 from thebleep.shells import shell
 
 # What a resolver says when it was handed something that is not a name. The
@@ -37,7 +37,8 @@ def _looks_like_a_url(argument):
 
 
 def _urls(command):
-    return [part for part in command.script_parts[1:]
+    start = command_word_index(command.script_parts)
+    return [part for part in command.script_parts[start + 1:]
             if not part.startswith('-') and _looks_like_a_url(part)]
 
 

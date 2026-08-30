@@ -9,9 +9,8 @@ suggestion that changes nothing, offered for a command that had not failed.
 
 """
 
-import re
-
-from thebleep.utils import for_app
+from thebleep.utils import (command_word_index, for_app,
+                            replace_command_word)
 
 # Every way of saying "show me the hidden ones". `-A` adds nothing to any of
 # them.
@@ -19,7 +18,8 @@ ALREADY_ASKED = ('--all', '--almost-all')
 
 
 def _asks_for_hidden(command):
-    for part in command.script_parts[1:]:
+    start = command_word_index(command.script_parts)
+    for part in command.script_parts[start + 1:]:
         if part in ALREADY_ASKED:
             return True
         # A short-flag bundle: `-la`, `-Al`, `-a`.
@@ -39,4 +39,5 @@ def get_new_command(command):
     # Keep the user's original quoting: `ls 'a;touch marker'` is one literal
     # path, and rebuilding it from `script_parts` would turn the semicolon
     # into shell syntax in the suggestion.
-    return re.sub(r'^ls(?=\s|$)', 'ls -A', command.script, count=1)
+    start = command_word_index(command.script_parts)
+    return replace_command_word(command.script, start, 'ls -A')

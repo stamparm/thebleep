@@ -55,6 +55,12 @@ def test_get_new_command(script, fixed):
     assert get_new_command(Command(script, LINUX)) == fixed
 
 
+def test_prefixed_command_keeps_assignment():
+    command = Command('PING_COPIES=1 ping https://github.com/', LINUX)
+    assert match(command)
+    assert get_new_command(command) == 'PING_COPIES=1 ping github.com'
+
+
 def test_a_hostile_host_is_quoted():
     """It comes out of something that was pasted, and goes back to the shell."""
     command = Command('ping https://a;rm.com/x', LINUX)

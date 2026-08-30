@@ -1,6 +1,5 @@
 import os
-import re
-from thebleep.utils import for_app
+from thebleep.utils import command_word_index, for_app, replace_command_word
 
 
 def _is_recursive(part):
@@ -16,11 +15,14 @@ def _isdir(part):
 
 @for_app('prove')
 def match(command):
+    start = command_word_index(command.script_parts)
     return (
         'NOTESTS' in command.output
-        and not any(_is_recursive(part) for part in command.script_parts[1:])
-        and any(_isdir(part) for part in command.script_parts[1:]))
+        and not any(_is_recursive(part)
+                    for part in command.script_parts[start + 1:])
+        and any(_isdir(part) for part in command.script_parts[start + 1:]))
 
 
 def get_new_command(command):
-    return re.sub(r'^prove(?=\s|$)', 'prove -r', command.script, count=1)
+    return replace_command_word(
+        command.script, command_word_index(command.script_parts), 'prove -r')

@@ -49,6 +49,8 @@ def test_not_match(script, output):
 @pytest.mark.parametrize('script, result', [
     ('ifconfig wlan0', ['ifconfig wlp2s0']),
     ('ifconfig -s wlan0', ['ifconfig -s wlp2s0']),
+    ('IFCONFIG_COLOR=0 ifconfig wlan0',
+     ['IFCONFIG_COLOR=0 ifconfig wlp2s0']),
 ])
 def test_get_new_comman(script, result):
     new_command = get_new_command(

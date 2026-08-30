@@ -1,14 +1,16 @@
 from thebleep.specific.archlinux import archlinux_env
 from thebleep.specific.sudo import sudo_support
-from thebleep.utils import for_app, replace_argument_prefix
+from thebleep.utils import (command_word_index, for_app,
+                            replace_argument_prefix)
 
 
 INVALID_OPTIONS = "surqfdvt"
 
 
 def _invalid_option(command):
+    start = command_word_index(command.script_parts)
     return next((part[1]
-                 for part in command.script_parts[1:]
+                 for part in command.script_parts[start + 1:]
                  if len(part) > 1 and part.startswith('-')
                  and part[1] in INVALID_OPTIONS), None)
 

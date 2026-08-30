@@ -34,7 +34,8 @@ def test_not_match(isdir, script, output, isdir_result):
 
 @pytest.mark.parametrize('before, after', [
     ('prove -lv t', 'prove -r -lv t'),
-    ('prove t', 'prove -r t')])
+    ('prove t', 'prove -r t'),
+    ('HARNESS_VERBOSE=1 prove t', 'HARNESS_VERBOSE=1 prove -r t')])
 def test_get_new_command(before, after):
     command = Command(before, output)
     assert get_new_command(command) == after

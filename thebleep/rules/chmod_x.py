@@ -1,5 +1,6 @@
 import os
 from thebleep.shells import shell
+from thebleep.utils import command_word_index
 
 # The forms a script can be run by, all of which are a path rather than a name
 # the shell looks up on `PATH`:
@@ -22,7 +23,11 @@ def _path(command):
     if not command.script_parts:
         return None
 
-    first = command.script_parts[0]
+    start = command_word_index(command.script_parts)
+    if start == len(command.script_parts):
+        return None
+
+    first = command.script_parts[start]
     if os.sep not in first and (os.altsep is None or os.altsep not in first):
         return None
     return first

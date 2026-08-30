@@ -1,6 +1,7 @@
 import re
 
-from thebleep.utils import for_app, replace_command, eager, tool_lines
+from thebleep.utils import (command_word_index, for_app, replace_command,
+                            eager, tool_lines)
 
 
 LINUX_NOT_FOUND = re.compile(
@@ -34,7 +35,8 @@ def get_new_command(command):
 
 def _typed_interface(command, reported):
     """Use the complete operand when Linux shortened it in its diagnostic."""
-    for part in command.script_parts[1:]:
+    start = command_word_index(command.script_parts)
+    for part in command.script_parts[start + 1:]:
         if not part.startswith('-') and part.startswith(reported):
             return part
     return reported

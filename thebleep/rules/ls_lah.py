@@ -1,13 +1,11 @@
 # -*- encoding: utf-8 -*-
 
-import re
-
 # Appends -lah when ls ran but showed nothing hidden
 #
 # Example:
 # > ls
 # file.txt
-from thebleep.utils import for_app
+from thebleep.utils import command_word_index, for_app, replace_command_word
 
 # The ways an `ls` says it failed rather than listed. A rule that answers any
 # output at all was answering these too:
@@ -24,8 +22,9 @@ _FAILURES = ('cannot access',
 
 @for_app('ls')
 def match(command):
-    if not command.script_parts or any(
-            part.startswith('-') for part in command.script_parts[1:]):
+    start = command_word_index(command.script_parts)
+    if start == len(command.script_parts) or any(
+            part.startswith('-') for part in command.script_parts[start + 1:]):
         return False
 
     return not any(failure in command.output
@@ -33,7 +32,8 @@ def match(command):
 
 
 def get_new_command(command):
-    return re.sub(r'^ls(?=\s|$)', 'ls -lah', command.script, count=1)
+    return replace_command_word(
+        command.script, command_word_index(command.script_parts), 'ls -lah')
 
 
 # The error check above is the whole point now; without the output there is
