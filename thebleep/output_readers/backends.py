@@ -76,6 +76,36 @@ def _tmux_read(script, expanded):
     return tmux.get_output(script, expanded)
 
 
+def _zellij_available():
+    from . import zellij
+    return zellij.is_available()
+
+
+def _zellij_read(script, expanded):
+    from . import zellij
+    return zellij.get_output(script, expanded)
+
+
+def _wezterm_available():
+    from . import wezterm
+    return wezterm.is_available()
+
+
+def _wezterm_read(script, expanded):
+    from . import wezterm
+    return wezterm.get_output(script, expanded)
+
+
+def _kitty_available():
+    from . import kitty
+    return kitty.is_available()
+
+
+def _kitty_read(script, expanded):
+    from . import kitty
+    return kitty.get_output(script, expanded)
+
+
 def _replay_available(script, expanded):
     from .. import replay
     return replay.is_allowed(script, expanded)
@@ -94,6 +124,9 @@ def builtins(script, expanded, shell_logger_available=None):
         CaptureBackend('shell-logger', True, shell_logger_available,
                        _shell_logger_read),
         CaptureBackend('instant-log', True, _instant_available, _instant_read),
+        CaptureBackend('zellij', True, _zellij_available, _zellij_read),
+        CaptureBackend('wezterm', True, _wezterm_available, _wezterm_read),
+        CaptureBackend('kitty', True, _kitty_available, _kitty_read),
         CaptureBackend('tmux', True, _tmux_available, _tmux_read),
         CaptureBackend('replay', False,
                        lambda: _replay_available(script, expanded),
@@ -142,6 +175,9 @@ def status():
         CaptureBackend('shell-logger', True, _shell_logger_available,
                        _shell_logger_read),
         CaptureBackend('instant-log', True, _instant_available, _instant_read),
+        CaptureBackend('zellij', True, _zellij_available, _zellij_read),
+        CaptureBackend('wezterm', True, _wezterm_available, _wezterm_read),
+        CaptureBackend('kitty', True, _kitty_available, _kitty_read),
         CaptureBackend('tmux', True, _tmux_available, _tmux_read),
         CaptureBackend('replay', False, lambda: True, _replay_read))
     result = []
@@ -154,6 +190,24 @@ def status():
         elif backend.name == 'tmux':
             configured = bool(os.environ.get('TMUX')
                               and os.environ.get('TMUX_PANE'))
+            try:
+                available = backend.is_available()
+            except Exception:                                  # pragma: no cover
+                available = False
+        elif backend.name == 'zellij':
+            configured = bool(os.environ.get('ZELLIJ_PANE_ID'))
+            try:
+                available = backend.is_available()
+            except Exception:                                  # pragma: no cover
+                available = False
+        elif backend.name == 'wezterm':
+            configured = bool(os.environ.get('WEZTERM_PANE'))
+            try:
+                available = backend.is_available()
+            except Exception:                                  # pragma: no cover
+                available = False
+        elif backend.name == 'kitty':
+            configured = bool(os.environ.get('KITTY_WINDOW_ID'))
             try:
                 available = backend.is_available()
             except Exception:                                  # pragma: no cover

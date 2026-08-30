@@ -2,7 +2,7 @@
 
 import pytest
 
-from thebleep.output_readers import tmux
+from thebleep.output_readers import pane, tmux
 
 
 def test_a_command_must_follow_a_prompt():
@@ -43,11 +43,12 @@ def test_capture_is_bounded_and_uses_the_current_pane(mocker, monkeypatch):
     monkeypatch.setattr(tmux, 'which', lambda name: '/usr/bin/tmux')
     process = mocker.MagicMock(returncode=0)
     process.stdout.read.side_effect = [b'user$ gti status\nerror\nuser$ ', b'']
-    mocker.patch.object(tmux.subprocess, 'Popen', return_value=process)
+    mocker.patch.object(pane.subprocess, 'Popen', return_value=process)
 
     tmux._capture()
 
-    tmux.subprocess.Popen.assert_called_once_with(
+    pane.subprocess.Popen.assert_called_once_with(
         ['/usr/bin/tmux', '-S', 'socket', 'capture-pane', '-p', '-J',
          '-t', '%7'],
-        stdout=tmux.subprocess.PIPE, stderr=tmux.subprocess.DEVNULL)
+        stdin=pane.subprocess.DEVNULL, stdout=pane.subprocess.PIPE,
+        stderr=pane.subprocess.DEVNULL)

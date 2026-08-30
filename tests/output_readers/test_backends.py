@@ -18,6 +18,7 @@ def test_builtins_keep_replay_as_the_last_fallback(settings):
     assert [(item.name, item.replayless)
             for item in backends.builtins('gti status', 'error')] == [
                 ('shell-logger', True), ('instant-log', True),
+                ('zellij', True), ('wezterm', True), ('kitty', True),
                 ('tmux', True), ('replay', False)]
 
 
@@ -56,7 +57,8 @@ def test_status_does_not_execute_a_command(settings, mocker):
     settings.instant_mode = False
 
     assert [item['name'] for item in backends.status()] == [
-        'shell-logger', 'instant-log', 'tmux', 'replay']
+        'shell-logger', 'instant-log', 'zellij', 'wezterm', 'kitty', 'tmux',
+        'replay']
     assert backends.status()[2]['configured'] is False
     assert not any(item['available'] for item in backends.status()
                    if item['name'] not in ('replay',))

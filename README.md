@@ -1464,11 +1464,19 @@ It is called experimental because it is, and it is worth being specific about
 which parts. This is what a real terminal was driven through, on bash 5.2,
 zsh 5.9 and fish 4.0.2:
 
-Output acquisition is an ordered backend chain: an external logger or instant
-recording is preferred, then the existing consent-gated replay path. Terminal
-integrations can add a backend without changing correction rules; a backend
-that cannot identify the requested command returns no answer and the chain
-continues safely.
+Output acquisition is an ordered backend chain: an external logger, instant
+recording, or a terminal-native pane capture is preferred, then the existing
+consent-gated replay path. Inside **tmux, Zellij, WezTerm or kitty**, The Bleep
+reads the current pane/window directly, so it does not run the failed command
+again. Terminal integrations can add a backend without changing correction
+rules; a backend that cannot identify the requested command returns no answer
+and the chain continues safely.
+
+Kitty must have remote control enabled (`allow_remote_control` or a configured
+remote-control password); otherwise its client is present but the pane read is
+rejected and the normal fallback remains available. These readers only ask
+their terminal for text: they never send keys, focus another pane, accept a
+remote-control prompt, or rerun the failed command.
 
 | | |
 | --- | --- |
@@ -1499,8 +1507,8 @@ after the alias is set up — powerlevel10k, starship, some oh-my-zsh themes —
 switches instant mode off, with a warning saying so.
 
 Where it does not work it does not go wrong: the mark is missing, or the command
-has scrolled out of the recording, and instant mode is simply not in play for
-that correction — which takes the ordinary route and
+has scrolled out of the recording, and capture is simply not in play for that
+correction — which takes the ordinary route and
 [asks before it runs anything again](#reading-the-previous-command). Falling back
 gains nothing: the question is the same question, and the same short list of
 programs that only ever read is what skips it.
