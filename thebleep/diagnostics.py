@@ -39,6 +39,10 @@ _POSIX_MISSING_PATH = re.compile(
     r'''(?im)^[^:\r\n]+:\s+(?:cannot[ ](?:access|stat)[ ])?
         (?P<quote>['"]?)(?P<path>[^'"\r\n]+?)(?P=quote):
         \s*no[ ]such[ ]file[ ]or[ ]directory''', re.VERBOSE)
+_POSIX_EXISTING_PATH = re.compile(
+    r'''(?im)^[^:\r\n]+:\s+(?:failed[ ]to[ ]create[ ]symbolic[ ]link[ ])?
+        (?P<quote>['"]?)(?P<path>[^'"\r\n]+?)(?P=quote):
+        \s*file[ ]exists''', re.VERBOSE)
 _POSIX_MISSING_MOVE = re.compile(
     r'''(?im)^[^:\r\n]+:\s+rename\s+(?P<source>.+?)\s+to\s+
         (?P<destination>[^:\r\n]+):\s*no[ ]such[ ]file[ ]or[ ]directory''',
@@ -125,6 +129,10 @@ def _posix_missing_path(output):
             paths.append(value)
         return move, paths
     return _posix_path(output, _POSIX_MISSING_PATH)
+
+
+def _posix_existing_path(output):
+    return _posix_path(output, _POSIX_EXISTING_PATH)
 
 
 def _path_inspection(path, platform_name, permission=False):
@@ -283,6 +291,21 @@ def _missing_python_path(script, output, platform_name):
     }
 
 
+def _existing_path(script, output, platform_name):
+    path_error = _posix_existing_path(output)
+    if not path_error:
+        return None
+    match, path = path_error
+    return {
+        'kind': 'path_already_exists',
+        'summary': 'The path {!r} already exists.'.format(path),
+        'evidence': [match.group(0).lower()],
+        'next_steps': [_step(
+            _path_inspection(path, platform_name),
+            'inspect the existing path')],
+    }
+
+
 def _dns_failure(script, output, platform_name):
     match = _DNS_HOST.search(output)
     if not match:
@@ -368,7 +391,8 @@ def _missing_interface(script, output, platform_name):
 
 _DETECTORS = (_address_in_use, _permission_denied, _certificate_expired,
               _disk_full, _connection_refused, _missing_module,
-              _missing_python_path, _git_not_repository, _git_conflict,
+              _missing_python_path, _existing_path, _git_not_repository,
+              _git_conflict,
               _dubious_ownership, _dns_failure, _missing_interface)
 
 

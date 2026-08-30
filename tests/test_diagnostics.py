@@ -111,7 +111,21 @@ def test_python_missing_path_is_explained_and_quoted():
         'next_steps': [{
             'command': "ls -ld '/tmp/a; touch /tmp/bleep-owned'",
             'reason': 'check whether the requested path exists',
-            'risk': 'read-only'}]}]
+                   'risk': 'read-only'}]}]
+
+
+@pytest.mark.parametrize('platform_name, output, command', [
+    ('posix', 'ln: existing: File exists', 'ls -ld existing'),
+    ('nt', "/usr/bin/ln: failed to create symbolic link 'existing': "
+           'File exists', "Get-Item -LiteralPath 'existing'")])
+def test_existing_path_is_explained_with_a_safe_inspection(
+        platform_name, output, command):
+    result = diagnostics.diagnose(
+        'ln -s missing existing', output, platform_name=platform_name)
+
+    assert result['diagnoses'][0]['kind'] == 'path_already_exists'
+    assert result['diagnoses'][0]['next_steps'][0]['command'] == command
+    assert result['diagnoses'][0]['next_steps'][0]['risk'] == 'read-only'
 
 
 def test_python_permission_path_gets_a_safe_inspection_step():
