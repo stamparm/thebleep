@@ -210,6 +210,13 @@ class TestNamesFromSomewhereElse(object):
 
         assert canary(git_branch_0flag.get_new_command(command)) == []
 
+    def test_ls_all_preserves_a_quoted_path(self, name, payload, canary):
+        from thebleep.rules import ls_all
+
+        command = Command(u"ls 'a;>LS_ALL'", u'')
+
+        assert canary(ls_all.get_new_command(command)) == []
+
     def test_git_push_different_branch_names(self, name, payload, canary):
         """A whole `git push <remote> <branch>` line, repeated back."""
         from thebleep.rules import git_push_different_branch_names as rule
