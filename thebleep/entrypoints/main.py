@@ -99,6 +99,10 @@ def _main():
         from .alias import print_alias
 
         print_alias(known_args)
+    elif getattr(known_args, 'mcp', False):
+        from ..mcp import serve
+
+        sys.exit(serve())
     # Before the correction branch, like `--doctor` and `--alias`, and for the
     # same reason: the alias exports `TB_HISTORY`, so from any shell that has
     # the alias loaded -- which is every shell anybody would start a logging

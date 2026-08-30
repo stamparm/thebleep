@@ -521,6 +521,18 @@ limit. The Python API applies the same 8 MiB output limit. `--command` preserves
 the exact command string, including compound
 syntax and quoting; the older positional form after `--` remains supported.
 
+For IDEs and coding agents, the same engine can also run as a dependency-free
+MCP stdio server:
+
+```bash
+thebleep --mcp
+```
+
+The server exposes `bleep_suggest` and `bleep_why`. Both accept a command and
+optional output already captured by the caller, return the API's structured
+result, and never replay or execute the command. It speaks MCP protocol
+`2025-06-18`; stdout is reserved for newline-delimited JSON-RPC messages.
+
 Output-derived replacements use those same command boundaries. If a reported
 word appears in more than one command in a compound line, The Bleep abstains
 instead of changing the first textual match and potentially altering a command

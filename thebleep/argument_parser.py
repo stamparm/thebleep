@@ -13,6 +13,7 @@ DEFAULTS = {'alias': None,
             'edit': False,
             'inline': False,
             'bind_inline': False,
+            'mcp': False,
             'explain': False,
             'forget': None,
             'forget_learning': None,
@@ -140,6 +141,10 @@ class Parser(object):
             '--json',
             action='store_true',
             help='return structured suggestions without running a command')
+        self._parser.add_argument(
+            '--mcp',
+            action='store_true',
+            help='serve read-only correction tools over stdio')
         self._parser.add_argument(
             '--inline',
             action='store_true',

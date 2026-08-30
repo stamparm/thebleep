@@ -4,6 +4,10 @@
 
 ### Added
 
+- **A read-only MCP stdio server** — `thebleep --mcp` exposes deterministic
+  `bleep_suggest` and `bleep_why` tools to IDEs and coding agents without
+  replaying or executing their commands.
+
 - **Structured suggestions include conservative risk metadata.** API consumers
   can see explicit privilege, destructive-command, bypass and side-effect
   markers before deciding how to present a correction.
