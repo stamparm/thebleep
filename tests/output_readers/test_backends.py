@@ -22,6 +22,17 @@ def test_builtins_keep_replay_as_the_last_fallback(settings):
                 ('tmux', True), ('replay', False)]
 
 
+def test_explicit_false_logger_override_does_not_probe_the_host(mocker):
+    detector = mocker.patch.object(
+        backends, '_shell_logger_available', return_value=True)
+
+    logger = backends.builtins('gti status', 'error',
+                               shell_logger_available=False)[0]
+
+    assert not logger.is_available()
+    detector.assert_not_called()
+
+
 def test_a_registered_backend_runs_before_builtins(mocker):
     read = mocker.Mock(return_value='captured')
     backend = backends.CaptureBackend('tmux', True, lambda: True, read)
@@ -62,6 +73,41 @@ def test_status_does_not_execute_a_command(settings, mocker):
     assert backends.status()[2]['configured'] is False
     assert not any(item['available'] for item in backends.status()
                    if item['name'] not in ('replay',))
+
+
+def test_enabled_instant_mode_needs_shell_support(settings, mocker):
+    settings.instant_mode = True
+    mocker.patch('thebleep.shells.shell.supports_instant_mode',
+                 return_value=False)
+
+    instant = next(item for item in backends.status()
+                   if item['name'] == 'instant-log')
+
+    assert instant == {
+        'name': 'instant-log', 'replayless': True,
+        'configured': True, 'available': False}
+
+
+def test_runtime_instant_reader_does_not_need_status_probe(settings, mocker):
+    settings.instant_mode = True
+    mocker.patch('thebleep.shells.shell.supports_instant_mode',
+                 return_value=False)
+
+    instant = next(item for item in backends.builtins('x', 'y')
+                   if item.name == 'instant-log')
+
+    assert instant.is_available()
+
+
+def test_status_uses_backend_configuration_before_availability(mocker):
+    available = mocker.Mock(return_value=True)
+    backends.register(backends.CaptureBackend(
+        'custom', True, available, lambda *_: None, lambda: False))
+
+    assert backends.status()[0] == {
+        'name': 'custom', 'replayless': True,
+        'configured': False, 'available': False}
+    available.assert_not_called()
 
 
 def test_status_includes_registered_backend_health():

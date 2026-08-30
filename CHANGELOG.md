@@ -91,6 +91,10 @@
 
 ### Fixed
 
+- **Capture backend status now has one source of truth.** Runtime selection and
+  `--doctor` use the same configured/available predicates, and explicit false
+  test overrides no longer probe the host for a shell logger.
+
 - **Inline and structured correction now abstain on incomplete shell syntax.**
   Unclosed quotes, substitutions and escapes are preserved instead of being
   handed to rules that could mistake their contents for command words.

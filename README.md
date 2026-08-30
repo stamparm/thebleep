@@ -1508,6 +1508,11 @@ again. Terminal integrations can add a backend without changing correction
 rules; a backend that cannot identify the requested command returns no answer
 and the chain continues safely.
 
+`--doctor` reports the same backend configuration and availability checks used
+by runtime capture. A configured integration that is temporarily unavailable
+is shown as such, while the replay fallback is listed without asking for
+permission or running a command.
+
 Kitty must have remote control enabled (`allow_remote_control` or a configured
 remote-control password); otherwise its client is present but the pane read is
 rejected and the normal fallback remains available. These readers only ask
