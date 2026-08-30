@@ -30,6 +30,13 @@ def _check_output(output):
         raise ValueError('output exceeds the 8 MiB limit')
 
 
+def _check_script(script):
+    if not script.strip():
+        raise ValueError('script must be a non-empty command')
+    if '\x00' in script:
+        raise ValueError('script must not contain NUL bytes')
+
+
 def _suggestion(corrected, command):
     rule = getattr(corrected, 'rule', None)
     explanation = explain_module.describe(corrected, command)
@@ -84,6 +91,7 @@ def suggest(script, output=None):
     """
     if not isinstance(script, str):
         raise TypeError('script must be a string')
+    _check_script(script)
     if output is not None and not isinstance(output, str):
         raise TypeError('output must be a string or None')
     _check_output(output)
@@ -106,6 +114,7 @@ def why(script, output=None, platform_name=None):
     """Return deterministic diagnoses for output the caller already has."""
     if not isinstance(script, str):
         raise TypeError('script must be a string')
+    _check_script(script)
     if output is not None and not isinstance(output, str):
         raise TypeError('output must be a string or None')
     _check_output(output)

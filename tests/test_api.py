@@ -81,6 +81,18 @@ def test_suggest_requires_text():
         assert False, 'non-string script was accepted'
 
 
+@pytest.mark.parametrize('function', [api.suggest, api.why])
+def test_api_rejects_an_empty_script(function):
+    with pytest.raises(ValueError, match='non-empty command'):
+        function(' \t\n')
+
+
+@pytest.mark.parametrize('function', [api.suggest, api.why])
+def test_api_rejects_nul_bytes_in_a_script(function):
+    with pytest.raises(ValueError, match='NUL bytes'):
+        function('git\x00status')
+
+
 def test_suggest_requires_text_output():
     try:
         api.suggest('gti status', b'command not found')
