@@ -1,5 +1,6 @@
 import pytest
 from thebleep.rules.cd_correction import get_new_command, match
+from thebleep.shells import shell
 from thebleep.types import Command
 
 
@@ -26,4 +27,4 @@ def test_environment_assignment_is_preserved(tmp_path, monkeypatch):
                       'cd: fop: No such file or directory')
 
     assert get_new_command(command) == \
-        'CDPATH= cd {}'.format(tmp_path / 'foo')
+        'CDPATH= cd {}'.format(shell.quote(str(tmp_path / 'foo')))
