@@ -11,6 +11,7 @@ git clone https://github.com/stamparm/thebleep.git
 Author: Miguel Guthridge
 '''
 from urllib import parse
+from thebleep.shells import shell
 from thebleep.utils import which
 
 
@@ -39,4 +40,4 @@ def match(command):
 
 
 def get_new_command(command):
-    return 'git clone ' + command.script
+    return 'git clone ' + shell.quote(command.script)

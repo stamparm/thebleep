@@ -624,3 +624,15 @@ def test_cd_correction_quotes_hostile_dir(
 
     suggestion = cd_correction.get_new_command(Command('cd folder', ''))
     assert canary(suggestion) == []
+
+
+@pytest.mark.skipif(sys.platform == 'win32', reason='needs a POSIX shell')
+def test_git_clone_url_is_quoted(canary):
+    from thebleep.rules import git_clone_missing
+
+    command = Command(
+        u'https://github.com/stamparm/thebleep.git;>GIT_CLONE',
+        u'not found')
+
+    assert git_clone_missing.match(command)
+    assert canary(git_clone_missing.get_new_command(command)) == []
