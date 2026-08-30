@@ -319,7 +319,8 @@ def _unknown_command(command, output_required=True):
             # commonest way a command fails in a shell this supports --
             # went uncorrected.
             or 'unknown command' in output.lower()
-            or 'is not recognized as' in output):
+            or 'is not recognized as' in output
+            or re.search(r'(?im)^env:.*no such file or directory', output)):
         if output_required:
             return None
         for index in _command_indexes(parts):

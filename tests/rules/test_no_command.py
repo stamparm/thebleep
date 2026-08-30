@@ -142,6 +142,18 @@ def test_corrects_command_inside_wrapper_substitution(mocker):
     assert get_new_command(command)[0] == 'echo $(command git status)'
 
 
+@pytest.mark.parametrize('script, expect', [
+    ('env gti status', 'env git status'),
+    ('echo $(env gti status)', 'echo $(env git status)'),
+])
+def test_corrects_commands_from_env_error(mocker, script, expect):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command(script, 'env: ‘gti’: No such file or directory')
+
+    assert get_new_command(command)[0] == expect
+
+
 def test_process_substitution_is_not_assumed_for_other_shells(
         mocker, set_shell):
     from thebleep.shells import Powershell
