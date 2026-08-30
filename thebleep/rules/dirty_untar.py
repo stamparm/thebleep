@@ -1,4 +1,4 @@
-from thebleep.utils import for_app
+from thebleep.utils import command_word_index, for_app
 from thebleep.shells import shell
 
 
@@ -7,11 +7,11 @@ tar_extensions = ('.tar', '.tar.Z', '.tar.bz2', '.tar.gz', '.tar.lz',
                   '.tgz', '.tlz', '.txz', '.tz')
 
 
-def _is_tar_extract(script_parts):
-    if len(script_parts) < 2:
+def _is_tar_extract(script_parts, start=0):
+    if len(script_parts) <= start + 1:
         return False
 
-    first_option = script_parts[1]
+    first_option = script_parts[start + 1]
     if first_option == '--extract' or first_option.startswith('--extract='):
         return True
 
@@ -29,15 +29,17 @@ def _tar_file(cmd):
 
 def _has_change_directory_option(script_parts):
     """Whether tar was already given a directory-changing option."""
+    start = command_word_index(script_parts)
     return any(part == '-C' or part.startswith('-C')
                or part == '--directory' or part.startswith('--directory=')
-               for part in script_parts[1:])
+               for part in script_parts[start + 1:])
 
 
 @for_app('tar')
 def match(command):
+    start = command_word_index(command.script_parts)
     return (not _has_change_directory_option(command.script_parts)
-            and _is_tar_extract(command.script_parts)
+            and _is_tar_extract(command.script_parts, start)
             and _tar_file(command.script_parts) is not None)
 
 

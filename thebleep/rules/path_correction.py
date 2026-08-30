@@ -34,7 +34,7 @@ from pathlib import Path
 from thebleep import matching
 from thebleep.shells import shell
 from thebleep.system import expanduser
-from thebleep.utils import memoize, replace_argument
+from thebleep.utils import command_word_index, memoize, replace_argument
 
 # `shlex.quote`'s idea of a character that needs quoting, minus the backslash:
 # on Windows it is the path separator, so asking `shell.quote` -- POSIX rules
@@ -137,7 +137,10 @@ def match(command):
             and bool(command.script_parts)
             # `cd` already gets this, directory-only and with its own
             # `cd_mkdir` fallback; asking again here would just duplicate it.
-            and command.script_parts[0] != 'cd'
+            and (command_word_index(command.script_parts)
+                 == len(command.script_parts)
+                 or command.script_parts[command_word_index(
+                     command.script_parts)] != 'cd')
             and bool(_fixed_argument(command)))
 
 

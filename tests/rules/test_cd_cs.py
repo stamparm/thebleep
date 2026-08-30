@@ -9,3 +9,8 @@ def test_match():
 
 def test_get_new_command():
     assert get_new_command(Command('cs /etc/', 'cs: command not found')) == 'cd /etc/'
+
+
+def test_environment_assignment_is_preserved():
+    assert (get_new_command(Command('CDPATH= cs /etc/', ''))
+            == 'CDPATH= cd /etc/')

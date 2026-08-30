@@ -37,6 +37,10 @@ def test_not_match_for_cd(tree):
 
     assert not match(command)
 
+    prefixed = Command('CDPATH= cd {}'.format(broken),
+                       'cd: {}: No such file or directory'.format(broken))
+    assert not match(prefixed)
+
 
 @pytest.mark.usefixtures('no_memoize')
 def test_get_new_command(tree):

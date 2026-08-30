@@ -10,3 +10,8 @@ def test_match():
 def test_get_new_command():
     assert (get_new_command(Command('./test_sudo.py', ''))
             == 'python ./test_sudo.py')
+
+
+def test_environment_assignment_is_preserved():
+    assert (get_new_command(Command('PYTHONPATH=. ./test_sudo.py', ''))
+            == 'PYTHONPATH=. python ./test_sudo.py')

@@ -28,3 +28,8 @@ def test_not_match(script):
 )
 def test_get_new_command(script, new_command):
     assert get_new_command(Command(script, "")) == new_command
+
+
+def test_environment_assignment_is_preserved():
+    assert (get_new_command(Command('GIT_DIR=/tmp git-log', ''))
+            == 'GIT_DIR=/tmp git log')

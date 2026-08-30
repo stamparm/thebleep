@@ -35,3 +35,8 @@ def test_not_match(script, output):
 def test_get_new_command(script, result):
     command = Command(script, '')
     assert get_new_command(command) == result
+
+
+def test_environment_assignment_is_preserved():
+    assert get_new_command(Command('LN_OPTS= ln a b', '')) == \
+        'LN_OPTS= ln -s a b'

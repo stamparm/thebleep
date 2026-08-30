@@ -8,14 +8,20 @@
 # cd /etc/ [enter/↑/↓/ctrl+c]
 # /etc >
 
+from thebleep.utils import command_word_index, raw_script_parts
+
 
 def match(command):
-    if command.script_parts[0] == 'cs':
+    start = command_word_index(command.script_parts)
+    if start < len(command.script_parts) \
+            and command.script_parts[start] == 'cs':
         return True
 
 
 def get_new_command(command):
-    return 'cd' + ''.join(command.script[2:])
+    parts = raw_script_parts(command.script)
+    start = command_word_index(parts)
+    return command.script.replace(parts[start], 'cd', 1)
 
 
 priority = 900

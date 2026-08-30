@@ -16,3 +16,8 @@ def test_match():
 
 def test_get_new_command():
     assert get_new_command(Command('main --help', '')) == './main --help'
+
+
+def test_environment_assignment_is_preserved():
+    assert (get_new_command(Command('PATH=/tmp main --help', ''))
+            == 'PATH=/tmp ./main --help')

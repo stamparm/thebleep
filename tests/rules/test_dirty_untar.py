@@ -66,6 +66,10 @@ def test_match_does_not_confuse_archive_name_with_extract_option(tar_error):
     assert not match(Command('tar foo-x.tar', ''))
 
 
+def test_environment_assignment_is_supported():
+    assert match(Command('TAR_OPTIONS= tar xvf foo.tar', ''))
+
+
 def test_nothing_is_deleted_behind_the_suggestion(tar_error):
     """See `test_dirty_unzip` for why the rollback could not be made safe."""
     assert not hasattr(dirty_untar, 'side_effect')
