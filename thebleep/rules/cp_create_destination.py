@@ -72,9 +72,14 @@ DESTINATION = (
 # but uses the same wording for a missing source, so it needs the same check.
 BSD_CP = re.compile(
     r'(?m)^cp: ([^\n]+): No such file or directory$')
-BSD_MV = re.compile(
-    r"(?m)^mv: rename '([^']*)' to '([^']*)': "
-    r'No such file or directory$')
+BSD_MV = (
+    # Older BSD mv quotes both operands.
+    re.compile(r"(?m)^mv: rename '([^']*)' to '([^']*)': "
+               r'No such file or directory$'),
+    # macOS 26 leaves ordinary operands unquoted. The command check below
+    # disambiguates the ` to ` separator if a path contains those words.
+    re.compile(r'(?m)^mv: rename ([^:\n]+) to ([^:\n]+): '
+               r'No such file or directory$'))
 
 
 def _destination(output, command=None):
@@ -87,9 +92,10 @@ def _destination(output, command=None):
     if found and _bsd_cp_destination(command, found.group(1)):
         return found.group(1)
 
-    found = BSD_MV.search(output)
-    if found and _bsd_mv_destination(command, found.groups()):
-        return found.group(2)
+    for pattern in BSD_MV:
+        found = pattern.search(output)
+        if found and _bsd_mv_destination(command, found.groups()):
+            return found.group(2)
 
     return None
 

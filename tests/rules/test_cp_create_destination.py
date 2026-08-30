@@ -28,6 +28,7 @@ GNU_MV = "mv: cannot move '{}' to '{}': No such file or directory\n"
 BUSYBOX_CP = "cp: can't create '{}': No such file or directory\n"
 BSD_CP = "cp: {}: No such file or directory\n"
 BSD_MV = "mv: rename '{}' to '{}': No such file or directory\n"
+BSD_MV_PLAIN = "mv: rename {} to {}: No such file or directory\n"
 
 # The *source* is what is missing, so there is nothing to make and the copy
 # would fail again. Firing here left a directory named after the destination.
@@ -81,6 +82,8 @@ class TestTheDestinationIsMissing(object):
     @pytest.mark.parametrize('script, output', [
         ('cp a.txt nodir/a.txt', BSD_CP.format('nodir/a.txt')),
         ('mv a.txt nodir/a.txt', BSD_MV.format('a.txt', 'nodir/a.txt')),
+        ('mv a.txt nodir/a.txt',
+         BSD_MV_PLAIN.format('a.txt', 'nodir/a.txt')),
     ])
     def test_macos_wording_when_source_exists(self, tmpdir, monkeypatch,
                                               script, output):
