@@ -34,10 +34,31 @@ def _suggestion(corrected, command):
     rule = getattr(corrected, 'rule', None)
     explanation = explain_module.describe(corrected, command)
     assessment = risk.assess(corrected)
+    if rule is None:
+        confidence = {
+            'level': 'unknown',
+            'basis': ['the suggestion did not identify its rule'],
+        }
+    elif getattr(rule, 'learned', False):
+        confidence = {
+            'level': 'high',
+            'basis': ['a correction learned from the user'],
+        }
+    elif rule.requires_output and command.output is not None:
+        confidence = {
+            'level': 'high',
+            'basis': ['the rule matched captured command output'],
+        }
+    else:
+        confidence = {
+            'level': 'medium',
+            'basis': ['the rule matched the command or local context'],
+        }
     return {
         'command': corrected.script,
         'rule': rule.name if rule is not None else None,
         'priority': corrected.priority,
+        'confidence': confidence,
         'side_effect': bool(corrected.side_effect),
         'risk': assessment['level'],
         'risk_factors': assessment['factors'],

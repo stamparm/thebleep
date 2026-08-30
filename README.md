@@ -487,7 +487,11 @@ The result includes `schema: 1` for contract versioning, the original command,
 whether output was supplied, and a `decision`: `suggest` when a candidate passed
 the rules, or `abstain` when no candidate was verified. Each suggestion contains
 its command, rule, priority,
-side-effect flag, conservative risk markers and evidence. `risk: low` means
+side-effect flag, ordinal confidence, conservative risk markers and evidence.
+Confidence is evidence strength, not a calibrated probability: `high` means
+captured output or a learned correction supports the rule, `medium` means the
+rule matched command or local context, and `unknown` means the source was not
+identified. `risk: low` means
 that no known high-risk marker was found; it is not a safety guarantee. The
 `explanation` field keeps the same facts with labels, so a consumer can tell
 matched output from the read requirement, side effect or privilege change

@@ -26,6 +26,9 @@ def test_suggest_returns_structured_correction(mocker):
             'command': 'git status',
             'rule': 'test_rule',
             'priority': 1200,
+            'confidence': {
+                'level': 'high',
+                'basis': ['the rule matched captured command output']},
             'side_effect': False,
             'risk': 'low',
             'risk_factors': [],
@@ -110,6 +113,21 @@ def test_suggest_keeps_action_details_labeled(mocker):
               ['explanation']]
 
     assert labels == ['rule', 'matched', 'read', 'side effect', 'runs as']
+
+
+def test_suggest_marks_command_only_confidence(mocker):
+    correction = CorrectedCommand('git status', None, 1200,
+                                  rule=type('Rule', (), {
+                                      'name': 'test_rule',
+                                      'requires_output': False})())
+    mocker.patch.object(api, 'get_corrected_commands',
+                        return_value=iter([correction]))
+
+    suggestion = api.suggest('gti status')['suggestions'][0]
+
+    assert suggestion['confidence'] == {
+        'level': 'medium',
+        'basis': ['the rule matched the command or local context']}
 
 
 def test_suggest_marks_explicitly_risky_corrections(mocker):
