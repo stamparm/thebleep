@@ -9,6 +9,7 @@ machine, reruns the command, or turns an extracted value into an executable
 action.
 """
 
+import ast
 import os
 import re
 import shlex
@@ -21,6 +22,10 @@ _PORT_IN_COMMAND = re.compile(
 _MODULE = re.compile(
     r"(?:ModuleNotFoundError: )?No module named ['\"]([^'\"]+)['\"]")
 _DNS_HOST = re.compile(r'could not resolve host:\s*([^\s]+)', re.IGNORECASE)
+_PYTHON_MISSING_PATH = re.compile(
+    r'FileNotFoundError: \[(?:Errno|WinError) \d+\] '
+    r'(?P<message>[^:\r\n]+): '
+    r'(?P<quote>[\'\"])(?P<path>(?:\\.|(?!(?P=quote)).)*)(?P=quote)')
 
 
 def _port(script, output):
@@ -162,6 +167,37 @@ def _missing_module(script, output, platform_name):
     }
 
 
+def _missing_python_path(script, output, platform_name):
+    match = _PYTHON_MISSING_PATH.search(output)
+    if not match:
+        return None
+
+    literal = '{}{}{}'.format(
+        match.group('quote'), match.group('path'), match.group('quote'))
+    try:
+        path = ast.literal_eval(literal)
+    except (SyntaxError, ValueError):
+        return None
+    if not isinstance(path, str) or not path:
+        return None
+
+    if platform_name == 'nt':
+        command = 'Get-Item -LiteralPath {}'.format(
+            _quote(path, platform_name))
+    else:
+        # BSD ls has no `--`; make a relative option-looking path explicit.
+        displayed_path = './{}'.format(path) if path.startswith('-') else path
+        command = 'ls -ld {}'.format(_quote(displayed_path, platform_name))
+    return {
+        'kind': 'missing_path',
+        'summary': 'Python could not find the requested path.',
+        'evidence': [match.group('message').strip().lower()],
+        'next_steps': [_step(
+            command,
+            'check whether the requested path exists')],
+    }
+
+
 def _dns_failure(script, output, platform_name):
     match = _DNS_HOST.search(output)
     if not match:
@@ -214,7 +250,8 @@ def _git_not_repository(script, output, platform_name):
 
 _DETECTORS = (_address_in_use, _permission_denied, _certificate_expired,
               _disk_full, _connection_refused, _missing_module,
-              _git_not_repository, _dubious_ownership, _dns_failure)
+              _missing_python_path, _git_not_repository, _dubious_ownership,
+              _dns_failure)
 
 
 def diagnose(script, output=None, platform_name=None):

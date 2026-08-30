@@ -80,6 +80,23 @@ def test_git_outside_a_repository_is_explained():
             'risk': 'read-only'}]}]
 
 
+def test_python_missing_path_is_explained_and_quoted():
+    result = diagnostics.diagnose(
+        'python app.py',
+        "FileNotFoundError: [Errno 2] No such file or directory: "
+        "'/tmp/a; touch /tmp/bleep-owned'",
+        platform_name='posix')
+
+    assert result['diagnoses'] == [{
+        'kind': 'missing_path',
+        'summary': 'Python could not find the requested path.',
+        'evidence': ['no such file or directory'],
+        'next_steps': [{
+            'command': "ls -ld '/tmp/a; touch /tmp/bleep-owned'",
+            'reason': 'check whether the requested path exists',
+            'risk': 'read-only'}]}]
+
+
 @pytest.mark.parametrize('kind, script, output, command', [
     ('address_in_use', 'python server.py --port 5432',
      'OSError: [WinError 10048] Address already in use',
@@ -94,6 +111,10 @@ def test_git_outside_a_repository_is_explained():
     ('git_not_repository', 'git status',
      'fatal: not a git repository (or any of the parent directories): .git',
      'Get-Location'),
+    ('missing_path', 'python app.py',
+     r"FileNotFoundError: [WinError 2] The system cannot find the file "
+     r"specified: 'C:\\missing\\config.ini'",
+     r"Get-Item -LiteralPath 'C:\missing\config.ini'"),
 ])
 def test_windows_diagnostics_offer_windows_read_only_next_steps(
         kind, script, output, command):
