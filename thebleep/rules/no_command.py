@@ -239,7 +239,9 @@ def _substitution_ranges(script):
     command's arguments as executable words.
     """
     for start in range(len(script) - 1):
-        if script[start:start + 2] != '$(' or _in_single_quotes(script, start):
+        if (script[start:start + 2] != '$('
+                or _in_single_quotes(script, start)
+                or _is_escaped(script, start)):
             continue
 
         depth = 1

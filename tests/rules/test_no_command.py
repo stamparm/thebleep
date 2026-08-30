@@ -90,6 +90,14 @@ def test_does_not_treat_quoted_substitution_as_a_command(mocker):
     assert get_new_command(command) == []
 
 
+def test_does_not_treat_escaped_substitution_as_a_command(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command(r'echo \$(gti status)', 'bash: gti: command not found')
+
+    assert get_new_command(command) == []
+
+
 def test_does_not_treat_quoted_backtick_as_a_command(mocker):
     mocker.patch('thebleep.rules.no_command.which', return_value=None)
 
