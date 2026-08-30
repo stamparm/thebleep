@@ -21,3 +21,11 @@ def test_match(is_not_task):
 def test_get_new_command(is_not_task):
     assert (get_new_command(Command('lein rpl --help', is_not_task))
             == ['lein repl --help', 'lein jar --help'])
+
+
+def test_prefixed_command_keeps_assignment(is_not_task):
+    command = Command('LEIN_JVM_OPTS=-Xmx1g lein rpl', is_not_task)
+    assert match(command)
+    assert get_new_command(command) == [
+        'LEIN_JVM_OPTS=-Xmx1g lein repl',
+        'LEIN_JVM_OPTS=-Xmx1g lein jar']

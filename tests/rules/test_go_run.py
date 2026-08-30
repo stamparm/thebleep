@@ -15,3 +15,9 @@ def test_match(command):
     (Command('go run bar', ''), 'go run bar.go')])
 def test_get_new_command(command, new_command):
     assert get_new_command(command) == new_command
+
+
+def test_prefixed_command_keeps_assignment():
+    command = Command('GOFLAGS=-v go run foo', '')
+    assert match(command)
+    assert get_new_command(command) == 'GOFLAGS=-v go run foo.go'

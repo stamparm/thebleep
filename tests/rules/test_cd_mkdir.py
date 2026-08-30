@@ -21,6 +21,12 @@ def test_not_match(command):
 
 @pytest.mark.parametrize('command, new_command', [
     (Command('cd foo', ''), 'mkdir -p foo && cd foo'),
-    (Command('cd foo/bar/baz', ''), 'mkdir -p foo/bar/baz && cd foo/bar/baz')])
+    (Command('cd foo/bar/baz', ''), 'mkdir -p foo/bar/baz && cd foo/bar/baz'),
+    (Command('CDPATH= cd foo', ''), 'mkdir -p foo && CDPATH= cd foo')])
 def test_get_new_command(command, new_command):
     assert get_new_command(command) == new_command
+
+
+def test_prefixed_command_matches():
+    assert match(Command(
+        'CDPATH= cd foo', 'cd: foo: No such file or directory'))

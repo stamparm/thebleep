@@ -28,7 +28,7 @@ else. Message wording captured from GNU coreutils 9.x.
 import os
 import re
 from thebleep.specific.sudo import sudo_support
-from thebleep.utils import raw_script_parts
+from thebleep.utils import command_word_index, raw_script_parts
 
 # `ln: failed to create symbolic link 'x': File exists` -- GNU's spelling.
 # macOS/BSD says `ln: x: File exists` instead. In both cases the name ln was
@@ -60,7 +60,8 @@ def _operands(script_parts):
 
     """
     names = []
-    for part in script_parts[1:]:
+    start = command_word_index(script_parts)
+    for part in script_parts[start + 1:]:
         if part in FLAGS:
             continue
         if part.startswith('-'):
@@ -94,7 +95,8 @@ def _reversed_pair(command):
 
 @sudo_support
 def match(command):
-    return (command.script_parts[:1] == ['ln']
+    start = command_word_index(command.script_parts)
+    return (command.script_parts[start:start + 1] == ['ln']
             and bool({'-s', '--symbolic'}.intersection(command.script_parts))
             and 'File exists' in command.output
             and _reversed_pair(command) is not None)

@@ -46,6 +46,14 @@ def test_the_reversed_command(on_disk, script, result):
     assert get_new_command(command) == result
 
 
+def test_environment_assignment_is_preserved(on_disk):
+    on_disk('source')
+    command = Command('LN_BLOCK_SIZE=1 ln -s dest source',
+                      get_output('source'))
+    assert match(command)
+    assert get_new_command(command) == 'LN_BLOCK_SIZE=1 ln -s source dest'
+
+
 def test_bsd_error(on_disk):
     on_disk('source')
     command = Command('ln -s dest source', bsd_output('source'))

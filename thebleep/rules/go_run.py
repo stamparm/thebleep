@@ -1,4 +1,4 @@
-from thebleep.utils import for_app
+from thebleep.utils import command_word_index, for_app
 # Appends .go when compiling go files
 #
 # Example:
@@ -8,7 +8,8 @@ from thebleep.utils import for_app
 
 @for_app('go')
 def match(command):
-    return (command.script.startswith('go run ')
+    start = command_word_index(command.script_parts)
+    return (command.script_parts[start:start + 2] == ['go', 'run']
             and not command.script.endswith('.go'))
 
 
