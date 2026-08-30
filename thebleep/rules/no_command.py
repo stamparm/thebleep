@@ -74,6 +74,7 @@ def match(command):
 
 
 _COMMAND_SEPARATORS = frozenset(('&&', '||', '|', '|&', ';', '&'))
+_CASE_TERMINATORS = frozenset((';;', ';&', ';;&'))
 _ENVIRONMENT_ASSIGNMENT = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
 _SAFE_COMMAND_NAME = re.compile(r'^[A-Za-z0-9_@%+=:,./-]+$')
 _CONTROL_PREFIXES = frozenset(
@@ -127,6 +128,9 @@ def _command_indexes(parts):
     segment_start = 0
     powershell_condition = False
     condition_depth = 0
+    case_depth = 0
+    case_pending = False
+    case_pattern = False
     powershell = _is_powershell()
     for index, part in enumerate(parts):
         if powershell_condition:
@@ -149,6 +153,33 @@ def _command_indexes(parts):
                     segment_start = index + 1
             continue
 
+        if case_pending:
+            if part == 'in':
+                case_pending = False
+                case_pattern = True
+            continue
+
+        if case_pattern:
+            if part == 'esac':
+                case_depth -= 1
+                case_pattern = False
+                command_start = False
+            elif part == ')':
+                case_pattern = False
+                command_start = True
+                segment_start = index + 1
+            continue
+
+        if case_depth and part == 'esac':
+            case_depth -= 1
+            command_start = False
+            continue
+
+        if case_depth and part in _CASE_TERMINATORS:
+            case_pattern = True
+            command_start = False
+            continue
+
         if part in _COMMAND_SEPARATORS:
             command_start = True
             segment_start = index + 1
@@ -166,6 +197,11 @@ def _command_indexes(parts):
                 continue
 
             word = parts[command_start_index]
+            if word == 'case':
+                case_depth += 1
+                case_pending = True
+                command_start = False
+                continue
             if word in wrappers.WRAPPERS:
                 wrapped = wrappers.wrapped_command_index(
                     parts[command_start_index:])
@@ -421,7 +457,7 @@ def _replace_after_separator(script, old, replacement):
     when that still leaves more than one choice it returns ``None`` and the
     caller abstains.
     """
-    separators = frozenset(';&|({}')
+    separators = frozenset(';&|(){}')
     spans = []
     quote = None
     escaped = False

@@ -69,6 +69,16 @@ def test_corrects_a_command_inside_a_pipeline(mocker):
         'cd project && git status | grpe main')
 
 
+def test_corrects_a_command_inside_a_case_body(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command(
+        'case x in x) gti status;; esac', 'bash: gti: command not found')
+
+    assert get_new_command(command)[0] == (
+        'case x in x) git status;; esac')
+
+
 @pytest.mark.parametrize('script, expect', [
     ('echo $(gti status)', 'echo $(git status)'),
     ('echo "$(gti status)"', 'echo "$(git status)"'),
@@ -125,6 +135,15 @@ def test_inline_correction_works_inside_a_substitution(mocker):
 
     assert match(command)
     assert get_new_command(command)[0] == 'echo $(git status)'
+
+
+def test_inline_correction_works_inside_a_case_body(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command('case x in x) gti status;; esac', None)
+
+    assert get_new_command(command)[0] == (
+        'case x in x) git status;; esac')
 
 
 def test_does_not_choose_between_multiple_substitutions(mocker):
