@@ -78,6 +78,19 @@ def test_suggest_does_not_collect_missing_output(mocker):
     assert result['suggestions'] == []
 
 
+def test_history_returns_bounded_local_records_without_running_commands(mocker):
+    entries = [{'number': 1, 'command': 'gti status', 'output': 'not found'}]
+    public = mocker.patch.object(api.failure_store, 'public_entries',
+                                 return_value=entries)
+
+    assert api.history() == {
+        'schema': 2,
+        'limit': api.failure_store.LIMIT,
+        'failures': entries,
+    }
+    public.assert_called_once_with()
+
+
 @pytest.mark.parametrize('script', ["echo 'unfinished", 'echo $(gti status'])
 def test_suggest_abstains_on_incomplete_shell_syntax(mocker, script):
     corrections = mocker.patch.object(

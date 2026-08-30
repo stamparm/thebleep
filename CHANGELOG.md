@@ -4,6 +4,10 @@
 
 ### Added
 
+- **Failure history is available to agents too.** `--json --pick` and the
+  `bleep_history` MCP tool return bounded local records with captured output,
+  shell, working directory, exit status and age, without replaying a command.
+
 - **Wrapped redirections stay correctable.** Transparent wrappers now preserve
   parsed output redirections while still abstaining on pipes, chains and
   nested shell syntax.

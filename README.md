@@ -141,10 +141,11 @@ The rest of the reasons:
 - **Press `?` to be told why.** Which rule made the suggestion, what it saw,
   and whether accepting it does anything besides run the command.
   [Why am I being told this](#why-am-i-being-told-this).
-- **It remembers the last five failed commands.** `thebleep --pick` lists them;
-  `thebleep --pick 2` corrects one using its captured output and working
-  directory, without replaying it. `thebleep --forget 2` removes one record;
-  `--clear-cache` removes them all. The records are local and bounded.
+- **It remembers the last five failed commands.** `thebleep --pick` lists them
+  with their shell, exit status, directory and age; `thebleep --pick 2`
+  corrects one using its captured output and working directory, without
+  replaying it. `thebleep --forget 2` removes one record; `--clear-cache`
+  removes them all. The records are local and bounded.
 - **It can learn an explicit correction.** After accepting a one-word fix,
   `thebleep --learn-last` saves it locally for the executable; `global` and
   `repository` scopes are available when the same correction should travel
@@ -443,7 +444,13 @@ sensitive data, so `thebleep --clear-cache` removes it with the other caches.
 thebleep --pick       # list the failures
 thebleep --pick 2     # correct the second one, without replaying it
 thebleep --forget 2   # remove the second one
+thebleep --json --pick  # list the same records for a tool or script
 ```
+
+The JSON form includes captured output, a stable record number, shell, working
+directory, exit status, timestamp and age in seconds. It is also exposed as
+the read-only `bleep_history` MCP tool. A caller can pass a record's output to
+`bleep_suggest` or `bleep_why`; neither interface executes the stored command.
 
 If its original directory no longer exists, correction continues from the
 current directory and says so. A stored failure is never executed merely by
@@ -552,9 +559,10 @@ MCP stdio server:
 thebleep --mcp
 ```
 
-The server exposes `bleep_suggest` and `bleep_why`. Both accept a command and
-optional output already captured by the caller, return the API's structured
-result, and never replay or execute the command. It speaks MCP protocol
+The server exposes `bleep_suggest`, `bleep_why` and `bleep_history`. The first
+two accept a command and optional output already captured by the caller; the
+last returns the bounded local failure ring. All three return structured data
+and never replay or execute a command. It speaks MCP protocol
 `2025-06-18`; stdout is reserved for newline-delimited JSON-RPC messages.
 
 Output-derived replacements use those same command boundaries. If a reported

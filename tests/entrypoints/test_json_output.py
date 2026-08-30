@@ -13,6 +13,7 @@ def _args(command, stderr=None, cwd=None, command_text=None):
     args.command_text = command_text
     args.stderr = stderr
     args.cwd = cwd
+    args.pick = None
     args.why = False
     args.yes = args.debug = args.repeat = args.edit = args.explain = False
     return args
@@ -92,6 +93,28 @@ def test_json_output_requires_a_command(mocker, capsys):
     _no_settings(mocker)
     assert json_output(_args([])) == 2
     assert '--json needs a command' in capsys.readouterr().err
+
+
+def test_json_output_can_list_recent_failures(mocker, capsys):
+    _no_settings(mocker)
+    result = {'schema': 2, 'limit': 5, 'failures': []}
+    history = mocker.patch(
+        'thebleep.entrypoints.json_output.api.history', return_value=result)
+    args = _args([])
+    args.pick = 0
+
+    assert json_output(args) == 0
+    history.assert_called_once_with()
+    assert json.loads(capsys.readouterr().out) == result
+
+
+def test_json_output_does_not_mix_history_with_a_command(mocker, capsys):
+    _no_settings(mocker)
+    args = _args(['gti'])
+    args.pick = 1
+
+    assert json_output(args) == 2
+    assert 'cannot be combined' in capsys.readouterr().err
 
 
 def test_json_output_reports_a_missing_output_file(tmpdir, mocker, capsys):

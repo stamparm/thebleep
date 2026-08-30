@@ -29,7 +29,7 @@ def test_initialize_and_list_tools():
     assert responses[0]['result']['protocolVersion'] == mcp.PROTOCOL_VERSION
     assert responses[0]['result']['capabilities'] == {'tools': {}}
     assert [tool['name'] for tool in responses[1]['result']['tools']] == [
-        'bleep_suggest', 'bleep_why']
+        'bleep_suggest', 'bleep_why', 'bleep_history']
     assert all(tool['annotations']['readOnlyHint']
                for tool in responses[1]['result']['tools'])
 
@@ -78,6 +78,33 @@ def test_why_passes_platform_to_diagnostics(mocker):
     why.assert_called_once_with('curl example.invalid',
                                 'Could not resolve host', 'nt')
     assert responses[1]['result']['structuredContent'] == result
+
+
+def test_history_returns_local_records_without_command_arguments(mocker):
+    result = {'schema': 2, 'limit': 5, 'failures': []}
+    history = mocker.patch.object(mcp.api, 'history', return_value=result)
+    responses = _serve([
+        _message('initialize'),
+        {'jsonrpc': '2.0', 'method': 'notifications/initialized'},
+        _message('tools/call', params={
+            'name': 'bleep_history', 'arguments': {},
+        }),
+    ])
+
+    history.assert_called_once_with()
+    assert responses[1]['result']['structuredContent'] == result
+
+
+def test_history_rejects_unexpected_arguments():
+    responses = _serve([
+        _message('initialize'),
+        {'jsonrpc': '2.0', 'method': 'notifications/initialized'},
+        _message('tools/call', params={
+            'name': 'bleep_history', 'arguments': {'command': 'gti'},
+        }),
+    ])
+
+    assert responses[1]['error']['code'] == -32602
 
 
 def test_tool_input_errors_are_visible_to_the_agent():

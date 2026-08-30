@@ -32,7 +32,7 @@ def _output_schema():
     ], 'description': 'Output already captured by the caller, if available'}
 
 
-def _tool(name, title, description, properties):
+def _tool(name, title, description, properties, required=('command',)):
     return {
         'name': name,
         'title': title,
@@ -40,7 +40,7 @@ def _tool(name, title, description, properties):
         'inputSchema': {
             'type': 'object',
             'properties': properties,
-            'required': ['command'],
+            'required': list(required),
             'additionalProperties': False,
         },
         'outputSchema': {'type': 'object'},
@@ -77,6 +77,12 @@ TOOLS = (
                 'description': 'Target platform for follow-up commands',
             },
         }),
+    _tool(
+        'bleep_history',
+        'List recent failed commands',
+        'Return the bounded local failure history, including output already '
+        'captured at failure time. This tool never replays a command.',
+        {}, required=()),
 )
 
 _TOOL_NAMES = frozenset(tool['name'] for tool in TOOLS)
@@ -105,11 +111,14 @@ def _validate_tool_arguments(name, arguments):
     if not isinstance(arguments, dict):
         return 'tool arguments must be an object'
 
-    allowed = {'command', 'output'} | ({'platform'} if name == 'bleep_why'
-                                       else set())
+    allowed = ({'command', 'output'} if name != 'bleep_history' else set())
+    if name == 'bleep_why':
+        allowed.add('platform')
     unexpected = sorted(set(arguments) - allowed)
     if unexpected:
         return 'unknown argument: {}'.format(unexpected[0])
+    if name == 'bleep_history':
+        return None
     if not isinstance(arguments.get('command'), str):
         return 'command must be a string'
     if 'output' in arguments and arguments['output'] is not None \
@@ -122,6 +131,8 @@ def _validate_tool_arguments(name, arguments):
 
 
 def _call_tool(name, arguments):
+    if name == 'bleep_history':
+        return api.history()
     command = arguments['command']
     output = arguments.get('output')
     if name == 'bleep_why':

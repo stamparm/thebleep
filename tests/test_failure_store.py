@@ -128,19 +128,41 @@ def test_load_discards_oversized_utf8_output(mocker):
 def test_print_recent(capsys):
     failure_store.print_recent([{
         'script': 'gti status', 'output': '', 'cwd': 'project', 'shell': 'bash',
-        'exit': 127, 'saved_at': 1}])
+        'exit': 127, 'saved_at': 1}], now=2)
 
     output = capsys.readouterr().out
     assert 'Recent failures:' in output
-    assert '1  gti status  (exit 127, project)' in output
+    assert '1  gti status  (exit 127, bash, project, 1s ago)' in output
 
 
 def test_print_recent_escapes_terminal_input(capsys):
     failure_store.print_recent([{
         'script': 'gti\n\x1b[31mstatus\x1b[0m', 'output': '',
-        'cwd': 'project\twork', 'shell': 'bash', 'exit': 127, 'saved_at': 1}])
+        'cwd': 'project\twork', 'shell': 'bash', 'exit': 127, 'saved_at': 1}],
+        now=1)
 
     output = capsys.readouterr().out
     assert output == ('Recent failures:\n'
-                      ' 1  gti\\nstatus  (exit 127, project\\twork)\n')
+                      ' 1  gti\\nstatus  (exit 127, bash, '
+                      'project\\twork, just now)\n')
     assert '\x1b' not in output
+
+
+def test_public_entries_are_numbered_and_include_age():
+    entries = [{
+        'script': 'gti status', 'output': 'not found', 'cwd': 'project',
+        'shell': 'bash', 'exit': 127, 'saved_at': 100}]
+
+    assert failure_store.public_entries(entries, now=109) == [{
+        'number': 1, 'command': 'gti status', 'output': 'not found',
+        'cwd': 'project', 'shell': 'bash', 'exit': 127, 'saved_at': 100,
+        'age_seconds': 9,
+    }]
+
+
+def test_public_entries_does_not_expose_an_empty_shell_as_a_fake_name():
+    entries = [{
+        'script': 'gti status', 'output': '', 'cwd': 'project', 'shell': '',
+        'exit': 127, 'saved_at': 100}]
+
+    assert failure_store.public_entries(entries, now=100)[0]['shell'] is None

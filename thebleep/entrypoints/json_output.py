@@ -50,6 +50,18 @@ def json_output(args):
     command-only rules.
     """
     settings.init(args)
+    if getattr(args, 'pick', None) is not None:
+        if getattr(args, 'why', False):
+            logs.failed('--json --pick cannot be combined with --why')
+            return 2
+        if args.command or getattr(args, 'command_text', None) is not None:
+            logs.failed('--json --pick cannot be combined with a command')
+            return 2
+        if getattr(args, 'stderr', None) or getattr(args, 'cwd', None):
+            logs.failed('--json --pick cannot be combined with --stderr or --cwd')
+            return 2
+        print(json.dumps(api.history(), sort_keys=True))
+        return 0
     command_text = getattr(args, 'command_text', None)
     if command_text is not None and args.command:
         logs.failed('--command cannot be combined with positional command')

@@ -19,6 +19,35 @@ MAX_CWD = 4096
 MAX_SHELL = 64
 
 
+def _age(saved_at, now=None):
+    """Return a short, bounded age for a saved failure."""
+    if now is None:
+        now = time.time()
+    try:
+        seconds = max(0, int(now - float(saved_at)))
+    except (TypeError, ValueError, OverflowError):
+        return 'unknown age'
+    if seconds < 1:
+        return 'just now'
+    if seconds < 60:
+        return '{}s ago'.format(seconds)
+    if seconds < 3600:
+        return '{}m ago'.format(seconds // 60)
+    if seconds < 86400:
+        return '{}h ago'.format(seconds // 3600)
+    return '{}d ago'.format(seconds // 86400)
+
+
+def _age_seconds(saved_at, now=None):
+    """Return a non-negative numeric age for structured consumers."""
+    if now is None:
+        now = time.time()
+    try:
+        return max(0, int(now - float(saved_at)))
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
 def _byte_length(value):
     """Return the size of text as it will be stored on disk."""
     return len(value.encode('utf-8'))
@@ -104,8 +133,8 @@ def forget(number):
     return True
 
 
-def print_recent(entries=None):
-    """Prints a compact, stable list for a human choosing a failure."""
+def print_recent(entries=None, now=None):
+    """Print a compact list for a human choosing a failure."""
     def display(value):
         """Keep stored terminal input on one harmless, readable line."""
         from .utils import without_control_sequences
@@ -128,4 +157,27 @@ def print_recent(entries=None):
     for index, entry in enumerate(entries, 1):
         print('{:>2}  {}  (exit {}, {})'.format(
             index, display(entry['script']), entry['exit'],
-            display(entry['cwd'])))
+            ', '.join((display(entry['shell']) or 'unknown shell',
+                       display(entry['cwd']) or 'unknown directory',
+                       _age(entry['saved_at'], now)))))
+
+
+def public_entries(entries=None, now=None):
+    """Return bounded failure records for JSON and agent consumers.
+
+    The output is intentionally a copy with stable field names. It contains
+    the captured output because selecting a record is specifically meant to
+    correct from what the failed command already printed; no command is run.
+    """
+    if entries is None:
+        entries = load()
+    return [{
+        'number': index,
+        'command': entry['script'],
+        'output': entry['output'],
+        'cwd': entry['cwd'],
+        'shell': entry['shell'] or None,
+        'exit': entry['exit'],
+        'saved_at': entry['saved_at'],
+        'age_seconds': _age_seconds(entry['saved_at'], now),
+    } for index, entry in enumerate(entries, 1)]

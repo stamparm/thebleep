@@ -19,7 +19,7 @@ from difflib import SequenceMatcher
 from . import explain as explain_module
 from .corrector import get_corrected_commands
 from .types import Command
-from . import diagnostics, risk
+from . import diagnostics, failure_store, risk
 from .utils import tool_probes
 
 
@@ -238,4 +238,18 @@ def why(script, output=None, platform_name=None):
         'output_supplied': result['output_supplied'],
         'decision': result['decision'],
         'diagnoses': result['diagnoses'],
+    }
+
+
+def history():
+    """Return the bounded local failure history without executing anything.
+
+    Records are newest first and include the output already captured when the
+    failure happened, so a caller can inspect or feed one back to ``suggest``
+    or ``why`` without replaying it.
+    """
+    return {
+        'schema': SCHEMA_VERSION,
+        'limit': failure_store.LIMIT,
+        'failures': failure_store.public_entries(),
     }
