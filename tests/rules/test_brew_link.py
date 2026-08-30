@@ -28,6 +28,13 @@ def test_match(output, script):
     assert match(Command(script, output))
 
 
+def test_environment_assignment_is_preserved(output):
+    script = 'HOMEBREW_NO_AUTO_UPDATE=1 brew link coreutils'
+    assert match(Command(script, output))
+    assert get_new_command(Command(script, output)) == (
+        'HOMEBREW_NO_AUTO_UPDATE=1 brew link --overwrite --dry-run coreutils')
+
+
 @pytest.mark.parametrize('script', ['brew link coreutils'])
 def test_not_match(script):
     assert not match(Command(script, ''))

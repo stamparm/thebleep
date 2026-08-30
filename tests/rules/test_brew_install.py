@@ -63,6 +63,12 @@ def test_match(brew_no_available_formula_one, brew_no_available_formula_two,
     assert not match(Command('brew install', brew_install_no_argument))
 
 
+def test_match_accepts_environment_assignments(
+        brew_no_available_formula_one):
+    assert match(Command('HOMEBREW_NO_AUTO_UPDATE=1 brew install giss',
+                         brew_no_available_formula_one))
+
+
 def test_get_new_command(brew_no_available_formula_one, brew_no_available_formula_two,
                          brew_no_available_formula_three):
     assert get_new_command(Command('brew install giss',

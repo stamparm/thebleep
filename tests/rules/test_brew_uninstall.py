@@ -27,6 +27,13 @@ def test_match(output, script):
     assert match(Command(script, output))
 
 
+def test_environment_assignment_is_preserved(output):
+    script = 'HOMEBREW_NO_AUTO_UPDATE=1 brew uninstall tbb'
+    assert match(Command(script, output))
+    assert get_new_command(Command(script, output)) == (
+        'HOMEBREW_NO_AUTO_UPDATE=1 brew uninstall --force tbb')
+
+
 @pytest.mark.parametrize('script', ['brew remove gnuplot'])
 def test_not_match(script):
     output = 'Uninstalling /usr/local/Cellar/gnuplot/5.0.4_1... (44 files, 2.3M)\n'

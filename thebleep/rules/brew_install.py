@@ -1,6 +1,6 @@
 import re
 from thebleep.shells import shell
-from thebleep.utils import for_app
+from thebleep.utils import command_word_index, for_app
 from thebleep.specific.brew import brew_available
 
 enabled_by_default = brew_available
@@ -27,7 +27,9 @@ def match(command):
     # `command.script`, which this used to look in, holds `install` for
     # `brew uninstall` and `brew reinstall` too -- and correcting either of
     # those to an install would be a wrong and destructive thing to offer.
-    return (command.script_parts[1] == 'install'
+    parts = command.script_parts
+    start = command_word_index(parts)
+    return (parts[start + 1] == 'install'
             and bool(_suggested_formulae(command.output)))
 
 
