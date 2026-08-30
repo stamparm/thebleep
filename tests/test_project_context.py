@@ -50,3 +50,23 @@ def test_manifest_keys_must_be_usable_command_names(tmpdir):
         'ok': 'true', '\nnot-a-line': 'true', '\u0000bad': 'true'}}))
 
     assert project_context.package_scripts(str(project)) == ['ok']
+
+
+def test_make_targets_are_static_and_deduplicated(tmpdir):
+    root = tmpdir.mkdir('project')
+    nested = root.mkdir('src')
+    root.join('Makefile').write(
+        '.PHONY: build test\n'
+        'build test:\n\t@true\n'
+        'generated-%:\n\t@true\n'
+        '$(DYNAMIC):\n\t@true\n')
+
+    assert project_context.make_targets(str(nested)) == ['build', 'test']
+
+
+def test_make_targets_distinguish_missing_and_empty_files(tmpdir):
+    empty = tmpdir.mkdir('empty')
+    assert project_context.make_targets(str(empty)) is None
+
+    empty.join('Makefile').write('# comments only\nVAR := value\n')
+    assert project_context.make_targets(str(empty)) == []

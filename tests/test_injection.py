@@ -52,7 +52,7 @@ def canary(tmpdir):
                  'sh', 'env', 'rm', 'kill', 'ssh', 'ssh-keygen', 'vim',
                  'rails', 'kubectl', 'uv', 'ruff', 'gh', 'helm',
                  'black', 'cargo', 'prettier', 'pytest', 'mytool', 'bun',
-                 'heroku', 'hg'):
+                 'heroku', 'hg', 'make'):
         shutil.copy(str(stub), str(stubs.join(name)))
 
     work = tmpdir.mkdir('work')
@@ -170,6 +170,20 @@ class TestNamesFromSomewhereElse(object):
         assert suggestions, 'the hostile name never reached a suggestion'
         for suggestion in suggestions:
             assert canary(suggestion) == []
+
+    def test_make_target_is_quoted(self, name, payload, canary, tmpdir,
+                                   monkeypatch):
+        """Static Makefile vocabulary is still untrusted shell input."""
+        project = tmpdir.mkdir('make-project')
+        project.join('Makefile').write('build&touch:\n\t@true\n')
+        monkeypatch.chdir(str(project))
+        output = "make: *** No rule to make target 'buil&touch'.  Stop."
+
+        from thebleep.rules import make_no_target
+
+        suggestion = make_no_target.get_new_command(
+            Command('make buil&touch', output))[0]
+        assert canary(suggestion) == []
 
     def test_ssh_known_hosts(self, name, payload, canary):
         """The known_hosts path and host name come out of ssh's warning."""

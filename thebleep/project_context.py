@@ -9,9 +9,12 @@ declared metadata: it never imports a project or runs a script.
 
 import json
 import os
+import re
 
 
 MAX_JSON_BYTES = 1024 * 1024
+MAX_MAKEFILE_BYTES = 1024 * 1024
+_MAKE_TARGET = re.compile(r'^(?![ \t])([^:#=\s][^:#]*?)\s*:(?!=)')
 
 
 def find_up(filename, start=None):
@@ -76,3 +79,70 @@ def package_scripts(start=None):
         return []
 
     return [name for name in scripts if _usable_name(name)]
+
+
+def _makefile(start=None):
+    """Return the nearest Makefile using make's standard name order."""
+    directory = os.path.abspath(start or os.getcwd())
+    while True:
+        for filename in ('GNUmakefile', 'makefile', 'Makefile'):
+            candidate = os.path.join(directory, filename)
+            if os.path.isfile(candidate):
+                return candidate
+
+        parent = os.path.dirname(directory)
+        if parent == directory:
+            return None
+        directory = parent
+
+
+def _read_makefile(path):
+    try:
+        if os.path.getsize(path) > MAX_MAKEFILE_BYTES:
+            return None
+        with open(path, encoding='utf-8') as handle:
+            value = handle.read(MAX_MAKEFILE_BYTES + 1)
+    except (EnvironmentError, UnicodeError):
+        return None
+
+    return value if len(value.encode('utf-8')) <= MAX_MAKEFILE_BYTES else None
+
+
+def _make_target_name(name):
+    """Whether a static target is safe and useful as a typo candidate."""
+    return (bool(name) and not name.startswith('.') and '%' not in name
+            and '$' not in name and '\\' not in name
+            and '\x00' not in name and '\r' not in name
+            and '\n' not in name)
+
+
+def make_targets(start=None):
+    """Return explicit target names from the nearest readable Makefile.
+
+    This intentionally understands only ordinary, static target declarations.
+    Dynamic ``eval``/pattern/variable targets are not guessed; an empty or
+    ambiguous source is safer than offering a recipe the file did not clearly
+    name.
+    """
+    path = _makefile(start)
+    if path is None:
+        return None
+
+    source = _read_makefile(path)
+    if source is None:
+        return None
+
+    found = []
+    for line in source.splitlines():
+        match = _MAKE_TARGET.match(line)
+        if not match:
+            continue
+
+        names = match.group(1).split()
+        if names == ['.PHONY']:
+            names = line[match.end():].split()
+        for name in names:
+            if _make_target_name(name) and name not in found:
+                found.append(name)
+
+    return found
