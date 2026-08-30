@@ -21,8 +21,53 @@ from . import diagnostics, risk
 from .utils import tool_probes
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 MAX_OUTPUT = 8 * 1024 * 1024
+
+
+def _confidence(rule, command):
+    """Return a useful score alongside the human-readable confidence tier.
+
+    The number is an ordinal heuristic, not a probability. It deliberately
+    rewards evidence the engine can point to: an accepted learned correction is
+    stronger than a rule match, and a captured tool error is stronger than a
+    command-only guess.
+    """
+    if rule is None:
+        return {
+            'level': 'unknown',
+            'score': None,
+            'basis': ['the suggestion did not identify its rule'],
+        }
+    if getattr(rule, 'learned', False):
+        return {
+            'level': 'high',
+            'score': 0.98,
+            'basis': ['a correction learned from the user'],
+        }
+    if rule.requires_output and command.output is not None:
+        return {
+            'level': 'high',
+            'score': 0.95,
+            'basis': ['the rule matched captured command output'],
+        }
+    return {
+        'level': 'medium',
+        'score': 0.75,
+        'basis': ['the rule matched the command or local context'],
+    }
+
+
+def _evidence_details(explanation):
+    kinds = {
+        'rule': 'source',
+        'matched': 'match',
+        'read': 'context',
+        'side effect': 'side_effect',
+        'runs as': 'execution',
+    }
+    return [{'kind': kinds.get(label, label), 'text': value}
+            for label, value in explanation]
 
 
 def _check_output(output):
@@ -41,26 +86,7 @@ def _suggestion(corrected, command):
     rule = getattr(corrected, 'rule', None)
     explanation = explain_module.describe(corrected, command)
     assessment = risk.assess(corrected)
-    if rule is None:
-        confidence = {
-            'level': 'unknown',
-            'basis': ['the suggestion did not identify its rule'],
-        }
-    elif getattr(rule, 'learned', False):
-        confidence = {
-            'level': 'high',
-            'basis': ['a correction learned from the user'],
-        }
-    elif rule.requires_output and command.output is not None:
-        confidence = {
-            'level': 'high',
-            'basis': ['the rule matched captured command output'],
-        }
-    else:
-        confidence = {
-            'level': 'medium',
-            'basis': ['the rule matched the command or local context'],
-        }
+    confidence = _confidence(rule, command)
     return {
         'command': corrected.script,
         'rule': rule.name if rule is not None else None,
@@ -73,6 +99,7 @@ def _suggestion(corrected, command):
         'evidence': [
             value for label, value in explanation
             if label in ('matched', 'read')],
+        'evidence_details': _evidence_details(explanation),
         'explanation': [
             {'label': label, 'value': value}
             for label, value in explanation],
@@ -104,6 +131,7 @@ def suggest(script, output=None):
     return {
         'schema': SCHEMA_VERSION,
         'command': script,
+        'structure': command.command_model.as_dict(),
         'output_supplied': output is not None,
         'decision': 'suggest' if suggestions else 'abstain',
         'suggestions': suggestions,
@@ -126,6 +154,7 @@ def why(script, output=None, platform_name=None):
     return {
         'schema': result['schema'],
         'command': result['command'],
+        'structure': Command(script, output).command_model.as_dict(),
         'output_supplied': result['output_supplied'],
         'decision': result['decision'],
         'diagnoses': result['diagnoses'],

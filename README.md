@@ -483,15 +483,26 @@ for item in result['suggestions']:
     print(item['command'], item['rule'], item['evidence'])
 ```
 
-The result includes `schema: 1` for contract versioning, the original command,
+The result includes `schema: 2` for contract versioning, the original command,
 whether output was supplied, and a `decision`: `suggest` when a candidate passed
 the rules, or `abstain` when no candidate was verified. Each suggestion contains
 its command, rule, priority,
 side-effect flag, ordinal confidence, conservative risk markers and evidence.
-Confidence is evidence strength, not a calibrated probability: `high` means
+The top-level `structure` is a source-preserving view of the command: its
+segments, separators, redirections, nested substitutions and source spans are
+available to editors and agents without re-parsing shell punctuation. Incomplete
+syntax is retained and marked `complete: false`, so consumers can abstain
+instead of treating a partial parse as a valid command tree. The existing rule
+engine still receives the legacy command fields, so third-party rules do not
+need to change.
+
+Confidence is evidence strength, not a calibrated probability. The numeric
+`score` is an ordinal ranking hint, not a promise of accuracy: `high` means
 captured output or a learned correction supports the rule, `medium` means the
 rule matched command or local context, and `unknown` means the source was not
-identified. `risk: low` means
+identified. The `evidence_details` field gives the same facts with stable
+`kind` values such as `source`, `match`, `context`, `side_effect` and
+`execution`; the older `evidence` list remains for simple consumers. `risk: low` means
 that no known high-risk marker was found; it is not a safety guarantee. The
 `explanation` field keeps the same facts with labels, so a consumer can tell
 matched output from the read requirement, side effect or privilege change

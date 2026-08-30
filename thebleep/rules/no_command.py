@@ -621,8 +621,19 @@ def _used_executables(command):
             for script in get_valid_history_without_current(command)}
 
 
-def _replace_command_at(script, command_index, old, replacement):
+def _replace_command_at(script, command_index, old, replacement, command=None):
     """Replace one identified command word without touching its arguments."""
+    if command is not None:
+        from thebleep.command_model import parse, replace_span
+
+        model = command.command_model
+        if script != model.script:
+            model = parse(script, model.shell)
+        matches = [token for token in model.command_tokens()
+                   if token.text == old]
+        if len(matches) == 1:
+            return replace_span(script, matches[0], replacement)
+
     if command_index == 0 or script.count(old) == 1:
         return script.replace(old, replacement, 1)
     return _replace_after_separator(script, old, replacement)
@@ -660,7 +671,7 @@ def _combined_inline_command(command):
         replacement = (plausible[0] if _SAFE_COMMAND_NAME.match(plausible[0])
                        else shell.quote(plausible[0]))
         corrected = _replace_command_at(
-            corrected, command_index, old_command, replacement)
+            corrected, command_index, old_command, replacement, command)
         if corrected is None:
             return None
 
@@ -748,7 +759,8 @@ def get_new_command(command):
                 old_command, replacement)
         else:
             script = _replace_command_at(
-                command.script, command_index, old_command, replacement)
+                command.script, command_index, old_command, replacement,
+                command)
             if script is None:
                 # String replacement cannot identify the right token when the
                 # failed command also appears as an argument. Abstain rather

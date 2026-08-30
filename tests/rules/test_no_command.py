@@ -1,5 +1,5 @@
 import pytest
-from thebleep.rules.no_command import match, get_new_command
+from thebleep.rules.no_command import match, get_new_command, _replace_command_at
 from thebleep.types import Command
 
 
@@ -78,6 +78,13 @@ def test_inline_corrects_each_unambiguous_command_in_a_pipeline(mocker):
 
     assert get_new_command(command) == [
         'cd project && git status | grep main']
+
+
+def test_span_replacement_tracks_an_earlier_length_change():
+    command = Command('gti && grpe', None)
+
+    assert _replace_command_at(
+        'git && grpe', 1, 'grpe', 'grep', command) == 'git && grep'
 
 
 def test_corrects_a_command_inside_a_case_body(mocker):

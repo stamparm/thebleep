@@ -44,6 +44,24 @@ class Command(object):
 
         return self._script_parts
 
+    @property
+    def command_model(self):
+        """A source-preserving structure for clients that need command spans.
+
+        Existing rules keep using ``script_parts``. The model is lazy so the
+        normal correction path pays nothing for structured consumers, while
+        the API and future AST-aware rules can share one parser instead of
+        each growing another punctuation-and-quoting implementation.
+        """
+        if not hasattr(self, '_command_model'):
+            from .command_model import parse
+
+            name = type(shell).__name__.lower()
+            if name not in ('powershell',):
+                name = 'posix'
+            self._command_model = parse(self.script, name)
+        return self._command_model
+
     def __eq__(self, other):
         if isinstance(other, Command):
             return (self.script, self.output) == (other.script, other.output)

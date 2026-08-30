@@ -18,8 +18,20 @@ def test_suggest_returns_structured_correction(mocker):
     result = api.suggest('gti status', 'command not found')
 
     assert result == {
-        'schema': 1,
+        'schema': 2,
         'command': 'gti status',
+        'structure': {
+            'shell': 'posix',
+            'complete': True,
+            'segments': [{
+                'start': 0,
+                'end': 10,
+                'separator': None,
+                'command': 'gti',
+                'tokens': [
+                    {'text': 'gti', 'start': 0, 'end': 3, 'kind': 'word'},
+                    {'text': 'status', 'start': 4, 'end': 10,
+                     'kind': 'word'}]}]},
         'output_supplied': True,
         'decision': 'suggest',
         'suggestions': [{
@@ -27,6 +39,7 @@ def test_suggest_returns_structured_correction(mocker):
             'rule': 'test_rule',
             'priority': 1200,
             'confidence': {
+                'score': 0.95,
                 'level': 'high',
                 'basis': ['the rule matched captured command output']},
             'side_effect': False,
@@ -36,6 +49,12 @@ def test_suggest_returns_structured_correction(mocker):
             'evidence': [
                 'a condition this rule works out for itself',
                 'what your command printed'],
+            'evidence_details': [
+                {'kind': 'source',
+                 'text': 'test_rule (from somewhere unrecorded)'},
+                {'kind': 'match',
+                 'text': 'a condition this rule works out for itself'},
+                {'kind': 'context', 'text': 'what your command printed'}],
             'explanation': [
                 {'label': 'rule', 'value': 'test_rule (from somewhere unrecorded)'},
                 {'label': 'matched',
@@ -139,6 +158,7 @@ def test_suggest_marks_command_only_confidence(mocker):
 
     assert suggestion['confidence'] == {
         'level': 'medium',
+        'score': 0.75,
         'basis': ['the rule matched the command or local context']}
 
 
@@ -159,8 +179,20 @@ def test_why_returns_the_versioned_diagnosis_contract():
     assert api.why('python app.py',
                    "ModuleNotFoundError: No module named 'tomli'",
                    platform_name='posix') == {
-        'schema': 1,
+        'schema': 2,
         'command': 'python app.py',
+        'structure': {
+            'shell': 'posix',
+            'complete': True,
+            'segments': [{
+                'start': 0,
+                'end': 13,
+                'separator': None,
+                'command': 'python',
+                'tokens': [
+                    {'text': 'python', 'start': 0, 'end': 6, 'kind': 'word'},
+                    {'text': 'app.py', 'start': 7, 'end': 13,
+                     'kind': 'word'}]}]},
         'output_supplied': True,
         'decision': 'diagnose',
         'diagnoses': [{
