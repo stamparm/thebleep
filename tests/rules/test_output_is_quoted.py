@@ -19,8 +19,9 @@ import subprocess
 import sys
 import pytest
 from thebleep.rules import (cp_create_destination, docker_image_being_used_by_container,
-                            git_add, heroku_multiple_apps, nixos_cmd_not_found,
-                            no_such_file, python_module_error, touch)
+                            brew_cask_dependency, git_add, heroku_multiple_apps,
+                            nixos_cmd_not_found, no_such_file,
+                            python_module_error, touch)
 from thebleep.shells import shell
 from thebleep.types import Command
 
@@ -164,3 +165,13 @@ def test_docker_image_being_used_by_container(payload, arguments_reaching):
     new_command = docker_image_being_used_by_container.get_new_command(command)
     assert arguments_reaching(new_command, 'docker') \
         == ['container', 'rm', '-f', payload]
+
+
+@pytest.mark.parametrize('payload', ONE_WORD)
+def test_brew_cask_dependency(payload, arguments_reaching):
+    output = ('brew install --cask {}\n'.format(payload))
+    command = Command('brew install sshfs', output)
+    new_command = brew_cask_dependency.get_new_command(command)
+
+    assert arguments_reaching(new_command, 'brew') \
+        == ['install', '--cask', payload]

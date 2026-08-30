@@ -46,3 +46,12 @@ def test_not_match(script, output):
 def test_get_new_command(before, command_output, after):
     command = Command(before, command_output)
     assert get_new_command(command) == after
+
+
+def test_get_new_command_quotes_output_words():
+    hostile = output.replace('osxfuse', 'a;touch')
+
+    command = Command('brew install sshfs', hostile)
+
+    assert get_new_command(command) == (
+        "brew install --cask 'a;touch' && brew install sshfs")

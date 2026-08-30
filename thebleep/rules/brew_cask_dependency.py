@@ -1,4 +1,4 @@
-from thebleep.utils import for_app, eager
+from thebleep.utils import for_app, eager, quote_words
 from thebleep.shells import shell
 from thebleep.specific.brew import brew_available
 
@@ -34,7 +34,7 @@ def _get_script_for_brew_cask(output):
 
 def get_new_command(command):
     brew_cask_script = _get_script_for_brew_cask(command.output)
-    return shell.and_(brew_cask_script, command.script)
+    return shell.and_(quote_words(brew_cask_script), command.script)
 
 
 enabled_by_default = brew_available
