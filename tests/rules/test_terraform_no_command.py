@@ -26,3 +26,11 @@ def test_not_match(script, output):
 ])
 def test_get_new_command(script, output, new_command):
     assert get_new_command(Command(script, output)) == new_command
+
+
+def test_get_new_command_quotes_suggestion():
+    command = Command(
+        'terraform appyl',
+        'Terraform has no command named "appyl". '
+        'Did you mean "apply;>TERRAFORM"?')
+    assert get_new_command(command) == "terraform 'apply;>TERRAFORM'"

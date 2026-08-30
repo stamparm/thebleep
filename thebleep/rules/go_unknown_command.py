@@ -1,5 +1,6 @@
 from itertools import dropwhile, islice, takewhile
 
+from thebleep.shells import shell
 from thebleep.utils import (get_closest, replace_argument, for_app, which,
                             cache, tool_lines)
 
@@ -24,5 +25,7 @@ def match(command):
 
 def get_new_command(command):
     closest_subcommand = get_closest(command.script_parts[1], get_golang_commands())
+    if closest_subcommand is None:
+        return []
     return replace_argument(command.script, command.script_parts[1],
-                            closest_subcommand)
+                            shell.quote(closest_subcommand))

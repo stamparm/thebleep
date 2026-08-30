@@ -79,3 +79,9 @@ def test_not_match():
 @pytest.mark.usefixtures('no_memoize', 'go_stderr')
 def test_get_new_command(build_misspelled_output):
     assert get_new_command(Command('go bulid', build_misspelled_output)) == 'go build'
+
+
+def test_no_completion_means_no_suggestion(build_misspelled_output, mocker):
+    mocker.patch('thebleep.rules.go_unknown_command.get_golang_commands',
+                 return_value=[])
+    assert get_new_command(Command('go bulid', build_misspelled_output)) == []

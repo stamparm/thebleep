@@ -571,6 +571,24 @@ class TestNamesFromSomewhereElse(object):
         command = Command(u'git -{}'.format(payload), output)
         assert canary(git_two_dashes.get_new_command(command)) == []
 
+    def test_terraform_suggestion_is_quoted(self, name, payload, canary):
+        if '"' in payload:
+            return
+        from thebleep.rules import terraform_no_command
+
+        output = (u'Terraform has no command named "appyl". '
+                  u'Did you mean "{}"?'.format(payload))
+        command = Command(u'terraform appyl', output)
+        assert canary(terraform_no_command.get_new_command(command)) == []
+
+    def test_go_suggestion_is_quoted(self, name, payload, canary, mocker):
+        from thebleep.rules import go_unknown_command
+
+        mocker.patch.object(go_unknown_command, 'get_golang_commands',
+                            return_value=[payload])
+        command = Command(u'go bulid', u'go bulid: unknown command')
+        assert canary(go_unknown_command.get_new_command(command)) == []
+
 
 @pytest.mark.skipif(sys.platform == 'win32', reason='needs a POSIX shell')
 def test_learned_correction_quotes_its_replacement(
