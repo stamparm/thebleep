@@ -13,6 +13,13 @@ def test_not_match():
     assert not match(Command('', ''))
 
 
+def test_option_failure_is_not_a_help_correction():
+    assert not match(Command(
+        'ls --colour',
+        "ls: unrecognized option '--colour'\n"
+        "Try 'ls --help' for more information.\n"))
+
+
 @pytest.mark.parametrize('before, after', [
     ('grep -h', 'grep --help'),
     ('tar -h', 'tar --help'),

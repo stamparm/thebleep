@@ -6,6 +6,14 @@ help_regex = r"(?:Run|Try) '([^']+)'(?: or '[^']+')? for (?:details|more informa
 
 
 def match(command):
+    # An option failure may include `Try 'tool --help'`, but that is advice
+    # from the failed tool, not a correction to the command. A specialised
+    # option rule gets first chance to produce a real replacement; if it has
+    # no evidence, abstain instead of offering a help screen as the answer.
+    if re.search(r'(?:unrecognized|unknown|invalid) option',
+                 command.output, re.I) is not None:
+        return False
+
     if re.search(help_regex, command.output, re.I) is not None:
         return True
 
