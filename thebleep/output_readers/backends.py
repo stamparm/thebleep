@@ -67,8 +67,9 @@ def _instant_read(script, expanded):
 
 
 def _tmux_available():
-    from . import tmux
-    return tmux.is_available()
+    from ..utils import which
+    return bool(os.environ.get('TMUX') and os.environ.get('TMUX_PANE')
+                and which('tmux'))
 
 
 def _tmux_read(script, expanded):
@@ -77,8 +78,8 @@ def _tmux_read(script, expanded):
 
 
 def _zellij_available():
-    from . import zellij
-    return zellij.is_available()
+    from ..utils import which
+    return bool(os.environ.get('ZELLIJ_PANE_ID') and which('zellij'))
 
 
 def _zellij_read(script, expanded):
@@ -87,8 +88,8 @@ def _zellij_read(script, expanded):
 
 
 def _wezterm_available():
-    from . import wezterm
-    return wezterm.is_available()
+    from ..utils import which
+    return bool(os.environ.get('WEZTERM_PANE') and which('wezterm'))
 
 
 def _wezterm_read(script, expanded):
@@ -97,8 +98,9 @@ def _wezterm_read(script, expanded):
 
 
 def _kitty_available():
-    from . import kitty
-    return kitty.is_available()
+    from ..utils import which
+    window_id = os.environ.get('KITTY_WINDOW_ID', '')
+    return bool(window_id.isdigit() and which('kitten'))
 
 
 def _kitty_read(script, expanded):

@@ -5,7 +5,6 @@
 import os
 
 from ..utils import which
-from . import pane
 
 
 def _window_id():
@@ -19,6 +18,8 @@ def is_available():
 
 
 def _capture():
+    from . import pane
+
     executable = which('kitten')
     window_id = _window_id()
     if not executable or not window_id:
@@ -30,5 +31,7 @@ def _capture():
 
 def get_output(script, expanded):
     """Return the current window's output, or ``None`` on weak boundaries."""
+    from . import pane
+
     capture = _capture()
     return pane.output(script, capture) if capture is not None else None

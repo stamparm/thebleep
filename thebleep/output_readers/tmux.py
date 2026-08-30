@@ -5,7 +5,6 @@
 import os
 
 from ..utils import which
-from . import pane
 
 
 def is_available():
@@ -15,6 +14,8 @@ def is_available():
 
 
 def _capture():
+    from . import pane
+
     executable = which('tmux')
     tmux_state = os.environ.get('TMUX', '')
     if not tmux_state:
@@ -30,6 +31,8 @@ def _capture():
 
 
 def _output(script, capture):
+    from . import pane
+
     return pane.output(script, capture)
 
 
