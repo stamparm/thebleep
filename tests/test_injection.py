@@ -200,6 +200,16 @@ class TestNamesFromSomewhereElse(object):
             return
         assert canary(git_push.get_new_command(command)) == []
 
+    def test_git_branch_zero_flag_quotes_a_quoted_branch(self, name, payload,
+                                                         canary):
+        from thebleep.rules import git_branch_0flag
+
+        command = Command(
+            u"git branch '0;'",
+            u"fatal: A branch named 'bar' already exists.")
+
+        assert canary(git_branch_0flag.get_new_command(command)) == []
+
     def test_git_push_different_branch_names(self, name, payload, canary):
         """A whole `git push <remote> <branch>` line, repeated back."""
         from thebleep.rules import git_push_different_branch_names as rule

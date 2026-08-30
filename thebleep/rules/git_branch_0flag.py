@@ -26,6 +26,10 @@ def get_new_command(command):
     fixed_flag = branch_name.replace("0", "-")
     fixed_script = replace_argument(command.script, branch_name, fixed_flag)
     if "A branch named '" in command.output and "' already exists." in command.output:
-        delete_branch = u" ".join(parts[:index + 1] + ['-D', branch_name])
+        # Rebuild the auxiliary command from parsed words, but quote each one:
+        # a quoted branch such as `'0;'` is valid git input and must not turn
+        # into shell syntax when the delete step is added.
+        delete_branch = u" ".join(
+            shell.quote(part) for part in parts[:index + 1] + ['-D', branch_name])
         return shell.and_(delete_branch, fixed_script)
     return fixed_script
