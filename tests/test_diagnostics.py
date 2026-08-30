@@ -162,6 +162,18 @@ def test_posix_missing_path_is_quoted():
         "ls -ld '/tmp/a; touch /tmp/bleep-owned'")
 
 
+def test_bsd_mv_missing_path_checks_both_sides_of_rename():
+    """macOS reports both operands, but not which one was absent."""
+    result = diagnostics.diagnose(
+        'mv thebleep-source missing-dir/destination',
+        'mv: rename thebleep-source to missing-dir/destination: '
+        'No such file or directory',
+        platform_name='posix')
+
+    assert [step['command'] for step in result['diagnoses'][0]['next_steps']] \
+        == ['ls -ld thebleep-source', 'ls -ld missing-dir/destination']
+
+
 def test_git_conflict_offers_status_as_a_read_only_next_step():
     result = diagnostics.diagnose(
         'git merge feature',

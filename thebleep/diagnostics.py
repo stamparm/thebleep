@@ -37,6 +37,10 @@ _POSIX_MISSING_PATH = re.compile(
     r'''(?im)^[^:\r\n]+:\s+(?:cannot[ ](?:access|stat)[ ])?
         (?P<quote>['"]?)(?P<path>[^'"\r\n]+?)(?P=quote):
         \s*no[ ]such[ ]file[ ]or[ ]directory''', re.VERBOSE)
+_POSIX_MISSING_MOVE = re.compile(
+    r'''(?im)^[^:\r\n]+:\s+rename\s+(?P<source>.+?)\s+to\s+
+        (?P<destination>[^:\r\n]+):\s*no[ ]such[ ]file[ ]or[ ]directory''',
+    re.VERBOSE)
 
 
 def _port(script, output):
@@ -102,6 +106,22 @@ def _posix_permission_path(output):
 
 
 def _posix_missing_path(output):
+    move = _POSIX_MISSING_MOVE.search(output)
+    if move:
+        paths = []
+        for name in ('source', 'destination'):
+            value = move.group(name).strip()
+            if len(value) >= 2 and value[0] == value[-1] \
+                    and value[0] in "'\"":
+                literal = '{}{}{}'.format(value[0], value[1:-1], value[0])
+                try:
+                    value = ast.literal_eval(literal)
+                except (SyntaxError, ValueError):
+                    return None
+            if not value:
+                return None
+            paths.append(value)
+        return move, paths
     return _posix_path(output, _POSIX_MISSING_PATH)
 
 
@@ -244,7 +264,9 @@ def _missing_python_path(script, output, platform_name):
         path_error = _posix_missing_path(output)
     if not path_error:
         return None
-    match, path = path_error
+    match, paths = path_error
+    if not isinstance(paths, (list, tuple)):
+        paths = [paths]
     return {
         'kind': 'missing_path',
         'summary': ('Python could not find the requested path.'
@@ -255,7 +277,7 @@ def _missing_python_path(script, output, platform_name):
                      else 'no such file or directory'],
         'next_steps': [_step(
             _path_inspection(path, platform_name),
-            'check whether the requested path exists')],
+            'check whether the requested path exists') for path in paths],
     }
 
 
