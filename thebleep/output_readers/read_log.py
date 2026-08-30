@@ -215,10 +215,28 @@ def _get_output_lines(script, log_file):
     return screen.display
 
 
-def _skip_old_lines(log_file):
-    size = os.path.getsize(os.environ['THEBLEEP_OUTPUT_LOG'])
-    if size > const.LOG_SIZE_IN_BYTES:
-        log_file.seek(size - const.LOG_SIZE_IN_BYTES)
+def _map_log(fd, size):
+    """Map at most the newest recording window, positioned at its start.
+
+    The bundled logger keeps a file exactly `LOG_SIZE_IN_BYTES` long, but the
+    reader also accepts a file supplied by another capture backend. Mapping the
+    first window of a larger file and seeking by the file's path size moved the
+    cursor to the end of the mapping, so the newest command disappeared. The
+    path could also change between `open` and `getsize`, making that seek about
+    a different file than the descriptor being read.
+
+    `mmap` offsets must be allocation-granularity aligned (which is stricter on
+    Windows than on most Unix systems). Map from the preceding aligned offset,
+    then position the view at the beginning of the bounded tail.
+
+    """
+    start = max(size - const.LOG_SIZE_IN_BYTES, 0)
+    alignment = mmap.ALLOCATIONGRANULARITY
+    offset = start - start % alignment
+    buffer = mmap.mmap(fd, size - offset, access=mmap.ACCESS_READ,
+                       offset=offset)
+    buffer.seek(start - offset)
+    return buffer
 
 
 def get_output(script):
@@ -263,13 +281,12 @@ def get_output(script):
                 # here catches; asking for a region the file has not actually
                 # been extended to is worse than that, because touching it
                 # raises `SIGBUS` and kills the process outright.
-                size = min(os.fstat(fd).st_size, const.LOG_SIZE_IN_BYTES)
+                size = os.fstat(fd).st_size
                 if size <= 0:
                     logs.warn("Output log is empty")
                     return None
 
-                with mmap.mmap(fd, size, access=mmap.ACCESS_READ) as buffer:
-                    _skip_old_lines(buffer)
+                with _map_log(fd, size) as buffer:
                     lines = _get_output_lines(script, buffer)
             finally:
                 os.close(fd)

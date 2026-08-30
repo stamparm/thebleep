@@ -217,6 +217,19 @@ class TestWhenItCannotAnswer(object):
         os.environ['THEBLEEP_OUTPUT_LOG'] = str(tmpdir.join('gone'))
         assert read_log.get_output(u'ls') is None
 
+    def test_a_recording_larger_than_the_window_uses_its_tail(
+            self, tmpdir, os_environ):
+        path = tmpdir.join('oversized-log')
+        tail = (u'{}$ ehco test\r\nehco: command not found\r\n{}$ '
+                .format(MARK, MARK)).encode('utf-8')
+        with open(str(path), 'wb') as handle:
+            handle.write(b'x\n' * ((read_log.const.LOG_SIZE_IN_BYTES + 1) // 2))
+            handle.write(tail)
+        os.environ['THEBLEEP_OUTPUT_LOG'] = str(path)
+        os.environ['PS1'] = MARK + u'$ '
+
+        assert read_log.get_output(u'ehco test') == u'ehco: command not found'
+
     def test_a_command_that_is_not_in_it(self, tmpdir, os_environ):
         _log(tmpdir, (u'ls', u'a'))
         assert read_log.get_output(u'ehco test') is None
