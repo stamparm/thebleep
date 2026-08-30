@@ -533,8 +533,9 @@ result = why('python client.py --port 5432',
 
 The result uses the same versioned envelope and returns `diagnoses` with the
 observed evidence, a short summary and read-only `next_steps`. It covers a
-small set of high-signal failures such as occupied ports, Docker daemon
-outages, changed SSH host keys, existing paths, read-only filesystems, missing
+small set of high-signal failures such as occupied ports, refused, reset or
+timed-out connections, unreachable networks, Docker daemon outages, changed
+SSH host keys, existing paths, read-only filesystems, missing
 network interfaces, DNS resolution failures, missing Python paths/modules and
 Git's repository/ownership refusals. It never
 probes the machine or reruns the command. Unknown wording returns

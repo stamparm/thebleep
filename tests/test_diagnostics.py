@@ -4,8 +4,8 @@
 
 The examples below are the final lines captured from real commands: Python's
 second bind to an occupied local port, importing a missing Python module,
-``df``/filesystem failures, a refused TCP connection, TLS verification, and a
-DNS resolution failure from curl 8.5.0.
+``df``/filesystem failures, refused/reset/timed-out TCP connections, TLS
+verification, and a DNS resolution failure from curl 8.5.0.
 Only the stable wording is kept; paths, tracebacks and host-specific details
 are intentionally not part of the contract.
 """
@@ -50,6 +50,57 @@ def test_dns_failure_extracts_host_and_offers_read_only_next_step():
         'next_steps': [{
             'command': 'getent hosts this-host-does-not-exist.invalid',
             'reason': 'check whether DNS can resolve the hostname',
+            'risk': 'read-only'}]}]
+
+
+def test_curl_timeout_extracts_url_port_and_offers_route_inspection():
+    """Captured from curlimages/curl latest against TEST-NET-1."""
+    result = diagnostics.diagnose(
+        'curl --connect-timeout 1 http://192.0.2.1:81/',
+        'curl: (28) Connection timed out after 1000 milliseconds\n',
+        platform_name='posix')
+
+    assert result['diagnoses'] == [{
+        'kind': 'connection_timeout',
+        'summary': 'The connection timed out before a response arrived.',
+        'evidence': ['connection timed out', 'port 81'],
+        'next_steps': [{
+            'command': 'netstat -rn',
+            'reason': 'inspect the local routing table',
+            'risk': 'read-only'}]}]
+
+
+def test_connection_reset_extracts_url_port_and_checks_local_listener():
+    """Captured from curl 8 against a local socket that closes immediately."""
+    result = diagnostics.diagnose(
+        'curl http://127.0.0.1:8765/',
+        'curl: (56) Recv failure: Connection reset by peer\n',
+        platform_name='posix')
+
+    assert result['diagnoses'] == [{
+        'kind': 'connection_reset',
+        'summary': 'The peer closed the connection unexpectedly.',
+        'evidence': ['recv failure: connection reset', 'port 8765'],
+        'next_steps': [{
+            'command': 'lsof -nP -iTCP:8765 -sTCP:LISTEN',
+            'reason': 'check the local listener on this port',
+            'risk': 'read-only'}]}]
+
+
+def test_network_unreachable_uses_the_target_platform_route_command():
+    """Captured from Python 3 in a container with networking disabled."""
+    result = diagnostics.diagnose(
+        'python -c "socket.connect((\'1.1.1.1\', 80))"',
+        'OSError: [Errno 101] Network is unreachable',
+        platform_name='nt')
+
+    assert result['diagnoses'] == [{
+        'kind': 'network_unreachable',
+        'summary': 'The network could not reach the target.',
+        'evidence': ['network is unreachable'],
+        'next_steps': [{
+            'command': 'route print',
+            'reason': 'inspect the local routing table',
             'risk': 'read-only'}]}]
 
 
@@ -385,6 +436,10 @@ def test_windows_diagnostics_offer_windows_read_only_next_steps(
      'ConnectionRefusedError: [Errno 111] Connection refused',
      'connection_refused',
      'The target refused the connection on port 8080.'),
+    ('curl http://192.0.2.1:81/',
+     'curl: (28) Connection timed out after 1000 milliseconds',
+     'connection_timeout',
+     'The connection timed out before a response arrived.'),
     ('python app.py', "ModuleNotFoundError: No module named 'tomli'",
      'missing_python_module', "Python could not import module 'tomli'."),
     ('git status',

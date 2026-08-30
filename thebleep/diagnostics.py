@@ -19,6 +19,8 @@ _PORT_IN_OUTPUT = re.compile(
     r'(?:\bport(?:\s+|=)|:)([0-9]{1,5})\b', re.IGNORECASE)
 _PORT_IN_COMMAND = re.compile(
     r'(?:--?port(?:=|\s+)|\s-p(?:\s+|=))([0-9]{1,5})\b', re.IGNORECASE)
+_PORT_IN_URL = re.compile(
+    r'://(?:\[[^\]]+\]|[^/:\s]+):([0-9]{1,5})\b', re.IGNORECASE)
 _MODULE = re.compile(
     r"(?:ModuleNotFoundError: )?No module named ['\"]([^'\"]+)['\"]")
 _DNS_HOST = re.compile(r'could not resolve host:\s*([^\s]+)', re.IGNORECASE)
@@ -27,6 +29,15 @@ _DNS_HOSTNAME = re.compile(
 _DNS_BAD_ADDRESS = re.compile(
     r"bad address ['\"]([^'\"\r\n]+)['\"]", re.IGNORECASE)
 _READ_ONLY_FS = re.compile(r'read[- ]only file system', re.IGNORECASE)
+_CONNECTION_TIMEOUT = re.compile(
+    r'(?:connection timed out|connect(?:ion)? timeout|connect timed out|'
+    r'connecttimeout)', re.IGNORECASE)
+_CONNECTION_RESET = re.compile(
+    r'(?:connection reset by peer|connection reset|'
+    r'recv failure:\s*connection reset)', re.IGNORECASE)
+_NETWORK_UNREACHABLE = re.compile(
+    r'(?:network is unreachable|no route to host|'
+    r'destination host unreachable)', re.IGNORECASE)
 _DOCKER_DAEMON = re.compile(
     r'(?:cannot connect to the docker daemon|'
     r'failed to connect to the docker api)', re.IGNORECASE)
@@ -68,7 +79,8 @@ _POSIX_MISSING_MOVE = re.compile(
 def _port(script, output):
     """Returns a valid port explicitly present in the supplied context."""
     for source, pattern in ((output, _PORT_IN_OUTPUT),
-                            (script, _PORT_IN_COMMAND)):
+                            (script, _PORT_IN_COMMAND),
+                            (script, _PORT_IN_URL)):
         for value in pattern.findall(source or ''):
             if 0 < int(value) < 65536:
                 return value
@@ -264,6 +276,63 @@ def _connection_refused(script, output, platform_name):
             port) if port else 'The target refused the connection.'),
         'evidence': evidence,
         'next_steps': next_steps,
+    }
+
+
+def _route_step(platform_name):
+    return _step(
+        _shell_command('netstat -rn', 'route print', platform_name),
+        'inspect the local routing table')
+
+
+def _connection_timeout(script, output, platform_name):
+    match = _CONNECTION_TIMEOUT.search(output)
+    if not match:
+        return None
+    evidence = [match.group(0).lower()]
+    port = _port(script, output)
+    if port:
+        evidence.append('port {}'.format(port))
+    return {
+        'kind': 'connection_timeout',
+        'summary': 'The connection timed out before a response arrived.',
+        'evidence': evidence,
+        'next_steps': [_route_step(platform_name)],
+    }
+
+
+def _connection_reset(script, output, platform_name):
+    match = _CONNECTION_RESET.search(output)
+    if not match:
+        return None
+    evidence = [match.group(0).lower()]
+    port = _port(script, output)
+    next_steps = []
+    if port:
+        evidence.append('port {}'.format(port))
+        next_steps.append(_step(
+            _shell_command(
+                'lsof -nP -iTCP:{} -sTCP:LISTEN'.format(port),
+                'netstat -ano -p tcp | findstr ":{}"'.format(port),
+                platform_name),
+            'check the local listener on this port'))
+    return {
+        'kind': 'connection_reset',
+        'summary': 'The peer closed the connection unexpectedly.',
+        'evidence': evidence,
+        'next_steps': next_steps,
+    }
+
+
+def _network_unreachable(script, output, platform_name):
+    match = _NETWORK_UNREACHABLE.search(output)
+    if not match:
+        return None
+    return {
+        'kind': 'network_unreachable',
+        'summary': 'The network could not reach the target.',
+        'evidence': [match.group(0).lower()],
+        'next_steps': [_route_step(platform_name)],
     }
 
 
@@ -477,7 +546,8 @@ def _missing_interface(script, output, platform_name):
 
 
 _DETECTORS = (_address_in_use, _permission_denied, _certificate_expired,
-              _disk_full, _connection_refused, _missing_module,
+              _disk_full, _connection_refused, _connection_timeout,
+              _connection_reset, _network_unreachable, _missing_module,
               _missing_python_path, _existing_path, _git_not_repository,
               _git_conflict,
               _dubious_ownership, _dns_failure, _docker_daemon,
