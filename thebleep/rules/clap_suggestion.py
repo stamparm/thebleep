@@ -58,7 +58,7 @@ Wordings captured from ruff 0.14.5, uv 0.12.5, cargo 1.97.1 and deno 2.1.4.
 """
 
 import re
-from thebleep.utils import replace_command
+from thebleep.utils import command_word_index, replace_command
 
 # What clap says it did not recognise. A subcommand is quoted plainly; an
 # argument keeps its dashes, which is what makes the replacement land on the
@@ -106,7 +106,8 @@ def _broken(command):
     if found and found.group(1):
         return found.group(1)
 
-    for part in command.script_parts[1:]:
+    start = command_word_index(command.script_parts)
+    for part in command.script_parts[start + 1:]:
         if not part.startswith('-'):
             return part
 

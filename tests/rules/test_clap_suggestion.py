@@ -136,6 +136,12 @@ class TestCorrecting(object):
         assert get_new_command(Command('deno runn', DENO_COLOURED)) == \
             ['deno run']
 
+    def test_environment_assignment_is_skipped(self):
+        command = Command('DENO_NO_UPDATE_CHECK=1 deno runn',
+                          DENO_COLOURED)
+        assert get_new_command(command) == \
+            ['DENO_NO_UPDATE_CHECK=1 deno run']
+
     def test_the_colour_does_not_hide_any_of_it(self):
         """The reset between `error` and its colon used to hide the whole
         message from this rule -- see 4.0.4."""
