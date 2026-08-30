@@ -64,7 +64,12 @@ def _ranked(word):
 
 
 def match(command):
-    unknown = _unknown_command(command)
+    has_output = command.output is not None
+    unknown = _unknown_command(command, output_required=has_output)
+    if unknown is None:
+        substitution = _unknown_in_substitution(
+            command, output_required=has_output)
+        unknown = substitution[3] if substitution is not None else None
     return bool(unknown and _ranked(unknown[1]))
 
 
@@ -202,9 +207,10 @@ def _unknown_command(command, output_required=True):
             or 'is not recognized as' in output):
         if output_required:
             return None
-        index = next(iter(_command_indexes(parts)), None)
-        return ((index, parts[index])
-                if index is not None else None)
+        for index in _command_indexes(parts):
+            if not _is_available_command(parts[index]):
+                return index, parts[index]
+        return None
 
     for index in _command_indexes(parts):
         word = parts[index]
@@ -212,6 +218,106 @@ def _unknown_command(command, output_required=True):
             return index, word
 
     return None
+
+
+def _is_available_command(word):
+    """Whether a command is available as an executable or shell builtin."""
+    if which(word):
+        return True
+
+    from thebleep.shells import shell
+
+    return word in shell.get_builtin_commands()
+
+
+def _substitution_ranges(script):
+    """Yield the bodies of ``$(...)`` expressions outside single quotes.
+
+    This is intentionally only the small piece of shell structure needed by
+    the unknown-command rule. The shell still owns parsing and execution; the
+    ranges merely let us inspect a nested command without treating the outer
+    command's arguments as executable words.
+    """
+    for start in range(len(script) - 1):
+        if script[start:start + 2] != '$(':
+            continue
+
+        quote = None
+        escaped = False
+        single_quoted = False
+        for character in script[:start]:
+            if escaped:
+                escaped = False
+            elif character == '\\' and quote != "'":
+                escaped = True
+            elif character in ("'", '"'):
+                if quote == character:
+                    quote = None
+                elif quote is None:
+                    quote = character
+        if quote == "'":
+            single_quoted = True
+        if single_quoted:
+            continue
+
+        depth = 1
+        quote = None
+        escaped = False
+        index = start + 2
+        while index < len(script):
+            character = script[index]
+            if escaped:
+                escaped = False
+            elif character == '\\' and quote != "'":
+                escaped = True
+            elif quote:
+                if character == quote:
+                    quote = None
+            elif character in ("'", '"'):
+                quote = character
+            elif script[index:index + 2] == '$(':
+                depth += 1
+                index += 1
+            elif character == ')':
+                depth -= 1
+                if depth == 0:
+                    yield start + 2, index
+                    break
+            index += 1
+
+
+def _unknown_in_substitution(command, output_required=True):
+    """Find one unknown command in a command substitution, if unambiguous."""
+    found = []
+    for start, end in _substitution_ranges(command.script):
+        inner = command.update(script=command.script[start:end])
+        unknown = _unknown_command(inner, output_required=output_required)
+        if unknown is not None:
+            found.append((start, end, inner, unknown))
+
+    return found[0] if len(found) == 1 else None
+
+
+def _replace_substitution_command(script, start, end, command_index, old,
+                                  replacement):
+    """Replace the identified command word inside one ``$(...)`` body."""
+    body = script[start:end]
+    if command_index == 0:
+        leading = len(body) - len(body.lstrip())
+        position = leading + body[leading:].find(old)
+        separators = frozenset(';&|(){}')
+        if (position < leading or
+                (position + len(old) < len(body)
+                 and not (body[position + len(old)].isspace()
+                          or body[position + len(old)] in separators))):
+            return None
+        return script[:start + position] + replacement + \
+            script[start + position + len(old):]
+
+    corrected = _replace_after_separator(body, old, replacement)
+    if corrected is None:
+        return None
+    return script[:start] + corrected + script[end:]
 
 
 def _candidates():
@@ -333,8 +439,12 @@ def _used_executables(command):
 @sudo_support
 def get_new_command(command):
     unknown = _unknown_command(command, output_required=False)
+    substitution = None
     if unknown is None:
-        return []
+        substitution = _unknown_in_substitution(command, output_required=False)
+        if substitution is None:
+            return []
+        start, end, inner, unknown = substitution
 
     command_index, old_command = unknown
 
@@ -385,7 +495,7 @@ def get_new_command(command):
             ranked = familiar + [name for name in ranked
                                  if name not in familiar]
 
-    parts = _compound_parts(command)
+    parts = _compound_parts(inner) if substitution else _compound_parts(command)
     ranked = _demote_impossible(ranked, parts[command_index + 1:])
 
     from thebleep.conf import settings
@@ -396,7 +506,11 @@ def get_new_command(command):
     for name in ranked[:settings.num_close_matches]:
         replacement = (name if _SAFE_COMMAND_NAME.match(name)
                        else shell.quote(name))
-        if command_index == 0:
+        if substitution:
+            script = _replace_substitution_command(
+                command.script, start, end, command_index,
+                old_command, replacement)
+        elif command_index == 0:
             script = command.script.replace(old_command, replacement, 1)
         elif command.script.count(old_command) != 1:
             script = _replace_after_separator(command.script, old_command,
@@ -408,10 +522,15 @@ def get_new_command(command):
                 continue
         else:
             script = command.script.replace(old_command, replacement, 1)
-        if script != command.script:
+        if script is not None and script != command.script:
             corrected.append(script)
 
     return corrected
 
 
 priority = 3000
+
+# Inline correction has no stderr by definition. The command finder can still
+# identify an uninstalled command from PATH, while the normal failure path
+# remains conservative when output exists but does not name a shell error.
+requires_output = False

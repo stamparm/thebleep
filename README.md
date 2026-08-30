@@ -316,8 +316,10 @@ leave the binding unavailable rather than injecting keystrokes into the
 terminal.
 
 Inline correction has no command output to inspect, so rules that require
-stderr are skipped. Use `--inline --command 'gti status'` to try the same
-non-executing lookup without a line editor.
+stderr are skipped. The generic command lookup can still use your PATH and
+shell builtins, including a misspelled command inside `$(...)`. Use
+`--inline --command 'gti status'` to try the same non-executing lookup without
+a line editor.
 
 ### Which shells
 

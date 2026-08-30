@@ -50,6 +50,15 @@ def test_get_new_command(script, result):
     assert get_new_command(Command(script, '')) == result
 
 
+def test_match_and_correct_without_failure_output(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command('gti status', None)
+
+    assert match(command)
+    assert get_new_command(command)[0] == 'git status'
+
+
 def test_corrects_a_command_inside_a_pipeline(mocker):
     mocker.patch('thebleep.rules.no_command.which', return_value=None)
 
@@ -58,6 +67,44 @@ def test_corrects_a_command_inside_a_pipeline(mocker):
 
     assert get_new_command(command)[0] == (
         'cd project && git status | grpe main')
+
+
+@pytest.mark.parametrize('script, expect', [
+    ('echo $(gti status)', 'echo $(git status)'),
+    ('echo "$(gti status)"', 'echo "$(git status)"'),
+    ('echo $(true && gti status)', 'echo $(true && git status)')])
+def test_corrects_commands_inside_substitutions(mocker, script, expect):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command(script, 'bash: gti: command not found')
+
+    assert get_new_command(command)[0] == expect
+
+
+def test_does_not_treat_quoted_substitution_as_a_command(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command("echo '$(gti status)'", 'bash: gti: command not found')
+
+    assert get_new_command(command) == []
+
+
+def test_inline_correction_works_inside_a_substitution(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command('echo $(gti status)', None)
+
+    assert match(command)
+    assert get_new_command(command)[0] == 'echo $(git status)'
+
+
+def test_does_not_choose_between_multiple_substitutions(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command('echo $(gti status) $(gti log)',
+                      'bash: gti: command not found')
+
+    assert get_new_command(command) == []
 
 
 @pytest.mark.parametrize('script, expect', [
