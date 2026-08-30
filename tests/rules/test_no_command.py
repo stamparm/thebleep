@@ -79,6 +79,14 @@ def test_corrects_a_command_inside_a_case_body(mocker):
         'case x in x) git status;; esac')
 
 
+def test_corrects_a_command_inside_a_bash_test_substitution(mocker):
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+
+    command = Command('[[ $(gti status) ]]', 'bash: gti: command not found')
+
+    assert get_new_command(command)[0] == '[[ $(git status) ]]'
+
+
 @pytest.mark.parametrize('script, expect', [
     ('for x in one; do gti status; done',
      'for x in one; do git status; done'),

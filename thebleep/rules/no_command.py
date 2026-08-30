@@ -133,10 +133,17 @@ def _command_indexes(parts):
     case_pattern = False
     function_pending = False
     loop_pending = False
+    test_depth = 0
     coproc_pending = False
     coproc_candidate = None
     powershell = _is_powershell()
     for index, part in enumerate(parts):
+        if test_depth:
+            if part == ']]':
+                test_depth -= 1
+                command_start = False
+            continue
+
         if powershell_condition:
             if part == '(':
                 condition_depth = 1
@@ -234,6 +241,10 @@ def _command_indexes(parts):
             if word == 'case':
                 case_depth += 1
                 case_pending = True
+                command_start = False
+                continue
+            if not powershell and word == '[[':
+                test_depth = 1
                 command_start = False
                 continue
             if not powershell and word in ('for', 'select'):
