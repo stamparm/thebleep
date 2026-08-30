@@ -53,11 +53,21 @@ class Zsh(Generic):
         return True
 
     def inline_binding(self):
-        """Bind Esc Esc to a command-only correction in ZLE."""
+        """Bind Esc Esc to a command-only correction in ZLE.
+
+        The alias list is part of the shell context: an inline command can use
+        a name that is not an executable, just like a command that has already
+        run. Keep the transport local to the callback so it cannot leak into
+        the user's next command.
+
+        """
         return '''
 __thebleep_inline() {{
-    local fixed
-    fixed=$(TB_SHELL=zsh {command} --inline --command "$BUFFER")
+    local fixed TB_SHELL_ALIASES TB_HISTORY
+    TB_SHELL_ALIASES=$(alias)
+    TB_HISTORY=
+    {fit_transport}
+    fixed=$(TB_SHELL=zsh TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" {command} --inline --command "$BUFFER")
     if [[ $? -eq 0 && -n $fixed ]]; then
         BUFFER=$fixed
         CURSOR=${{#BUFFER}}
@@ -66,7 +76,7 @@ __thebleep_inline() {{
 }}
 zle -N __thebleep_inline
 bindkey '\\e\\e' __thebleep_inline
-'''.format(command=self._invocation())
+'''.format(command=self._invocation(), fit_transport=fit_transport())
 
     def _edit_line(self):
         """`print -z` is zsh's own answer to this, and has been for decades.

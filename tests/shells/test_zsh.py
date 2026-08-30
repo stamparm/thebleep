@@ -82,6 +82,7 @@ class TestZsh(object):
 
     def test_inline_binding_only_edits_zle(self, shell):
         binding = shell.inline_binding()
+        assert 'TB_SHELL_ALIASES=$(alias)' in binding
         assert "bindkey '\\e\\e'" in binding
         assert '--inline --command "$BUFFER"' in binding
         assert 'BUFFER=$fixed' in binding

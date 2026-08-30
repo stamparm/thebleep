@@ -81,6 +81,15 @@ echo '{}'
 exit 0
 """.format(INLINE_COMMAND)
 
+# Records the context handed to an inline correction. The shell alias list is
+# needed to recognise commands that exist only as aliases, but it must not be
+# left exported after the callback returns.
+FAKE_INLINE_ALIASES = u"""#!/bin/sh
+printf '%s' "${TB_SHELL_ALIASES-}" > "$THEBLEEP_INLINE_ENV_MARKER"
+echo 'echo INLINE-DONE'
+exit 0
+"""
+
 # Reports what the alias decided about editing, the way the real one reads it.
 FAKE_REPORTS = u"""#!/bin/sh
 echo "CAN_EDIT=[$TB_CAN_EDIT]" 1>&2
@@ -141,14 +150,14 @@ def _spawn(name, tmpdir, fake_source):
     return proc
 
 
-def _spawn_inline(name, tmpdir):
+def _spawn_inline(name, tmpdir, fake_source=FAKE_INLINE):
     under = SHELLS[name]
     binary = shutil.which(name)
     if binary is None:
         pytest.skip('{} is not installed'.format(name))
 
     fake = tmpdir.join('thebleep')
-    fake.write(FAKE_INLINE)
+    fake.write(fake_source)
     os.chmod(str(fake), 0o755)
 
     binding = tmpdir.join('binding')
@@ -158,6 +167,8 @@ def _spawn_inline(name, tmpdir):
                        LC_ALL='C.UTF-8', LANG='C.UTF-8', TERM='dumb',
                        THEBLEEP_INLINE_MARKER=str(tmpdir.join(
                            'inline-marker')),
+                       THEBLEEP_INLINE_ENV_MARKER=str(tmpdir.join(
+                           'inline-env-marker')),
                        PATH='{}{}{}'.format(str(tmpdir), os.pathsep,
                                             os.environ['PATH']))
     proc = pexpect.spawnu(binary, under.arguments, cwd=str(tmpdir),
@@ -237,6 +248,23 @@ class TestEditBuffer(object):
         proc.send(u'\x03')
         proc.expect_exact(PROMPT)
         assert not tmpdir.join('inline-marker').check()
+        proc.close(force=True)
+
+    def test_inline_binding_passes_alias_context(self, name, tmpdir):
+        """An alias available in the editor reaches the command-only lookup."""
+        if not _can_edit(name):
+            pytest.skip('this {} cannot edit'.format(name))
+        proc = _spawn_inline(name, tmpdir, FAKE_INLINE_ALIASES)
+        alias = (u"alias ll 'ls -l'" if name == 'fish'
+                 else u"alias ll='ls -l'")
+        proc.sendline(alias)
+        proc.expect_exact(PROMPT)
+        proc.send(u'gti status')
+        proc.send(u'\x1b\x1b')
+        proc.expect_exact(u'INLINE-DONE')
+        assert 'll' in tmpdir.join('inline-env-marker').read()
+        proc.send(u'\x03')
+        proc.expect_exact(PROMPT)
         proc.close(force=True)
 
 

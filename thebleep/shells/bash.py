@@ -61,12 +61,22 @@ class Bash(Generic):
         return True
 
     def inline_binding(self):
-        """Bind Esc Esc to a command-only correction in readline."""
+        """Bind Esc Esc to a command-only correction in readline.
+
+        The alias list is part of the shell context: an inline command can use
+        a name that is not an executable, just like a command that has already
+        run. Keep the transport local to the callback so it cannot leak into
+        the user's next command.
+
+        """
         return '''
 if [ "${{BASH_VERSINFO[0]:-0}}" -ge 4 ]; then
     __thebleep_inline() {{
-        local fixed
-        fixed=$(TB_SHELL=bash {command} --inline --command "$READLINE_LINE")
+        local fixed TB_SHELL_ALIASES TB_HISTORY
+        TB_SHELL_ALIASES=$(alias)
+        TB_HISTORY=
+        {fit_transport}
+        fixed=$(TB_SHELL=bash TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" {command} --inline --command "$READLINE_LINE")
         if [ "$?" -eq 0 ] && [ -n "$fixed" ]; then
             READLINE_LINE="$fixed"
             READLINE_POINT=${{#READLINE_LINE}}
@@ -74,7 +84,7 @@ if [ "${{BASH_VERSINFO[0]:-0}}" -ge 4 ]; then
     }}
     bind -x '"\\e\\e":__thebleep_inline'
 fi
-'''.format(command=self._invocation())
+'''.format(command=self._invocation(), fit_transport=fit_transport())
 
     def _edit_line(self):
         """Reopens the correction in readline for the user to finish.

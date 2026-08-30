@@ -27,8 +27,12 @@ def _get_functions(overridden):
 
 @cache('~/.config/fish/config.fish')
 def _get_aliases(overridden):
+    return _parse_aliases(tool_lines(['fish', '-ic', 'alias']), overridden)
+
+
+def _parse_aliases(lines, overridden):
     aliases = {}
-    for alias in tool_lines(['fish', '-ic', 'alias']):
+    for alias in lines:
         for separator in (' ', '='):
             split_alias = alias.replace('alias ', '', 1).split(separator, 1)
             if len(split_alias) == 2:
@@ -127,8 +131,13 @@ exit
                 '    set tb_exit $TB_EXIT\n'
                 '  end\n'
                 '  set -l broken_command $history[1]\n'
+                '  set -l shell_aliases (alias | string collect)\n'
+                '  if test (string length -- "$shell_aliases") -gt 32000\n'
+                '    set shell_aliases\n'
+                '  end\n'
                 '  env TB_SHELL=fish TB_ALIAS={0} TB_CAN_EDIT=1'
                 ' TB_EXIT=$tb_exit'
+                ' TB_SHELL_ALIASES="$shell_aliases"'
                 ' {5} $broken_command {2} $argv | read -l fixed_command\n'
                 '  set -l tb_status $pipestatus[1]\n'
                 '  if test $tb_status -eq {3}\n'
@@ -147,7 +156,11 @@ exit
         """Bind Esc Esc to a command-only correction in Fish."""
         return '''
 function __thebleep_inline
-    set -l fixed (env TB_SHELL=fish {command} --inline --command (commandline) | string collect)
+    set -l shell_aliases (alias | string collect)
+    if test (string length -- "$shell_aliases") -gt 32000
+        set shell_aliases
+    end
+    set -l fixed (env TB_SHELL=fish TB_SHELL_ALIASES="$shell_aliases" {command} --inline --command (commandline) | string collect)
     if test -n "$fixed"
         commandline --replace -- $fixed
     end
@@ -180,7 +193,10 @@ bind \\e\\e __thebleep_inline
     def get_aliases(self):
         overridden = self._get_overridden_aliases()
         functions = _get_functions(overridden)
-        raw_aliases = _get_aliases(overridden)
+        transported = os.environ.get('TB_SHELL_ALIASES')
+        raw_aliases = (_parse_aliases(transported.splitlines(), overridden)
+                       if transported is not None
+                       else _get_aliases(overridden))
         functions.update(raw_aliases)
         return functions
 

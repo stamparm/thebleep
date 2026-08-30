@@ -97,6 +97,7 @@ class TestBash(object):
     def test_inline_binding_only_edits_readline(self, shell):
         binding = shell.inline_binding()
         assert 'bind -x' in binding
+        assert 'TB_SHELL_ALIASES=$(alias)' in binding
         assert '--inline --command "$READLINE_LINE"' in binding
         assert 'READLINE_LINE="$fixed"' in binding
         assert 'eval' not in binding

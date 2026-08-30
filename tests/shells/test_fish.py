@@ -101,12 +101,21 @@ class TestFish(object):
         self.answers = {'functions': ['func1', 'func2'], 'alias': []}
         assert shell.get_aliases() == {'func1': 'func1', 'func2': 'func2'}
 
+    def test_get_aliases_includes_current_session_aliases(
+            self, shell, os_environ):
+        """The child fish cannot see an alias defined after config loading."""
+        os_environ['TB_SHELL_ALIASES'] = "alias ll 'ls -l'"
+        assert shell.get_aliases()['ll'] == "'ls -l'"
+
     def test_app_alias(self, shell):
         assert 'function bleep' in shell.app_alias('bleep')
         assert 'function BLEEP' in shell.app_alias('BLEEP')
         assert 'thebleep' in shell.app_alias('bleep')
+        assert 'TB_SHELL_ALIASES="$shell_aliases"' in shell.app_alias('bleep')
         assert 'TB_SHELL=fish' in shell.app_alias('bleep')
-        assert 'TB_ALIAS=bleep TB_CAN_EDIT=1 TB_EXIT=$tb_exit thebleep' in shell.app_alias('bleep')
+        assert ('TB_ALIAS=bleep TB_CAN_EDIT=1 TB_EXIT=$tb_exit'
+                ' TB_SHELL_ALIASES="$shell_aliases" thebleep'
+                in shell.app_alias('bleep'))
         assert ARGUMENT_PLACEHOLDER in shell.app_alias('bleep')
 
     def test_app_alias_loader(self, shell):
@@ -152,6 +161,8 @@ class TestFish(object):
     def test_inline_binding_only_edits_commandline(self, shell):
         binding = shell.inline_binding()
         assert 'bind \\e\\e __thebleep_inline' in binding
+        assert 'alias | string collect' in binding
+        assert 'TB_SHELL_ALIASES="$shell_aliases"' in binding
         assert '--inline --command (commandline)' in binding
         assert 'commandline --replace -- $fixed' in binding
         assert 'eval' not in binding
