@@ -23,7 +23,9 @@ _MODULE = re.compile(
     r"(?:ModuleNotFoundError: )?No module named ['\"]([^'\"]+)['\"]")
 _DNS_HOST = re.compile(r'could not resolve host:\s*([^\s]+)', re.IGNORECASE)
 _MISSING_INTERFACE = re.compile(
-    r'interface\s+(?P<name>[^\s:]+)\s+does not exist', re.IGNORECASE)
+    r'(?:interface\s+(?P<name>[^\s:]+)\s+does not exist|'
+    r'(?P<linux_name>[^\s:]+):\s+error fetching interface information:'
+    r'\s+device not found)', re.IGNORECASE)
 _PYTHON_PATH_ERROR = re.compile(
     r'(?P<kind>FileNotFoundError|PermissionError): '
     r'\[(?:Errno|WinError) \d+\] '
@@ -36,7 +38,7 @@ _POSIX_PERMISSION_PATH = re.compile(
         (?P<quote>['"]?)(?P<path>[^'"\r\n]+?)(?P=quote):
         \s*permission[ ]denied''', re.VERBOSE)
 _POSIX_MISSING_PATH = re.compile(
-    r'''(?im)^[^:\r\n]+:\s+(?:cannot[ ](?:access|stat)[ ])?
+    r'''(?im)^[^:\r\n]+:\s+(?:(?:cannot|can't)[^'"\r\n]+[ ])?
         (?P<quote>['"]?)(?P<path>[^'"\r\n]+?)(?P=quote):
         \s*no[ ]such[ ]file[ ]or[ ]directory''', re.VERBOSE)
 _POSIX_EXISTING_PATH = re.compile(
@@ -378,10 +380,11 @@ def _missing_interface(script, output, platform_name):
     match = _MISSING_INTERFACE.search(output)
     if not match:
         return None
+    name = match.group('name') or match.group('linux_name')
     return {
         'kind': 'missing_network_interface',
         'summary': 'Network interface {!r} does not exist.'.format(
-            match.group('name')),
+            name),
         'evidence': [match.group(0).lower()],
         'next_steps': [_step(
             'ifconfig -a',

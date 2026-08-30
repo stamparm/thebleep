@@ -80,6 +80,45 @@ def test_missing_network_interface_lists_available_interfaces():
             'risk': 'read-only'}]}]
 
 
+def test_linux_ifconfig_missing_interface_is_explained():
+    """Linux and BusyBox use a different real error than BSD ifconfig."""
+    result = diagnostics.diagnose(
+        'ifconfig thebleep-no-such-interface',
+        'thebleep-no-suc: error fetching interface information: '
+        'Device not found\n',
+        platform_name='posix')
+
+    assert result['diagnoses'] == [{
+        'kind': 'missing_network_interface',
+        'summary': "Network interface 'thebleep-no-suc' does not exist.",
+        'evidence': ['thebleep-no-suc: error fetching interface information: '
+                     'device not found'],
+        'next_steps': [{
+            'command': 'ifconfig -a',
+            'reason': 'list the available network interfaces',
+            'risk': 'read-only'}]}]
+
+
+@pytest.mark.parametrize('output, path', [
+    ("cp: can't create 'missing-dir/destination': No such file or "
+     'directory\n', 'missing-dir/destination'),
+    ("cp: can't stat 'missing-source': No such file or directory\n",
+     'missing-source'),
+    ("mkdir: can't create directory 'missing-dir/destination': No such "
+     'file or directory\n', 'missing-dir/destination'),
+    ("mv: can't rename 'thebleep-source': No such file or directory\n",
+     'thebleep-source'),
+])
+def test_busybox_missing_paths_are_explained(output, path):
+    """BusyBox's real wording uses ``can't`` instead of ``cannot``."""
+    result = diagnostics.diagnose('tool {}'.format(path), output,
+                                  platform_name='posix')
+
+    assert result['diagnoses'][0]['kind'] == 'missing_path'
+    assert result['diagnoses'][0]['next_steps'][0]['command'] == (
+        'ls -ld {}'.format(path))
+
+
 def test_git_outside_a_repository_is_explained():
     result = diagnostics.diagnose(
         'git status',
