@@ -134,6 +134,7 @@ def _command_indexes(parts):
     function_pending = False
     loop_pending = False
     test_depth = 0
+    arithmetic_depth = 0
     coproc_pending = False
     coproc_candidate = None
     powershell = _is_powershell()
@@ -142,6 +143,15 @@ def _command_indexes(parts):
             if part == ']]':
                 test_depth -= 1
                 command_start = False
+            continue
+
+        if arithmetic_depth:
+            if part == '((':
+                arithmetic_depth += 1
+            elif part == '))':
+                arithmetic_depth -= 1
+                if arithmetic_depth == 0:
+                    command_start = False
             continue
 
         if powershell_condition:
@@ -245,6 +255,10 @@ def _command_indexes(parts):
                 continue
             if not powershell and word == '[[':
                 test_depth = 1
+                command_start = False
+                continue
+            if not powershell and word == '((':
+                arithmetic_depth = 1
                 command_start = False
                 continue
             if not powershell and word in ('for', 'select'):
