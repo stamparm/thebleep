@@ -3,6 +3,8 @@ from thebleep.rules.missing_space_before_subcommand import (
     match, get_new_command)
 from thebleep.types import Command
 
+pytestmark = pytest.mark.usefixtures('no_memoize')
+
 
 @pytest.fixture(autouse=True)
 def all_executables(mocker):
