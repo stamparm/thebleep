@@ -356,6 +356,15 @@ and the fix is waiting at the next prompt, already in readline, exactly as
 file in The Bleep's cache directory, keyed by the shell's pid. Bash 4 or
 newer.
 
+The check runs on a keystroke, so it is worth making fast. Starting Python
+costs about sixty milliseconds; with `warm_server = True` in your settings,
+zsh's bindings ask a warm `thebleep --serve` process over a private Unix
+socket instead — a few milliseconds — and start that process in the
+background the first time it is not there. It answers only command-only
+corrections for the shell it was started for, runs nothing, keeps nothing,
+and leaves after half an hour without a question. zsh has a socket client of
+its own (`zsh/net/socket`); bash and fish start Python as before.
+
 The check is deliberately narrow: only the first word, only when the shell
 itself has never heard of it, and never for a word with a slash, a quote, a
 variable or an assignment in it. `git satus` runs and fails as before,
@@ -1773,6 +1782,7 @@ Several *The Bleep* parameters can be changed in the file `$XDG_CONFIG_HOME/theb
 * `auto_run_confidence` — run a correction without asking when its confidence is at least this share of one and nothing risky was found in it, by default `None` (off); see [Running the correction without asking](#running-the-correction-without-asking);
 * `why_command` — a command of your own to ask when `--why` has no deterministic diagnosis, like `'ollama run llama3'`, by default `None` (off); see [Asking something of your own](#asking-something-of-your-own);
 * `why_timeout` — how many seconds `why_command` may take, by default `30`;
+* `warm_server` — let zsh's <kbd>Esc</kbd> <kbd>Esc</kbd> and `--ambient` bindings ask a warm `thebleep --serve` process over a private socket, starting it when needed, by default `False`; see [Without typing bleep](#without-typing-bleep);
 * `env` — environment variables to set for your previous command when it is run again to read its output, by default `{'LC_ALL': 'C', 'LANG': 'C'}`, which is there so that rules can look for English error messages. Git also gets `GIT_TRACE=1`, so that `git st` can be resolved to whatever alias it stands for; nothing else does.
 
 An example of `settings.py`:
@@ -1797,6 +1807,7 @@ explain = False
 auto_run_confidence = None
 why_command = None
 why_timeout = 30
+warm_server = False
 env = {'LC_ALL': 'C', 'LANG': 'C'}
 ```
 
@@ -1824,6 +1835,7 @@ rule with lower `priority` will be matched first;
 * `THEBLEEP_AUTO_RUN_CONFIDENCE` — run a correction without asking from this confidence up, like `0.9` or `90%`; `off` by default.
 * `THEBLEEP_WHY_COMMAND` — a command to ask when `--why` has no deterministic diagnosis; off by default.
 * `THEBLEEP_WHY_TIMEOUT` — how many seconds that command may take, like `60`.
+* `THEBLEEP_WARM_SERVER` — let zsh's bindings ask a warm `thebleep --serve` process, `true/false`.
 
 For example:
 

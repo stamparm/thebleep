@@ -62,21 +62,73 @@ class Zsh(Generic):
 
         """
         return '''
+{client}
 __thebleep_inline() {{
-    local fixed TB_SHELL_ALIASES TB_HISTORY
+    local TB_SHELL_ALIASES TB_HISTORY
     TB_SHELL_ALIASES=$(alias)
     TB_HISTORY=
     {fit_transport}
-    fixed=$(TB_SHELL=zsh TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" {command} --inline --command "$BUFFER")
-    if [[ $? -eq 0 && -n $fixed ]]; then
-        BUFFER=$fixed
+    if __thebleep_fixed "$BUFFER"; then
+        BUFFER=$REPLY
         CURSOR=${{#BUFFER}}
     fi
     zle redisplay
 }}
 zle -N __thebleep_inline
 bindkey '\\e\\e' __thebleep_inline
-'''.format(command=self._invocation(), fit_transport=fit_transport())
+'''.format(fit_transport=fit_transport(), client=self._warm_client())
+
+    def _warm_client(self):
+        """A function that asks the warm server first, when that is on.
+
+        `__thebleep_fixed BUFFER` sets `REPLY` to the correction and returns 0,
+        or returns 1 for none. With `warm_server` on and `zsh/net/socket`
+        loadable, the socket is tried before Python is started; a socket that
+        is not there yet starts the server in the background for next time and
+        falls through to the ordinary call this time.
+
+        """
+        from ..conf import settings
+
+        direct = '''
+    local fixed
+    fixed=$(TB_SHELL=zsh TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" {command} --inline --command "$1" 2>/dev/null)
+    if [[ $? -eq 0 && -n $fixed ]]; then
+        REPLY=$fixed
+        return 0
+    fi
+    return 1'''.format(command=self._invocation())
+        if not settings.warm_server:
+            return '__thebleep_fixed() {' + direct + '\n}'
+
+        from ..serve import socket_path
+
+        return '''__thebleep_json() {{
+    local s=$1
+    s=${{s//\\\\/\\\\\\\\}}
+    s=${{s//\\"/\\\\\\"}}
+    s=${{s//$'\\n'/\\\\n}}
+    s=${{s//$'\\r'/\\\\r}}
+    s=${{s//$'\\t'/\\\\t}}
+    REPLY=$s
+}}
+__thebleep_fixed() {{
+    local sock={sock} fd answer
+    if [[ -S $sock ]] && zmodload zsh/net/socket 2>/dev/null && zsocket $sock 2>/dev/null; then
+        fd=$REPLY
+        __thebleep_json "$1"; local script=$REPLY
+        __thebleep_json "$TB_SHELL_ALIASES"; local aliases=$REPLY
+        print -r -- "{{\\"script\\": \\"$script\\", \\"aliases\\": \\"$aliases\\"}}" >&$fd
+        IFS= read -r answer <&$fd
+        REPLY=$(cat <&$fd)
+        exec {{fd}}>&-
+        [[ $answer == ok && -n $REPLY ]] && return 0
+        [[ $answer == none ]] && return 1
+    elif [[ ! -S $sock ]]; then
+        (TB_SHELL=zsh {command} --serve </dev/null >/dev/null 2>&1 &)
+    fi{direct}
+}}'''.format(sock=self.quote(socket_path('zsh')), command=self._invocation(),
+             direct=direct)
 
     def ambient_binding(self):
         """Correct a misspelled program before it runs, on return.
@@ -95,6 +147,7 @@ bindkey '\\e\\e' __thebleep_inline
 if [[ ${{widgets[accept-line]}} == user:* ]]; then
     zle -A accept-line __thebleep_previous_accept_line
 fi
+{client}
 __thebleep_ambient_accept_line() {{
     local first fixed TB_SHELL_ALIASES TB_HISTORY
     first=${{${{(z)BUFFER}}[1]}}
@@ -102,8 +155,8 @@ __thebleep_ambient_accept_line() {{
         TB_SHELL_ALIASES=$(alias)
         TB_HISTORY=
         {fit_transport}
-        fixed=$(TB_SHELL=zsh TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" {command} --inline --command "$BUFFER" 2>/dev/null)
-        if [[ $? -eq 0 && -n $fixed && $fixed != $BUFFER ]]; then
+        if __thebleep_fixed "$BUFFER" && [[ $REPLY != $BUFFER ]]; then
+            fixed=$REPLY
             zle -M "bleep: $first is not a command; return runs \\`$fixed\\`, ctrl+_ puts yours back"
             BUFFER=$fixed
             CURSOR=${{#BUFFER}}
@@ -117,7 +170,7 @@ __thebleep_ambient_accept_line() {{
     fi
 }}
 zle -N accept-line __thebleep_ambient_accept_line
-'''.format(command=self._invocation(), fit_transport=fit_transport())
+'''.format(fit_transport=fit_transport(), client=self._warm_client())
 
     def _edit_line(self):
         """`print -z` is zsh's own answer to this, and has been for decades.

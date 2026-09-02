@@ -19,7 +19,7 @@ def _args(**override):
             'enable_experimental_instant_mode': False,
             'shell': None, 'shell_logger': None, 'stderr': None, 'cwd': None,
             'why': False, 'learn_last': None, 'learned': False,
-            'learn_from_history': None, 'stats': None}
+            'learn_from_history': None, 'stats': None, 'serve': False}
     args.update(override)
     return args
 

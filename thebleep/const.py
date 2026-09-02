@@ -105,7 +105,8 @@ DEFAULT_SETTINGS = {'rules': DEFAULT_RULES,
                     'excluded_search_path_prefixes': [],
                     'auto_run_confidence': None,
                     'why_command': None,
-                    'why_timeout': 30}
+                    'why_timeout': 30,
+                    'warm_server': False}
 
 ENV_TO_ATTR = {'THEBLEEP_RULES': 'rules',
                'THEBLEEP_EXCLUDE_RULES': 'exclude_rules',
@@ -127,7 +128,8 @@ ENV_TO_ATTR = {'THEBLEEP_RULES': 'rules',
                'THEBLEEP_EXCLUDED_SEARCH_PATH_PREFIXES': 'excluded_search_path_prefixes',
                'THEBLEEP_AUTO_RUN_CONFIDENCE': 'auto_run_confidence',
                'THEBLEEP_WHY_COMMAND': 'why_command',
-               'THEBLEEP_WHY_TIMEOUT': 'why_timeout'}
+               'THEBLEEP_WHY_TIMEOUT': 'why_timeout',
+               'THEBLEEP_WARM_SERVER': 'warm_server'}
 
 SETTINGS_HEADER = u"""# The Bleep settings file
 #

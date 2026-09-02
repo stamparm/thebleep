@@ -142,6 +142,10 @@ def _main():
         from .inline import print_binding
 
         sys.exit(print_binding(known_args))
+    elif getattr(known_args, 'serve', False):
+        from ..serve import main as serve_main
+
+        sys.exit(serve_main(known_args))
     elif getattr(known_args, 'ambient', False):
         from .inline import print_ambient
 

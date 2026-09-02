@@ -306,6 +306,7 @@ def memoize(fn):
 
     """
     memo = {}
+    memoize.caches.append(memo)
 
     @wraps(fn)
     def wrapper(*args, **kwargs):
@@ -329,6 +330,14 @@ def memoize(fn):
 
 
 memoize.disabled = False
+# Every memo there is, so that a process answering more than one question --
+# the warm server -- can forget what it learnt for the last one.
+memoize.caches = []
+
+
+def forget_memoized():
+    for memo in memoize.caches:
+        memo.clear()
 
 
 # What Windows runs when `PATHEXT` says nothing, and what `shutil.which` falls

@@ -4,6 +4,15 @@
 
 ### Added
 
+- **A warm server for the keystroke path.** `thebleep --serve` keeps a
+  process with the rules loaded, listening on a Unix socket in a directory
+  only its user can enter, and answers command-only corrections in a few
+  milliseconds instead of the sixty a fresh Python costs. With
+  `warm_server = True`, zsh's <kbd>Esc</kbd> <kbd>Esc</kbd> and `--ambient`
+  bindings ask it through `zsh/net/socket` and start it when it is not there;
+  it runs nothing, keeps nothing between questions, answers one shell only
+  and leaves after half an hour idle. Off by default.
+
 - **PowerShell edits inline.** `thebleep --bind-inline` prints a PSReadLine
   key handler for <kbd>Esc</kbd> <kbd>Esc</kbd> that rewrites the current
   line, and `--ambient` binds return to the same first-word check the other

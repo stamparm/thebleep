@@ -27,6 +27,7 @@ DEFAULTS = {'alias': None,
             'learn_last': None,
             'learn_from_history': None,
             'stats': None,
+            'serve': False,
             'learned': False,
             'pick': None,
             'platform_name': None,
@@ -168,6 +169,11 @@ class Parser(object):
             '--bind-inline',
             action='store_true',
             help='print an Esc Esc inline-correction binding for this shell')
+        self._parser.add_argument(
+            '--serve',
+            action='store_true',
+            help='answer command-only corrections over a private socket '
+                 'until idle for half an hour')
         self._parser.add_argument(
             '--ambient',
             action='store_true',

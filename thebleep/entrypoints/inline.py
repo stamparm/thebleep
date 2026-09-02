@@ -24,25 +24,34 @@ def _script(args):
     return value
 
 
+def correct(script):
+    """The first command-only correction of `script`, or None.
+
+    `None` for the output is deliberate: Command.from_raw_script would acquire
+    output by running the command, which is exactly what an inline correction
+    must not do. Rules requiring output are consequently not candidates. An
+    incomplete quote, substitution or escape is also not a command buffer to
+    rewrite: its apparent words may belong to syntax the shell has not
+    finished. The warm server answers with this too.
+
+    """
+    command = types.Command(script, None)
+    if not command.command_model.complete:
+        return None
+    corrected = next(iter(get_corrected_commands(command)), None)
+    return corrected.script if corrected is not None else None
+
+
 def inline_command(args):
     """Print the first command-only correction, without replaying anything."""
     settings.init(args)
     script = _script(args)
     if script is None:
         return 2
-
-    # `None` is deliberate: Command.from_raw_script would acquire output by
-    # running the command, which is exactly what an inline correction must not
-    # do. Rules requiring output are consequently not candidates. An incomplete
-    # quote, substitution or escape is also not a command buffer to rewrite:
-    # its apparent words may belong to syntax the shell has not finished.
-    command = types.Command(script, None)
-    if not command.command_model.complete:
+    fixed = correct(script)
+    if fixed is None:
         return 1
-    corrected = next(iter(get_corrected_commands(command)), None)
-    if corrected is None:
-        return 1
-    print(corrected.script)
+    print(fixed)
     return 0
 
 

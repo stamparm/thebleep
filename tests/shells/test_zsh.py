@@ -84,8 +84,9 @@ class TestZsh(object):
         binding = shell.inline_binding()
         assert 'TB_SHELL_ALIASES=$(alias)' in binding
         assert "bindkey '\\e\\e'" in binding
-        assert '--inline --command "$BUFFER"' in binding
-        assert 'BUFFER=$fixed' in binding
+        assert '__thebleep_fixed "$BUFFER"' in binding
+        assert '--inline --command "$1"' in binding
+        assert 'BUFFER=$REPLY' in binding
         assert 'eval' not in binding
 
     def test_get_history(self, history_lines, shell):
@@ -128,7 +129,7 @@ class TestAmbient(object):
         binding = shell.ambient_binding()
         assert 'whence -w -- "$first"' in binding
         assert '== *": none"' in binding
-        assert '--inline --command "$BUFFER"' in binding
+        assert '__thebleep_fixed "$BUFFER"' in binding
 
     def test_the_buffer_is_replaced_and_said_so(self, shell):
         binding = shell.ambient_binding()
@@ -149,3 +150,38 @@ class TestInstantModeMarks(object):
         assert 'add-zsh-hook precmd __thebleep_precmd' in alias
         assert "printf '\\033]133;C\\007'" in alias
         assert "printf '\\033]133;D;%s\\007\\033]133;A\\007' \"$?\"" in alias
+
+
+@pytest.mark.usefixtures('isfile', 'no_memoize', 'no_cache')
+class TestWarmServer(object):
+    @pytest.fixture
+    def shell(self):
+        return Zsh()
+
+    def test_off_by_default_python_is_started(self, shell, settings):
+        settings.warm_server = False
+        for binding in (shell.ambient_binding(), shell.inline_binding()):
+            assert '__thebleep_fixed()' in binding
+            assert 'zsocket' not in binding
+            assert '--inline --command "$1"' in binding
+
+    def test_on_the_socket_is_tried_first(self, shell, settings, os_environ,
+                                          tmpdir):
+        settings.warm_server = True
+        os_environ['XDG_RUNTIME_DIR'] = str(tmpdir)
+        binding = shell.ambient_binding()
+        assert 'zmodload zsh/net/socket' in binding
+        assert 'zsocket $sock' in binding
+        assert 'local sock={}'.format(
+            str(tmpdir.join('thebleep', 'inline-zsh.sock'))) in binding
+        # A socket that is not there starts the server for next time...
+        assert '--serve </dev/null >/dev/null 2>&1 &)' in binding
+        # ...and Python answers this time.
+        assert '--inline --command "$1"' in binding
+
+    def test_the_question_is_json_the_server_can_read(self, shell, settings):
+        settings.warm_server = True
+        binding = shell.ambient_binding()
+        assert '__thebleep_json' in binding
+        assert 'print -r -- "{\\"script\\": \\"$script\\", ' \
+               '\\"aliases\\": \\"$aliases\\"}" >&$fd' in binding

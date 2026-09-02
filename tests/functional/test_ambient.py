@@ -47,6 +47,19 @@ def zsh(spawnu, TIMEOUT):
     return proc
 
 
+init_zshrc_warm = init_zshrc.replace(
+    u'eval "$(TB_SHELL=zsh thebleep --ambient)"',
+    u'eval "$(THEBLEEP_WARM_SERVER=true TB_SHELL=zsh thebleep --ambient)"')
+
+
+@pytest.fixture
+def warm_zsh(spawnu, TIMEOUT):
+    proc = spawnu(*python_3)
+    proc.sendline(init_zshrc_warm)
+    proc.sendline(u'zsh')
+    return proc
+
+
 @pytest.fixture
 def fish(spawnu, TIMEOUT):
     proc = spawnu(u'thebleep/python3', u'', u'fish')
@@ -104,3 +117,27 @@ def test_fish_leaves_a_known_command_alone(fish, TIMEOUT):
     # an empty list, and a word joined to an empty list is no word at all.
     fish.send(u'echo un(echo)touched\r')
     assert fish.expect([TIMEOUT, u'untouched'])
+
+
+@pytest.mark.functional
+def test_zsh_asks_the_warm_server_once_it_is_up(warm_zsh, TIMEOUT):
+    """The first miss starts the server and is answered by Python; the socket
+    is then there, and the second miss is answered over it."""
+    warm_zsh.send(u'gti --version\r')
+    assert warm_zsh.expect([TIMEOUT, u'bleep: gti is not a command'])
+    warm_zsh.send(u'\r')
+    assert warm_zsh.expect([TIMEOUT, u'git version'])
+    warm_zsh.sendline(u'for i in 1 2 3 4 5 6 7 8 9 10; do '
+                      u'[[ -S ~/.cache/thebleep/serve/inline-zsh.sock ]] '
+                      u'&& break; sleep 1; done; '
+                      u'[[ -S ~/.cache/thebleep/serve/inline-zsh.sock ]] '
+                      u'&& echo SOCKET_$(echo)UP')
+    assert warm_zsh.expect([TIMEOUT, u'SOCKET_UP'])
+    warm_zsh.send(u'gti --version\r')
+    assert warm_zsh.expect([TIMEOUT, u'bleep: gti is not a command'])
+    warm_zsh.send(u'\r')
+    assert warm_zsh.expect([TIMEOUT, u'git version'])
+    # And the server, not a fresh Python, was what answered: the only
+    # `--inline` process a hit could have started is none.
+    warm_zsh.sendline(u'pgrep -fc "thebleep --serve" && echo SERVER_$(echo)RUNS')
+    assert warm_zsh.expect([TIMEOUT, u'SERVER_RUNS'])
