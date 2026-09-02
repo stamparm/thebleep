@@ -96,6 +96,51 @@ def test_why_prints_a_deterministic_diagnosis_without_correcting(
     assert not correct.called
 
 
+def test_why_asks_the_explainer_only_when_nothing_was_diagnosed(
+        capsys, settings, mocker):
+    settings.debug = False
+    mocker.patch('thebleep.entrypoints.fix_command._get_raw_command',
+                 return_value=['./deploy'])
+    mocker.patch('thebleep.entrypoints.fix_command.types.Command'
+                 '.from_raw_script', return_value=Command(
+                     './deploy', 'something nobody has a fingerprint for'))
+    mocker.patch('thebleep.entrypoints.fix_command.get_corrected_commands')
+    settings.why_command = 'my-explainer'
+    asked = mocker.patch('thebleep.explainer.ask',
+                         return_value='a plausible story')
+
+    fix_command(Mock(command=[], force_command=None, repeat=False,
+                     debug=False, why=True))
+
+    output = capsys.readouterr().out
+    assert 'No deterministic diagnosis found.' in output
+    assert 'from my-explainer, which is not a deterministic source:' in output
+    assert output.rstrip().endswith('a plausible story')
+    asked.assert_called_once()
+    assert asked.call_args[0][:2] == (
+        './deploy', 'something nobody has a fingerprint for')
+
+
+def test_why_does_not_ask_the_explainer_when_it_had_an_answer(
+        capsys, settings, mocker):
+    settings.debug = False
+    mocker.patch('thebleep.entrypoints.fix_command._get_raw_command',
+                 return_value=['python server.py --port 5432'])
+    mocker.patch('thebleep.entrypoints.fix_command.types.Command'
+                 '.from_raw_script', return_value=Command(
+                     'python server.py --port 5432',
+                     'OSError: [Errno 98] Address already in use'))
+    mocker.patch('thebleep.entrypoints.fix_command.get_corrected_commands')
+    settings.why_command = 'my-explainer'
+    asked = mocker.patch('thebleep.explainer.ask')
+
+    fix_command(Mock(command=[], force_command=None, repeat=False,
+                     debug=False, why=True))
+
+    assert 'Port 5432 is already in use.' in capsys.readouterr().out
+    assert not asked.called
+
+
 def test_pick_uses_stored_output_without_replaying(mocker, settings):
     stored = {'script': 'gti status', 'output': "gti: command not found",
               'cwd': '.', 'shell': 'bash', 'exit': 127, 'saved_at': 1}

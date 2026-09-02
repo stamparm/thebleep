@@ -168,9 +168,13 @@ def test_the_environment_variables_it_documents_exist(readme):
     documented = set(re.findall(r'`(THEBLEEP_[A-Z_]+)`', readme))
     from thebleep import invocation
 
-    from thebleep import agent_hooks
+    from thebleep import agent_hooks, explainer
 
     real = set(const.ENV_TO_ATTR) | {'THEBLEEP_OVERRIDDEN_ALIASES',
+                                     # Handed *to* the user's explainer,
+                                     # never read.
+                                     explainer.COMMAND_ENV,
+                                     explainer.EXIT_ENV,
                                      'THEBLEEP_ARGUMENT_PLACEHOLDER',
                                      'THEBLEEP_OUTPUT_LOG',
                                      'THEBLEEP_NO_RULE_PACK',

@@ -113,14 +113,31 @@ def fix_command(known_args):
         _fix_command(known_args, command)
 
 
+def _ask_the_explainer(command):
+    """The user's own explainer, when the deterministic one had nothing."""
+    from .. import explainer
+
+    if explainer.configured() is None:
+        return
+    answer = explainer.ask(command.script, command.output,
+                           os.environ.get('TB_EXIT'))
+    if answer is None:
+        logs.warn('{} gave no answer'.format(explainer.configured()))
+        return
+    print(explainer.heading())
+    print(answer)
+
+
 def _fix_command(known_args, command):
     """Correct one already acquired command."""
 
     if getattr(known_args, 'why', False):
         from .. import diagnostics
 
-        print(diagnostics.format_human(
-            diagnostics.diagnose(command.script, command.output)))
+        result = diagnostics.diagnose(command.script, command.output)
+        print(diagnostics.format_human(result))
+        if not result['diagnoses']:
+            _ask_the_explainer(command)
         return
 
     corrected_commands = get_corrected_commands(command)

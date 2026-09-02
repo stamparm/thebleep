@@ -724,6 +724,27 @@ thebleep --json --why --stderr error.txt --command 'python app.py'
 Use `--platform nt` when diagnosing Windows output from another platform;
 `posix` is the default for POSIX output.
 
+### Asking something of your own
+
+`--why` abstains on anything it cannot prove, because a plausible explanation
+is not proof. If you would rather have the plausible explanation, from a
+program you trust, name it:
+
+```python
+why_command = 'ollama run llama3'
+```
+
+When the deterministic diagnosis has nothing to say and that setting is on,
+the command is run once, in your shell, with the failed command in
+`THEBLEEP_FAILED_COMMAND`, its exit status in `THEBLEEP_FAILED_EXIT` and what
+it printed on standard input. Whatever comes back is printed under a line that
+says where it came from, and that it is not a deterministic source. Nothing
+is bundled or recommended, nothing is sent anywhere you did not name, and
+`why_timeout` (30 seconds by default) is how long it gets.
+
+The structured API, `--json` and the MCP server never call it. Their promise
+is that the answer is deterministic, and this one is not.
+
 ##### [Back to Contents](#contents)
 
 ## Under a coding agent
@@ -1650,6 +1671,8 @@ Several *The Bleep* parameters can be changed in the file `$XDG_CONFIG_HOME/theb
 * `edit` — hand the correction to your command line to edit instead of running it, by default `False`; `--edit` does it for one run, and <kbd>tab</kbd> does it for one suggestion; see [Edit before you run](#edit-before-you-run);
 * `explain` — say which rule made each suggestion and what it matched, by default `False`; `--explain` does it for one run, and <kbd>?</kbd> does it at the prompt; see [Why am I being told this](#why-am-i-being-told-this);
 * `auto_run_confidence` — run a correction without asking when its confidence is at least this share of one and nothing risky was found in it, by default `None` (off); see [Running the correction without asking](#running-the-correction-without-asking);
+* `why_command` — a command of your own to ask when `--why` has no deterministic diagnosis, like `'ollama run llama3'`, by default `None` (off); see [Asking something of your own](#asking-something-of-your-own);
+* `why_timeout` — how many seconds `why_command` may take, by default `30`;
 * `env` — environment variables to set for your previous command when it is run again to read its output, by default `{'LC_ALL': 'C', 'LANG': 'C'}`, which is there so that rules can look for English error messages. Git also gets `GIT_TRACE=1`, so that `git st` can be resolved to whatever alias it stands for; nothing else does.
 
 An example of `settings.py`:
@@ -1672,6 +1695,8 @@ repeat = False
 edit = False
 explain = False
 auto_run_confidence = None
+why_command = None
+why_timeout = 30
 env = {'LC_ALL': 'C', 'LANG': 'C'}
 ```
 
@@ -1697,6 +1722,8 @@ rule with lower `priority` will be matched first;
 * `THEBLEEP_INSTANT_MODE` — read what scrolled past instead of running your command again, `true/false`; see [Experimental instant mode](#experimental-instant-mode).
 * `THEBLEEP_EXCLUDED_SEARCH_PATH_PREFIXES` — path prefixes to ignore when searching for commands, by default `[]`.
 * `THEBLEEP_AUTO_RUN_CONFIDENCE` — run a correction without asking from this confidence up, like `0.9` or `90%`; `off` by default.
+* `THEBLEEP_WHY_COMMAND` — a command to ask when `--why` has no deterministic diagnosis; off by default.
+* `THEBLEEP_WHY_TIMEOUT` — how many seconds that command may take, like `60`.
 
 For example:
 

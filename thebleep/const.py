@@ -103,7 +103,9 @@ DEFAULT_SETTINGS = {'rules': DEFAULT_RULES,
                     'confirm_replay': True,
                     'env': {'LC_ALL': 'C', 'LANG': 'C'},
                     'excluded_search_path_prefixes': [],
-                    'auto_run_confidence': None}
+                    'auto_run_confidence': None,
+                    'why_command': None,
+                    'why_timeout': 30}
 
 ENV_TO_ATTR = {'THEBLEEP_RULES': 'rules',
                'THEBLEEP_EXCLUDE_RULES': 'exclude_rules',
@@ -123,7 +125,9 @@ ENV_TO_ATTR = {'THEBLEEP_RULES': 'rules',
                'THEBLEEP_NUM_CLOSE_MATCHES': 'num_close_matches',
                'THEBLEEP_CONFIRM_REPLAY': 'confirm_replay',
                'THEBLEEP_EXCLUDED_SEARCH_PATH_PREFIXES': 'excluded_search_path_prefixes',
-               'THEBLEEP_AUTO_RUN_CONFIDENCE': 'auto_run_confidence'}
+               'THEBLEEP_AUTO_RUN_CONFIDENCE': 'auto_run_confidence',
+               'THEBLEEP_WHY_COMMAND': 'why_command',
+               'THEBLEEP_WHY_TIMEOUT': 'why_timeout'}
 
 SETTINGS_HEADER = u"""# The Bleep settings file
 #

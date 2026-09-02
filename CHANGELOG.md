@@ -9,6 +9,12 @@
   a learned correction, matches below that root for everyone who clones it.
   Data, not code; `?` names the file as the source.
 
+- **`--why` can ask a program of your choosing.** `why_command` names it;
+  when the deterministic diagnosis abstains, it is run once with the failed
+  command and exit status in the environment and the output on stdin, and its
+  answer is printed under a line saying it is not a deterministic source.
+  Off by default, bounded by `why_timeout`, and never used by the API or MCP.
+
 - **`not_on_path`** — `cargo build` -> `/home/u/.cargo/bin/cargo build`.
   When the program is installed where installers put things (`~/.cargo/bin`,
   `~/go/bin`, `~/.local/bin`, the shims of nvm, pyenv, rbenv, asdf and mise,

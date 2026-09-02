@@ -193,7 +193,7 @@ class Settings(dict):
     # suggestions of zero means the setting does nothing, which nobody sets on
     # purpose and which reads as the feature being broken.
     COUNTS = {'wait_command': 0, 'wait_slow_command': 0,
-              'history_limit': 1, 'num_close_matches': 1}
+              'history_limit': 1, 'num_close_matches': 1, 'why_timeout': 1}
 
     def _number_from_env(self, attr, val):
         try:
