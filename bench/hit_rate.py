@@ -104,6 +104,14 @@ def _measure(package='thebleep'):
     utils = importlib.import_module(package + '.utils')
     types = importlib.import_module(package + '.types')
     Command = types.Command
+    # The Bleep reads manual pages and fish completions for candidates; the
+    # corpus is answered without them, so the number is about the rules and
+    # not about which tools this machine has documented. The Fuck has no
+    # such module, and `contextlib.nullcontext` stands in.
+    try:
+        vocabulary = importlib.import_module(package + '.vocabulary')
+    except ImportError:
+        vocabulary = None
 
     from tests.corpus import cases
 
@@ -127,7 +135,10 @@ def _measure(package='thebleep'):
             mock.patch(package + '.utils.get_valid_history_without_current',
                        return_value=cases.HISTORY), \
             mock.patch(package + '.utils.which', side_effect=which), \
-            _no_package_database(package):
+            _no_package_database(package), \
+            (mock.patch.object(vocabulary, 'facts', return_value={
+                'subcommands': [], 'nested': {}, 'options': {}})
+             if vocabulary is not None else contextlib.nullcontext()):
         for label, group in groups:
             hits = 0
             misses = []

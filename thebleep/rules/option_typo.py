@@ -41,15 +41,21 @@ Where the answer comes from, in order:
    run. `git` is asked `git <subcommand> -h`, which is where git keeps a
    subcommand's options.
 
-`git log --onelien` is a known miss: `--oneline` is in git's manual page rather
-than in `git log -h`, so it is not among the options git offers and nothing here
-invents it.
+Between the two, the manual page. `git log --onelien` used to be a known
+miss -- `--oneline` is in `git-log.1` and not in `git log -h` -- and so was
+every program whose parser prints nothing and invites nothing: Go's `flag`
+(`flag provided but not defined`), Ruby's optparse (`invalid option`), Perl's
+Getopt::Long (`Unknown option: verbse`) and Python's argparse (`unrecognized
+arguments`). `thebleep.vocabulary` reads the program's manual page and its
+fish completion, where there is one, and the options named there are the
+candidates. Nothing is run for it.
 
 Then `thebleep.matching` picks the nearest, so a transposition counts as the one
 slip it is. Nothing is offered when nothing is close: `--colour` reaches
 `--color`, and a flag that was never a flag reaches nothing.
 
-Wordings captured from GNU coreutils 9.x, tar 1.35, curl 8.x and git 2.47.3.
+Wordings captured from GNU coreutils 9.x, tar 1.35, curl 8.x, git 2.47.3,
+Python 3.12's argparse, Go 1.22's flag package and Perl 5's Getopt::Long.
 
 """
 
@@ -76,7 +82,18 @@ BROKEN = (
     re.compile(r'unrecognized argument: -{1,2}([A-Za-z0-9][\w-]*)'),
     # curl.
     re.compile(r'option -{1,2}([A-Za-z0-9][\w-]*): is unknown'),
+    # Python's argparse. Plural, and the usage line above it lists the
+    # options in brackets, so the answer is usually already on screen.
+    re.compile(r'unrecognized arguments: -{1,2}([A-Za-z0-9][\w-]*)'),
+    # Go's `flag` package, which then prints `Usage of x:` and the flags.
+    re.compile(r'flag provided but not defined: -{1,2}([A-Za-z0-9][\w-]*)'),
+    # Perl's Getopt::Long, which names the option without its dashes and
+    # lists nothing at all.
+    re.compile(r'Unknown option: -{0,2}([A-Za-z0-9][\w-]*)'),
 )
+
+# Go's usage block writes its flags with one dash, one per line.
+GO_FLAG = re.compile(r'^\s+-([A-Za-z][\w-]*)', re.MULTILINE)
 
 # A long option as it appears in a usage block. git writes `--[no-]short` for a
 # flag that can be negated, and the name wanted is `short`.
@@ -146,17 +163,23 @@ BOILERPLATE = frozenset({'help', 'usage', 'version', 'manual'})
 
 
 def _candidates(command, broken):
-    """Long options this program might have meant, best source first."""
+    """Long options this program might have meant, best source first.
+
+    1. What the program printed.
+    2. What its manual page and fish completion say (`thebleep.vocabulary`),
+       which is a file read and covers the parsers that print nothing --
+       Ruby's optparse, Perl's Getopt::Long, and hand-rolled ones.
+    3. `--help`, when the program invited it and nothing else answered.
+
+    """
     from_output = [name for name in OPTION.findall(command.output)
                    if name != broken and name not in BOILERPLATE]
+    if 'Usage of ' in command.output:
+        from_output += [name for name in GO_FLAG.findall(command.output)
+                        if name != broken and name not in BOILERPLATE
+                        and name not in from_output]
     if from_output:
         return from_output
-
-    # Only ask the program when the program said to ask it. Everything that
-    # needs this prints `Try 'x --help' for more information.`; a program that
-    # does not invite it is not run.
-    if '--help' not in command.output and ' -h ' not in command.output:
-        return []
 
     parts = command.script_parts
     start = command_word_index(parts)
@@ -165,6 +188,19 @@ def _candidates(command, broken):
         if not part.startswith('-'):
             subcommand = part
             break
+
+    from thebleep import vocabulary
+
+    documented = [name for name in vocabulary.options(parts[start], subcommand)
+                  if name != broken and name not in BOILERPLATE]
+    if documented:
+        return documented
+
+    # Only ask the program when the program said to ask it. Everything that
+    # needs this prints `Try 'x --help' for more information.`; a program that
+    # does not invite it is not run.
+    if '--help' not in command.output and ' -h ' not in command.output:
+        return []
 
     return [name for name in _options_from_help(parts[start], subcommand)
             if name != broken and name not in BOILERPLATE]
@@ -175,7 +211,9 @@ def match(command):
              or 'unknown option' in command.output
              or 'invalid option' in command.output
              or 'unrecognized argument' in command.output
-             or ': is unknown' in command.output)
+             or ': is unknown' in command.output
+             or 'flag provided but not defined' in command.output
+             or 'Unknown option:' in command.output)
             and bool(command.script_parts)
             and bool(command_word_index(command.script_parts)
                      < len(command.script_parts))

@@ -74,6 +74,12 @@ def machine(request, mocker, monkeypatch, settings):
     mocker.patch('thebleep.utils.which', side_effect=_which)
     mocker.patch('thebleep.rules.no_command.which', side_effect=_which)
 
+    # No manual pages and no fish completions: `vocabulary` reads the real
+    # ones, and which tools this machine has documented is a fact about the
+    # machine.
+    mocker.patch('thebleep.vocabulary.facts', return_value={
+        'subcommands': [], 'nested': {}, 'options': {}})
+
     _stub_the_tools(mocker, settings)
 
     monkeypatch.setattr(utils.memoize, 'disabled', True)

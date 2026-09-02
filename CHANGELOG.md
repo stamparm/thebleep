@@ -4,6 +4,20 @@
 
 ### Added
 
+- **Vocabulary from the manual.** Long options and subcommands are now read
+  from the program's manual pages (`git-log.1` for `--oneline`,
+  `docker-image-ls.1` as a page per subcommand) and from installed fish
+  completions, as bounded, cached file reads. `option_typo` uses it for the
+  parsers that print nothing to read -- Go's `flag`, Ruby's optparse, Perl's
+  Getopt::Long, Python's argparse -- and no longer needs to run `--help`
+  when the manual answers. `git log --onelien` is no longer a known miss.
+
+- **`unknown_subcommand`** — `go biuld` -> `go build`, `docker pss` ->
+  `docker ps`, for any program whose manual has a page per subcommand or
+  whose fish completion lists them, when the program named the broken word
+  and offered nothing. Outputs that name a candidate are left to the rules
+  that read one.
+
 - **Hooks for coding agents.** `thebleep --hook claude-code` and
   `--hook cursor` print the hook settings; `--as-hook` is what they run.
   Before an agent's shell command runs, a misspelled program is refused with

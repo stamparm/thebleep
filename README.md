@@ -766,9 +766,9 @@ $ thebleep --doctor
   Executable          ~/.local/bin/thebleep
   On PATH             yes
   Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
-  Rules               194 bundled, 3 of your own
+  Rules               195 bundled, 3 of your own
   Rule health         169 enabled, none raising
-  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (194 rules cached)
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (195 rules cached)
 - Replayless capture  available, not switched on
                       See --enable-experimental-instant-mode.
   Editing             supported by this shell (tab at the prompt)
@@ -949,7 +949,7 @@ nothing.
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
-| **Rules** | 194 of them, for git, docker, npm, pnpm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+| **Rules** | 195 of them, for git, docker, npm, pnpm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
@@ -1387,6 +1387,7 @@ The following rules are enabled by default:
 * `tsuru_not_command` — fixes wrong `tsuru` commands like `tsuru shell`;
 * `tmux` — fixes `tmux` commands;
 * `unknown_command` — fixes hadoop hdfs-style "unknown command", for example adds missing '-' to the command on `hdfs dfs ls`;
+* `unknown_subcommand` — `go biuld` -> `go build`, `docker pss` -> `docker ps`, for any program whose manual has a page per subcommand or whose fish completion lists them, when the program named the broken word and offered nothing;
 * `unsudo` — removes `sudo` from previous command if a process refuses to run on superuser privilege.
 * `vagrant_up` — starts up the vagrant instance;
 * `whois` — fixes `whois` command;
@@ -1430,6 +1431,46 @@ default:
 * `git_push_force` — adds `--force-with-lease` to a `git push` (may conflict with `git_push_pull`);
 * `python_module_error` — installs the package a missing import needs. An import name is not a distribution name (`import yaml` wants PyYAML, `cv2` wants opencv-python), and a mistyped import makes the suggestion `pip install <typo>`, so this is not on by default;
 * `rm_root` — adds `--no-preserve-root` to `rm -rf /` command.
+
+##### [Back to Contents](#contents)
+
+### Words from the manual
+
+A rule can only read what the tool wrote, and a large class of tools write
+nothing worth reading. Go's `flag` package says `flag provided but not
+defined: -verbse`; Ruby's optparse says `invalid option: --verbse`; Perl's
+Getopt::Long says `Unknown option: verbse`; a hand-rolled parser says
+`unknown command` and stops. Until now there was nothing to suggest for any
+of them, because the only honest sources were the output and `--help`, and
+running `--help` on a program nobody vouched for is not something this does
+uninvited.
+
+There is a third source, and it is already on the disk. Nearly every
+installed program has a manual page, and a manual page lists the long options
+in a form a regular expression can pick out. The big tools also document
+their subcommands one page each — `git-status.1`, `docker-image-ls.1`,
+`npm-install.1`, `cargo-build.1` — so the *file names* are the subcommand
+list, read without opening a page. Where fish completions are installed they
+are read too, for any shell's benefit: `complete -c rg -l ignore-case` is a
+fact about `rg`, whether or not fish is your shell.
+
+```bash
+$ git log --onelien
+error: unknown option `onelien'
+$ bleep
+❯ git log --oneline                                95%  from what it printed
+```
+
+That one used to be a known miss: `--oneline` is in `git-log.1` and not in
+`git log -h`. `docker-image-ls.1` and `git-cherry-pick.1` look the same from
+the outside and mean different things — a command under a command, and one
+command with a dash in it — and the page's own synopsis is what settles it.
+
+Everything read is a file, bounded in size and count, cached under the
+directories' modification times and never a process run. It is vocabulary,
+not truth: a page can be older than the binary, so what comes back is a list
+of *candidates* held to edit distance like any other, and a word nothing is
+close to is still answered with nothing.
 
 ##### [Back to Contents](#contents)
 
@@ -1794,7 +1835,7 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches about a fifth of the 194 rules, and
+  running it. A typical command now reaches about a fifth of the 195 rules, and
   one for a tool with many rules of its own — `git` — under a quarter, instead of
   all of them. Rules that don't say what they are about are always loaded, so
   this makes corrections faster, never fewer.

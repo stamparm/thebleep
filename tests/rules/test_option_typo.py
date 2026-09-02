@@ -74,6 +74,18 @@ NO_HELP = 'fatal: unrecognized argument: --onelien\n'
 
 
 @pytest.fixture(autouse=True)
+def no_manual(mocker):
+    """No manual page on this machine says anything, unless a test says so.
+
+    The rule reads real manual pages, and a machine with `git-log.1` on it
+    would otherwise answer `git log --onelien` in a test about what happens
+    when nothing invites `--help`.
+
+    """
+    return mocker.patch('thebleep.vocabulary.options', return_value=[])
+
+
+@pytest.fixture(autouse=True)
 def installed(mocker):
     """A fixed machine, so nothing here depends on the runner."""
     mocker.patch.object(option_typo, 'which',
@@ -206,3 +218,81 @@ class TestAnOptionWithAValue(object):
         command = Command(script, output)
         assert match(command)
         assert get_new_command(command)[0] == expected
+
+
+# Parsers that print the option and nothing else. Python 3.12's argparse,
+# Go 1.22's flag package (which does print its flags, one dash each), Perl 5's
+# Getopt::Long and Ruby 3.3's optparse, each run against a program declaring
+# `--verbose` and asked for `--verbse`.
+ARGPARSE = ('usage: tool [-h] [--verbose]\n'
+            'tool: error: unrecognized arguments: --verbse\n')
+GO_FLAG = ('flag provided but not defined: -verbse\n'
+           'Usage of /tmp/go-build1112113620/b001/exe/m:\n'
+           '  -verbose\n'
+           '    \tx\n')
+PERL = 'Unknown option: verbse\n'
+RUBY = 'invalid option: --verbse (OptionParser::InvalidOption)\n'
+
+
+@pytest.fixture
+def documented(mocker):
+    """The manual page says what the program would not."""
+    return mocker.patch('thebleep.vocabulary.options',
+                        return_value=['verbose', 'version', 'quiet'])
+
+
+@pytest.fixture
+def never_asked(mocker):
+    return mocker.patch.object(
+        option_typo, '_options_from_help',
+        side_effect=AssertionError('the program was run for its help'))
+
+
+@pytest.mark.usefixtures('installed')
+class TestParsersThatPrintNothing(object):
+    def test_argparse_lists_them_in_its_usage_line(self, never_asked):
+        assert get_new_command(Command('tool --verbse', ARGPARSE)) == [
+            'tool --verbose']
+
+    def test_go_lists_them_with_one_dash(self, never_asked):
+        assert get_new_command(Command('tool -verbse', GO_FLAG)) == [
+            'tool -verbose']
+
+    def test_perl_names_it_without_dashes(self, documented, never_asked):
+        assert match(Command('tool --verbse', PERL))
+        assert get_new_command(Command('tool --verbse', PERL)) == [
+            'tool --verbose']
+        documented.assert_called_once_with('tool', None)
+
+    def test_ruby(self, documented, never_asked):
+        assert get_new_command(Command('tool --verbse', RUBY)) == [
+            'tool --verbose']
+
+    def test_the_subcommand_is_looked_up_too(self, documented, never_asked):
+        get_new_command(Command('tool run --verbse', PERL))
+        documented.assert_called_once_with('tool', 'run')
+
+    def test_git_log_onelien_is_no_longer_a_known_miss(
+            self, mocker, never_asked):
+        """`--oneline` is in `git-log.1` and not in `git log -h`."""
+        mocker.patch('thebleep.vocabulary.options',
+                     return_value=['oneline', 'graph', 'decorate'])
+        assert get_new_command(Command('git log --onelien', NO_HELP)) == [
+            'git log --oneline']
+
+    def test_the_manual_beats_asking_the_program(self, documented, never_asked):
+        """`ls --colour` prints an invitation to run `ls --help`. With a manual
+        page to read, the program is not run."""
+        get_new_command(Command('ls --colour', GNU))
+        assert documented.called
+
+    def test_without_a_manual_the_invitation_still_counts(self, mocker):
+        mocker.patch('thebleep.vocabulary.options', return_value=[])
+        asked = mocker.patch.object(option_typo, '_options_from_help',
+                                    return_value=['color', 'all'])
+        assert get_new_command(Command('ls --colour', GNU)) == ['ls --color']
+        assert asked.called
+
+    def test_nothing_anywhere_is_nothing(self, mocker, never_asked):
+        mocker.patch('thebleep.vocabulary.options', return_value=[])
+        assert get_new_command(Command('tool --verbse', PERL)) == []
