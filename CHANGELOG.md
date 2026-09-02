@@ -4,6 +4,11 @@
 
 ### Added
 
+- **A repository can ship corrections.** `.thebleep/corrections.json` at the
+  root, a list of `before`/`after` pairs held to the one-changed-word shape of
+  a learned correction, matches below that root for everyone who clones it.
+  Data, not code; `?` names the file as the source.
+
 - **`not_on_path`** — `cargo build` -> `/home/u/.cargo/bin/cargo build`.
   When the program is installed where installers put things (`~/.cargo/bin`,
   `~/go/bin`, `~/.local/bin`, the shims of nvm, pyenv, rbenv, asdf and mise,

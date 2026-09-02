@@ -208,3 +208,112 @@ def test_learning_state_does_not_follow_a_symlink(learning_home):
     os.symlink(str(target), str(learning_home.join('learned.json')))
 
     assert learning.load() == []
+
+
+class TestShippedCorrections(object):
+    """`.thebleep/corrections.json` at the repository root."""
+
+    def write(self, root, corrections, fmt=1):
+        directory = root.mkdir('.thebleep')
+        directory.join('corrections.json').write(json.dumps(
+            {'format': fmt, 'corrections': corrections}))
+
+    def test_a_pair_becomes_a_repository_correction(self, learning_home):
+        learning_home.mkdir('.git')
+        self.write(learning_home, [
+            {'before': 'corpctl deply payments',
+             'after': 'corpctl deploy payments'}])
+
+        corrections = list(learning.corrections(
+            Command('corpctl deply payments', '')))
+
+        assert [item.script for item in corrections] == [
+            'corpctl deploy payments']
+        assert corrections[0].rule.name == 'shipped_1'
+        assert corrections[0].rule.learning_shipped
+
+    def test_it_explains_where_it_came_from(self, learning_home):
+        from thebleep.explain import confidence, describe
+
+        learning_home.mkdir('.git')
+        self.write(learning_home, [
+            {'before': 'corpctl deply payments',
+             'after': 'corpctl deploy payments'}])
+        correction = list(learning.corrections(
+            Command('corpctl deply payments', '')))[0]
+
+        assert ('matched', "the repository's own correction for corpctl, "
+                           'from .thebleep/corrections.json') \
+            in describe(correction, Command('corpctl deply payments', ''))
+        assert confidence(correction.rule)['basis'] == [
+            'a correction the repository ships']
+
+    def test_only_below_the_root(self, learning_home, monkeypatch):
+        repo = learning_home.mkdir('repo')
+        repo.mkdir('.git')
+        self.write(repo, [
+            {'before': 'corpctl deply payments',
+             'after': 'corpctl deploy payments'}])
+        monkeypatch.chdir(str(repo.mkdir('src')))
+        assert len(list(learning.corrections(
+            Command('corpctl deply payments', '')))) == 1
+        monkeypatch.chdir(str(learning_home))
+        assert list(learning.corrections(
+            Command('corpctl deply payments', ''))) == []
+
+    def test_in_any_shell(self, learning_home, mocker):
+        learning_home.mkdir('.git')
+        self.write(learning_home, [
+            {'before': 'corpctl deply payments',
+             'after': 'corpctl deploy payments'}])
+        mocker.patch('thebleep.learning._current_shell_name',
+                     return_value='fish')
+        assert len(list(learning.corrections(
+            Command('corpctl deply payments', '')))) == 1
+
+    def test_pairs_that_do_not_fit_the_shape_are_ignored(self, learning_home):
+        learning_home.mkdir('.git')
+        self.write(learning_home, [
+            {'before': 'a b', 'after': 'c d'},            # two words changed
+            {'before': 'a b', 'after': 'a b c'},          # a word added
+            {'before': 'a && b', 'after': 'a && c'},      # not simple
+            {'before': 'a', 'after': 'a'},                # nothing changed
+            'not a pair', 7, None,
+            {'before': 'make tset', 'after': 'make test'}])
+        entries = learning.repository_entries(str(learning_home))
+        assert [entry['after'] for entry in entries] == ['make test']
+
+    def test_words_are_quoted(self, learning_home):
+        learning_home.mkdir('.git')
+        self.write(learning_home, [
+            {'before': 'run job', 'after': 'run "job;>PWNED"'}])
+        corrections = list(learning.corrections(Command('run job', '')))
+        assert corrections[0].script == "run 'job;>PWNED'"
+
+    def test_no_repository_no_file_no_entries(self, learning_home):
+        assert learning.repository_entries(str(learning_home)) == []
+        learning_home.mkdir('.git')
+        assert learning.repository_entries(str(learning_home)) == []
+
+    def test_a_wrong_format_or_an_oversized_file(self, learning_home, mocker):
+        learning_home.mkdir('.git')
+        self.write(learning_home, [
+            {'before': 'make tset', 'after': 'make test'}], fmt=2)
+        assert learning.repository_entries(str(learning_home)) == []
+        learning_home.join('.thebleep', 'corrections.json').write(json.dumps(
+            {'format': 1, 'corrections': [
+                {'before': 'make tset', 'after': 'make test'}]}))
+        mocker.patch.object(learning, 'MAX_FILE', 10)
+        assert learning.repository_entries(str(learning_home)) == []
+
+    def test_the_users_own_entries_come_first(self, learning_home):
+        learning_home.mkdir('.git')
+        self.write(learning_home, [
+            {'before': 'corpctl deply payments',
+             'after': 'corpctl deploy payments'}])
+        _pending(learning_home, after='corpctl deploy-v2 payments')
+        learning.learn_last('global')
+        scripts = [item.script for item in learning.corrections(
+            Command('corpctl deply payments', ''))]
+        assert scripts == ['corpctl deploy-v2 payments',
+                           'corpctl deploy payments']

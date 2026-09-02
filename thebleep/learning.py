@@ -17,6 +17,14 @@ FORMAT = 1
 LIMIT = 100
 MAX_FILE = 256 * 1024
 SCOPES = ('global', 'executable', 'repository')
+
+# A repository can ship corrections of its own, for everyone who clones it:
+# `.thebleep/corrections.json` at the root, a list of `before` and `after`
+# pairs held to the same one-changed-word shape as a learned entry. Data, not
+# code -- nothing in it is imported or run, and every word it produces is
+# quoted for the shell like any learned word.
+REPOSITORY_FILE = os.path.join('.thebleep', 'corrections.json')
+REPOSITORY_FORMAT = 1
 _CONTROL_WORDS = frozenset(('&&', '||', '|', ';', '(', ')'))
 
 
@@ -267,6 +275,57 @@ def _current_shell_name():
     return shell._shell_name()
 
 
+def _read_repository_file(root):
+    """The corrections a repository ships, or None when there are none."""
+    import json
+
+    path = os.path.join(root, REPOSITORY_FILE)
+    try:
+        if os.path.getsize(path) > MAX_FILE:
+            return None
+        with _open_for_read(path) as handle:
+            raw = handle.read(MAX_FILE + 1)
+        if len(raw) > MAX_FILE:
+            return None
+        value = json.loads(raw.decode('utf-8'))
+    except Exception:
+        return None
+    if not isinstance(value, dict) or value.get('format') != REPOSITORY_FORMAT:
+        return None
+    corrections = value.get('corrections')
+    return corrections if isinstance(corrections, list) else None
+
+
+def repository_entries(cwd=None):
+    """Entries from the repository's own file, shaped like learned ones.
+
+    Each is a repository-scope entry rooted at the checkout, for any shell,
+    and only the pairs that change exactly one word count -- the same bar a
+    learned correction has to clear, for the same reason: an exact shape to
+    match, not a string replacement.
+
+    """
+    root = _repository_root(cwd if cwd is not None else os.getcwd())
+    if root is None:
+        return []
+    listed = _read_repository_file(root)
+    if not listed:
+        return []
+    entries = []
+    for number, item in enumerate(listed[:LIMIT], 1):
+        if not isinstance(item, dict):
+            continue
+        spec = _spec(item.get('before'), item.get('after'))
+        if spec is None:
+            continue
+        spec.pop('command_index', None)
+        spec.update({'id': number, 'scope': 'repository', 'root': root,
+                     'shell': '', 'created_at': 0, 'shipped': True})
+        if _valid_entry(spec):
+            entries.append(spec)
+    return entries
+
+
 def _matches(entry, parts, cwd, shell_name):
     if entry['shell'] and entry['shell'] != shell_name:
         return False
@@ -294,18 +353,20 @@ def corrections(command):
     """Yield learned corrections for a command in the current context."""
     from .types import CorrectedCommand, Rule
 
-    entries = load()
-    if not entries:
-        return
     parts = command.script_parts
     if not parts:
         return
     cwd = os.getcwd()
+    entries = load() + repository_entries(cwd)
+    if not entries:
+        return
     shell_name = _current_shell_name()
     for entry in entries:
         if not _matches(entry, parts, cwd, shell_name):
             continue
-        rule = Rule('learned_{}'.format(entry['id']),
+        name = '{}_{}'.format(
+            'shipped' if entry.get('shipped') else 'learned', entry['id'])
+        rule = Rule(name,
                     lambda candidate, item=entry: _matches(
                         item, candidate.script_parts, os.getcwd(),
                         _current_shell_name()),
@@ -316,6 +377,7 @@ def corrections(command):
         rule.learned = True
         rule.learning_scope = entry['scope']
         rule.learning_executable = entry['executable']
+        rule.learning_shipped = bool(entry.get('shipped'))
         yield CorrectedCommand(_render(entry, parts), None, 50, rule=rule)
 
 

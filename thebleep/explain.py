@@ -45,6 +45,9 @@ def confidence(rule, command=None, corrected_command=None):
         return {'level': 'unknown', 'score': None,
                 'basis': ['the suggestion did not identify its rule']}
     if getattr(rule, 'learned', False):
+        if getattr(rule, 'learning_shipped', False):
+            return {'level': 'high', 'score': 0.98,
+                    'basis': ['a correction the repository ships']}
         return {'level': 'high', 'score': 0.98,
                 'basis': ['a correction learned from the user']}
     if rule.requires_output and command is not None \
@@ -172,7 +175,11 @@ def describe(corrected_command, command=None, include_assessment=False):
     lines.append(('rule', u'{} ({})'.format(rule.name, _origin(
         getattr(rule, 'path', None)))))
 
-    if getattr(rule, 'learned', False):
+    if getattr(rule, 'learning_shipped', False):
+        lines.append(('matched', u'the repository\'s own correction for {}, '
+                                 u'from .thebleep/corrections.json'.format(
+                                     rule.learning_executable)))
+    elif getattr(rule, 'learned', False):
         lines.append(('matched', u'your {} learned correction for {}'.format(
             rule.learning_scope, rule.learning_executable)))
     else:

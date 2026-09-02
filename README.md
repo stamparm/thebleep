@@ -564,6 +564,25 @@ the command, so a learned `corpctl deply payments` correction cannot rewrite a
 different command or an unrelated argument. Repository entries also require a
 Git root and do not match outside it.
 
+A repository can ship corrections of its own, for everyone who clones it.
+`.thebleep/corrections.json` at the repository root:
+
+```json
+{
+  "format": 1,
+  "corrections": [
+    {"before": "corpctl deply payments", "after": "corpctl deploy payments"},
+    {"before": "make tset", "after": "make test"}
+  ]
+}
+```
+
+Each pair is held to the same bar as a learned correction — one changed word
+in a simple command — and matches below that root in any shell. It is data,
+not code: nothing in the file is imported or run, every word it produces is
+quoted for the shell, and a pair that does not fit the shape is ignored.
+<kbd>?</kbd> names the file as the source.
+
 ##### [Back to Contents](#contents)
 
 ## Structured API
