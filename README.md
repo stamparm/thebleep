@@ -329,6 +329,7 @@ your startup file:
 ```bash
 eval "$(thebleep --ambient)"          # bash, zsh
 thebleep --ambient >> ~/.config/fish/config.fish
+thebleep --ambient >> $profile        # PowerShell
 ```
 
 and a misspelled program is corrected *before it runs*:
@@ -339,9 +340,9 @@ $ git status
 bleep: gti is not a command; return runs `git status`, ctrl+_ puts yours back
 ```
 
-In zsh and fish, return is bound to a check: when the first word of the line
-is not a command, function, alias or builtin the shell knows — `whence -w`
-and `type -q` are asked, and cost nothing — the line is offered to the same
+In zsh, fish and PowerShell, return is bound to a check: when the first word of the line
+is not a command, function, alias or builtin the shell knows — `whence -w`,
+`type -q` and `Get-Command` are asked, and cost nothing — the line is offered to the same
 command-only rules <kbd>Esc</kbd> <kbd>Esc</kbd> uses, and a correction
 replaces the line with a message underneath. Nothing has run yet; return runs
 the corrected line, and undo puts yours back. Every other line is accepted
@@ -473,7 +474,11 @@ Bash is the one that is close rather than exact. It has no way to write the
 history, your editing keys — on a line that already holds the correction, and
 the prompt is your own `PS1`. PowerShell's editing API belongs to a key handler
 and does nothing when called from a function, so there the correction becomes
-the newest history entry and one <kbd>↑</kbd> brings it up.
+the newest history entry and one <kbd>↑</kbd> brings it up. Inside a key
+handler that API does work, which is why PowerShell has the
+[<kbd>Esc</kbd> <kbd>Esc</kbd> binding](#inline-correction-before-execution)
+and [`--ambient`](#without-typing-bleep) like the others:
+`thebleep --bind-inline >> $profile` and `thebleep --ambient >> $profile`.
 
 Where editing is not available, <kbd>tab</kbd> is not offered and does nothing;
 `--edit` says so and runs nothing rather than falling back to running the
@@ -653,11 +658,6 @@ quoted for the shell, and a pair that does not fit the shape is ignored.
 
 ##### [Back to Contents](#contents)
 
-## Structured API
-
-For an editor, IDE or agent that already has the failed command's output, use
-the deterministic engine without invoking a shell:
-
 ## thebleep --stats
 
 Has it been worth it? The answer is a handful of counters kept in the
@@ -684,6 +684,11 @@ only the hundred most frequent of each. `--clear-cache` leaves it alone; it
 is a record, not a cache. `thebleep --stats reset` starts it over.
 
 ##### [Back to Contents](#contents)
+
+## Structured API
+
+For an editor, IDE or agent that already has the failed command's output, use
+the deterministic engine without invoking a shell:
 
 ```python
 from thebleep.api import suggest

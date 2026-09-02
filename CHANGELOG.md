@@ -4,6 +4,14 @@
 
 ### Added
 
+- **PowerShell edits inline.** `thebleep --bind-inline` prints a PSReadLine
+  key handler for <kbd>Esc</kbd> <kbd>Esc</kbd> that rewrites the current
+  line, and `--ambient` binds return to the same first-word check the other
+  shells have. Inside a key handler PSReadLine's editing API works; from a
+  function at the prompt it did not, which is why tab still goes through the
+  history there. Parsed by pwsh 7; the handlers themselves are unverified on
+  Windows.
+
 - **`thebleep --stats`** counts corrections accepted, edited and run without
   asking, the times nothing was offered, the slips fixed most often and the
   rules that fixed them. A local record in the configuration directory,

@@ -93,3 +93,35 @@ class TestPowershell(object):
     def test_neither_probe_answers(self, shell, probes):
         probes.return_value = ''
         assert shell.info() == 'PowerShell'
+
+
+class TestKeyHandlers(object):
+    @pytest.fixture
+    def shell(self):
+        return Powershell()
+
+    def test_esc_esc_rewrites_the_line_inside_a_key_handler(self, shell):
+        """The editing API that fails from a function at the prompt is the one
+        that works inside a PSReadLine key handler."""
+        binding = shell.inline_binding()
+        assert "Set-PSReadLineKeyHandler -Chord 'Escape,Escape'" in binding
+        assert '::GetBufferState([ref]$line, [ref]$cursor)' in binding
+        assert '--inline --command $line' in binding
+        assert '::Replace(0, $line.Length, $fixed)' in binding
+        # The transport is put back afterwards, as the alias puts it back.
+        assert '$env:TB_SHELL = $shell' in binding
+
+    def test_return_checks_the_first_word_then_accepts(self, shell):
+        binding = shell.ambient_binding()
+        assert 'Set-PSReadLineKeyHandler -Key Enter' in binding
+        assert "-split '\\s+', 2)[0]" in binding
+        assert 'Get-Command -Name $first -ErrorAction SilentlyContinue' \
+            in binding
+        assert '::AcceptLine()' in binding
+        assert '::Replace(0, $line.Length, $fixed)' in binding
+
+    def test_a_word_with_syntax_in_it_is_left_alone(self, shell):
+        """The pattern is one PowerShell string: a doubled quote inside it.
+        Verified against pwsh 7: `a"b`, `x/y`, `$env`, `FOO=1`, `it's`,
+        `` a`b `` and `C:\\x` all fail the test, `gti` passes it."""
+        assert '''-notmatch '[\\\\/=$`"'']\'''' in shell.ambient_binding()

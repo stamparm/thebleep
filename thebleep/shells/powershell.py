@@ -83,6 +83,71 @@ class Powershell(Generic):
                 '}}\n').format(name=alias_name, exit_edit=EXIT_EDIT,
                                command=self._invocation())
 
+    def inline_binding(self):
+        """Esc Esc corrects the current line, through a PSReadLine key handler.
+
+        The editing API that does not work from a function at the prompt
+        (see `can_edit_buffer`) is the one that does work inside a key
+        handler: `GetBufferState` reads the line and `Replace` rewrites it,
+        which is exactly what PSReadLine's own sample profile does. The
+        chord is two Escapes, as in the other shells.
+
+        """
+        return '''
+Set-PSReadLineKeyHandler -Chord 'Escape,Escape' -BriefDescription 'TheBleepInline' -Description 'Correct the current line with The Bleep' -ScriptBlock {{
+    $line = $null
+    $cursor = $null
+    [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+    if ([string]::IsNullOrWhiteSpace($line)) {{ return }}
+    $shell = $env:TB_SHELL
+    $env:TB_SHELL = 'powershell'
+    try {{
+        $fixed = ({command} --inline --command $line 2>$null | Out-String).TrimEnd()
+        $code = $LASTEXITCODE
+    }} finally {{
+        $env:TB_SHELL = $shell
+    }}
+    if ($code -eq 0 -and -not [string]::IsNullOrWhiteSpace($fixed)) {{
+        [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $fixed)
+    }}
+}}
+'''.format(command=self._invocation())
+
+    def ambient_binding(self):
+        """Return corrects a misspelled program before it runs.
+
+        Enter is rebound to a handler that looks at the first word of the
+        line: when `Get-Command` knows nothing by that name -- no cmdlet,
+        function, alias or program -- the line is offered to The Bleep as a
+        command-only correction, and a fix replaces the line so that return
+        runs the corrected command. Anything else is `AcceptLine`, which is
+        what return did before.
+
+        """
+        return '''
+Set-PSReadLineKeyHandler -Key Enter -BriefDescription 'TheBleepAmbient' -Description 'Correct a misspelled program before it runs' -ScriptBlock {{
+    $line = $null
+    $cursor = $null
+    [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+    $first = ($line.TrimStart() -split '\\s+', 2)[0]
+    if (-not [string]::IsNullOrWhiteSpace($first) -and $first -notmatch '[\\\\/=$`"'']' -and -not (Get-Command -Name $first -ErrorAction SilentlyContinue)) {{
+        $shell = $env:TB_SHELL
+        $env:TB_SHELL = 'powershell'
+        try {{
+            $fixed = ({command} --inline --command $line 2>$null | Out-String).TrimEnd()
+            $code = $LASTEXITCODE
+        }} finally {{
+            $env:TB_SHELL = $shell
+        }}
+        if ($code -eq 0 -and -not [string]::IsNullOrWhiteSpace($fixed) -and $fixed -ne $line) {{
+            [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $fixed)
+            return
+        }}
+    }}
+    [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
+}}
+'''.format(command=self._invocation())
+
     def can_edit_buffer(self):
         """As far as PSReadLine will go, which is not all the way.
 
