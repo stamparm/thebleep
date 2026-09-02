@@ -4,6 +4,16 @@
 
 ### Added
 
+- **`wrong_directory`** — the command was right and the directory was not.
+  When git, npm, pnpm, yarn, make, cargo, mvn, docker compose, just, task, uv,
+  poetry or terraform report that there is no project here, the rule looks
+  two directories down (and, for the tools that do not look upwards
+  themselves, one up) for the one that has the project file -- and, where a
+  script, target or recipe was named, declares it -- and offers
+  `cd app && npm run build`. Several candidates that declare the named item
+  are offered in name order; several that merely exist are a guess, and
+  nothing is offered.
+
 - **A correction can run without the prompt when there is enough to go on.**
   `auto_run_confidence = 0.9` in the settings, or
   `THEBLEEP_AUTO_RUN_CONFIDENCE=0.9`, lets the first suggestion run unasked

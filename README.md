@@ -688,9 +688,9 @@ $ thebleep --doctor
   Executable          ~/.local/bin/thebleep
   On PATH             yes
   Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
-  Rules               193 bundled, 3 of your own
+  Rules               194 bundled, 3 of your own
   Rule health         169 enabled, none raising
-  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (193 rules cached)
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (194 rules cached)
 - Replayless capture  available, not switched on
                       See --enable-experimental-instant-mode.
   Editing             supported by this shell (tab at the prompt)
@@ -871,7 +871,7 @@ nothing.
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
-| **Rules** | 193 of them, for git, docker, npm, pnpm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+| **Rules** | 194 of them, for git, docker, npm, pnpm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
@@ -1313,6 +1313,7 @@ The following rules are enabled by default:
 * `vagrant_up` — starts up the vagrant instance;
 * `whois` — fixes `whois` command;
 * `workon_doesnt_exists` — fixes `virtualenvwrapper` env name os suggests to create new.
+* `wrong_directory` — when git, npm, pnpm, yarn, make, cargo, mvn, docker compose, just, task, uv, poetry or terraform say there is no project here, offers `cd` into the one directory nearby that has it (`cd app && npm run build`);
 * `wrong_hyphen_before_subcommand` — removes an improperly placed hyphen (`apt-install` -> `apt install`, `git-log` -> `git log`, etc.)
 * `wp_cli_suggestion` — fixes misspelled `wp` (WP-CLI) commands, like `wp plugn list`;
 * `yarn_alias` — fixes aliased `yarn` commands like `yarn ls`;
@@ -1715,7 +1716,7 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches about a fifth of the 193 rules, and
+  running it. A typical command now reaches about a fifth of the 194 rules, and
   one for a tool with many rules of its own — `git` — under a quarter, instead of
   all of them. Rules that don't say what they are about are always loaded, so
   this makes corrections faster, never fewer.
