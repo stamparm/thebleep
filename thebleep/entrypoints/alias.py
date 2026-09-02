@@ -40,9 +40,27 @@ def _get_alias(known_args):
     return alias
 
 
+def _with_ambient(known_args, code):
+    """`code`, followed by the ambient bindings when `--ambient` was given too.
+
+    `eval "$(thebleep --alias-loader --ambient)"` is the natural line to write,
+    and it used to print the loader alone: the dispatcher stopped at the first
+    flag it knew, and the second was silently dropped.
+
+    """
+    if not getattr(known_args, 'ambient', False):
+        return code
+    ambient = shell.ambient_binding()
+    if ambient is None:
+        failed('{} does not support ambient correction; printing the alias '
+               'alone.'.format(shell.friendly_name))
+        return code
+    return code.rstrip('\n') + '\n' + ambient
+
+
 def print_alias(known_args):
     settings.init(known_args)
-    print(_get_alias(known_args))
+    print(_with_ambient(known_args, _get_alias(known_args)))
 
 
 def print_alias_loader(known_args):
@@ -55,4 +73,5 @@ def print_alias_loader(known_args):
 
     """
     settings.init(known_args)
-    print(shell.app_alias_loader(_checked(known_args.alias_loader)))
+    print(_with_ambient(known_args, shell.app_alias_loader(
+        _checked(known_args.alias_loader))))

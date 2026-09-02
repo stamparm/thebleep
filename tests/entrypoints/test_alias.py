@@ -83,3 +83,47 @@ def test_a_shell_keyword_is_left_to_the_shell():
     """
     for keyword in ('if', 'then', 'fi', 'while', 'function'):
         assert _checked(keyword) == keyword
+
+
+class TestWithAmbient(object):
+    """`--alias-loader --ambient` in one line, which used to print the loader
+    alone and drop the other flag on the floor."""
+
+    def test_the_loader_and_the_bindings(self, mocker, capsys):
+        from thebleep.shells import Bash
+
+        mocker.patch('thebleep.entrypoints.alias.shell', Bash())
+        print_alias_loader(Mock(alias_loader='bleep', ambient=True,
+                                enable_experimental_instant_mode=False))
+        out = capsys.readouterr().out
+        assert 'bleep() {' in out or 'bleep () {' in out
+        assert 'command_not_found_handle()' in out
+        assert out.index('bleep') < out.index('command_not_found_handle')
+
+    def test_the_alias_and_the_bindings(self, mocker, capsys):
+        from thebleep.shells import Zsh
+
+        mocker.patch('thebleep.entrypoints.alias.shell', Zsh())
+        print_alias(Mock(alias='bleep', ambient=True,
+                         enable_experimental_instant_mode=False))
+        out = capsys.readouterr().out
+        assert 'zle -N accept-line __thebleep_ambient_accept_line' in out
+
+    def test_a_shell_without_ambient_gets_the_alias_and_a_note(
+            self, mocker, capsys):
+        from thebleep.shells import Tcsh
+
+        mocker.patch('thebleep.entrypoints.alias.shell', Tcsh())
+        print_alias_loader(Mock(alias_loader='bleep', ambient=True,
+                                enable_experimental_instant_mode=False))
+        out, err = capsys.readouterr()
+        assert 'bleep' in out
+        assert 'does not support ambient correction' in err
+
+    def test_without_the_flag_nothing_changes(self, mocker, capsys):
+        from thebleep.shells import Bash
+
+        mocker.patch('thebleep.entrypoints.alias.shell', Bash())
+        print_alias_loader(Mock(alias_loader='bleep', ambient=False,
+                                enable_experimental_instant_mode=False))
+        assert 'command_not_found_handle' not in capsys.readouterr().out

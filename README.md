@@ -327,10 +327,13 @@ Typing `bleep` is the part that can go. Add this after the alias loader in
 your startup file:
 
 ```bash
-eval "$(thebleep --ambient)"          # bash, zsh
-thebleep --ambient >> ~/.config/fish/config.fish
-thebleep --ambient >> $profile        # PowerShell
+eval "$(thebleep --alias-loader --ambient)"      # bash, zsh: one line does both
+thebleep --alias-loader --ambient >> ~/.config/fish/config.fish
+thebleep --alias-loader --ambient >> $profile    # PowerShell
 ```
+
+`thebleep --ambient` on its own prints just the bindings, for a startup file
+that already has the loader.
 
 and a misspelled program is corrected *before it runs*:
 
