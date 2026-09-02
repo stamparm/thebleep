@@ -177,21 +177,22 @@ contributors; their work and history remain fully credited.
 5. [Recent failures](#recent-failures)
 6. [Learned corrections](#learned-corrections)
 7. [Structured API](#structured-api)
-8. [thebleep --doctor](#thebleep---doctor)
-9. [Coming from The Fuck](#coming-from-the-fuck)
-10. [What's fixed](#whats-fixed)
-11. [Supported everything](#supported-everything)
-12. [Installation](#installation)
-13. [Updating](#updating)
-14. [Uninstall](#uninstall)
-15. [How it works](#how-it-works)
-16. [Creating your own rules](#creating-your-own-rules)
-17. [Settings](#settings)
-18. [Third-party packages with rules](#third-party-packages-with-rules)
-19. [Experimental instant mode](#experimental-instant-mode)
-20. [Performance](#performance)
-21. [Developing](#developing)
-22. [License](#license-mit)
+8. [Under a coding agent](#under-a-coding-agent)
+9. [thebleep --doctor](#thebleep---doctor)
+10. [Coming from The Fuck](#coming-from-the-fuck)
+11. [What's fixed](#whats-fixed)
+12. [Supported everything](#supported-everything)
+13. [Installation](#installation)
+14. [Updating](#updating)
+15. [Uninstall](#uninstall)
+16. [How it works](#how-it-works)
+17. [Creating your own rules](#creating-your-own-rules)
+18. [Settings](#settings)
+19. [Third-party packages with rules](#third-party-packages-with-rules)
+20. [Experimental instant mode](#experimental-instant-mode)
+21. [Performance](#performance)
+22. [Developing](#developing)
+23. [License](#license-mit)
 
 ## Safe by default
 
@@ -703,6 +704,46 @@ thebleep --json --why --stderr error.txt --command 'python app.py'
 
 Use `--platform nt` when diagnosing Windows output from another platform;
 `posix` is the default for POSIX output.
+
+##### [Back to Contents](#contents)
+
+## Under a coding agent
+
+Agents mistype commands the way people do, and pay more for it: `gti status`
+costs a turn, a model call, and whatever the agent decides the failure meant.
+Claude Code and Cursor both run hooks around the shell commands their agents
+issue, with JSON in and JSON out, and *The Bleep* can be those hooks:
+
+```bash
+$ thebleep --hook claude-code    # the settings to merge into ~/.claude/settings.json
+$ thebleep --hook cursor         # the contents of ~/.cursor/hooks.json
+```
+
+Two moments, both read-only, neither running the agent's command:
+
+- **Before the command runs.** If a word about to be executed as a program is
+  on nobody's `PATH` and a correction exists, the call is refused with the
+  correction as the reason, and the agent re-issues it fixed — no failed run,
+  no turn spent reading `command not found`. Only the *program* words are
+  checked: `gti` in `gti status`, `pytets` in `cd tests && pytets -q`. A line
+  that could put a program on `PATH` first — `source .venv/bin/activate &&
+  pytest`, `nvm use 20 && npm test`, anything behind `npx`, `uv`, `docker`
+  or `sudo` — is left alone, as is anything whose program is a substitution
+  or a variable.
+- **After it failed.** The failure text the agent would have read anyway goes
+  to the same rules and the same [`--why`](#structured-api) fingerprints as
+  an interactive correction, and the answer is attached beside the failed
+  result: `The Bleep suggests: \`git status\` (95% confidence, the rule
+  matched captured command output)`, and a diagnosis with read-only next
+  steps where there is one. Nothing is decided for the agent. (Claude Code
+  only; Cursor's after-hook takes no answer back.)
+
+`THEBLEEP_HOOK_DECISION=ask` asks you instead of refusing, and `=context`
+lets the command run and only adds the note. The hook never exits non-zero
+and never writes anything it is not sure of: a payload it cannot read, or a
+command it has no opinion on, gets silence, which both tools read as "no
+decision". The same corrections are available to any other tool through the
+[structured API and the MCP server](#structured-api).
 
 ##### [Back to Contents](#contents)
 

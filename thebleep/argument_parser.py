@@ -14,6 +14,8 @@ DEFAULTS = {'alias': None,
             'inline': False,
             'bind_inline': False,
             'mcp': False,
+            'hook': None,
+            'as_hook': None,
             'explain': False,
             'forget': None,
             'forget_learning': None,
@@ -145,6 +147,16 @@ class Parser(object):
             '--mcp',
             action='store_true',
             help='serve read-only correction tools over stdio')
+        self._parser.add_argument(
+            '--hook',
+            metavar='AGENT',
+            help='print the hook settings for a coding agent: '
+                 'claude-code or cursor')
+        self._parser.add_argument(
+            '--as-hook',
+            metavar='AGENT',
+            help='act as that agent\'s hook: read its JSON on stdin, '
+                 'answer on stdout')
         self._parser.add_argument(
             '--inline',
             action='store_true',

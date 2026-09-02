@@ -103,6 +103,16 @@ def _main():
         from ..mcp import serve
 
         sys.exit(serve())
+    elif getattr(known_args, 'hook', None):
+        from ..agent_hooks import print_config
+
+        sys.exit(print_config(known_args.hook))
+    elif getattr(known_args, 'as_hook', None):
+        from ..conf import settings
+        from ..agent_hooks import run
+
+        settings.init(known_args)
+        sys.exit(run(known_args.as_hook))
     # Before the correction branch, like `--doctor` and `--alias`, and for the
     # same reason: the alias exports `TB_HISTORY`, so from any shell that has
     # the alias loaded -- which is every shell anybody would start a logging

@@ -4,6 +4,15 @@
 
 ### Added
 
+- **Hooks for coding agents.** `thebleep --hook claude-code` and
+  `--hook cursor` print the hook settings; `--as-hook` is what they run.
+  Before an agent's shell command runs, a misspelled program is refused with
+  the correction as the reason, so the agent re-issues it fixed instead of
+  spending a turn on `command not found`; lines that could change `PATH`
+  first are left alone. After a command fails under Claude Code, the
+  suggestion, its confidence and any `--why` diagnosis are attached beside
+  the result. `THEBLEEP_HOOK_DECISION` chooses refuse, ask or note-only.
+
 - **Suggestions are drawn as a list.** The prompt shows up to three rows with
   the chosen one marked, the words that differ from what you typed
   highlighted, and each row's confidence and its basis at the right edge;
