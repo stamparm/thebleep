@@ -4,6 +4,13 @@
 
 ### Added
 
+- **`--learn-from-history`** reads the corrections you have been making by
+  hand -- a line followed by the same line with one word fixed, a slip
+  apart -- out of the shell history, shows each with how often it was seen,
+  and learns the ones you say yes to; `list` only shows, `all` keeps them
+  all. Entries are the same bounded, executable-scoped ones `--learn-last`
+  makes.
+
 - **Instant mode reads semantic prompt marks.** The recording is now read by
   the `OSC 133` marks terminals use for prompt navigation -- `A` at a prompt,
   `C` as a command starts, `D;<status>` as it ends -- which instant mode's

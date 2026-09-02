@@ -601,7 +601,29 @@ thebleep --learn-last global       # keep it wherever the command appears
 thebleep --learn-last repository   # keep it below the current Git root
 thebleep --learned                 # inspect the local list
 thebleep --forget-learning 2       # remove entry 2
+thebleep --learn-from-history      # the corrections you have been making by hand
 ```
+
+Your history already holds the corrections you make by hand: a line followed
+at once by the same line with one word fixed, where the two words are a slip
+apart. `--learn-from-history` reads those pairs out of the shell history --
+the same pair twice is a habit -- shows them with how often each was seen,
+and learns the ones you answer <kbd>y</kbd> to:
+
+```bash
+$ thebleep --learn-from-history
+gti -> git  (gti, seen 14)  keep it? [y/n/q] y
+pytets -> pytest  (pytets, seen 3)  keep it? [y/n/q] y
+Learned 2 corrections.
+```
+
+`--learn-from-history list` only shows them and `--learn-from-history all`
+keeps them all. Two commands that differ by one word are not a slip --
+`git checkout main` then `git checkout dev` -- so a pair counts only when the
+words are within two edits, three letters or longer, not numbers, and not
+both names of files that exist. Nothing is read but the history, nothing is
+learned without a yes, and the entries are the same local, bounded,
+executable-scoped ones `--learn-last` makes.
 
 Entries are stored locally in the normal *The Bleep* configuration directory,
 limited to 100, and never uploaded. Matching is exact for every other word in

@@ -317,3 +317,71 @@ class TestShippedCorrections(object):
             Command('corpctl deply payments', ''))]
         assert scripts == ['corpctl deploy-v2 payments',
                            'corpctl deploy payments']
+
+
+class TestFromHistory(object):
+    """Fail-then-fix pairs the history already holds."""
+
+    @pytest.fixture(autouse=True)
+    def installed(self, mocker):
+        mocker.patch('thebleep.learning._exists',
+                     side_effect=lambda name: name in ('git', 'pytest', 'make',
+                                                       'cat', 'echo'))
+
+    HISTORY = [
+        'gti status', 'git status',           # a slip, fixed
+        'ls -la', 'cd src',
+        'gti status', 'git status',           # the same slip again
+        'git checkout main', 'git checkout dev',   # two commands, not a slip
+        'pytets -q', 'pytest -q',
+        'echo 1', 'echo 2',                   # digits are not slips
+        'bleep', 'git push',
+        'make bulid', 'make build',
+        'a b', 'c b',                         # too short to be a slip
+        'git status', 'gti status',           # the slip made again, not a fix
+        'make build --jobs=4', 'make build --jobs=8',
+        'make build --jobs=8', 'make build --jobs=4',   # back and forth
+    ]
+
+    def test_repeated_pairs_come_first(self, learning_home):
+        found = learning.candidates_from_history(self.HISTORY)
+        shown = [(item['spec']['before_parts'][item['spec']['index']],
+                  item['spec']['after_parts'][item['spec']['index']],
+                  item['seen']) for item in found]
+        assert shown == [('gti', 'git', 2), ('pytets', 'pytest', 1),
+                         ('bulid', 'build', 1)]
+
+    def test_already_learned_pairs_are_not_proposed_again(self, learning_home):
+        learning.learn_pair('gti status', 'git status')
+        found = learning.candidates_from_history(self.HISTORY)
+        assert [item['before'] for item in found] == ['pytets -q', 'make bulid']
+
+    def test_two_existing_files_are_two_files(self, learning_home):
+        learning_home.ensure('notes.txt')
+        learning_home.ensure('nodes.txt')
+        assert learning.candidates_from_history(
+            ['cat notes.txt', 'cat nodes.txt']) == []
+
+    def test_learn_pair_stores_an_executable_entry(self, learning_home):
+        entry = learning.learn_pair('gti status', 'git status', 'executable',
+                                    'generic')
+        assert entry['scope'] == 'executable'
+        assert entry['executable'] == 'gti'
+        assert entry['shell'] == 'generic'
+        assert [item.script for item in learning.corrections(
+            Command('gti status', ''))] == ['git status']
+
+    def test_learn_pair_refuses_what_learn_last_would(self, learning_home):
+        assert learning.learn_pair('a b', 'c d') is None
+        assert learning.learn_pair('git checkout main',
+                                   'git checkout main') is None
+        with pytest.raises(ValueError):
+            learning.learn_pair('gti status', 'git status', 'everywhere')
+
+    def test_repository_scope_needs_a_repository(self, learning_home):
+        assert learning.learn_pair('gti status', 'git status',
+                                   'repository') is None
+        learning_home.mkdir('.git')
+        assert learning.learn_pair('gti status', 'git status',
+                                   'repository')['root'] == str(
+            Path(str(learning_home)).resolve())

@@ -70,6 +70,10 @@ def _main():
         from .. import learning
 
         learning.print_entries()
+    elif getattr(known_args, 'learn_from_history', None) is not None:
+        from .learn import learn_from_history
+
+        sys.exit(learn_from_history(known_args))
     elif getattr(known_args, 'learn_last', None) is not None:
         from .. import learning
 

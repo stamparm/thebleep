@@ -25,6 +25,7 @@ DEFAULTS = {'alias': None,
             'help': False,
             'json': False,
             'learn_last': None,
+            'learn_from_history': None,
             'learned': False,
             'pick': None,
             'platform_name': None,
@@ -195,6 +196,14 @@ class Parser(object):
             choices=('global', 'executable', 'repository'),
             metavar='SCOPE',
             help='learn the last accepted one-word correction')
+        self._parser.add_argument(
+            '--learn-from-history',
+            nargs='?',
+            const='ask',
+            choices=['ask', 'list', 'all'],
+            metavar='MODE',
+            help='find typo-then-fix pairs in the shell history and offer to '
+                 'learn them: ask (default), list, or all')
         self._parser.add_argument(
             '--learned',
             action='store_true',

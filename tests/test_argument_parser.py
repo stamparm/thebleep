@@ -18,7 +18,8 @@ def _args(**override):
             'doctor': False, 'explain': False,
             'enable_experimental_instant_mode': False,
             'shell': None, 'shell_logger': None, 'stderr': None, 'cwd': None,
-            'why': False, 'learn_last': None, 'learned': False}
+            'why': False, 'learn_last': None, 'learned': False,
+            'learn_from_history': None}
     args.update(override)
     return args
 

@@ -252,8 +252,17 @@ def learn_last(scope='executable'):
     if scope == 'repository' and root is None:
         return None
 
+    entry = _store(dict(pending), scope, root)
+    if entry is None:
+        return None
+    _write('learning-pending.json', {'format': FORMAT, 'entry': None})
+    return entry
+
+
+def _store(spec, scope, root):
+    """Put `spec` at the front of the learned list; None when that failed."""
     entries = _entries()
-    entry = dict(pending)
+    entry = dict(spec)
     entry.update({'id': _new_id(entries), 'scope': scope, 'root': root})
     entry.pop('cwd', None)
     entry.pop('command_index', None)
@@ -265,8 +274,115 @@ def learn_last(scope='executable'):
     if not _write('learned.json', {'format': FORMAT,
                                    'entries': entries[:LIMIT]}):
         return None
-    _write('learning-pending.json', {'format': FORMAT, 'entry': None})
     return entry
+
+
+def learn_pair(before, after, scope='executable', shell_name=None):
+    """Learn `before` -> `after` directly, as `--learn-from-history` does."""
+    if scope not in SCOPES:
+        raise ValueError('unknown learning scope')
+    spec = _spec(before, after)
+    if spec is None:
+        return None
+    import time
+
+    root = _repository_root(os.getcwd()) if scope == 'repository' else None
+    if scope == 'repository' and root is None:
+        return None
+    spec['shell'] = shell_name if isinstance(shell_name, str) else ''
+    spec['created_at'] = time.time()
+    return _store(spec, scope, root)
+
+
+# How far apart the two words of a fail-then-fix pair may be, and how short
+# the word may be, before the pair stops looking like a typo and its fix.
+# `git checkout main` followed by `git checkout dev` changes one word too,
+# and is two commands rather than one mistake.
+HISTORY_SCAN = 5000
+SLIP_DISTANCE = 2
+SLIP_LENGTH = 3
+
+
+def _exists(program):
+    from .utils import which
+
+    return which(program) is not None
+
+
+def _looks_like_a_slip(before_word, after_word):
+    from . import matching
+
+    if min(len(before_word), len(after_word)) < SLIP_LENGTH:
+        return False
+    if before_word.isdigit() or after_word.isdigit():
+        return False
+    if os.path.exists(before_word) and os.path.exists(after_word):
+        # Two files that both exist are two files, not a misspelling.
+        return False
+    return matching.distance(before_word, after_word,
+                             limit=SLIP_DISTANCE) <= SLIP_DISTANCE
+
+
+def shell_history():
+    from .shells import shell
+
+    return shell.get_history()
+
+
+def candidates_from_history(history=None):
+    """Fail-then-fix pairs in the shell history, most repeated first.
+
+    A line followed at once by the same line with one word changed, where the
+    two words are a slip apart, is somebody making a mistake and fixing it;
+    the same pair twice is a habit. Nothing is learned here -- these are
+    proposals for `--learn-from-history` to show, each with how often it was
+    seen. Pairs already learned, and lines that were The Bleep itself, are
+    left out.
+
+    :rtype: [dict] -- `before`, `after`, `spec`, `seen`
+
+    """
+    from .const import get_alias
+
+    if history is None:
+        history = shell_history()
+    history = [line for line in history[-HISTORY_SCAN:]
+               if line and not line.startswith(get_alias())]
+
+    known = {(entry['before'], entry['after']) for entry in _entries()}
+    found = {}
+    for before, after in zip(history, history[1:]):
+        if before == after or (before, after) in known:
+            continue
+        spec = _spec(before, after)
+        if spec is None:
+            continue
+        index = spec['index']
+        if not _looks_like_a_slip(spec['before_parts'][index],
+                                  spec['after_parts'][index]):
+            continue
+        before_word = spec['before_parts'][index]
+        after_word = spec['after_parts'][index]
+        if index == spec['command_index'] and not (
+                _exists(after_word) and not _exists(before_word)):
+            # The changed word is the program: the fix has to be one that
+            # exists, and the slip one that does not. `git status` followed
+            # by `gti status` is the slip being made again, not a correction.
+            continue
+        key = (before_word, after_word, spec['executable'])
+        if key in found:
+            found[key]['seen'] += 1
+        else:
+            found[key] = {'before': before, 'after': after, 'spec': spec,
+                          'seen': 1}
+    # An argument changed one way and then back is two edits, not a slip and
+    # its fix: whichever direction was seen less often is dropped.
+    dropped = [key for key in found
+               if (key[1], key[0], key[2]) in found
+               and found[(key[1], key[0], key[2])]['seen'] >= found[key]['seen']]
+    for key in dropped:
+        del found[key]
+    return sorted(found.values(), key=lambda item: -item['seen'])
 
 
 def _current_shell_name():
