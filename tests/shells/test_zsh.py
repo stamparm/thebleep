@@ -172,10 +172,13 @@ class TestWarmServer(object):
         binding = shell.ambient_binding()
         assert 'zmodload zsh/net/socket' in binding
         assert 'zsocket $sock' in binding
-        # Through the shell's own quoting, which leaves a POSIX path bare and
-        # quotes a Windows one for its backslashes.
-        assert 'local sock={}'.format(shell.quote(
-            str(tmpdir.join('thebleep', 'inline-zsh.sock')))) in binding
+        # The path the server itself would use -- the runtime directory when
+        # a socket path there is short enough, which on macOS and Windows the
+        # test's temporary directory is not -- through the shell's own quoting.
+        from thebleep import serve
+
+        assert 'local sock={}'.format(shell.quote(serve.socket_path('zsh'))) \
+            in binding
         # A socket that is not there starts the server for next time...
         assert '--serve </dev/null >/dev/null 2>&1 &)' in binding
         # ...and Python answers this time.

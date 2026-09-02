@@ -232,7 +232,12 @@ def ask(shell_name, script, aliases=None, timeout=1.0):
         connection.sendall(json.dumps({'script': script,
                                        'aliases': aliases}).encode('utf-8')
                            + b'\n')
-        connection.shutdown(socket.SHUT_WR)
+        try:
+            connection.shutdown(socket.SHUT_WR)
+        except OSError:
+            # The newline already ended the question; a server quick enough
+            # to have answered and hung up makes macOS refuse the shutdown.
+            pass
         chunks = []
         while True:
             chunk = connection.recv(65536)
