@@ -156,12 +156,17 @@ def confirm_text(corrected_command, offer_edit=False, offer_explain=False):
             blue=color(colorama.Fore.BLUE)))
 
 
+def dim(message):
+    """A line of stderr that is there if you look for it."""
+    sys.stderr.write(u'{dim}{message}{reset}\n'.format(
+        dim=color(colorama.Style.DIM),
+        message=message,
+        reset=color(colorama.Style.RESET_ALL)))
+
+
 def trusted(reason):
     """Why a correction ran without the question, in one dim line."""
-    sys.stderr.write(u'{dim}ran without asking: {reason}{reset}\n'.format(
-        dim=color(colorama.Style.DIM),
-        reason=reason,
-        reset=color(colorama.Style.RESET_ALL)))
+    dim(u'ran without asking: {}'.format(reason))
 
 
 def cannot_edit():

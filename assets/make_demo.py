@@ -104,14 +104,20 @@ class Scene(object):
     def blank(self):
         self.row += 1
 
-    def case(self, wrong, error, correction, separate=True):
+    def case(self, wrong, error, correction, confidence, separate=True):
         """One mistake: what was typed, what came back, what to run instead."""
         self.type('$ ', wrong, then=260)
         for run in error:
             self.line(run)
         self.wait(READ_MS)
         self.type('$ ', 'bleep', then=380)
-        self.line(*(list(correction) + [('dim', KEYS)]))
+        # The suggestion list as `menu` draws it: the chosen row marked, the
+        # confidence at the right edge, the keys on the line below.
+        shown = sum(len(text) for _, text in correction)
+        gap = ' ' * max(COLUMNS - 2 - shown - len(confidence), 2)
+        self.line(*([('accent', MARKER + ' ')] + list(correction)
+                    + [('dim', gap + confidence)]))
+        self.line(('dim', KEYS))
         if separate:
             self.wait(1000)
             self.blank()
@@ -247,7 +253,8 @@ def render(scene, total, at=None):
         ''])
 
 
-KEYS = '[enter/↑/↓/ctrl+c/esc]'
+KEYS = '[enter/↑/↓/tab=edit/?/ctrl+c/esc]'
+MARKER = '❯'
 
 
 def demo():
@@ -264,28 +271,31 @@ def demo():
     # A mistyped program name, by the `no_command` rule.
     scene.case('gti status',
                [('error', 'gti: command not found')],
-               [('accent', 'git'), ('text', ' status ')])
+               [('accent', 'git'), ('text', ' status')],
+               '75%  from the command')
 
     # A mistyped subcommand, by `pip_unknown_command`.
     scene.case('pip instatl requests',
                [('error', 'ERROR: unknown command "instatl" - maybe you meant '
                           '"install"')],
                [('text', 'pip '), ('accent', 'install'),
-                ('text', ' requests ')])
+                ('text', ' requests')],
+               '95%  from what it printed')
 
     # Something that needed to be root, by the `sudo` rule.
     scene.case('apt-get install vim',
                [('error', 'E: Could not open lock file /var/lib/dpkg/lock-'
                           'frontend (13: Permission denied)')],
-               [('accent', 'sudo '), ('text', 'apt-get install vim ')])
+               [('accent', 'sudo '), ('text', 'apt-get install vim')],
+               '95%  from what it printed')
 
     # And the one that writes out the flags you would have had to look up.
     scene.case('git push',
                [('error', 'fatal: The current branch bleep has no upstream '
                           'branch')],
                [('text', 'git push '),
-                ('accent', '--set-upstream origin bleep'), ('text', ' ')],
-               separate=False)
+                ('accent', '--set-upstream origin bleep')],
+               '95%  from what it printed', separate=False)
     scene.wait(700)
     scene.line(('cyan', "Branch 'bleep' set up to track 'origin/bleep'."))
     scene.wait(200)

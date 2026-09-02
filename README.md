@@ -171,26 +171,27 @@ contributors; their work and history remain fully credited.
 ## Contents
 
 1. [Safe by default](#safe-by-default)
-2. [Edit before you run](#edit-before-you-run)
-3. [Why am I being told this](#why-am-i-being-told-this)
-4. [Recent failures](#recent-failures)
-5. [Learned corrections](#learned-corrections)
-6. [Structured API](#structured-api)
-7. [thebleep --doctor](#thebleep---doctor)
-8. [Coming from The Fuck](#coming-from-the-fuck)
-9. [What's fixed](#whats-fixed)
-10. [Supported everything](#supported-everything)
-11. [Installation](#installation)
-12. [Updating](#updating)
-13. [Uninstall](#uninstall)
-14. [How it works](#how-it-works)
-15. [Creating your own rules](#creating-your-own-rules)
-16. [Settings](#settings)
-17. [Third-party packages with rules](#third-party-packages-with-rules)
-18. [Experimental instant mode](#experimental-instant-mode)
-19. [Performance](#performance)
-20. [Developing](#developing)
-21. [License](#license-mit)
+2. [The list](#the-list)
+3. [Edit before you run](#edit-before-you-run)
+4. [Why am I being told this](#why-am-i-being-told-this)
+5. [Recent failures](#recent-failures)
+6. [Learned corrections](#learned-corrections)
+7. [Structured API](#structured-api)
+8. [thebleep --doctor](#thebleep---doctor)
+9. [Coming from The Fuck](#coming-from-the-fuck)
+10. [What's fixed](#whats-fixed)
+11. [Supported everything](#supported-everything)
+12. [Installation](#installation)
+13. [Updating](#updating)
+14. [Uninstall](#uninstall)
+15. [How it works](#how-it-works)
+16. [Creating your own rules](#creating-your-own-rules)
+17. [Settings](#settings)
+18. [Third-party packages with rules](#third-party-packages-with-rules)
+19. [Experimental instant mode](#experimental-instant-mode)
+20. [Performance](#performance)
+21. [Developing](#developing)
+22. [License](#license-mit)
 
 ## Safe by default
 
@@ -317,6 +318,39 @@ Only the first suggestion is ever considered, because that is the one
 <kbd>enter</kbd> would have run. It is off by default, and
 `THEBLEEP_AUTO_RUN_CONFIDENCE=0.9` sets it for a shell; `off` switches it back.
 
+## The list
+
+Suggestions are drawn as a list, not shown one at a time:
+
+```bash
+$ npm run buidl
+npm error Missing script: "buidl"
+$ bleep
+❯ npm run build                                    95%  from what it printed
+  npm run bundle                                   95%  from what it printed
+[enter/↑/↓/tab=edit/?/ctrl+c/esc]  1/2
+```
+
+The highlighted words are the ones that differ from what you typed, so
+`cd app && npm run build` reads as three new words in front of a command you
+already know. The percentage is the confidence <kbd>?</kbd> and `--json`
+report, and the words after it are where it came from: *from what it printed*
+when a rule read the tool's own message, *from the command* when it had only
+your typing to go on, *you taught it* for a [learned correction](#learned-corrections).
+Three rows are on screen at once and the chosen one stays among them.
+
+The first row appears as soon as the first rule answers; the rest of the rules
+run when you first press an arrow, exactly as before, so a correction that
+needs one keystroke costs what it always cost. A console that cannot move the
+cursor back gets the one-line prompt it always had.
+
+When nothing is offered, a dim line says what was looked at: how many rules
+applied to the command, that none of them matched, and how many needed output
+that was not read — which is the difference between a typo nothing knows and a
+replay you declined.
+
+##### [Back to Contents](#contents)
+
 ## Edit before you run
 
 A suggestion is often ninety-five percent of what you wanted. Press <kbd>tab</kbd>
@@ -327,7 +361,8 @@ finish:
 $ git chekout featuer
 git: 'chekout' is not a git command. See 'git --help'.
 $ bleep
-git checkout feature [enter/↑/↓/tab=edit/?/ctrl+c/esc]
+❯ git checkout feature                             95%  from what it printed
+[enter/↑/↓/tab=edit/?/ctrl+c/esc]
 ```
 
 <kbd>tab</kbd>, and the next thing you see is your own prompt, with the cursor
@@ -413,7 +448,8 @@ line, and you press return to run it.**
 Error: nu::shell::external_command
   × External command failed
 > bleep
-git status [enter/↑/↓/ctrl+c/esc]
+❯ git status                                       75%  from the command
+[enter/↑/↓/ctrl+c/esc]
 > git status█
 ```
 
@@ -443,7 +479,8 @@ is a thin reason to run anything. Press <kbd>?</kbd> at the prompt:
 ```bash
 $ git chekout featuer
 $ bleep
-git checkout feature [enter/↑/↓/tab=edit/?/ctrl+c/esc]
+❯ git checkout feature                             95%  from what it printed
+[enter/↑/↓/tab=edit/?/ctrl+c/esc]
   rule     git_not_command (bundled)
   matched  git, and output containing "is not a git command. See 'git --help'."
   read     what your command printed

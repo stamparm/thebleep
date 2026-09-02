@@ -180,6 +180,12 @@ def organize_commands(corrected_commands, script=''):
     yield from sorted_commands
 
 
+# What the last correction pass looked at, for the line printed when nothing
+# was offered: how many rules were tried, and how many of them never could
+# have matched because they need output that was not read.
+last_pass = {}
+
+
 def _corrections(rules, command):
     return (corrected for rule in rules if rule.is_match(command)
             for corrected in rule.get_corrected_commands(command))
@@ -329,6 +335,10 @@ def get_corrected_commands(command):
     from . import learning
 
     rules = get_rules(command)
+    last_pass.clear()
+    last_pass['rules'] = len(rules)
+    last_pass['unread'] = (sum(1 for rule in rules if rule.requires_output)
+                           if command.output is None else 0)
     learned_commands = learning.corrections(command)
     # Keep the whole-line pass for compound-aware rules such as no_command,
     # which can deliberately combine independent missing commands. The

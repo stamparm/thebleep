@@ -166,20 +166,23 @@ class TestSelectCommand(object):
         assert ui.select_command(iter(commands)) == (commands[0],
                                                      const.ACTION_SELECT)
         assert capsys.readouterr() == (
-            '', const.USER_COMMAND_MARK + u'\x1b[1K\rls [enter/↑/↓/?/ctrl+c/esc]\n')
+            '', u'\x1b[1K\r' + const.USER_COMMAND_MARK
+            + u'❯ ls\n[enter/↑/↓/?/ctrl+c/esc]\n')
 
     def test_with_confirmation_abort(self, capsys, patch_get_key, commands):
         patch_get_key([const.KEY_CTRL_C])
         assert ui.select_command(iter(commands)) == (None, const.ACTION_ABORT)
         assert capsys.readouterr() == (
-            '', const.USER_COMMAND_MARK + u'\x1b[1K\rls [enter/↑/↓/?/ctrl+c/esc]\nAborted\n')
+            '', u'\x1b[1K\r' + const.USER_COMMAND_MARK
+            + u'❯ ls\n[enter/↑/↓/?/ctrl+c/esc]\nAborted\n')
 
     def test_with_confirmation_abort_with_escape(self, capsys, patch_get_key,
                                                  commands):
         patch_get_key([const.KEY_ESCAPE])
         assert ui.select_command(iter(commands)) == (None, const.ACTION_ABORT)
         assert capsys.readouterr() == (
-            '', const.USER_COMMAND_MARK + u'\x1b[1K\rls [enter/↑/↓/?/ctrl+c/esc]\nAborted\n')
+            '', u'\x1b[1K\r' + const.USER_COMMAND_MARK
+            + u'❯ ls\n[enter/↑/↓/?/ctrl+c/esc]\nAborted\n')
 
     def test_with_confirmation_with_side_effct(self, capsys, patch_get_key,
                                                commands_with_side_effect):
@@ -187,7 +190,8 @@ class TestSelectCommand(object):
         assert (ui.select_command(iter(commands_with_side_effect))
                 == (commands_with_side_effect[0], const.ACTION_SELECT))
         assert capsys.readouterr() == (
-            '', const.USER_COMMAND_MARK + u'\x1b[1K\rls (+side effect) [enter/↑/↓/?/ctrl+c/esc]\n')
+            '', u'\x1b[1K\r' + const.USER_COMMAND_MARK
+            + u'❯ ls (+side effect)\n[enter/↑/↓/?/ctrl+c/esc]\n')
 
     def test_without_tty(self, capsys, commands, is_interactive):
         is_interactive.return_value = False
@@ -209,10 +213,27 @@ class TestSelectCommand(object):
         assert ui.select_command(iter(commands)) == (commands[1],
                                                      const.ACTION_SELECT)
         stderr = (
-            u'{mark}\x1b[1K\rls [enter/↑/↓/?/ctrl+c/esc]'
-            u'{mark}\x1b[1K\rcd [enter/↑/↓/?/ctrl+c/esc]\n'
+            u'\x1b[1K\r{mark}❯ ls\n[enter/↑/↓/?/ctrl+c/esc]'
+            # Back over the two lines drawn, clear, and draw the list with
+            # the second row chosen and a position in the hint.
+            u'\r\x1b[1A\x1b[J{mark}  ls\n❯ cd\n[enter/↑/↓/?/ctrl+c/esc]  2/2\n'
         ).format(mark=const.USER_COMMAND_MARK)
         assert capsys.readouterr() == ('', stderr)
+
+    def test_a_console_without_escapes_gets_one_line(
+            self, capsys, mocker, patch_get_key, commands):
+        """Nothing can move the cursor back, so the list cannot be redrawn;
+        the one-line prompt is what such a console had before and keeps."""
+        from thebleep import logs
+
+        mocker.patch.object(logs._ansi_supported, 'cached', False)
+        patch_get_key([const.KEY_DOWN, '\n'])
+        assert ui.select_command(iter(commands)) == (commands[1],
+                                                     const.ACTION_SELECT)
+        assert capsys.readouterr() == (
+            '', u'{mark}\rls [enter/↑/↓/?/ctrl+c/esc]'
+                u'{mark}\rcd [enter/↑/↓/?/ctrl+c/esc]\n'.format(
+                    mark=const.USER_COMMAND_MARK))
 
 
 @pytest.mark.usefixtures('no_colors')

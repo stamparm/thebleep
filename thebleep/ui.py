@@ -44,6 +44,16 @@ def read_actions():
             yield const.ACTION_SELECT
 
 
+def _explain_silence():
+    """One dim line on what was looked at, when nothing came of it."""
+    from . import corrector
+    from .menu import abstained
+
+    said = abstained(corrector.last_pass)
+    if said:
+        logs.dim(said)
+
+
 def _explain(corrected_command, command):
     """Why this suggestion is being made. Imported here: only asking pays."""
     from . import explain
@@ -82,6 +92,15 @@ class CommandSelector(object):
     def value(self):
         """:rtype thebleep.types.CorrectedCommand"""
         return self._commands[self._index]
+
+    @property
+    def commands(self):
+        """What has been computed so far: one, until the list is walked."""
+        return self._commands
+
+    @property
+    def index(self):
+        return self._index
 
 
 def select_command(corrected_commands, command=None):
@@ -123,6 +142,8 @@ def select_command(corrected_commands, command=None):
     except NoRuleMatched:
         logs.failed('No bleeps given' if get_alias() == 'bleep'
                     else 'Nothing found')
+        if command is not None:
+            _explain_silence()
         return None, const.ACTION_ABORT
 
     chosen = const.ACTION_EDIT if wants_edit else const.ACTION_SELECT
@@ -160,11 +181,22 @@ def select_command(corrected_commands, command=None):
     offer_edit = editable and not wants_edit
     explaining = bool(settings.explain)
 
+    # The list needs to move the cursor back over itself to redraw; a console
+    # that renders no escapes gets the one-line prompt it always had.
+    menu = None
+    if logs._ansi_supported():
+        from .menu import Menu
+
+        menu = Menu(offer_edit, offer_explain=True, command=command)
+
     def show(value):
         if explaining:
             sys.stderr.write('\n')
             _explain(value, command)
-        logs.confirm_text(value, offer_edit, offer_explain=True)
+        if menu is not None and not explaining:
+            menu.draw(selector.commands, selector.index)
+        else:
+            logs.confirm_text(value, offer_edit, offer_explain=True)
 
     show(selector.value)
 

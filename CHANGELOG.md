@@ -4,6 +4,14 @@
 
 ### Added
 
+- **Suggestions are drawn as a list.** The prompt shows up to three rows with
+  the chosen one marked, the words that differ from what you typed
+  highlighted, and each row's confidence and its basis at the right edge;
+  the arrows move the mark and the hint shows the position. The first row
+  still appears as soon as the first rule answers. A console that renders no
+  escapes keeps the one-line prompt. When nothing is offered, a dim line says
+  how many rules were tried and how many needed output that was not read.
+
 - **`wrong_directory`** — the command was right and the directory was not.
   When git, npm, pnpm, yarn, make, cargo, mvn, docker compose, just, task, uv,
   poetry or terraform report that there is no project here, the rule looks
