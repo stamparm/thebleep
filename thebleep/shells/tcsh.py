@@ -13,6 +13,9 @@ class Tcsh(Generic):
         """See `Generic.replay_argv`."""
         return self._posix_replay_argv(['tcsh', '-c', script])
 
+    def put_on_path(self, directory):
+        return u'setenv PATH {}:$PATH'.format(self.quote(directory))
+
     def _invocation(self):
         """What tcsh can be told to run, which is less than the others.
 

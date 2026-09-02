@@ -127,6 +127,10 @@ class Powershell(Generic):
         """
         return u"'{}'".format(s.replace(u"'", u"''"))
 
+    def put_on_path(self, directory):
+        return u'$env:PATH = {} + [IO.Path]::PathSeparator + $env:PATH'.format(
+            self.quote(directory))
+
     def and_(self, *commands):
         """Runs each command only if the one before it succeeded.
 

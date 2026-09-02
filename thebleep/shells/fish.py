@@ -241,6 +241,12 @@ bind \\e\\e __thebleep_inline
     def and_(self, *commands):
         return u'; and '.join(commands)
 
+    def put_on_path(self, directory):
+        # `set -gx`, not `fish_add_path`: the latter writes a universal
+        # variable that outlives the shell, and a correction has no business
+        # changing anything past the session it runs in.
+        return u'set -gx PATH {} $PATH'.format(self.quote(directory))
+
     def or_(self, *commands):
         return u'; or '.join(commands)
 

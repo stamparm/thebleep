@@ -366,6 +366,16 @@ class Generic(object):
     def and_(self, *commands):
         return u' && '.join(commands)
 
+    def put_on_path(self, directory):
+        """Shell code that puts `directory` first on PATH, for this shell.
+
+        For the session, not for good: nothing here writes a startup file.
+        `not_on_path` puts this in front of a command whose program was found
+        off PATH, so the line on the screen is also the line to keep.
+
+        """
+        return u'export PATH={}:"$PATH"'.format(self.quote(directory))
+
     def or_(self, *commands):
         return u' || '.join(commands)
 

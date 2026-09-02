@@ -766,9 +766,9 @@ $ thebleep --doctor
   Executable          ~/.local/bin/thebleep
   On PATH             yes
   Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
-  Rules               195 bundled, 3 of your own
+  Rules               196 bundled, 3 of your own
   Rule health         169 enabled, none raising
-  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (195 rules cached)
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (196 rules cached)
 - Replayless capture  available, not switched on
                       See --enable-experimental-instant-mode.
   Editing             supported by this shell (tab at the prompt)
@@ -949,7 +949,7 @@ nothing.
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
-| **Rules** | 195 of them, for git, docker, npm, pnpm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+| **Rules** | 196 of them, for git, docker, npm, pnpm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
@@ -1348,6 +1348,7 @@ The following rules are enabled by default:
 * `npm_run_script` — adds missing `run-script` for custom `npm` scripts;
 * `npm_wrong_command` — fixes wrong npm commands like `npm urgrade`;
 * `no_command` — fixes wrong console commands, for example `vom/vim`;
+* `not_on_path` — `cargo build` -> `/home/u/.cargo/bin/cargo build` when the program is installed where installers put things (`~/.cargo/bin`, `~/go/bin`, `~/.local/bin`, nvm, pyenv, Homebrew, snap, …) or in the project (`node_modules/.bin`, `.venv/bin`) and the shell does not know; also offers the same command with the directory put on `PATH` first;
 * `no_such_file` — creates missing directories with `mv` and `cp` commands;
 * `omnienv_no_such_command` — fixes wrong commands for `goenv`, `nodenv`, `pyenv` and `rbenv` (eg.: `pyenv isntall` or `goenv list`);
 * `open` — either prepends `http://` to address passed to `open` or creates a new file or directory and passes it to `open`;
@@ -1433,6 +1434,36 @@ default:
 * `rm_root` — adds `--no-preserve-root` to `rm -rf /` command.
 
 ##### [Back to Contents](#contents)
+
+### Installed, but not on PATH
+
+The commonest `command not found` on a developer's machine is not a typo. The
+program is there; it was put somewhere the installer told you about once, in
+a line you never added to your startup file, or it belongs to the project you
+are standing in and was never meant to be on `PATH` at all:
+
+```bash
+$ cargo build
+bash: cargo: command not found
+$ bleep
+❯ /home/u/.cargo/bin/cargo build                   90%  cargo is installed at /home/u/.cargo/bin/cargo, which…
+  export PATH='/home/u/.cargo/bin':"$PATH" && cargo build   85%  puts /home/u/.cargo/bin on PATH for this shell
+[enter/↑/↓/tab=edit/?/ctrl+c/esc]  1/2
+```
+
+`not_on_path` looks where installers put things — `~/.cargo/bin`, `~/go/bin`,
+`~/.local/bin`, the shims of nvm, pyenv, rbenv, asdf and mise, Homebrew, snap,
+flatpak, `/usr/sbin` — and where projects keep their own — `node_modules/.bin`,
+`.venv/bin`, `vendor/bin`, `target/debug` — from the working directory up to
+the repository root, nearest first. When the program is there under exactly
+the name typed, it offers the command with the path written out, which runs
+now, and the same command with the directory put on `PATH` first, in your
+shell's own syntax, which fixes the rest of the session. Nothing is written
+anywhere: putting that line in a startup file is your call, and it is the line
+on the screen.
+
+It runs before `no_command`, because a program that exists under the name you
+typed beats a program one edit away that does not.
 
 ### Words from the manual
 
@@ -1835,7 +1866,7 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches about a fifth of the 195 rules, and
+  running it. A typical command now reaches about a fifth of the 196 rules, and
   one for a tool with many rules of its own — `git` — under a quarter, instead of
   all of them. Rules that don't say what they are about are always loaded, so
   this makes corrections faster, never fewer.

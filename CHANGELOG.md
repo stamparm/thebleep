@@ -4,6 +4,15 @@
 
 ### Added
 
+- **`not_on_path`** — `cargo build` -> `/home/u/.cargo/bin/cargo build`.
+  When the program is installed where installers put things (`~/.cargo/bin`,
+  `~/go/bin`, `~/.local/bin`, the shims of nvm, pyenv, rbenv, asdf and mise,
+  Homebrew, snap, flatpak, `/usr/sbin`) or in the project (`node_modules/.bin`,
+  `.venv/bin`, `vendor/bin`, `target/debug`) and the shell does not know, the
+  rule offers the command with the path written out and the same command with
+  the directory put on `PATH` first, in the shell's own syntax. It runs before
+  `no_command`: an exact name off PATH beats a guess one edit away.
+
 - **Vocabulary from the manual.** Long options and subcommands are now read
   from the program's manual pages (`git-log.1` for `--oneline`,
   `docker-image-ls.1` as a page per subcommand) and from installed fish

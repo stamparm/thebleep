@@ -157,6 +157,10 @@ class Nushell(Generic):
     def can_edit_buffer(self):
         return True
 
+    def put_on_path(self, directory):
+        return u'$env.PATH = ($env.PATH | prepend {})'.format(
+            self.quote(directory))
+
     def and_(self, *commands):
         """Runs each command only if the one before it succeeded.
 
