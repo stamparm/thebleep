@@ -144,6 +144,9 @@ def select_command(corrected_commands, command=None):
                     else 'Nothing found')
         if command is not None:
             _explain_silence()
+            from . import stats
+
+            stats.bump('abstained')
         return None, const.ACTION_ABORT
 
     chosen = const.ACTION_EDIT if wants_edit else const.ACTION_SELECT
@@ -158,6 +161,9 @@ def select_command(corrected_commands, command=None):
         if verdict:
             logs.show_corrected_command(selector.value)
             logs.trusted(verdict.reason)
+            from . import stats
+
+            stats.bump('trusted')
             if settings.explain:
                 _explain(selector.value, command)
             return selector.value, chosen

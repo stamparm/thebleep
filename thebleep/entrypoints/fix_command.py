@@ -145,7 +145,14 @@ def _fix_command(known_args, command):
 
     if selected_command is None:
         sys.exit(1)
-    elif action is const.ACTION_EDIT:
+
+    from .. import stats
+
+    rule = getattr(selected_command, 'rule', None)
+    stats.bump('edited' if action is const.ACTION_EDIT else 'accepted',
+               rule=rule.name if rule is not None else None,
+               before=command.script, after=selected_command.script)
+    if action is const.ACTION_EDIT:
         selected_command.edit()
         # The shell alias reads this status and puts what is on stdout in
         # the line editor. Nothing has been run.

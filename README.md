@@ -177,23 +177,24 @@ contributors; their work and history remain fully credited.
 5. [Why am I being told this](#why-am-i-being-told-this)
 6. [Recent failures](#recent-failures)
 7. [Learned corrections](#learned-corrections)
-8. [Structured API](#structured-api)
-9. [Under a coding agent](#under-a-coding-agent)
-10. [thebleep --doctor](#thebleep---doctor)
-11. [Coming from The Fuck](#coming-from-the-fuck)
-12. [What's fixed](#whats-fixed)
-13. [Supported everything](#supported-everything)
-14. [Installation](#installation)
-15. [Updating](#updating)
-16. [Uninstall](#uninstall)
-17. [How it works](#how-it-works)
-18. [Creating your own rules](#creating-your-own-rules)
-19. [Settings](#settings)
-20. [Third-party packages with rules](#third-party-packages-with-rules)
-21. [Experimental instant mode](#experimental-instant-mode)
-22. [Performance](#performance)
-23. [Developing](#developing)
-24. [License](#license-mit)
+8. [thebleep --stats](#thebleep---stats)
+9. [Structured API](#structured-api)
+10. [Under a coding agent](#under-a-coding-agent)
+11. [thebleep --doctor](#thebleep---doctor)
+12. [Coming from The Fuck](#coming-from-the-fuck)
+13. [What's fixed](#whats-fixed)
+14. [Supported everything](#supported-everything)
+15. [Installation](#installation)
+16. [Updating](#updating)
+17. [Uninstall](#uninstall)
+18. [How it works](#how-it-works)
+19. [Creating your own rules](#creating-your-own-rules)
+20. [Settings](#settings)
+21. [Third-party packages with rules](#third-party-packages-with-rules)
+22. [Experimental instant mode](#experimental-instant-mode)
+23. [Performance](#performance)
+24. [Developing](#developing)
+25. [License](#license-mit)
 
 ## Safe by default
 
@@ -656,6 +657,33 @@ quoted for the shell, and a pair that does not fit the shape is ignored.
 
 For an editor, IDE or agent that already has the failed command's output, use
 the deterministic engine without invoking a shell:
+
+## thebleep --stats
+
+Has it been worth it? The answer is a handful of counters kept in the
+configuration directory, yours alone and never sent anywhere:
+
+```bash
+$ thebleep --stats
+Since 2026-09-02 (18 days): 312 corrections
+  accepted 287, edited 25, ran without asking 40
+  nothing to offer 41 times
+Most fixed:
+     40  gti → git
+     12  sl → ls
+      9  pytets → pytest
+Rules that fixed most:
+    120  no_command
+     60  git_not_command
+     31  option_typo
+```
+
+Nothing about the commands themselves is kept except a one-word slip and its
+fix — the same shape a [learned correction](#learned-corrections) has — and
+only the hundred most frequent of each. `--clear-cache` leaves it alone; it
+is a record, not a cache. `thebleep --stats reset` starts it over.
+
+##### [Back to Contents](#contents)
 
 ```python
 from thebleep.api import suggest

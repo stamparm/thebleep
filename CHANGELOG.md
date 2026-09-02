@@ -4,6 +4,12 @@
 
 ### Added
 
+- **`thebleep --stats`** counts corrections accepted, edited and run without
+  asking, the times nothing was offered, the slips fixed most often and the
+  rules that fixed them. A local record in the configuration directory,
+  bounded to the hundred most frequent of each, untouched by `--clear-cache`;
+  `--stats reset` starts it over.
+
 - **`--learn-from-history`** reads the corrections you have been making by
   hand -- a line followed by the same line with one word fixed, a slip
   apart -- out of the shell history, shows each with how often it was seen,

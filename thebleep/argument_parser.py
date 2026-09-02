@@ -26,6 +26,7 @@ DEFAULTS = {'alias': None,
             'json': False,
             'learn_last': None,
             'learn_from_history': None,
+            'stats': None,
             'learned': False,
             'pick': None,
             'platform_name': None,
@@ -204,6 +205,14 @@ class Parser(object):
             metavar='MODE',
             help='find typo-then-fix pairs in the shell history and offer to '
                  'learn them: ask (default), list, or all')
+        self._parser.add_argument(
+            '--stats',
+            nargs='?',
+            const='show',
+            choices=['show', 'reset'],
+            metavar='MODE',
+            help='how many corrections were accepted, edited or run unasked, '
+                 'and what was fixed most; `reset` starts the count over')
         self._parser.add_argument(
             '--learned',
             action='store_true',
