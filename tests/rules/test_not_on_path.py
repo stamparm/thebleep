@@ -28,6 +28,11 @@ def executable(directory, name):
     return str(path)
 
 
+def exe(name):
+    """`name` as the platform spells an executable file."""
+    return name + ('.exe' if os.name == 'nt' else '')
+
+
 def quoted(path):
     """How the suggestion spells `path`: through the shell's own quoting, which
     leaves a plain POSIX path alone and quotes a Windows one for its
@@ -130,9 +135,10 @@ class TestProjects(object):
         executable(work.mkdir('node_modules').mkdir('.bin'), 'prettier')
         got = get_new_command(Command('prettier --check .', ZSH.replace(
             'cargo', 'prettier')))
-        assert got == ['./node_modules/.bin/prettier --check .']
+        assert got == ['./node_modules/.bin/{} --check .'.format(exe('prettier'))]
         assert got[0].evidence == (
-            'prettier is in this project at ./node_modules/.bin/prettier',)
+            'prettier is in this project at ./node_modules/.bin/{}'.format(
+                exe('prettier')),)
 
     def test_a_venv_in_the_parent(self, machine, monkeypatch):
         work = machine.join('work')
@@ -141,9 +147,9 @@ class TestProjects(object):
         monkeypatch.chdir(inside)
         got = get_new_command(Command('pytest -q', FISH.replace(
             'cargo', 'pytest')))
-        assert got == ['../.venv/bin/pytest -q']
+        assert got == ['../.venv/bin/{} -q'.format(exe('pytest'))]
         assert os.path.samefile(
-            pytest_bin, str(inside.join('..', '.venv', 'bin', 'pytest')))
+            pytest_bin, str(inside.join('..', '.venv', 'bin', exe('pytest'))))
 
     def test_the_search_stops_at_the_repository_root(self, machine,
                                                      monkeypatch):
@@ -160,7 +166,7 @@ class TestProjects(object):
         executable(work.mkdir('.venv').mkdir('bin'), 'pytest')
         executable(machine.join('home').mkdir('.local').mkdir('bin'), 'pytest')
         got = get_new_command(Command('pytest', BASH.replace('cargo', 'pytest')))
-        assert got[0] == './.venv/bin/pytest'
+        assert got[0] == './.venv/bin/{}'.format(exe('pytest'))
         assert len(got) == 3
 
 

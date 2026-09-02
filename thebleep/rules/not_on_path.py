@@ -90,10 +90,25 @@ def _executable_in(directory, name):
         path = os.path.join(directory, candidate)
         try:
             if (os.path.isfile(path) and os.access(path, os.X_OK)):
-                return path
+                return _as_spelled_on_disk(directory, candidate)
         except OSError:
             continue
     return None
+
+
+def _as_spelled_on_disk(directory, name):
+    """`cargo.exe` as the file is called, not `cargo.EXE` as PATHEXT spells
+    the extension: this goes on the user's command line."""
+    path = os.path.join(directory, name)
+    if os.name != 'nt':
+        return path
+    try:
+        for entry in os.listdir(directory):
+            if entry.lower() == name.lower():
+                return os.path.join(directory, entry)
+    except OSError:
+        pass
+    return path
 
 
 def _home_directories():
