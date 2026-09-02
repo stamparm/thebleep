@@ -22,6 +22,25 @@ from thebleep.types import Command
 # shell needs more of it than PATH, particularly on Windows.
 REAL_ENVIRONMENT = dict(os.environ)
 
+
+@pytest.fixture(autouse=True, scope='module')
+def _a_home_of_the_tests_own(tmp_path_factory):
+    """The real environment, but not the real config and cache: the program
+    run here records what it does, and it was recording into whoever's
+    `~/.config/thebleep` ran the suite."""
+    home = tmp_path_factory.mktemp('home')
+    saved = {key: REAL_ENVIRONMENT.get(key)
+             for key in ('XDG_CONFIG_HOME', 'XDG_CACHE_HOME')}
+    REAL_ENVIRONMENT['XDG_CONFIG_HOME'] = str(home / 'config')
+    REAL_ENVIRONMENT['XDG_CACHE_HOME'] = str(home / 'cache')
+    yield
+    for key, value in saved.items():
+        if value is None:
+            REAL_ENVIRONMENT.pop(key, None)
+        else:
+            REAL_ENVIRONMENT[key] = value
+
+
 # Imported before a correction begins, this lot cost more than everything else
 # the app does. Each is loaded only on the path that actually needs it.
 SHOULD_NOT_BE_IMPORTED = [

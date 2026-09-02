@@ -9,6 +9,8 @@ in that will quietly stop working, so this runs it.
 
 import os
 import subprocess
+
+import pytest
 import sys
 
 import thebleep.__main__
@@ -19,6 +21,24 @@ from thebleep.entrypoints.main import main
 # a cut-down environment got `shell not found` out of the re-run and
 # `_Py_HashRandomization_Init` out of the interpreter itself.
 REAL_ENVIRONMENT = dict(os.environ)
+
+
+@pytest.fixture(autouse=True, scope='module')
+def _a_home_of_the_tests_own(tmp_path_factory):
+    """The real environment, but not the real config and cache: the program
+    run here records what it does, and it was recording into whoever's
+    `~/.config/thebleep` ran the suite."""
+    home = tmp_path_factory.mktemp('home')
+    saved = {key: REAL_ENVIRONMENT.get(key)
+             for key in ('XDG_CONFIG_HOME', 'XDG_CACHE_HOME')}
+    REAL_ENVIRONMENT['XDG_CONFIG_HOME'] = str(home / 'config')
+    REAL_ENVIRONMENT['XDG_CACHE_HOME'] = str(home / 'cache')
+    yield
+    for key, value in saved.items():
+        if value is None:
+            REAL_ENVIRONMENT.pop(key, None)
+        else:
+            REAL_ENVIRONMENT[key] = value
 
 
 def test_it_is_the_same_entry_point():
