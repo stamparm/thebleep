@@ -21,9 +21,20 @@ PWSH = ("cargo: The term 'cargo' is not recognized as a name of a cmdlet, "
 
 
 def executable(directory, name):
-    path = directory.ensure(name)
+    """An executable called `name` in `directory`, as the platform spells one:
+    a mode bit on POSIX, an `.exe` suffix on Windows."""
+    path = directory.ensure(name + ('.exe' if os.name == 'nt' else ''))
     path.chmod(0o755)
     return str(path)
+
+
+def quoted(path):
+    """How the suggestion spells `path`: through the shell's own quoting, which
+    leaves a plain POSIX path alone and quotes a Windows one for its
+    backslashes."""
+    from thebleep.shells import shell
+
+    return shell.quote(path)
 
 
 @pytest.fixture
@@ -69,9 +80,9 @@ class TestInstallers(object):
                            'cargo')
         got = get_new_command(Command('cargo build --release', BASH))
         assert got == [
-            '{} build --release'.format(cargo),
+            '{} build --release'.format(quoted(cargo)),
             'export PATH={}:"$PATH" && cargo build --release'.format(
-                os.path.dirname(cargo))]
+                quoted(os.path.dirname(cargo)))]
         assert got[0].confidence == 0.9
         assert got[0].evidence == (
             'cargo is installed at {}, which is not on PATH'.format(cargo),)
@@ -83,7 +94,7 @@ class TestInstallers(object):
             machine.join('home').mkdir('.nvm').mkdir('versions').mkdir('node')
             .mkdir('v22.1.0').mkdir('bin'), 'node')
         assert get_new_command(Command('node -v', ZSH.replace(
-            'cargo', 'node')))[0] == '{} -v'.format(node)
+            'cargo', 'node')))[0] == '{} -v'.format(quoted(node))
 
     def test_a_directory_already_on_path_is_not_the_answer(
             self, machine, os_environ):
@@ -98,6 +109,8 @@ class TestInstallers(object):
     def test_nothing_anywhere(self, machine):
         assert get_new_command(Command('cargo build', BASH)) == []
 
+    @pytest.mark.skipif(os.name == 'nt',
+                        reason='Windows has no execute bit to take away')
     def test_a_directory_that_is_not_executable_does_not_count(self, machine):
         machine.join('home').mkdir('.cargo').mkdir('bin').ensure('cargo')
         os.chmod(str(machine.join('home', '.cargo', 'bin', 'cargo')), 0o644)
@@ -108,7 +121,7 @@ class TestInstallers(object):
                            'cargo')
         got = get_new_command(Command('RUST_LOG=debug cargo test', BASH.replace(
             'cargo', 'cargo')))
-        assert got[0] == 'RUST_LOG=debug {} test'.format(cargo)
+        assert got[0] == 'RUST_LOG=debug {} test'.format(quoted(cargo))
 
 
 class TestProjects(object):
@@ -167,6 +180,7 @@ def test_a_path_with_shell_syntax_in_it_is_quoted(tmpdir, os_environ,
     assert got[0] == "'{}'".format(tool)
     assert got[1].startswith("export PATH='{}':\"$PATH\" && tool".format(
         os.path.dirname(tool)))
+    assert "'" + os.path.dirname(tool) + "'" == quoted(os.path.dirname(tool))
 
 
 @pytest.mark.parametrize('shell_module, klass, expected', [

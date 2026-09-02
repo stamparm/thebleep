@@ -104,8 +104,10 @@ def _home_directories():
         return []
     found = []
     for pattern in HOMES:
-        pattern = pattern.replace('~', home, 1) if pattern.startswith('~') \
-            else pattern
+        if pattern.startswith('~/'):
+            # Joined piece by piece, so the separators are the platform's
+            # own and not a mix of `/` from here and `\\` from `os.path`.
+            pattern = os.path.join(home, *pattern[2:].split('/'))
         matches = sorted(glob.glob(pattern)) if '*' in pattern else [pattern]
         for directory in matches:
             if os.path.isdir(directory):
