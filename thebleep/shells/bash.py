@@ -168,9 +168,25 @@ fi
 
     def instant_mode_alias(self, alias_name):
         if os.environ.get('THEBLEEP_INSTANT_MODE', '').lower() == 'true':
+            # Two ways of telling the recording where a command's output is.
+            # The mark in `PS1` is the old one, and a prompt framework that
+            # rebuilds `PS1` takes it away. The semantic prompt marks are the
+            # new one: `PS0` is printed after a command is read and before it
+            # runs (bash 4.4+), which is `C`; the first thing `PROMPT_COMMAND`
+            # does is `D` with the status and `A` for the prompt to come.
+            # Nothing a theme does to `PS1` touches either. No `\\[ \\]`
+            # around the `PS0` mark: those are readline's, `PS0` never goes
+            # through readline, and bash writes them out as `\\001`/`\\002`.
             mark = USER_COMMAND_MARK + '\b' * len(USER_COMMAND_MARK)
             return '''
                 export PS1="{user_command_mark}$PS1";
+                PS0="\\e]133;C\\a$PS0";
+                __thebleep_precmd() {{ printf '\\033]133;D;%s\\007\\033]133;A\\007' "$?"; }};
+                if [[ "$(declare -p PROMPT_COMMAND 2>/dev/null)" == "declare -a"* ]]; then
+                    PROMPT_COMMAND=(__thebleep_precmd "${{PROMPT_COMMAND[@]}}");
+                else
+                    PROMPT_COMMAND="__thebleep_precmd${{PROMPT_COMMAND:+;$PROMPT_COMMAND}}";
+                fi;
                 {app_alias}
             '''.format(user_command_mark=mark,
                        app_alias=self.app_alias(alias_name))

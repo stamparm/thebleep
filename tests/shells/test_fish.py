@@ -242,3 +242,20 @@ class TestAmbient(object):
         the pattern ends there and the rest is shell syntax."""
         expected = "string match -qr '[/=$\\'\"`]' -- \"$first\""
         assert expected in shell.ambient_binding()
+
+
+@pytest.mark.usefixtures('isfile', 'no_memoize', 'no_cache')
+class TestInstantModeMarks(object):
+    @pytest.fixture
+    def shell(self):
+        return Fish()
+
+    def test_fish_3_gets_the_marks_fish_4_emits_itself(
+            self, shell, os_environ):
+        os_environ['THEBLEEP_INSTANT_MODE'] = 'true'
+        alias = shell.instant_mode_alias('bleep')
+        assert 'if test (string split . -- $FISH_VERSION)[1] -lt 4' in alias
+        assert '--on-event fish_preexec' in alias
+        assert "printf '\\e]133;C\\a'" in alias
+        assert "printf '\\e]133;D;%s\\a' $status" in alias
+        assert '--on-event fish_prompt' in alias

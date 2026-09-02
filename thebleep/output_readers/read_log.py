@@ -7,6 +7,88 @@ from ..exceptions import ScriptNotInLog
 from .. import const, logs
 
 
+class NoMarks(Exception):
+    """Neither semantic marks in the recording nor the mark in `PS1`."""
+
+
+# FinalTerm's semantic prompt marks, `OSC 133`: `A` starts a prompt, `B` ends
+# it (the command follows), `C` says the command is about to run and `D;<exit>`
+# that it finished. Terminals that understand them (kitty, WezTerm, iTerm2,
+# foot, Ghostty, VS Code) draw prompt navigation from them; fish 4 emits them
+# by itself and instant mode's shell hooks emit them for bash and zsh. In the
+# recording they are the exact boundaries of a command's output, with no
+# prompt to recognise and nothing that a prompt framework can rebuild away.
+MARK = re.compile(r'\x1b\]133;([A-D])(?:;([^\x07\x1b]*))?(?:\x07|\x1b\\)')
+
+
+def _marked(data):
+    """Whether the recording carries semantic prompt marks at all."""
+    return MARK.search(data) is not None
+
+
+def _typed_there(region, script, after_prompt_end):
+    """Whether `script` is the command echoed in `region`.
+
+    With a `B` mark the region starts where the prompt ended and the command
+    has to be the first thing in it. Without one the region begins at the
+    prompt, and the same test the unmarked reader uses decides whether the
+    words follow a prompt rather than sit inside some other command.
+
+    """
+    from ..utils import without_control_sequences
+
+    searchable = without_control_sequences(region)
+    parts = _words(script)
+    if not parts:
+        return False
+    position = 0
+    first_position = None
+    for part in parts:
+        position = _find_word(searchable, part, position)
+        if position == -1:
+            return False
+        if first_position is None:
+            first_position = position
+        position += len(part)
+    if after_prompt_end:
+        return not searchable[:first_position].strip()
+    return _starts_after_prompt(searchable, first_position)
+
+
+def _marked_output(data, script):
+    """The output between the `C` and `D` marks of the newest run of `script`.
+
+    Newest first, because the same command may have been run several times
+    and the failure being corrected is the last one. Raises `ScriptNotInLog`
+    when the marks are there and none of the marked commands is this one.
+
+    """
+    marks = list(MARK.finditer(data))
+    for index in range(len(marks) - 1, -1, -1):
+        if marks[index].group(1) != 'D':
+            continue
+        started = index - 1
+        while started >= 0 and marks[started].group(1) != 'C':
+            started -= 1
+        if started < 0:
+            continue
+        prompt = started - 1
+        while prompt >= 0 and marks[prompt].group(1) not in ('A', 'B'):
+            prompt -= 1
+        if prompt < 0:
+            region_start, after_prompt_end = 0, False
+        else:
+            region_start = marks[prompt].end()
+            after_prompt_end = marks[prompt].group(1) == 'B'
+        region = data[region_start:marks[started].start()]
+        if _typed_there(region, script, after_prompt_end):
+            # Readline's invisible-text markers, should a prompt string
+            # have put them around a mark: pyte renders nothing after them.
+            return data[marks[started].end():marks[index].start()].replace(
+                '\x01', '').replace('\x02', '')
+    raise ScriptNotInLog
+
+
 def _group_by_calls(log):
     ps1 = os.environ['PS1']
     ps1_newlines = ps1.count('\\n') + ps1.count('\n')
@@ -127,23 +209,25 @@ def _starts_after_prompt(text, position):
     return marker >= 0 and not prefix[marker + 1:].strip()
 
 
+def _word_continues(character):
+    return bool(character) and not character.isspace() \
+        and character not in "'\";&|(){}<>"
+
+
+def _find_word(text, word, start):
+    while True:
+        position = text.find(word, start)
+        if position == -1:
+            return -1
+        before = text[position - 1] if position else ''
+        after_at = position + len(word)
+        after = text[after_at] if after_at < len(text) else ''
+        if not _word_continues(before) and not _word_continues(after):
+            return position
+        start = position + 1
+
+
 def _get_script_group_lines(grouped, script):
-    def _word_continues(character):
-        return bool(character) and not character.isspace() \
-            and character not in "'\";&|(){}<>"
-
-    def _find_word(text, word, start):
-        while True:
-            position = text.find(word, start)
-            if position == -1:
-                return -1
-            before = text[position - 1] if position else ''
-            after_at = position + len(word)
-            after = text[after_at] if after_at < len(text) else ''
-            if not _word_continues(before) and not _word_continues(after):
-                return position
-            start = position + 1
-
     parts = _words(script)
     width = max(get_terminal_size().columns, 1)
 
@@ -206,10 +290,24 @@ def _get_output_lines(script, log_file):
 
     data = _decode(log_file.read())
     data = re.sub(r'\x00+$', '', data)
-    lines = data.split('\n')
-    grouped = list(_group_by_calls(lines))
-    script_lines = _get_script_group_lines(grouped, script)
-    screen = pyte.Screen(get_terminal_size().columns, len(script_lines))
+    ps1_marked = const.USER_COMMAND_MARK in os.environ.get('PS1', '')
+    if _marked(data):
+        try:
+            script_lines = _marked_output(data, script).split('\n')
+        except ScriptNotInLog:
+            if not ps1_marked:
+                raise
+            script_lines = None
+    elif not ps1_marked:
+        raise NoMarks
+    else:
+        script_lines = None
+    if script_lines is None:
+        lines = data.split('\n')
+        grouped = list(_group_by_calls(lines))
+        script_lines = _get_script_group_lines(grouped, script)
+    screen = pyte.Screen(get_terminal_size().columns,
+                         max(len(script_lines), 1))
     stream = pyte.Stream(screen)
     stream.feed('\n'.join(script_lines))
     return screen.display
@@ -248,12 +346,6 @@ def get_output(script):
     """
     if 'THEBLEEP_OUTPUT_LOG' not in os.environ:
         logs.warn("Output log isn't specified")
-        return None
-
-    if const.USER_COMMAND_MARK not in os.environ.get('PS1', ''):
-        logs.warn(
-            "PS1 doesn't contain user command mark, please ensure "
-            "that PS1 is not changed after The Bleep alias initialization")
         return None
 
     try:
@@ -298,4 +390,12 @@ def get_output(script):
         return None
     except ScriptNotInLog:
         logs.warn("Script not found in output log")
+        return None
+    except NoMarks:
+        # Only now, and only when the recording carries no semantic marks
+        # either: a shell whose hooks emit them has nothing to fear from a
+        # prompt framework rebuilding `PS1`.
+        logs.warn(
+            "PS1 doesn't contain user command mark, please ensure "
+            "that PS1 is not changed after The Bleep alias initialization")
         return None

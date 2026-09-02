@@ -138,11 +138,20 @@ zle -N accept-line __thebleep_ambient_accept_line
 
     def instant_mode_alias(self, alias_name):
         if os.environ.get('THEBLEEP_INSTANT_MODE', '').lower() == 'true':
+            # The mark in `PS1`, and the semantic prompt marks from zsh's own
+            # hooks: `preexec` prints `C` as the command is about to run,
+            # `precmd` prints `D` with its status and `A` for the next
+            # prompt. A theme that rebuilds `PS1` leaves the hooks alone.
             mark = ('%{' +
                     USER_COMMAND_MARK + '\b' * len(USER_COMMAND_MARK)
                     + '%}')
             return '''
                 export PS1="{user_command_mark}$PS1";
+                autoload -Uz add-zsh-hook;
+                __thebleep_preexec() {{ printf '\\033]133;C\\007'; }};
+                __thebleep_precmd() {{ printf '\\033]133;D;%s\\007\\033]133;A\\007' "$?"; }};
+                add-zsh-hook preexec __thebleep_preexec;
+                add-zsh-hook precmd __thebleep_precmd;
                 {app_alias}
             '''.format(user_command_mark=mark,
                        app_alias=self.app_alias(alias_name))

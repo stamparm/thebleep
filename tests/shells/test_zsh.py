@@ -135,3 +135,17 @@ class TestAmbient(object):
         assert 'BUFFER=$fixed' in binding
         assert 'zle -M "bleep:' in binding
         assert 'ctrl+_ puts yours back' in binding
+
+
+class TestInstantModeMarks(object):
+    @pytest.fixture
+    def shell(self):
+        return Zsh()
+
+    def test_the_hooks_emit_semantic_prompt_marks(self, shell, os_environ):
+        os_environ['THEBLEEP_INSTANT_MODE'] = 'true'
+        alias = shell.instant_mode_alias('bleep')
+        assert 'add-zsh-hook preexec __thebleep_preexec' in alias
+        assert 'add-zsh-hook precmd __thebleep_precmd' in alias
+        assert "printf '\\033]133;C\\007'" in alias
+        assert "printf '\\033]133;D;%s\\007\\033]133;A\\007' \"$?\"" in alias

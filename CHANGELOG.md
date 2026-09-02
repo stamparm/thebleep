@@ -4,6 +4,14 @@
 
 ### Added
 
+- **Instant mode reads semantic prompt marks.** The recording is now read by
+  the `OSC 133` marks terminals use for prompt navigation -- `A` at a prompt,
+  `C` as a command starts, `D;<status>` as it ends -- which instant mode's
+  shell hooks emit for bash (`PS0` and `PROMPT_COMMAND`) and zsh (`preexec`
+  and `precmd`) and which fish 4 emits itself. Output boundaries are exact,
+  no prompt has to be recognised, and a prompt framework that rebuilds `PS1`
+  no longer switches instant mode off. The `PS1` mark remains a fallback.
+
 - **Correcting without typing `bleep`.** `eval "$(thebleep --ambient)"` binds
   return in zsh and fish to a check: a first word the shell has never heard of
   is offered to the command-only rules before anything runs, and a correction

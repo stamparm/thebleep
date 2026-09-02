@@ -296,3 +296,100 @@ class TestACommandThatDoesNotParse(object):
         script = 'pip instatl requests # do not ask'
         _log(tmpdir, (script, 'ERROR: unknown command "instatl"'))
         assert 'instatl' in read_log.get_output(script)
+
+
+# A recording with FinalTerm's semantic prompt marks in it and *no* mark in
+# `PS1`: what a shell whose hooks emit `OSC 133` leaves behind, and what fish 4
+# emits on its own. `A` starts the prompt, `C` says the command is about to
+# run, `D;<status>` that it finished.
+A = u'\x1b]133;A\x07'
+B = u'\x1b]133;B\x07'
+C = u'\x1b]133;C\x07'
+
+
+def D(status=1):
+    return u'\x1b]133;D;{}\x07'.format(status)
+
+
+def _marked_log(tmpdir, *commands, **options):
+    prompt = options.get('prompt', u'user@host ~ $ ')
+    with_b = options.get('with_b', False)
+    text = u''
+    for script, output in commands:
+        text += A + prompt + (B if with_b else u'') + script + u'\r\n' + C
+        if output:
+            text += output + u'\r\n'
+        text += D()
+    text += A + prompt
+    path = _write(tmpdir, text.encode('utf-8'))
+    os.environ['PS1'] = prompt
+    return path
+
+
+class TestSemanticMarks(object):
+    def test_the_output_between_c_and_d(self, tmpdir):
+        _marked_log(tmpdir, (u'git satus', u"git: 'satus' is not a git command."))
+        assert read_log.get_output(u'git satus') == \
+            u"git: 'satus' is not a git command."
+
+    def test_no_mark_in_ps1_is_no_longer_a_problem(self, tmpdir, capsys):
+        """A prompt framework that rebuilt `PS1` used to switch instant mode
+        off; with marks in the recording, `PS1` is not consulted."""
+        _marked_log(tmpdir, (u'gti status', u'gti: command not found'))
+        os.environ['PS1'] = u'\u276f '     # starship, say
+        assert read_log.get_output(u'gti status') == u'gti: command not found'
+        assert 'PS1' not in capsys.readouterr()[1]
+
+    def test_the_newest_run_of_the_command(self, tmpdir):
+        _marked_log(tmpdir, (u'make', u'first failure'),
+                    (u'ls', u'a b c'), (u'make', u'second failure'))
+        assert read_log.get_output(u'make') == u'second failure'
+
+    def test_a_command_that_only_appears_inside_another(self, tmpdir):
+        """`echo git status` is not a run of `git status`."""
+        _marked_log(tmpdir, (u'echo git status', u'git status'))
+        assert read_log.get_output(u'git status') is None
+
+    def test_with_a_b_mark_the_command_is_what_follows_it(self, tmpdir):
+        _marked_log(tmpdir, (u'git satus', u'not a git command'), with_b=True,
+                    prompt=u'a prompt with no ending marker ')
+        assert read_log.get_output(u'git satus') == u'not a git command'
+
+    def test_marks_with_parameters(self, tmpdir):
+        """fish 4 writes `A;special_key=1` and `C;cmdline_url=...`."""
+        text = (u'\x1b]133;A;special_key=1\x07root@box /# gti status\r\n'
+                u'\x1b]133;C;cmdline_url=gti%20status\x07'
+                u'fish: Unknown command: gti\r\n\x1b]133;D;127\x07'
+                u'\x1b]133;A;special_key=1\x07root@box /# ')
+        _write(tmpdir, text.encode('utf-8'))
+        os.environ['PS1'] = u''
+        assert read_log.get_output(u'gti status') == \
+            u'fish: Unknown command: gti'
+
+    def test_a_string_terminator_ends_a_mark_too(self, tmpdir):
+        text = (u'\x1b]133;A\x1b\\$ ls\r\n\x1b]133;C\x1b\\a  b\r\n'
+                u'\x1b]133;D;0\x1b\\\x1b]133;A\x1b\\$ ')
+        _write(tmpdir, text.encode('utf-8'))
+        os.environ['PS1'] = u''
+        assert read_log.get_output(u'ls') == u'a  b'
+
+    def test_a_command_the_marks_never_saw(self, tmpdir, capsys):
+        _marked_log(tmpdir, (u'ls', u'a'))
+        assert read_log.get_output(u'git satus') is None
+        assert 'not found in output log' in capsys.readouterr()[1]
+
+    def test_the_unmarked_recording_still_needs_ps1(self, tmpdir, capsys):
+        _write(tmpdir, u'$ gti status\r\ngti: command not found\r\n$ '.encode(
+            'utf-8'))
+        os.environ['PS1'] = u'$ '
+        assert read_log.get_output(u'gti status') is None
+        assert "PS1 doesn't contain user command mark" in capsys.readouterr()[1]
+
+    def test_the_ps1_path_is_a_fallback_when_marks_do_not_know(self, tmpdir):
+        """A session where the hooks came in half way: older commands carry
+        the `PS1` mark only, newer ones the semantic marks."""
+        text = (u'{mark}$ gti status\r\ngti: command not found\r\n'
+                u'{a}{mark}$ ls\r\n{c}a b\r\n{d}{a}{mark}$ ').format(
+                    mark=MARK, a=A, c=C, d=D(0))
+        _write(tmpdir, text.encode('utf-8'))
+        assert read_log.get_output(u'gti status') == u'gti: command not found'

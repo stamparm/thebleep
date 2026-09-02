@@ -192,3 +192,21 @@ class TestAmbient(object):
     def test_history_follows_the_setting(self, shell, settings):
         settings.alter_history = False
         assert 'history -s' not in shell.ambient_binding()
+
+
+class TestInstantModeMarks(object):
+    @pytest.fixture
+    def shell(self):
+        return Bash()
+
+    def test_the_hooks_emit_semantic_prompt_marks(self, shell, os_environ):
+        os_environ['THEBLEEP_INSTANT_MODE'] = 'true'
+        alias = shell.instant_mode_alias('bleep')
+        # `C` from PS0 as the command starts, `D` with its status and `A` for
+        # the next prompt from the front of PROMPT_COMMAND.
+        assert 'PS0="\\e]133;C\\a$PS0"' in alias
+        assert "printf '\\033]133;D;%s\\007\\033]133;A\\007' \"$?\"" in alias
+        assert 'PROMPT_COMMAND=(__thebleep_precmd "${PROMPT_COMMAND[@]}")' \
+            in alias
+        # And the mark in PS1 stays, for a recording without marks.
+        assert 'export PS1="' + const.USER_COMMAND_MARK in alias

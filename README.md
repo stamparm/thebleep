@@ -1880,13 +1880,25 @@ out of the middle of a correction.
 holds every offset into that seam.
 
 The last two rows are the same limitation. What is recorded is the raw terminal
-stream, and where one command's output ends is worked out by looking for a mark
-that instant mode puts in your `PS1`. A program that takes over the screen moves
-the cursor wherever it likes and the marks stop lining up with what is on it; a
-nested shell writes a second set of them. For the same reason it needs your
-`PS1` to still contain that mark, so a prompt framework that rebuilds `PS1`
-after the alias is set up — powerlevel10k, starship, some oh-my-zsh themes —
-switches instant mode off, with a warning saying so.
+stream, and where one command's output ends has to be worked out from marks in
+it. A program that takes over the screen moves the cursor wherever it likes and
+the marks stop lining up with what is on it; a nested shell writes a second set
+of them.
+
+There are two kinds of mark, and the newer one is why a prompt framework no
+longer matters. The old one is a run of zero-width spaces that instant mode
+puts in your `PS1`, and a framework that rebuilds `PS1` after the alias is set
+up — powerlevel10k, starship, some oh-my-zsh themes — took it away and
+switched instant mode off. The new ones are the *semantic prompt marks*
+(`OSC 133`, FinalTerm's) that kitty, WezTerm, iTerm2, foot, Ghostty and VS
+Code already read for prompt navigation: `A` where a prompt starts, `C` as a
+command is about to run, `D` with its exit status when it is done. Instant
+mode's shell hooks emit them — bash from `PS0` and the front of
+`PROMPT_COMMAND`, zsh from `preexec` and `precmd`, and fish 4 emits them by
+itself — so the recording carries the exact boundaries of every command's
+output, and nothing a theme does to `PS1` touches them. The `PS1` mark stays
+for a recording that has no others; the warning about it is only printed when
+neither is there.
 
 Where it does not work it does not go wrong: the mark is missing, or the command
 has scrolled out of the recording, and capture is simply not in play for that

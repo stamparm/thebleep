@@ -85,6 +85,17 @@ function fish_prompt
     printf '%s' $__thebleep_prompt_mark
     __thebleep_original_prompt
 end
+if test (string split . -- $FISH_VERSION)[1] -lt 4
+    function __thebleep_preexec --on-event fish_preexec
+        printf '\\e]133;C\\a'
+    end
+    function __thebleep_postexec --on-event fish_postexec
+        printf '\\e]133;D;%s\\a' $status
+    end
+    function __thebleep_prompt_start --on-event fish_prompt
+        printf '\\e]133;A\\a'
+    end
+end
 {app_alias}
 '''.format(mark=mark, app_alias=self.app_alias(alias_name))
 
