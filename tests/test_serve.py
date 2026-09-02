@@ -16,9 +16,17 @@ pytestmark = pytest.mark.skipif(not hasattr(socket, 'AF_UNIX'),
 
 @pytest.fixture
 def runtime(tmpdir, os_environ):
-    os_environ['XDG_RUNTIME_DIR'] = str(tmpdir)
+    """A runtime directory short enough for a socket path on every platform:
+    macOS caps one at 104 bytes and its pytest temporary paths are longer."""
+    import shutil
+    import tempfile
+
+    short = tempfile.mkdtemp(prefix='tb-', dir='/tmp' if os.path.isdir('/tmp')
+                             else None)
+    os_environ['XDG_RUNTIME_DIR'] = short
     os_environ['TB_SHELL'] = 'zsh'
-    return tmpdir
+    yield type(tmpdir)(short)
+    shutil.rmtree(short, ignore_errors=True)
 
 
 @pytest.fixture
@@ -109,8 +117,18 @@ def test_the_socket_goes_in_the_runtime_directory(runtime):
 def test_or_in_the_cache_without_one(os_environ, tmpdir):
     os_environ.pop('XDG_RUNTIME_DIR', None)
     os_environ['XDG_CACHE_HOME'] = str(tmpdir)
-    assert serve.socket_path('bash') == str(
-        tmpdir.join('thebleep', 'serve', 'inline-bash.sock'))
+    expected = str(tmpdir.join('thebleep', 'serve', 'inline-bash.sock'))
+    if serve._fits(str(tmpdir.join('thebleep', 'serve'))):
+        assert serve.socket_path('bash') == expected
+    else:
+        assert serve.socket_path('bash') != expected
+
+
+def test_a_path_too_long_for_a_socket_is_not_used(os_environ, tmpdir):
+    os_environ['XDG_RUNTIME_DIR'] = str(tmpdir.mkdir('x' * 120))
+    path = serve.socket_path('zsh')
+    assert len(path.encode('utf-8')) <= serve.MAX_SOCKET_PATH
+    assert 'thebleep' in path
 
 
 def test_correct_is_the_inline_correction(mocker):

@@ -36,15 +36,42 @@ IDLE_SECONDS = 30 * 60
 MAX_REQUEST = 256 * 1024
 BACKLOG = 8
 
+# A Unix socket path is short by law: 108 bytes on Linux, 104 on macOS and
+# the BSDs, terminator included. macOS's temporary directories alone run to
+# fifty, so the place is chosen with the whole path in mind.
+MAX_SOCKET_PATH = 100
+LONGEST_NAME = 'inline-powershell.sock'
+
+
+def _fits(directory):
+    return len(os.path.join(directory, LONGEST_NAME).encode(
+        'utf-8', 'replace')) <= MAX_SOCKET_PATH
+
 
 def socket_directory():
-    """Where the socket goes: the runtime directory, else the cache."""
+    """Where the socket goes.
+
+    The runtime directory, then the cache, then a directory of this user's
+    under the temporary directory -- the first whose socket path fits.
+
+    """
+    candidates = []
     runtime = os.environ.get('XDG_RUNTIME_DIR')
     if runtime and os.path.isdir(runtime):
-        return os.path.join(runtime, 'thebleep')
+        candidates.append(os.path.join(runtime, 'thebleep'))
     from . import cachefile
 
-    return os.path.join(str(cachefile.directory()), 'serve')
+    candidates.append(os.path.join(str(cachefile.directory()), 'serve'))
+    import tempfile
+
+    who = str(os.getuid()) if hasattr(os, 'getuid') else 'user'
+    candidates.append(os.path.join(tempfile.gettempdir(),
+                                   'thebleep-serve-' + who))
+    candidates.append(os.path.join('/tmp', 'thebleep-serve-' + who))
+    for directory in candidates:
+        if _fits(directory):
+            return directory
+    return candidates[0]
 
 
 def socket_path(shell_name):
