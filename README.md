@@ -272,6 +272,51 @@ Two ways to stop being asked:
   which restores *The Fuck*'s behaviour of running the previous command again
   without asking.
 
+### Running the correction without asking
+
+The question after a suggestion is a different one, and it has a different
+answer. `--yes` runs whatever comes first; `require_confirmation` always asks.
+Between the two there was nothing, and between the two is where most
+corrections live: git has printed `the most similar command is status`, the
+suggestion is `git status`, and the prompt is a formality with the answer
+already on the screen.
+
+```python
+auto_run_confidence = 0.9
+```
+
+With that in your settings, a correction runs without the prompt when **all**
+of these hold, and is asked about as before when any of them does not:
+
+- **its confidence is at least the threshold.** The scores are the ones
+  <kbd>?</kbd> and `--json` already show: `0.98` for a correction you taught it,
+  `0.95` for a rule that read what the tool printed, `0.75` for a rule that saw
+  only the command, and whatever a rule states for itself. So `0.9` means "only
+  when something more than my typing was read", and `0.7` lets the ordinary
+  guesses through as well;
+- **the risk scan found nothing.** No `sudo` or `doas`, no `rm`, no `--force`
+  and its relatives, no [side effect](#side_effect-and-why-to-think-twice).
+  That scan is a review hint and not a proof, which is why it is one gate here
+  and not the decision.
+
+What ran is printed, with the reason it was allowed to:
+
+```bash
+$ git satus
+git: 'satus' is not a git command. See 'git --help'.
+
+The most similar command is
+        status
+$ bleep
+git status
+ran without asking: 95% confidence, the rule matched captured command output; nothing risky in it
+On branch master
+```
+
+Only the first suggestion is ever considered, because that is the one
+<kbd>enter</kbd> would have run. It is off by default, and
+`THEBLEEP_AUTO_RUN_CONFIDENCE=0.9` sets it for a shell; `off` switches it back.
+
 ## Edit before you run
 
 A suggestion is often ninety-five percent of what you wanted. Press <kbd>tab</kbd>
@@ -1434,6 +1479,7 @@ Several *The Bleep* parameters can be changed in the file `$XDG_CONFIG_HOME/theb
 * `repeat` — if the corrected command fails too, correct that as well, by default `False`; `--repeat` does it for one run;
 * `edit` — hand the correction to your command line to edit instead of running it, by default `False`; `--edit` does it for one run, and <kbd>tab</kbd> does it for one suggestion; see [Edit before you run](#edit-before-you-run);
 * `explain` — say which rule made each suggestion and what it matched, by default `False`; `--explain` does it for one run, and <kbd>?</kbd> does it at the prompt; see [Why am I being told this](#why-am-i-being-told-this);
+* `auto_run_confidence` — run a correction without asking when its confidence is at least this share of one and nothing risky was found in it, by default `None` (off); see [Running the correction without asking](#running-the-correction-without-asking);
 * `env` — environment variables to set for your previous command when it is run again to read its output, by default `{'LC_ALL': 'C', 'LANG': 'C'}`, which is there so that rules can look for English error messages. Git also gets `GIT_TRACE=1`, so that `git st` can be resolved to whatever alias it stands for; nothing else does.
 
 An example of `settings.py`:
@@ -1455,6 +1501,7 @@ instant_mode = False
 repeat = False
 edit = False
 explain = False
+auto_run_confidence = None
 env = {'LC_ALL': 'C', 'LANG': 'C'}
 ```
 
@@ -1479,6 +1526,7 @@ rule with lower `priority` will be matched first;
 * `THEBLEEP_EXPLAIN` — say which rule made each suggestion and what it matched, `true/false`.
 * `THEBLEEP_INSTANT_MODE` — read what scrolled past instead of running your command again, `true/false`; see [Experimental instant mode](#experimental-instant-mode).
 * `THEBLEEP_EXCLUDED_SEARCH_PATH_PREFIXES` — path prefixes to ignore when searching for commands, by default `[]`.
+* `THEBLEEP_AUTO_RUN_CONFIDENCE` — run a correction without asking from this confidence up, like `0.9` or `90%`; `off` by default.
 
 For example:
 

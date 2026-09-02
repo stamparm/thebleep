@@ -27,6 +27,7 @@ class colorama(object):
 
     class Style(object):
         BRIGHT = '\033[1m'
+        DIM = '\033[2m'
         RESET_ALL = '\033[0m'
 
 
@@ -153,6 +154,14 @@ def confirm_text(corrected_command, offer_edit=False, offer_explain=False):
             red=color(colorama.Fore.RED),
             reset=color(colorama.Style.RESET_ALL),
             blue=color(colorama.Fore.BLUE)))
+
+
+def trusted(reason):
+    """Why a correction ran without the question, in one dim line."""
+    sys.stderr.write(u'{dim}ran without asking: {reason}{reset}\n'.format(
+        dim=color(colorama.Style.DIM),
+        reason=reason,
+        reset=color(colorama.Style.RESET_ALL)))
 
 
 def cannot_edit():

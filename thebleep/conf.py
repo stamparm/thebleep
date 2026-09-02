@@ -205,6 +205,29 @@ class Settings(dict):
             raise ValueError('{} is less than {}'.format(number, least))
         return number
 
+    # Settings that are a share of one: `0.9` and `95%` both mean the same
+    # thing, and `off` means none. Zero and anything past one are refused --
+    # a threshold nothing can miss, or nothing can reach, is a setting that
+    # silently does the opposite of what its name says.
+    FRACTIONS = frozenset(('auto_run_confidence',))
+
+    OFF = frozenset(('', 'off', 'none', 'no', 'false'))
+
+    def _fraction_from_env(self, val):
+        text = val.strip().lower()
+        if text in self.OFF:
+            return None
+        percent = text.endswith('%')
+        try:
+            number = float(text.rstrip('%'))
+        except ValueError:
+            raise ValueError('{!r} is not a number between 0 and 1'.format(val))
+        if percent:
+            number /= 100
+        if not 0 < number <= 1:
+            raise ValueError('{!r} is not between 0 and 1'.format(val))
+        return number
+
     def _bool_from_env(self, val):
         try:
             return self.BOOLEANS[val.strip().lower()]
@@ -223,6 +246,8 @@ class Settings(dict):
             return self._number_from_env(attr, val)
         elif attr in BOOLEANS_BY_DEFAULT:
             return self._bool_from_env(val)
+        elif attr in self.FRACTIONS:
+            return self._fraction_from_env(val)
         elif attr in ('slow_commands', 'excluded_search_path_prefixes'):
             return val.split(':')
         else:

@@ -4,6 +4,14 @@
 
 ### Added
 
+- **A correction can run without the prompt when there is enough to go on.**
+  `auto_run_confidence = 0.9` in the settings, or
+  `THEBLEEP_AUTO_RUN_CONFIDENCE=0.9`, lets the first suggestion run unasked
+  when its confidence reaches the threshold and the risk scan finds no
+  `sudo`, destructive command, safety bypass or side effect. Everything else
+  is asked about as before, and the line printed under an unasked run says
+  what let it through. Off by default.
+
 - **Failure history is available to agents too.** `--json --pick` and the
   `bleep_history` MCP tool return bounded local records with captured output,
   shell, working directory, exit status and age, without replaying a command.

@@ -103,6 +103,64 @@ class TestSelectCommand(object):
                 == (commands_with_side_effect[0], const.ACTION_SELECT))
         assert capsys.readouterr() == ('', const.USER_COMMAND_MARK + 'ls (+side effect)\n')
 
+    @pytest.fixture
+    def trusted_commands(self):
+        from thebleep.types import Rule
+
+        read = Rule('read_it', lambda _: True, lambda _: 'ls', True, None,
+                    1000, True)
+        return [CorrectedCommand('ls', None, 100, rule=read),
+                CorrectedCommand('cd', None, 100, rule=read)]
+
+    @pytest.fixture
+    def failed(self):
+        from thebleep.types import Command
+
+        return Command('sl', 'sl: command not found')
+
+    def test_trusted_enough_runs_unasked(
+            self, capsys, trusted_commands, settings, failed):
+        """No key is read: the first suggestion runs, and the line under it
+        says what let it through."""
+        settings.auto_run_confidence = 0.9
+        assert ui.select_command(iter(trusted_commands), failed) == (
+            trusted_commands[0], const.ACTION_SELECT)
+        out, err = capsys.readouterr()
+        assert out == ''
+        assert err.startswith(const.USER_COMMAND_MARK + 'ls\n')
+        assert 'ran without asking: 95% confidence' in err
+
+    def test_not_trusted_enough_asks(self, capsys, patch_get_key, commands,
+                                     settings, failed):
+        """A guess from the command alone scores 0.75, under the threshold,
+        so the prompt appears and enter is what runs it."""
+        settings.auto_run_confidence = 0.9
+        patch_get_key(['\n'])
+        assert ui.select_command(iter(commands), failed) == (
+            commands[0], const.ACTION_SELECT)
+        err = capsys.readouterr()[1]
+        assert 'enter' in err
+        assert 'ran without asking' not in err
+
+    def test_trust_never_skips_a_side_effect(self, capsys, patch_get_key,
+                                             commands_with_side_effect,
+                                             settings, failed):
+        settings.auto_run_confidence = 0.1
+        patch_get_key(['\n'])
+        assert ui.select_command(iter(commands_with_side_effect), failed) == (
+            commands_with_side_effect[0], const.ACTION_SELECT)
+        assert 'ran without asking' not in capsys.readouterr()[1]
+
+    def test_trust_goes_to_the_editor_when_that_is_all_there_is(
+            self, capsys, trusted_commands, settings, failed, mocker):
+        """Nushell cannot run a string, so trust means the correction is
+        placed on the line unasked -- nothing runs either way."""
+        settings.auto_run_confidence = 0.9
+        mocker.patch('thebleep.shells.shell.can_run_corrections',
+                     return_value=False)
+        assert ui.select_command(iter(trusted_commands), failed) == (
+            trusted_commands[0], const.ACTION_EDIT)
+
     def test_with_confirmation(self, capsys, patch_get_key, commands):
         patch_get_key(['\n'])
         assert ui.select_command(iter(commands)) == (commands[0],

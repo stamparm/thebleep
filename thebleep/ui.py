@@ -127,6 +127,21 @@ def select_command(corrected_commands, command=None):
 
     chosen = const.ACTION_EDIT if wants_edit else const.ACTION_SELECT
 
+    if settings.require_confirmation and settings.auto_run_confidence:
+        # Trusted enough to skip the question: see `trust`. Only the first
+        # suggestion is ever considered, because that is the one enter would
+        # have run, and it is shown along with what let it through.
+        from . import trust
+
+        verdict = trust.decide(selector.value, command)
+        if verdict:
+            logs.show_corrected_command(selector.value)
+            logs.trusted(verdict.reason)
+            if settings.explain:
+                _explain(selector.value, command)
+            return selector.value, chosen
+        logs.debug(u'Not run unasked: {}'.format(verdict.reason))
+
     if not settings.require_confirmation:
         logs.show_corrected_command(selector.value)
         if settings.explain:

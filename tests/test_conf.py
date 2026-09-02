@@ -270,3 +270,18 @@ class TestSettingsFromEnvironment(object):
     ])
     def test_a_number_that_does(self, from_env, variable, value, expected):
         assert from_env(**{variable: value}) == dict([expected])
+
+    @pytest.mark.parametrize('value, expected', [
+        ('0.9', 0.9), ('1', 1.0), (' 0.5 ', 0.5), ('95%', 0.95), ('100%', 1.0),
+        ('off', None), ('none', None), ('', None), ('false', None),
+    ])
+    def test_a_fraction(self, from_env, value, expected):
+        assert from_env(THEBLEEP_AUTO_RUN_CONFIDENCE=value) == {
+            'auto_run_confidence': expected}
+
+    @pytest.mark.parametrize('value', ['0', '0%', '1.5', '150%', '-0.2', 'abc'])
+    def test_a_fraction_that_makes_no_sense(self, from_env, value, capsys):
+        """Zero would run every suggestion and more than one none of them;
+        neither is what somebody typing a threshold meant."""
+        assert from_env(THEBLEEP_AUTO_RUN_CONFIDENCE=value) == {}
+        assert 'THEBLEEP_AUTO_RUN_CONFIDENCE' in capsys.readouterr()[1]
