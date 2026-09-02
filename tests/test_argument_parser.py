@@ -7,7 +7,7 @@ def _args(**override):
     args = {'alias': None, 'alias_loader': None, 'clear_cache': False,
             'command': [], 'command_text': None, 'yes': False,
             'help': False, 'version': False, 'debug': False, 'json': False,
-            'inline': False, 'bind_inline': False,
+            'inline': False, 'bind_inline': False, 'ambient': False,
             'mcp': False,
             'hook': None, 'as_hook': None,
             'pick': None,

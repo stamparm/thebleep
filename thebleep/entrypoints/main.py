@@ -134,6 +134,10 @@ def _main():
         from .inline import print_binding
 
         sys.exit(print_binding(known_args))
+    elif getattr(known_args, 'ambient', False):
+        from .inline import print_ambient
+
+        sys.exit(print_ambient(known_args))
     elif getattr(known_args, 'inline', False):
         from .inline import inline_command
 

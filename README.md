@@ -171,28 +171,29 @@ contributors; their work and history remain fully credited.
 ## Contents
 
 1. [Safe by default](#safe-by-default)
-2. [The list](#the-list)
-3. [Edit before you run](#edit-before-you-run)
-4. [Why am I being told this](#why-am-i-being-told-this)
-5. [Recent failures](#recent-failures)
-6. [Learned corrections](#learned-corrections)
-7. [Structured API](#structured-api)
-8. [Under a coding agent](#under-a-coding-agent)
-9. [thebleep --doctor](#thebleep---doctor)
-10. [Coming from The Fuck](#coming-from-the-fuck)
-11. [What's fixed](#whats-fixed)
-12. [Supported everything](#supported-everything)
-13. [Installation](#installation)
-14. [Updating](#updating)
-15. [Uninstall](#uninstall)
-16. [How it works](#how-it-works)
-17. [Creating your own rules](#creating-your-own-rules)
-18. [Settings](#settings)
-19. [Third-party packages with rules](#third-party-packages-with-rules)
-20. [Experimental instant mode](#experimental-instant-mode)
-21. [Performance](#performance)
-22. [Developing](#developing)
-23. [License](#license-mit)
+2. [Without typing bleep](#without-typing-bleep)
+3. [The list](#the-list)
+4. [Edit before you run](#edit-before-you-run)
+5. [Why am I being told this](#why-am-i-being-told-this)
+6. [Recent failures](#recent-failures)
+7. [Learned corrections](#learned-corrections)
+8. [Structured API](#structured-api)
+9. [Under a coding agent](#under-a-coding-agent)
+10. [thebleep --doctor](#thebleep---doctor)
+11. [Coming from The Fuck](#coming-from-the-fuck)
+12. [What's fixed](#whats-fixed)
+13. [Supported everything](#supported-everything)
+14. [Installation](#installation)
+15. [Updating](#updating)
+16. [Uninstall](#uninstall)
+17. [How it works](#how-it-works)
+18. [Creating your own rules](#creating-your-own-rules)
+19. [Settings](#settings)
+20. [Third-party packages with rules](#third-party-packages-with-rules)
+21. [Experimental instant mode](#experimental-instant-mode)
+22. [Performance](#performance)
+23. [Developing](#developing)
+24. [License](#license-mit)
 
 ## Safe by default
 
@@ -318,6 +319,50 @@ On branch master
 Only the first suggestion is ever considered, because that is the one
 <kbd>enter</kbd> would have run. It is off by default, and
 `THEBLEEP_AUTO_RUN_CONFIDENCE=0.9` sets it for a shell; `off` switches it back.
+
+## Without typing bleep
+
+Typing `bleep` is the part that can go. Add this after the alias loader in
+your startup file:
+
+```bash
+eval "$(thebleep --ambient)"          # bash, zsh
+thebleep --ambient >> ~/.config/fish/config.fish
+```
+
+and a misspelled program is corrected *before it runs*:
+
+```bash
+$ gti status⏎
+$ git status
+bleep: gti is not a command; return runs `git status`, ctrl+_ puts yours back
+```
+
+In zsh and fish, return is bound to a check: when the first word of the line
+is not a command, function, alias or builtin the shell knows — `whence -w`
+and `type -q` are asked, and cost nothing — the line is offered to the same
+command-only rules <kbd>Esc</kbd> <kbd>Esc</kbd> uses, and a correction
+replaces the line with a message underneath. Nothing has run yet; return runs
+the corrected line, and undo puts yours back. Every other line is accepted
+exactly as before, by whatever return was bound to before this, so another
+plugin's binding is kept.
+
+Bash cannot reach its line editor from a handler — `command_not_found_handle`
+runs in a subshell — so there the command runs and fails as it always did,
+and the fix is waiting at the next prompt, already in readline, exactly as
+<kbd>tab</kbd> leaves an ordinary correction. It travels through a private
+file in The Bleep's cache directory, keyed by the shell's pid. Bash 4 or
+newer.
+
+The check is deliberately narrow: only the first word, only when the shell
+itself has never heard of it, and never for a word with a slash, a quote, a
+variable or an assignment in it. `git satus` runs and fails as before,
+because `git` exists and the shell cannot know what git will think of
+`satus`; that correction is one `bleep` away, as it always was. What this
+removes is the failed run and the second command for the commonest mistake
+there is, and what it costs is nothing for a line the shell recognises.
+
+##### [Back to Contents](#contents)
 
 ## The list
 

@@ -78,6 +78,47 @@ zle -N __thebleep_inline
 bindkey '\\e\\e' __thebleep_inline
 '''.format(command=self._invocation(), fit_transport=fit_transport())
 
+    def ambient_binding(self):
+        """Correct a misspelled program before it runs, on return.
+
+        `accept-line` is wrapped: when the first word of the line is not a
+        command, function, alias, builtin or reserved word -- `whence -w`
+        says `none` -- the line is offered to The Bleep as a command-only
+        correction, and if one comes back it replaces the buffer with a
+        message underneath, so that return runs the corrected line and
+        nothing has run yet. Any other line is accepted exactly as before,
+        by whatever `accept-line` was bound to before this, so another
+        plugin's wrapper is not lost.
+
+        """
+        return '''
+if [[ ${{widgets[accept-line]}} == user:* ]]; then
+    zle -A accept-line __thebleep_previous_accept_line
+fi
+__thebleep_ambient_accept_line() {{
+    local first fixed TB_SHELL_ALIASES TB_HISTORY
+    first=${{${{(z)BUFFER}}[1]}}
+    if [[ -n $BUFFER && -n $first && $first != *[/=\\$\\'\\"\\`]* && "$(whence -w -- "$first" 2>/dev/null)" == *": none" ]]; then
+        TB_SHELL_ALIASES=$(alias)
+        TB_HISTORY=
+        {fit_transport}
+        fixed=$(TB_SHELL=zsh TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" {command} --inline --command "$BUFFER" 2>/dev/null)
+        if [[ $? -eq 0 && -n $fixed && $fixed != $BUFFER ]]; then
+            zle -M "bleep: $first is not a command; return runs \\`$fixed\\`, ctrl+_ puts yours back"
+            BUFFER=$fixed
+            CURSOR=${{#BUFFER}}
+            return 0
+        fi
+    fi
+    if (( ${{+widgets[__thebleep_previous_accept_line]}} )); then
+        zle __thebleep_previous_accept_line
+    else
+        zle .accept-line
+    fi
+}}
+zle -N accept-line __thebleep_ambient_accept_line
+'''.format(command=self._invocation(), fit_transport=fit_transport())
+
     def _edit_line(self):
         """`print -z` is zsh's own answer to this, and has been for decades.
 

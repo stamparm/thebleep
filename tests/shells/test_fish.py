@@ -217,3 +217,28 @@ class TestFish(object):
         probes.return_value = ''
         assert shell._get_version() == ''
         assert shell.info() == 'Fish Shell'
+
+
+@pytest.mark.usefixtures('isfile', 'no_memoize', 'no_cache')
+class TestAmbient(object):
+    @pytest.fixture
+    def shell(self):
+        return Fish()
+
+    def test_return_is_bound_in_both_keymaps(self, shell):
+        binding = shell.ambient_binding()
+        assert 'bind \\r __thebleep_ambient_execute' in binding
+        assert 'bind -M insert \\r __thebleep_ambient_execute' in binding
+        assert 'commandline -f execute' in binding
+
+    def test_only_an_unknown_first_word_asks(self, shell):
+        binding = shell.ambient_binding()
+        assert 'not type -q -- "$first"' in binding
+        assert '--inline --command "$buffer"' in binding
+        assert 'commandline -r -- $fixed' in binding
+
+    def test_the_word_test_is_one_fish_string(self, shell):
+        """A quote inside a single-quoted fish string has to be escaped, or
+        the pattern ends there and the rest is shell syntax."""
+        expected = "string match -qr '[/=$\\'\"`]' -- \"$first\""
+        assert expected in shell.ambient_binding()

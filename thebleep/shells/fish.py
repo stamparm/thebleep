@@ -168,6 +168,43 @@ end
 bind \\e\\e __thebleep_inline
 '''.format(command=self._invocation())
 
+    def ambient_binding(self):
+        """Correct a misspelled program before it runs, on return.
+
+        Return is bound to a function that looks at the first word of the
+        line: when `type -q` knows nothing by that name, the line is offered
+        to The Bleep as a command-only correction, and a fix replaces the
+        buffer and repaints, so that return runs the corrected line. Anything
+        else is `commandline -f execute`, which is what return did before.
+
+        """
+        return '''
+function __thebleep_ambient_execute
+    set -l buffer (commandline | string collect)
+    set -l first (string split -m1 ' ' -- (string trim -l -- "$buffer"))[1]
+    if test -n "$first"; and not string match -qr '[/=$\\'"`]' -- "$first"; and not type -q -- "$first"
+        set -l shell_aliases (alias | string collect)
+        if test (string length -- "$shell_aliases") -gt 32000
+            set shell_aliases
+        end
+        set -l fixed (env TB_SHELL=fish TB_SHELL_ALIASES="$shell_aliases" {command} --inline --command "$buffer" 2>/dev/null | string collect)
+        if test -n "$fixed"; and test "$fixed" != "$buffer"
+            printf '\\nbleep: %s is not a command; return runs `%s`\\n' "$first" "$fixed" >&2
+            commandline -r -- $fixed
+            commandline -f repaint
+            return
+        end
+    end
+    commandline -f execute
+end
+bind \\r __thebleep_ambient_execute
+bind \\n __thebleep_ambient_execute
+if bind -M insert >/dev/null 2>&1
+    bind -M insert \\r __thebleep_ambient_execute
+    bind -M insert \\n __thebleep_ambient_execute
+end
+'''.format(command=self._invocation())
+
     def _edit_line(self):
         """`commandline -r` writes fish's own line editor.
 

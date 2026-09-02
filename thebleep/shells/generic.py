@@ -265,6 +265,18 @@ class Generic(object):
         """Shell code for correcting the current line, or ``None``."""
         return None
 
+    def ambient_binding(self):
+        """Shell code that corrects a misspelled program before it runs,
+        without `bleep` being typed, or ``None`` for a shell that cannot."""
+        return None
+
+    def _ambient_directory(self):
+        """Where a shell that cannot reach its own line editor from a
+        handler leaves the fix for the next prompt: the cache directory."""
+        from .. import cachefile
+
+        return str(cachefile.directory())
+
     def edit_hint(self):
         """What to tell the user about where the correction went, or `None`.
 

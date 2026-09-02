@@ -109,3 +109,29 @@ class TestZsh(object):
     def test_a_probe_that_answers_nothing(self, shell, probe):
         probe.return_value = ''
         assert shell.info() == 'ZSH'
+
+
+@pytest.mark.usefixtures('isfile', 'no_memoize', 'no_cache')
+class TestAmbient(object):
+    @pytest.fixture
+    def shell(self):
+        return Zsh()
+
+    def test_accept_line_is_wrapped_and_the_previous_one_kept(self, shell):
+        binding = shell.ambient_binding()
+        assert 'zle -N accept-line __thebleep_ambient_accept_line' in binding
+        assert 'zle -A accept-line __thebleep_previous_accept_line' in binding
+        assert 'zle __thebleep_previous_accept_line' in binding
+        assert 'zle .accept-line' in binding
+
+    def test_only_an_unknown_first_word_asks(self, shell):
+        binding = shell.ambient_binding()
+        assert 'whence -w -- "$first"' in binding
+        assert '== *": none"' in binding
+        assert '--inline --command "$BUFFER"' in binding
+
+    def test_the_buffer_is_replaced_and_said_so(self, shell):
+        binding = shell.ambient_binding()
+        assert 'BUFFER=$fixed' in binding
+        assert 'zle -M "bleep:' in binding
+        assert 'ctrl+_ puts yours back' in binding

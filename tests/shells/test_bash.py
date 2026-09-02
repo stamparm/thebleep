@@ -164,3 +164,31 @@ class TestBash(object):
         warning naming an exception; now the version is simply unknown."""
         probe.return_value = ''
         assert shell.info() == 'Bash'
+
+
+@pytest.mark.usefixtures('isfile', 'no_memoize', 'no_cache')
+class TestAmbient(object):
+    @pytest.fixture
+    def shell(self):
+        return Bash()
+
+    def test_the_handler_hands_the_fix_to_the_next_prompt(self, shell):
+        binding = shell.ambient_binding()
+        assert 'command_not_found_handle()' in binding
+        assert '--inline --command "$*"' in binding
+        # Through a private file in the cache directory, keyed by the parent
+        # shell's pid, and read back by a PROMPT_COMMAND hook into readline.
+        assert "printf '%s/ambient-%s'" in binding
+        assert '(umask 077; printf' in binding
+        assert 'read -r -e -i "$fixed"' in binding
+        assert 'PROMPT_COMMAND+=(__thebleep_ambient)' in binding
+        # Bash 4 only, like every readline feature here.
+        assert binding.lstrip().startswith(
+            'if [ "${BASH_VERSINFO[0]:-0}" -ge 4 ]; then')
+
+    def test_bash_prints_nothing_itself_once_a_handler_exists(self, shell):
+        assert "printf 'bash: %s: command not found" in shell.ambient_binding()
+
+    def test_history_follows_the_setting(self, shell, settings):
+        settings.alter_history = False
+        assert 'history -s' not in shell.ambient_binding()

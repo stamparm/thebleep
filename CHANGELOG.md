@@ -4,6 +4,15 @@
 
 ### Added
 
+- **Correcting without typing `bleep`.** `eval "$(thebleep --ambient)"` binds
+  return in zsh and fish to a check: a first word the shell has never heard of
+  is offered to the command-only rules before anything runs, and a correction
+  replaces the line with a message underneath, so return runs the fixed
+  command and undo puts yours back. In bash, whose not-found handler runs in
+  a subshell, the fix is waiting in readline at the next prompt instead.
+  Known commands are accepted exactly as before, by whatever return was bound
+  to; the check costs nothing for them.
+
 - **A repository can ship corrections.** `.thebleep/corrections.json` at the
   root, a list of `before`/`after` pairs held to the one-changed-word shape of
   a learned correction, matches below that root for everyone who clones it.

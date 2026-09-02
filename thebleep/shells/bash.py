@@ -86,6 +86,60 @@ if [ "${{BASH_VERSINFO[0]:-0}}" -ge 4 ]; then
 fi
 '''.format(command=self._invocation(), fit_transport=fit_transport())
 
+    def ambient_binding(self):
+        """Correct a misspelled program without `bleep` being typed.
+
+        Bash runs `command_not_found_handle` in a subshell, so the handler
+        cannot put anything in the parent's line editor. It hands the fix to
+        the parent through a file of its own -- `$$` is the parent's pid even
+        in the subshell, and the file lives in The Bleep's cache directory,
+        created with a private mode -- and a `PROMPT_COMMAND` hook picks it
+        up before the next prompt and opens it in readline with `read -e -i`,
+        exactly as tab does for an ordinary correction. Nothing runs until
+        return is pressed on a line that is already the corrected command.
+
+        The handler prints bash's own message first, because bash prints
+        nothing itself once a handler is defined.
+
+        """
+        return '''
+if [ "${{BASH_VERSINFO[0]:-0}}" -ge 4 ]; then
+    __thebleep_ambient_file() {{ printf '%s/ambient-%s' {cache} "$$"; }}
+    command_not_found_handle() {{
+        local fixed file TB_SHELL_ALIASES TB_HISTORY
+        printf 'bash: %s: command not found\\n' "$1" >&2
+        TB_SHELL_ALIASES=$(alias)
+        TB_HISTORY=
+        {fit_transport}
+        fixed=$(TB_SHELL=bash TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" {command} --inline --command "$*" 2>/dev/null)
+        if [ "$?" -eq 0 ] && [ -n "$fixed" ]; then
+            file=$(__thebleep_ambient_file)
+            mkdir -p -m 700 -- "${{file%/*}}" 2>/dev/null
+            (umask 077; printf '%s' "$fixed" > "$file")
+        fi
+        return 127
+    }}
+    __thebleep_ambient() {{
+        local file fixed TB_PROMPT TB_EDIT
+        file=$(__thebleep_ambient_file)
+        [ -f "$file" ] || return 0
+        fixed=$(<"$file")
+        rm -f -- "$file"
+        [ -n "$fixed" ] || return 0
+        TB_PROMPT='> '
+        eval 'TB_PROMPT="${{PS1@P}}"' 2>/dev/null
+        IFS= read -r -e -i "$fixed" -p "$TB_PROMPT" TB_EDIT && [ -n "$TB_EDIT" ] && {{ {history}eval "$TB_EDIT"; }}
+    }}
+    if [[ "$(declare -p PROMPT_COMMAND 2>/dev/null)" == "declare -a"* ]]; then
+        PROMPT_COMMAND+=(__thebleep_ambient)
+    else
+        PROMPT_COMMAND="__thebleep_ambient${{PROMPT_COMMAND:+;$PROMPT_COMMAND}}"
+    fi
+fi
+'''.format(command=self._invocation(), fit_transport=fit_transport(),
+           cache=self.quote(self._ambient_directory()),
+           history='history -s "$TB_EDIT"; ' if settings.alter_history else '')
+
     def _edit_line(self):
         """Reopens the correction in readline for the user to finish.
 

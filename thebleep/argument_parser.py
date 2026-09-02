@@ -13,6 +13,7 @@ DEFAULTS = {'alias': None,
             'edit': False,
             'inline': False,
             'bind_inline': False,
+            'ambient': False,
             'mcp': False,
             'hook': None,
             'as_hook': None,
@@ -165,6 +166,11 @@ class Parser(object):
             '--bind-inline',
             action='store_true',
             help='print an Esc Esc inline-correction binding for this shell')
+        self._parser.add_argument(
+            '--ambient',
+            action='store_true',
+            help='print shell code that corrects a misspelled program '
+                 'before it runs, without bleep being typed')
         self._parser.add_argument(
             '--why',
             action='store_true',

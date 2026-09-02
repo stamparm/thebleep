@@ -46,6 +46,18 @@ def inline_command(args):
     return 0
 
 
+def print_ambient(args):
+    """Print the shell's opt-in code for correcting without typing `bleep`."""
+    settings.init(args)
+    binding = shell.ambient_binding()
+    if binding is None:
+        logs.failed('{} does not support ambient correction.'.format(
+            shell.friendly_name))
+        return 2
+    sys.stdout.write(binding)
+    return 0
+
+
 def print_binding(args):
     """Print the shell's opt-in Esc Esc line-editor binding."""
     settings.init(args)
