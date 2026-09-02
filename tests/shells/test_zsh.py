@@ -172,8 +172,10 @@ class TestWarmServer(object):
         binding = shell.ambient_binding()
         assert 'zmodload zsh/net/socket' in binding
         assert 'zsocket $sock' in binding
-        assert 'local sock={}'.format(
-            str(tmpdir.join('thebleep', 'inline-zsh.sock'))) in binding
+        # Through the shell's own quoting, which leaves a POSIX path bare and
+        # quotes a Windows one for its backslashes.
+        assert 'local sock={}'.format(shell.quote(
+            str(tmpdir.join('thebleep', 'inline-zsh.sock')))) in binding
         # A socket that is not there starts the server for next time...
         assert '--serve </dev/null >/dev/null 2>&1 &)' in binding
         # ...and Python answers this time.
