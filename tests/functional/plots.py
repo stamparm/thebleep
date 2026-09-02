@@ -1,3 +1,22 @@
+import re
+
+# The prompt colours the words that changed, so `echo test` arrives as
+# `\x1b[1m\x1b[32mecho\x1b[0m test` and is not one string any more. This is
+# the command as the terminal shows it: its words, with any colour codes
+# between them allowed for.
+SGR = u'(?:\x1b\\[[0-9;]*m)*'
+
+
+def shown(script):
+    words = [SGR + re.escape(word) + SGR for word in script.split()]
+    return (SGR + u' ' + SGR).join(words)
+
+
+def chosen(script):
+    """`script` as the marked row of the list, after an arrow moved to it."""
+    return SGR + u'❯' + SGR + u' ' + shown(script)
+
+
 def _set_confirmation(proc, require):
     proc.sendline(u'mkdir -p ~/.thebleep')
     proc.sendline(
@@ -12,7 +31,7 @@ def with_confirmation(proc, TIMEOUT):
     proc.sendline(u'ehco test')
 
     proc.sendline(u'bleep')
-    assert proc.expect([TIMEOUT, u'echo test'])
+    assert proc.expect([TIMEOUT, shown(u'echo test')])
     assert proc.expect([TIMEOUT, u'enter'])
     assert proc.expect_exact([TIMEOUT, u'ctrl+c'])
     _answer(proc, TIMEOUT, u'\n', u'test')
@@ -82,18 +101,20 @@ def select_command_with_arrows(proc, TIMEOUT):
     # `git h` is not something we can show is harmless, so unless the output
     # was recorded as it ran — which is what instant mode does — running it
     # again has to be agreed to first.
-    asked = proc.expect([TIMEOUT, u'Run it', u'git show'])
+    asked = proc.expect([TIMEOUT, u'Run it', shown(u'git show')])
     assert asked
     if asked == 1:
-        _agree(proc, TIMEOUT, u'git show')
+        _agree(proc, TIMEOUT, shown(u'git show'))
+    # The list redraws with the chosen row marked, so each arrow is followed
+    # by the marker in front of the row it moved to.
     proc.send('\033[B')
-    assert proc.expect([TIMEOUT, u'git push'])
+    assert proc.expect([TIMEOUT, chosen(u'git push')])
     proc.send('\033[B')
-    assert proc.expect([TIMEOUT, u'git help', u'git hook'])
+    assert proc.expect([TIMEOUT, chosen(u'git help'), chosen(u'git hook')])
     proc.send('\033[A')
-    assert proc.expect([TIMEOUT, u'git push'])
+    assert proc.expect([TIMEOUT, chosen(u'git push')])
     proc.send('\033[B')
-    assert proc.expect([TIMEOUT, u'git help', u'git hook'])
+    assert proc.expect([TIMEOUT, chosen(u'git help'), chosen(u'git hook')])
     proc.send('\n')
 
     assert proc.expect([TIMEOUT, u'usage', u'fatal: not a git repository'])
@@ -106,7 +127,7 @@ def refuse_with_confirmation(proc, TIMEOUT):
     proc.sendline(u'ehco test')
 
     proc.sendline(u'bleep')
-    assert proc.expect([TIMEOUT, u'echo test'])
+    assert proc.expect([TIMEOUT, shown(u'echo test')])
     assert proc.expect([TIMEOUT, u'enter'])
     assert proc.expect_exact([TIMEOUT, u'ctrl+c'])
     _answer(proc, TIMEOUT, u'\003', u'Aborted')
@@ -119,7 +140,7 @@ def without_confirmation(proc, TIMEOUT):
     proc.sendline(u'ehco test')
 
     proc.sendline(u'bleep')
-    assert proc.expect([TIMEOUT, u'echo test'])
+    assert proc.expect([TIMEOUT, shown(u'echo test')])
     assert proc.expect([TIMEOUT, u'test'])
 
 

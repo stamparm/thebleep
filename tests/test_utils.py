@@ -465,13 +465,20 @@ class TestCache(object):
 
     @pytest.fixture(autouse=True)
     def cache_home(self, tmpdir, os_environ, no_cache, no_disk_cache,
-                   monkeypatch):
+                   monkeypatch, mocker):
         # Both of those are requested so that they are set up first and this
         # undoes them. The suite as a whole keeps every test off the disk cache;
         # these tests are the ones about it.
+        #
+        # Through `mocker`, the same patcher `no_disk_cache` used, so the two
+        # are undone in one stack and in order. Restoring with `monkeypatch`
+        # over a `mocker` patch left the *mock* behind: `monkeypatch` put back
+        # what it found -- the mock -- after `mocker` had already put back the
+        # real function, and every test after this class that wrote to the
+        # disk cache wrote into a lambda.
         monkeypatch.setattr('thebleep.utils.cache.disabled', False)
-        monkeypatch.setattr('thebleep.cachefile.load', REAL_CACHEFILE[0])
-        monkeypatch.setattr('thebleep.cachefile.save', REAL_CACHEFILE[1])
+        mocker.patch('thebleep.cachefile.load', new=REAL_CACHEFILE[0])
+        mocker.patch('thebleep.cachefile.save', new=REAL_CACHEFILE[1])
         os_environ['XDG_CACHE_HOME'] = str(tmpdir.mkdir('cache'))
         return tmpdir
 

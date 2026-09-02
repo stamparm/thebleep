@@ -222,7 +222,10 @@ def _nearby(cwd, include_parent):
             if seen > VISIT_LIMIT:
                 return
             path = os.path.join(directory, name)
-            here = os.path.join(relative, name) if relative else name
+            # Forward slashes whatever the platform: every shell this writes
+            # for takes `cd work/repo`, and a backslash is an escape in half
+            # of them.
+            here = u'{}/{}'.format(relative, name) if relative else name
             yield path, here
             frontier.append((path, here, depth + 1))
 
@@ -291,5 +294,5 @@ def _shown(relative, is_project, path):
     for name in ('package.json', 'Makefile', 'makefile', 'GNUmakefile',
                  'justfile', 'Justfile', 'Taskfile.yml', 'Taskfile.yaml'):
         if os.path.isfile(os.path.join(path, name)):
-            return os.path.join(relative, name)
+            return u'{}/{}'.format(relative, name)
     return relative
