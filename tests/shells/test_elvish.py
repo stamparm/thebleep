@@ -70,5 +70,6 @@ class TestElvish(object):
 
     def test_how_to_configure(self, shell, tmp_path, monkeypatch):
         monkeypatch.setenv('HOME', str(tmp_path))
+        monkeypatch.setenv('USERPROFILE', str(tmp_path))
         monkeypatch.delenv('XDG_CONFIG_HOME', raising=False)
         assert shell.how_to_configure().path == '~/.config/elvish/rc.elv'

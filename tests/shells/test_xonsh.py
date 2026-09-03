@@ -74,7 +74,9 @@ class TestXonsh(object):
             shell._get_history_file_name().endswith('xonsh-b.json')
 
     def test_how_to_configure(self, shell, tmp_path, monkeypatch):
+        # Both: `expanduser` reads USERPROFILE on Windows and HOME elsewhere.
         monkeypatch.setenv('HOME', str(tmp_path))
+        monkeypatch.setenv('USERPROFILE', str(tmp_path))
         monkeypatch.delenv('XDG_CONFIG_HOME', raising=False)
         assert shell.how_to_configure().path == '~/.config/xonsh/rc.xsh'
         (tmp_path / '.xonshrc').write_text('')
