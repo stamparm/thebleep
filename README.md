@@ -276,8 +276,7 @@ Two ways to stop being asked:
   anything again, so the question never comes up. This is the better answer if
   your shell supports it.
 - **`confirm_replay = False`** in your settings, or `--yes` for a single run,
-  which restores *The Fuck*'s behaviour of running the previous command again
-  without asking.
+  which runs the previous command again without asking.
 
 ### Running the correction without asking
 
@@ -304,7 +303,10 @@ of these hold, and is asked about as before when any of them does not:
 - **the risk scan found nothing.** No `sudo` or `doas`, no `rm`, no `--force`
   and its relatives, no [side effect](#side_effect-and-why-to-think-twice).
   That scan is a review hint and not a proof, which is why it is one gate here
-  and not the decision.
+  and not the decision;
+- **it is not a correction the repository you are in ships.** Those score as
+  high as one you taught, and that is exactly why they always ask: a clone must
+  not be able to make a typo run its own command.
 
 What ran is printed, with the reason it was allowed to:
 
@@ -350,8 +352,10 @@ In zsh, fish and PowerShell, return is bound to a check: when the first word of 
 is not a command, function, alias or builtin the shell knows — `whence -w`,
 `type -q` and `Get-Command` are asked, and cost nothing — the line is offered to the same
 command-only rules <kbd>Esc</kbd> <kbd>Esc</kbd> uses, and a correction
-replaces the line with a message underneath. Nothing has run yet; return runs
-the corrected line, and undo puts yours back. Every other line is accepted
+replaces the line. Nothing has run yet, and return runs the corrected line. zsh
+says so in a message underneath, naming the undo key that puts yours back; fish
+prints the message without an undo hint; PowerShell replaces the line without
+a message. Every other line is accepted
 exactly as before, by whatever return was bound to before this, so another
 plugin's binding is kept.
 
@@ -455,8 +459,8 @@ thebleep --bind-inline >> ~/.bashrc
 
 Then type a command such as `gti status`, press <kbd>Esc Esc</kbd>, and the
 correction is placed in the current line for you to inspect. It is not run
-until you press return. Bash 4+, Zsh and Fish are supported; the other shells
-leave the binding unavailable rather than injecting keystrokes into the
+until you press return. Bash 4+, Zsh, Fish and PowerShell are supported; Nushell
+and tcsh leave the binding unavailable rather than injecting keystrokes into the
 terminal.
 
 Inline correction has no command output to inspect, so rules that require
@@ -566,7 +570,8 @@ Enter shows whether the candidate was backed by captured output and whether a
 known high-risk pattern was found.
 
 Everything there is a fact about the rule rather than a description of it: its
-name, which of the three places its file came from, whether it declares that it
+name, where its file came from — bundled, your own rules directory, or a
+`thebleep_contrib_*` package — whether it declares that it
 needs your command's output, whether it has a side effect — and then the two
 that carry most of the meaning, the app it says it is about and the text it
 requires in the output, both read out of the rule's own `match` by the same
@@ -729,8 +734,8 @@ need to change.
 Confidence is evidence strength, not a calibrated probability. The numeric
 `score` is an ordinal ranking hint, not a promise of accuracy: `high` means
 captured output or a learned correction supports the rule, `medium` means the
-rule matched command or local context, and `unknown` means the source was not
-identified. The `evidence_details` field gives the same facts with stable
+rule matched command or local context, `low` means a rule stated a confidence
+under 0.7 for itself, and `unknown` means the source was not identified. The `evidence_details` field gives the same facts with stable
 `kind` values such as `source`, `match`, `context`, `side_effect` and
 `execution`; the older `evidence` list remains for simple consumers. `risk: low` means
 that no known high-risk marker was found; it is not a safety guarantee. The
@@ -811,9 +816,10 @@ The result uses the same versioned envelope and returns `diagnoses` with the
 observed evidence, a short summary and read-only `next_steps`. It covers a
 small set of high-signal failures such as occupied ports, refused, reset or
 timed-out connections, unreachable networks, Docker daemon outages, changed
-SSH host keys, existing paths, read-only filesystems, missing
-network interfaces, DNS resolution failures, missing Python paths/modules,
-Git's repository/ownership refusals and executable launch failures. It never
+SSH host keys, existing paths, permission denials, read-only filesystems and
+full disks, expired TLS certificates, missing network interfaces, DNS
+resolution failures, missing Python paths/modules, Git's repository/ownership
+refusals and merge conflicts, and executable launch failures. It never
 probes the machine or reruns the command. Unknown wording returns
 `decision: abstain`, because a plausible explanation is not proof. Follow-up
 commands are selected for the
@@ -836,8 +842,9 @@ The command-line form is:
 thebleep --json --why --stderr error.txt --command 'python app.py'
 ```
 
-Use `--platform nt` when diagnosing Windows output from another platform;
-`posix` is the default for POSIX output.
+Use `--platform nt` when diagnosing Windows output from another platform, or
+`--platform posix` the other way round; without it, the running platform is
+assumed.
 
 ### Asking something of your own
 
@@ -990,8 +997,8 @@ agree to is what runs:
   own, and no longer delete the files that were already unpacked. They could not
   tell an extracted file from one of yours under the same name, and their
   containment check was a string prefix that `../` walks straight out of.
-- `ssh_known_hosts` shows you the `ssh-keygen -R` it wants to run, in front of
-  your command. It used to hand back your own command and remove the offending
+- `ssh_known_hosts` shows you the `ssh-keygen -f … -R host` that ssh itself
+  recommends, in front of your command. It used to hand back your own command and remove the offending
   line behind it, so a man-in-the-middle warning disappeared with nothing to
   read.
 - `rm_dir` adds `-r`, not `-rf`. `-r` is enough to remove a directory; `-f` also
@@ -1222,8 +1229,9 @@ call `thebleep --alias` on first use.
 
 ```bash
 bleep() {
+    TB_EXIT=$?;
     eval "$(TB_SHELL=bash thebleep --alias bleep)";
-    bleep "$@";
+    TB_EXIT="$TB_EXIT" bleep "$@";
 }
 ```
 
@@ -1362,9 +1370,9 @@ underneath is corrected by every rule as though you had typed it on its own,
 and the wrapper comes back in front of the suggestion exactly as you wrote it.
 Output redirections stay attached too, so `sudo env DEBUG=1 npm nstall >log`
 can be corrected without rebuilding the command line.
-That is one model applied to every rule, in place of the `sudo`-only decorator
-that 26 of them had to ask for individually — which is still there, and still
-works, for rules outside this repository.
+That is one model applied to every rule. The older `sudo_support` decorator,
+which 28 bundled rules still carry, is kept and still works, for rules outside
+this repository.
 
 It fails towards leaving your command alone. A wrapper that is not transparent
 is not peeled: `sudo -i` and `sudo -s` run a shell, `sudo -e` opens an editor,
@@ -1610,7 +1618,8 @@ $ bleep
 `~/.local/bin`, the shims of nvm, pyenv, rbenv, asdf and mise, Homebrew, snap,
 flatpak, `/usr/sbin` — and where projects keep their own — `node_modules/.bin`,
 `.venv/bin`, `vendor/bin`, `target/debug` — from the working directory up to
-the repository root, nearest first. When the program is there under exactly
+four directories towards the repository root, nearest first. When the program
+is there under exactly
 the name typed, it offers the command with the path written out, which runs
 now, and the same command with the directory put on `PATH` first, in your
 shell's own syntax, which fixes the rest of the session. Nothing is written
@@ -1626,8 +1635,8 @@ A rule can only read what the tool wrote, and a large class of tools write
 nothing worth reading. Go's `flag` package says `flag provided but not
 defined: -verbse`; Ruby's optparse says `invalid option: --verbse`; Perl's
 Getopt::Long says `Unknown option: verbse`; a hand-rolled parser says
-`unknown command` and stops. Until now there was nothing to suggest for any
-of them, because the only honest sources were the output and `--help`, and
+`unknown command` and stops. With only the output and `--help` to read, there
+would be nothing to suggest for any of them, and
 running `--help` on a program nobody vouched for is not something this does
 uninvited.
 
@@ -1647,8 +1656,8 @@ $ bleep
 ❯ git log --oneline                                95%  from what it printed
 ```
 
-That one used to be a known miss: `--oneline` is in `git-log.1` and not in
-`git log -h`. `docker-image-ls.1` and `git-cherry-pick.1` look the same from
+`--oneline` is in `git-log.1` and not in `git log -h`, which is why the page is
+the better source there. `docker-image-ls.1` and `git-cherry-pick.1` look the same from
 the outside and mean different things — a command under a command, and one
 command with a dash in it — and the page's own synopsis is what settles it.
 
@@ -1692,7 +1701,8 @@ The engine calculates risk itself from the final command. Evidence is shown by
 the structured API and by `?`; it does not grant a rule permission to execute
 anything.
 
-`Command` has three attributes: `script`, `output` and `script_parts`.
+`Command` exposes `script`, `output` and `script_parts`, plus the parsed
+`command_model` and the deprecated `stdout`/`stderr` aliases of `output`.
 Your rule should not change `Command`.
 
 
@@ -1746,10 +1756,10 @@ keep working.
 
 It is still the wrong tool nine times out of ten. Whatever it does happens
 *outside* the command you were shown and agreed to, so the thing you approved is
-not the thing that happened — which is exactly how `dirty_untar` came to delete
-files and `ssh_known_hosts` came to drop a host key behind a warning you never
-read. Both are now rules that say what they do in the command itself, and both
-are better rules for it. Prefer `shell.and_('the thing you want first',
+not the thing that happened — which is how an extraction rule can delete files
+and a host-key rule can drop a key behind a warning you never read.
+`dirty_untar` and `ssh_known_hosts` say what they do in the command itself for
+that reason. Prefer `shell.and_('the thing you want first',
 command.script)`: it is visible, it is refusable, and it appears in your history
 like anything else you ran.
 
@@ -1789,7 +1799,7 @@ Several *The Bleep* parameters can be changed in the file `$XDG_CONFIG_HOME/theb
 * `why_command` — a command of your own to ask when `--why` has no deterministic diagnosis, like `'ollama run llama3'`, by default `None` (off); see [Asking something of your own](#asking-something-of-your-own);
 * `why_timeout` — how many seconds `why_command` may take, by default `30`;
 * `warm_server` — let zsh's <kbd>Esc</kbd> <kbd>Esc</kbd> and `--ambient` bindings ask a warm `thebleep --serve` process over a private socket, starting it when needed, by default `False`; see [Without typing bleep](#without-typing-bleep);
-* `env` — environment variables to set for your previous command when it is run again to read its output, by default `{'LC_ALL': 'C', 'LANG': 'C'}`, which is there so that rules can look for English error messages. Git also gets `GIT_TRACE=1`, so that `git st` can be resolved to whatever alias it stands for; nothing else does.
+* `env` — environment variables to set for your previous command when it is run again to read its output, by default `{'LC_ALL': 'C', 'LANG': 'C'}`, which is there so that rules can look for English error messages. Git (and `hub`) also get `GIT_TRACE=1`, so that `git st` can be resolved to whatever alias it stands for; nothing else does.
 
 An example of `settings.py`:
 
@@ -1944,8 +1954,8 @@ remote-control prompt, or rerun the failed command.
 | After a full-screen program (`less`, `vim`, `top`) | **does not correct** |
 | After a shell started inside the shell | **does not correct** |
 
-The two Unicode rows are one row in the tests and were two bugs until this
-release: the recording is a ring, so reading the last megabyte of it begins at
+The two Unicode rows are one row in the tests and two separate hazards: the
+recording is a ring, so reading the last megabyte of it begins at
 whatever byte is a megabyte back, and that is inside a character as often as the
 output has multibyte characters in it. Decoding it raised, and the traceback came
 out of the middle of a correction.
@@ -1980,24 +1990,19 @@ correction — which takes the ordinary route and
 gains nothing: the question is the same question, and the same short list of
 programs that only ever read is what skips it.
 
-What is fixed rather than documented:
+What the recording promises:
 
-- **The recording is yours alone.** It used to be created world-readable in
-  `/tmp` — a megabyte of everything that had scrolled past, which is the
-  contents of every file you read, every token a command printed, and every
-  password typed at a prompt that echoes. It is mode 0600 now, in
+- **It is yours alone.** A megabyte of everything that scrolled past is the
+  contents of every file you read, every token a command printed and every
+  password typed at a prompt that echoes, so it is mode 0600, in
   `$XDG_RUNTIME_DIR` where there is one, created with `O_EXCL` and `O_NOFOLLOW`
   so a name somebody else got to first is refused rather than opened.
-- **It goes when the session goes.** Closing the terminal used to leave the
-  recording, the logger and the shell inside it running for the rest of the
-  login session. The logger removes its own recording on the way out however it
-  leaves, and the shell that started it has a `trap` as a backstop for
-  `SIGKILL`.
-- **No more holes in it.** When the recording filled up, the chunk that
-  overflowed was dropped rather than written after the room was made, so a busy
-  session lost up to a kilobyte of output every time it wrapped.
-- **The terminal is put back.** A shell that exited normally used to leave your
-  terminal in raw mode.
+- **It goes when the session goes.** The logger removes its own recording on
+  the way out however it leaves, and the shell that started it has a `trap` as
+  a backstop for `SIGKILL`.
+- **It has no holes.** When the recording is full, the chunk that overflows is
+  written after the room is made, not dropped.
+- **The terminal is put back** when the shell exits.
 
 ##### [Back to Contents](#contents)
 
@@ -2042,17 +2047,16 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command now reaches about a fifth of the 196 rules, and
+  running it. A typical command reaches about a fifth of the 196 rules, and
   one for a tool with many rules of its own — `git` — under a quarter, instead of
   all of them. Rules that don't say what they are about are always loaded, so
   this makes corrections faster, never fewer.
-  [`tests/test_performance.py`](tests/test_performance.py) fails if dispatch
-  goes broad again.
+  [`tests/test_performance.py`](tests/test_performance.py) fails if any of its
+  sample commands ever reaches half the rules again.
 - **Startup imports almost nothing, and so does a correction.** `pyte`,
   `psutil`, `argparse`, `pprint` and the five shells you are not using never
-  arrive at all; `ast`, `pickle`, `socket`, `uuid`, `tempfile`, `shutil`,
-  `subprocess`, `difflib` and `ctypes` arrive only on the paths that use them —
-  roughly half of what a correction used to open.
+  arrive at all; `ast`, `pickle`, `socket`, `mmap`, `uuid`, `platform`,
+  `tempfile` and `shutil` arrive only on the paths that use them.
   [`tests/test_performance.py`](tests/test_performance.py) names every module
   that has to stay out and holds the total to a budget, measured on whatever
   machine it is running on: the absolute count depends on the interpreter and on
@@ -2065,15 +2069,15 @@ Where the time went:
   timeout and then produced *nothing to correct from*. That is the 28.4× row
   above, and it is a correctness fix as much as a speed one.
 - **Nothing is scanned twice.** The list of everything on your `$PATH` is
-  remembered until a directory on it changes.
+  remembered until a directory on it changes or the record ages out.
 
 If a cache ever gets in your way, `thebleep --clear-cache` removes them all,
 and `THEBLEEP_NO_RULE_PACK=true` turns the rule cache off entirely.
 
 ### On Windows
 
-*The Fuck* has been called slow on Windows for years, and the reason is not
-either tool's own logic. Windows charges for *opening files*, and a Python module
+A correction is slower on Windows than anywhere else, and the reason is not the
+tool's own logic. Windows charges for *opening files*, and a Python module
 is a file the interpreter has to find and then open — with a virus scanner reading
 it first. So the work was to open fewer of them, which is the module list above,
 and it is the change that matters most here.

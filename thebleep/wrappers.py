@@ -6,7 +6,7 @@
 `nohup ./deploy.sh`, `doas apt instal` -- in every one of these the interesting
 command is not the first word, and a rule that asks "is this git?" is told no.
 
-Upstream's answer was a `sudo_support` decorator on twenty-six of the rules,
+Upstream's answer was a `sudo_support` decorator on twenty-eight of the rules,
 which strips a leading `sudo ` and puts it back. It only
 knows one wrapper, only in one spelling, and only for the rules that remembered
 to ask for it. What is here instead is one model of what a wrapper is, applied
