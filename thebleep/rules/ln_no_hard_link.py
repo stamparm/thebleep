@@ -14,7 +14,10 @@ from thebleep.utils import command_word_index, raw_script_parts
 
 @sudo_support
 def match(command):
-    return (command.output.endswith("hard link not allowed for directory") and
+    # `in`, not `endswith`: the output arrives with its trailing newline from
+    # a replay and without it from a pane, and the rule was dead after a
+    # replay.
+    return ("hard link not allowed for directory" in command.output and
             command_word_index(command.script_parts)
             < len(command.script_parts) and
             command.script_parts[command_word_index(command.script_parts)]

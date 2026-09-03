@@ -23,11 +23,29 @@ from thebleep.utils import for_app
 OPEN_FAILED = "can't open file"
 
 
-@for_app('python')
+import os  # noqa: E402
+import re  # noqa: E402
+
+from thebleep.utils import replace_argument  # noqa: E402
+
+# `python: can't open file '/home/u/foo': [Errno 2] No such file or directory`
+NAMED = re.compile(r"can't open file '([^']+)'")
+
+
+@for_app('python', 'python3', 'python2', at_least=1)
 def match(command):
-    return (OPEN_FAILED in command.output
-            and not command.script.endswith('.py'))
+    return OPEN_FAILED in command.output and _named(command) is not None
+
+
+def _named(command):
+    """The file python could not open, as it appears in the command."""
+    found = NAMED.search(command.output)
+    if not found or found.group(1).endswith('.py'):
+        return None
+    name = os.path.basename(found.group(1))
+    return name if name in command.script_parts else None
 
 
 def get_new_command(command):
-    return command.script + '.py'
+    name = _named(command)
+    return replace_argument(command.script, name, name + '.py')

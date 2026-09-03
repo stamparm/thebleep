@@ -9,13 +9,30 @@ Example:
 from thebleep.utils import for_app
 
 
-@for_app('javac')
+from thebleep.utils import command_word_index, raw_script_parts  # noqa: E402
+
+
+@for_app('javac', at_least=1)
 def match(command):
-    return not command.script.endswith('.java')
+    return _source(command) is not None
+
+
+def _source(command):
+    """The last word that is not an option, when it lacks `.java`."""
+    parts = command.script_parts
+    for part in reversed(parts[command_word_index(parts) + 1:]):
+        if not part.startswith('-'):
+            return None if part.endswith('.java') else part
+    return None
 
 
 def get_new_command(command):
-    return command.script + '.java'
+    parts = raw_script_parts(command.script)
+    for index in range(len(parts) - 1, command_word_index(parts), -1):
+        if not parts[index].startswith('-'):
+            parts[index] += '.java'
+            break
+    return ' '.join(parts)
 
 
 # This rule never looks at what the command printed -- the command itself is

@@ -15,14 +15,16 @@ def _get_pid_by_port(port):
     # `lsof` against a wedged NFS mount or an unresponsive filesystem is the
     # textbook hang, and this one runs from `match` -- so on the hot path of
     # every failed command whose output mentions a port.
-    lines = tool_lines(['lsof', '-i', ':{}'.format(port)])
-    if len(lines) > 1:
-        columns = lines[1].split()
+    #
+    # `-sTCP:LISTEN`, for the process *listening* on the port: without it the
+    # first row can be a client connected to it -- a browser -- and that is
+    # what `kill` would have been aimed at. `-t` prints pids alone.
+    for line in tool_lines(['lsof', '-t', '-i', ':{}'.format(port),
+                            '-sTCP:LISTEN']):
         # A pid, or nothing. `kill {}` is built from this and handed to the
-        # shell, so a warning line where the header was expected must not
-        # become part of a command.
-        if len(columns) > 1 and columns[1].isdigit():
-            return columns[1]
+        # shell, so a warning line must not become part of a command.
+        if line.strip().isdigit():
+            return line.strip()
     return None
 
 

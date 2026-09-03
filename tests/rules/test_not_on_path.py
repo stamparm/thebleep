@@ -214,3 +214,14 @@ def test_a_directory_with_a_space_is_quoted_for_the_shell():
         "export PATH='/opt/my tools/bin':\"$PATH\""
     assert Fish().put_on_path('/opt/my tools/bin') == \
         "set -gx PATH '/opt/my tools/bin' $PATH"
+
+
+def test_quoting_in_front_of_the_program_is_kept(machine):
+    """`FOO="a b" prettier` used to come back as `FOO="a ./…/prettier`."""
+    executable(machine.join('work').mkdir('node_modules').mkdir('.bin'),
+               'prettier')
+    got = get_new_command(Command(
+        'FOO="a b" prettier \'x;echo pwned\'',
+        BASH.replace('cargo', 'prettier')))
+    assert got[0] == 'FOO="a b" ./node_modules/.bin/{} \'x;echo pwned\''.format(
+        exe('prettier'))

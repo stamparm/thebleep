@@ -23,9 +23,18 @@ def match(command):
             and 'error: target not found:' in command.output)
 
 
-def get_new_command(command):
-    pgr = command.script_parts[-1]
+import re  # noqa: E402
 
+TARGET = re.compile(r'error: target not found: (\S+)')
+
+
+def get_new_command(command):
+    # The package pacman named, not the last word: `pacman -S llc --needed`
+    # ends in an option.
+    found = TARGET.search(command.output)
+    if not found:
+        return []
+    pgr = found.group(1)
     return replace_command(command, pgr, get_pkgfile(pgr))
 
 

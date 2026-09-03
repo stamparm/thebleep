@@ -224,14 +224,19 @@ def get_new_command(command):
     except OSError:
         cwd = None
 
+    # The command word's own span in the script, so what surrounds it is
+    # kept byte for byte -- quoting included. Rebuilding it from the parsed
+    # words dropped the user's quotes around anything in front of it.
+    from thebleep.utils import _argument_spans
+
     parts = command.script_parts
     start = command_word_index(parts)
-    rest = command.script[len(' '.join(parts[:start + 1])):] \
-        if command.script.startswith(' '.join(parts[:start + 1])) else \
-        ' ' + ' '.join(parts[start + 1:])
-    lead = command.script[:len(' '.join(parts[:start]))] if start else ''
-    if lead:
-        lead += ' '
+    spans = list(_argument_spans(command.script))
+    if len(spans) != len(parts) or start >= len(spans):
+        return []
+    begin, end = spans[start]
+    lead = command.script[:begin]
+    rest = command.script[end:]
 
     suggestions = []
     for path, directory, how, project in places[:2]:

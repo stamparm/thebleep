@@ -43,3 +43,10 @@ def test_every_case_it_matches_it_also_answers(output, expected):
     command = Command('git commit -h', output)
     assert match(command)
     assert get_new_command(command) == expected
+
+
+def test_the_tools_line_is_quoted_before_it_is_offered():
+    """It is text a program printed; a build somebody else controls could put
+    anything between those quotes."""
+    output = "Try 'x; touch /tmp/pwned #' for more information."
+    assert get_new_command(Command('x', output)) == "'x;' touch /tmp/pwned '#'"

@@ -30,3 +30,13 @@ def test_get_new_command(sed_unterminated_s):
             == r"sed -e 's/\/foo/bar/'")
     assert (get_new_command(Command(r"sed -e s/foo/bar -es/baz/quz", sed_unterminated_s))
             == r"sed -e s/foo/bar/ -es/baz/quz/")
+
+
+def test_only_the_expression_changes():
+    """Redirections and pipes stay shell syntax, and the user's quoting stays
+    theirs: the line used to be split and every word re-quoted."""
+    output = "sed: -e expression #1, char 9: unterminated `s' command"
+    assert get_new_command(Command("sed 's/a/b' f > out", output)) == \
+        "sed 's/a/b/' f > out"
+    assert get_new_command(Command('sed s/a/b f | less', output)) == \
+        'sed s/a/b/ f | less'

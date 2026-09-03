@@ -1,4 +1,4 @@
-from thebleep.utils import replace_argument
+from thebleep.utils import quote_words, replace_argument
 import re
 
 # regex to match a suggested help command from the tool output
@@ -32,7 +32,10 @@ def get_new_command(command):
     # spelling, which is most of them.
     found = re.search(help_regex, command.output, re.I)
     if found is not None:
-        return found.group(1)
+        # The tool's own line, quoted word by word: it is text a program
+        # printed, and a build whose output somebody else controls could put
+        # anything between those quotes.
+        return quote_words(found.group(1))
 
     return replace_argument(command.script, '-h', '--help')
 

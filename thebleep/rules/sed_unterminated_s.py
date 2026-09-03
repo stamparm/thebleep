@@ -1,6 +1,4 @@
-import shlex
-from thebleep.shells import shell
-from thebleep.utils import for_app
+from thebleep.utils import _argument_spans, for_app
 
 
 @for_app('sed')
@@ -13,10 +11,25 @@ def match(command):
 
 
 def get_new_command(command):
-    script = shlex.split(command.script)
+    """The closing slash, added inside the word that lacks it.
 
-    for (i, e) in enumerate(script):
-        if e.startswith(('s/', '-es/')) and e[-1] != '/':
-            script[i] += '/'
+    Only that word changes, in place. The line used to be split and every
+    word re-quoted, which turned `> out` and `| less` into arguments for sed
+    and rewrote the user's own quoting.
 
-    return ' '.join(map(shell.quote, script))
+    """
+    script = command.script
+    for begin, end in reversed(list(_argument_spans(script))):
+        word = script[begin:end]
+        # A quoted word's span starts after its opening quote and ends after
+        # its closing one; the slash goes inside the closing quote.
+        opening = script[begin - 1] if begin and script[begin - 1] in '"\'' \
+            else ''
+        inner = word
+        close_at = end
+        if opening and word.endswith(opening):
+            inner = word[:-1]
+            close_at = end - 1
+        if inner.startswith(('s/', '-es/')) and not inner.endswith('/'):
+            script = script[:close_at] + '/' + script[close_at:]
+    return script

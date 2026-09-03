@@ -3,7 +3,11 @@ from thebleep.shells import shell
 from thebleep.utils import for_app
 
 
-MISSING_DIRECTORY = re.compile(r"touch: (?:cannot touch ')?(.+)/.+'?:")
+# GNU with and without `-c` (`cannot touch 'a/b'`, `setting times of 'a/b'`),
+# and BSD's bare `touch: /a/b:`. The directory is everything before the last
+# slash; the old pattern also read `setting times of 'x` as a directory.
+MISSING_DIRECTORY = re.compile(
+    r"touch: (?:cannot touch |setting times of )?'?(.+)/[^/']+'?:")
 
 
 @for_app('touch')

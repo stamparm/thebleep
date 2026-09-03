@@ -5,21 +5,18 @@
 # The file ~/github.com does not exist.
 # Perhaps you meant 'http://github.com'?
 #
+import re
+
 from thebleep.shells import shell
 from thebleep.utils import eager, for_app
 
+# A domain ends at the end of the word or at a slash; `config.server.json`
+# contains `.se` and is a file, not a site.
+DOMAIN = re.compile(r'^www\.|\.(?:com|edu|info|io|ly|me|net|org|se)(?:/|$)')
+
 
 def is_arg_url(command):
-    return ('.com' in command.script or
-            '.edu' in command.script or
-            '.info' in command.script or
-            '.io' in command.script or
-            '.ly' in command.script or
-            '.me' in command.script or
-            '.net' in command.script or
-            '.org' in command.script or
-            '.se' in command.script or
-            'www.' in command.script)
+    return any(DOMAIN.search(part) for part in command.script_parts[1:])
 
 
 @for_app('open', 'xdg-open', 'gnome-open', 'kde-open')

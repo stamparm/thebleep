@@ -59,16 +59,24 @@ task: <Task pending coro=<RedisProtocol._reader_coroutine() running at /home/nvb
     '''
 ]
 
-lsof_stdout = b'''COMMAND   PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
-node    18233 nvbn   16u  IPv4 557134      0t0  TCP localhost:http-alt (LISTEN)
+# What `lsof -t -i :PORT -sTCP:LISTEN` prints: the listening pid alone. The
+# unfiltered table this used to read listed clients connected to the port as
+# well, and its first row could be a browser rather than the server.
+lsof_stdout = b'''18233
 '''
 
 
 @pytest.fixture(autouse=True)
 def lsof(mocker):
-    return mocker.patch(
-        'thebleep.rules.port_already_in_use.tool_lines',
-        return_value=lsof_stdout.decode('utf-8').splitlines())
+    def listening(arguments):
+        assert arguments[:3] == ['lsof', '-t', '-i']
+        assert arguments[-1] == '-sTCP:LISTEN'
+        return lsof.return_value
+
+    lsof = mocker.patch('thebleep.rules.port_already_in_use.tool_lines',
+                        side_effect=listening)
+    lsof.return_value = lsof_stdout.decode('utf-8').splitlines()
+    return lsof
 
 
 @pytest.mark.usefixtures('no_memoize')

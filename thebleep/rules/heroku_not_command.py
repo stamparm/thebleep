@@ -8,5 +8,5 @@ def match(command):
 
 
 def get_new_command(command):
-    return quote_words(re.findall('Run heroku _ to run ([^.]*)',
-                                  command.output)[0])
+    found = re.findall('Run heroku _ to run ([^.]+)', command.output)
+    return quote_words(found[0]) if found else []

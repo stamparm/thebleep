@@ -12,8 +12,7 @@ def match(command):
 
 
 def get_new_command(command):
-    url = re.findall(
+    found = re.findall(
         r'Visit ([^ ]*) for documentation about this command.',
-        command.output)[0]
-
-    return open_command(url)
+        command.output)
+    return open_command(found[0]) if found else []

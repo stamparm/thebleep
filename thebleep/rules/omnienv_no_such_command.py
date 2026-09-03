@@ -27,12 +27,18 @@ def get_app_commands(app):
 
 
 def get_new_command(command):
-    broken = re.findall(r"env: no such command ['`]([^']*)'", command.output)[0]
+    found = re.findall(r"env: no such command ['`]([^']*)'", command.output)
+    if not found:
+        return []
+    broken = found[0]
     matched = [replace_argument(command.script, broken, common_typo)
                for common_typo in COMMON_TYPOS.get(broken, [])]
 
     start = command_word_index(command.script_parts)
     app = command.script_parts[start]
-    app_commands = cache(which(app))(get_app_commands)(app)
+    # Cached under the binary, when there is one to cache under.
+    listing = cache(which(app))(get_app_commands) if which(app) \
+        else get_app_commands
+    app_commands = listing(app)
     matched.extend(replace_command(command, broken, app_commands))
     return matched

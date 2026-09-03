@@ -9,7 +9,9 @@ def match(command):
 
 
 def get_new_command(command):
-    broken_cmd = re.findall(r'tsuru: "([^"]*)" is not a tsuru command',
-                            command.output)[0]
-    return replace_command(command, broken_cmd,
+    found = re.findall(r'tsuru: "([^"]*)" is not a tsuru command',
+                       command.output)
+    if not found:
+        return []
+    return replace_command(command, found[0],
                            get_all_matched_commands(command.output))
