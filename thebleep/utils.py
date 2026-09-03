@@ -525,12 +525,9 @@ def _executable_extensions():
     if os.name != 'nt':
         return ()
 
-    # PATHEXT is semicolon-separated whatever `os.pathsep` says, and falls
-    # back to the same list `which` uses: without it, every file on PATH was
-    # a candidate and `pnpm.cmd` was compared against the typo with its
-    # extension on.
-    source = os.environ.get('PATHEXT') or DEFAULT_PATHEXT
-    return tuple(extension.lower() for extension in source.split(';')
+    # PATHEXT is semicolon-separated whatever `os.pathsep` says.
+    return tuple(extension.lower()
+                 for extension in os.environ.get('PATHEXT', '').split(';')
                  if extension.startswith('.'))
 
 
