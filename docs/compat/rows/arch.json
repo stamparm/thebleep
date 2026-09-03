@@ -152,7 +152,7 @@
     }
   },
   "label": "arch",
-  "latency_ms": 54,
+  "latency_ms": 75,
   "machine": "x86_64",
   "python": "3.14.7",
   "recorded_at": "2026-09-03",

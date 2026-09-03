@@ -154,7 +154,7 @@
     }
   },
   "label": "ubuntu-24.04",
-  "latency_ms": 38,
+  "latency_ms": 60,
   "machine": "x86_64",
   "python": "3.12.3",
   "recorded_at": "2026-09-03",

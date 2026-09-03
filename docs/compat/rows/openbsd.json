@@ -17,8 +17,8 @@
     },
     "cd_typo": {
       "correction": "cd Documents",
-      "exit_status": 2,
-      "output": "sh: cd: line 0: can't cd to Documnets: No such file or directory",
+      "exit_status": 1,
+      "output": "sh: cd: ./Documnets - No such file or directory",
       "ran": "cd Documnets",
       "rule": "cd_correction",
       "status": "ok",
@@ -30,7 +30,7 @@
     "chmod": {
       "correction": "chmod +x script.sh && ./script.sh",
       "exit_status": 126,
-      "output": "sh: ./script.sh: Permission denied",
+      "output": "sh: ./script.sh: cannot execute - Permission denied",
       "ran": "./script.sh",
       "rule": "chmod_x",
       "status": "ok",
@@ -62,7 +62,8 @@
       "rule": "no_command",
       "status": "ok",
       "suggestions": [
-        "git status"
+        "git status",
+        "gtf status"
       ]
     },
     "ls_typo": {
@@ -81,7 +82,7 @@
     "mkdir_parents": {
       "correction": "mkdir -p a/b/c",
       "exit_status": 1,
-      "output": "mkdir: can't create directory 'a/b/c': No such file or directory",
+      "output": "mkdir: a/b/c: No such file or directory",
       "ran": "mkdir a/b/c",
       "rule": "mkdir_p",
       "status": "ok",
@@ -106,34 +107,32 @@
       "status": "na"
     },
     "package_manager": {
-      "correction": "apk add vim",
+      "correction": "sudo pkg_add isntall",
       "exit_status": 1,
-      "output": "ERROR: 'isntall' is not an apk command. See 'apk --help'.",
-      "ran": "apk isntall vim",
-      "rule": "apk_unknown_command",
-      "status": "ok",
-      "suggestions": [
-        "apk add vim",
-        "apk list vim",
-        "apk stats vim"
-      ],
-      "tool": "apk"
-    },
-    "permission": {
-      "correction": "sudo cat /etc/shadow",
-      "exit_status": 1,
-      "output": "cat: can't open '/etc/shadow': Permission denied",
-      "ran": "cat /etc/shadow",
+      "output": "pkg_add: pkg_add must be run as root",
+      "ran": "pkg_add isntall",
       "rule": "sudo",
       "status": "ok",
       "suggestions": [
-        "sudo cat /etc/shadow"
+        "sudo pkg_add isntall"
+      ],
+      "tool": "pkg_add"
+    },
+    "permission": {
+      "correction": "sudo cat /etc/master.passwd",
+      "exit_status": 1,
+      "output": "cat: /etc/master.passwd: Permission denied",
+      "ran": "cat /etc/master.passwd",
+      "rule": "sudo",
+      "status": "ok",
+      "suggestions": [
+        "sudo cat /etc/master.passwd"
       ]
     },
     "rm_dir": {
       "correction": "rm -r emptydir",
       "exit_status": 1,
-      "output": "rm: 'emptydir' is a directory",
+      "output": "rm: emptydir: is a directory",
       "ran": "rm emptydir",
       "rule": "rm_dir",
       "status": "ok",
@@ -153,15 +152,15 @@
       ]
     }
   },
-  "label": "alpine",
-  "latency_ms": 99,
-  "machine": "x86_64",
-  "python": "3.14.7",
+  "label": "openbsd",
+  "latency_ms": 250,
+  "machine": "amd64",
+  "python": "3.13.14",
   "recorded_at": "2026-09-03",
   "recorded_by": "ci",
   "schema": 1,
   "shell": "sh sh",
   "source": "checkout",
-  "system": "Alpine Linux v3.24",
+  "system": "OpenBSD 7.9",
   "thebleep": "4.0.5"
 }

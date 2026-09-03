@@ -1,13 +1,17 @@
 {
   "cells": {
     "cargo": {
-      "reason": "cargo is not installed",
-      "status": "na"
+      "exit_status": 1,
+      "output": "error: rustup could not choose a version of cargo to run, because one wasn't specified explicitly, and no default is configured.\nhelp: run 'rustup default stable' to download the latest stable release of Rust and set it as your default toolchain.",
+      "ran": "cargo biuld",
+      "rule": null,
+      "status": "miss",
+      "suggestions": []
     },
     "cd_parent": {
       "correction": "cd ..",
       "exit_status": 127,
-      "output": "sh: cd..: not found",
+      "output": "bash: line 1: cd..: command not found",
       "ran": "cd..",
       "rule": "cd_parent",
       "status": "ok",
@@ -17,8 +21,8 @@
     },
     "cd_typo": {
       "correction": "cd Documents",
-      "exit_status": 2,
-      "output": "sh: cd: line 0: can't cd to Documnets: No such file or directory",
+      "exit_status": 1,
+      "output": "bash: line 1: cd: Documnets: No such file or directory",
       "ran": "cd Documnets",
       "rule": "cd_correction",
       "status": "ok",
@@ -30,7 +34,7 @@
     "chmod": {
       "correction": "chmod +x script.sh && ./script.sh",
       "exit_status": 126,
-      "output": "sh: ./script.sh: Permission denied",
+      "output": "bash: line 1: ./script.sh: Permission denied",
       "ran": "./script.sh",
       "rule": "chmod_x",
       "status": "ok",
@@ -40,8 +44,17 @@
       ]
     },
     "docker": {
-      "reason": "docker is not installed",
-      "status": "na"
+      "correction": "docker ps",
+      "exit_status": 1,
+      "output": "docker: unknown command: docker pss\n\nRun 'docker --help' for more information",
+      "ran": "docker pss",
+      "rule": "docker_not_command",
+      "status": "ok",
+      "suggestions": [
+        "docker ps",
+        "docker push",
+        "docker stats"
+      ]
     },
     "git_subcommand": {
       "correction": "git push",
@@ -57,7 +70,7 @@
     "git_typo": {
       "correction": "git status",
       "exit_status": 127,
-      "output": "sh: gti: not found",
+      "output": "bash: line 1: gti: command not found",
       "ran": "gti status",
       "rule": "no_command",
       "status": "ok",
@@ -68,20 +81,20 @@
     "ls_typo": {
       "correction": "ls -la",
       "exit_status": 127,
-      "output": "sh: sl: not found",
+      "output": "bash: line 1: sl: command not found",
       "ran": "sl -la",
       "rule": "no_command",
       "status": "ok",
       "suggestions": [
         "ls -la",
-        "su -la",
-        "sh -la"
+        "sql -la",
+        "su -la"
       ]
     },
     "mkdir_parents": {
       "correction": "mkdir -p a/b/c",
       "exit_status": 1,
-      "output": "mkdir: can't create directory 'a/b/c': No such file or directory",
+      "output": "mkdir: cannot create directory ‘a/b/c’: No such file or directory",
       "ran": "mkdir a/b/c",
       "rule": "mkdir_p",
       "status": "ok",
@@ -92,7 +105,7 @@
     "not_on_path": {
       "correction": "~/.local/bin/hellotool",
       "exit_status": 127,
-      "output": "sh: hellotool: not found",
+      "output": "bash: line 1: hellotool: command not found",
       "ran": "hellotool",
       "rule": "not_on_path",
       "status": "ok",
@@ -102,27 +115,34 @@
       ]
     },
     "npm": {
-      "reason": "npm is not installed",
-      "status": "na"
-    },
-    "package_manager": {
-      "correction": "apk add vim",
+      "correction": "npm run build",
       "exit_status": 1,
-      "output": "ERROR: 'isntall' is not an apk command. See 'apk --help'.",
-      "ran": "apk isntall vim",
-      "rule": "apk_unknown_command",
+      "output": "npm error Missing script: \"bulid\"\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error A complete log of this run can be found in: ~/.npm/_logs/2026-09-03T09_55_47_205Z-debug-0.log",
+      "ran": "npm run bulid",
+      "rule": "npm_missing_script",
       "status": "ok",
       "suggestions": [
-        "apk add vim",
-        "apk list vim",
-        "apk stats vim"
+        "npm run build"
+      ]
+    },
+    "package_manager": {
+      "correction": "apt install vim",
+      "exit_status": 100,
+      "output": "WARNING: apt does not have a stable CLI interface. Use with caution in scripts.\n\nE: Invalid operation isntall",
+      "ran": "apt isntall vim",
+      "rule": "apt_invalid_operation",
+      "status": "ok",
+      "suggestions": [
+        "apt install vim",
+        "apt reinstall vim",
+        "apt list vim"
       ],
-      "tool": "apk"
+      "tool": "apt"
     },
     "permission": {
       "correction": "sudo cat /etc/shadow",
       "exit_status": 1,
-      "output": "cat: can't open '/etc/shadow': Permission denied",
+      "output": "cat: /etc/shadow: Permission denied",
       "ran": "cat /etc/shadow",
       "rule": "sudo",
       "status": "ok",
@@ -133,7 +153,7 @@
     "rm_dir": {
       "correction": "rm -r emptydir",
       "exit_status": 1,
-      "output": "rm: 'emptydir' is a directory",
+      "output": "rm: cannot remove 'emptydir': Is a directory",
       "ran": "rm emptydir",
       "rule": "rm_dir",
       "status": "ok",
@@ -153,15 +173,15 @@
       ]
     }
   },
-  "label": "alpine",
-  "latency_ms": 99,
+  "label": "ubuntu-runner",
+  "latency_ms": 68,
   "machine": "x86_64",
-  "python": "3.14.7",
+  "python": "3.12.14",
   "recorded_at": "2026-09-03",
   "recorded_by": "ci",
   "schema": 1,
-  "shell": "sh sh",
+  "shell": "bash 5.2.21(1)-release",
   "source": "checkout",
-  "system": "Alpine Linux v3.24",
+  "system": "Ubuntu 24.04.4 LTS",
   "thebleep": "4.0.5"
 }

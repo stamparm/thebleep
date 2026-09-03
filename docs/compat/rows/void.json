@@ -152,7 +152,7 @@
     }
   },
   "label": "void",
-  "latency_ms": 58,
+  "latency_ms": 56,
   "machine": "x86_64",
   "python": "3.14.7",
   "recorded_at": "2026-09-03",

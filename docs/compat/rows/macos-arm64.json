@@ -1,13 +1,17 @@
 {
   "cells": {
     "cargo": {
-      "reason": "cargo is not installed",
-      "status": "na"
+      "exit_status": 1,
+      "output": "error: rustup could not choose a version of cargo to run, because one wasn't specified explicitly, and no default is configured.\nhelp: run 'rustup default stable' to download the latest stable release of Rust and set it as your default toolchain.",
+      "ran": "cargo biuld",
+      "rule": null,
+      "status": "miss",
+      "suggestions": []
     },
     "cd_parent": {
       "correction": "cd ..",
       "exit_status": 127,
-      "output": "sh: cd..: not found",
+      "output": "zsh:1: command not found: cd..",
       "ran": "cd..",
       "rule": "cd_parent",
       "status": "ok",
@@ -17,8 +21,8 @@
     },
     "cd_typo": {
       "correction": "cd Documents",
-      "exit_status": 2,
-      "output": "sh: cd: line 0: can't cd to Documnets: No such file or directory",
+      "exit_status": 1,
+      "output": "zsh:cd:1: no such file or directory: Documnets",
       "ran": "cd Documnets",
       "rule": "cd_correction",
       "status": "ok",
@@ -30,7 +34,7 @@
     "chmod": {
       "correction": "chmod +x script.sh && ./script.sh",
       "exit_status": 126,
-      "output": "sh: ./script.sh: Permission denied",
+      "output": "zsh:1: permission denied: ./script.sh",
       "ran": "./script.sh",
       "rule": "chmod_x",
       "status": "ok",
@@ -57,7 +61,7 @@
     "git_typo": {
       "correction": "git status",
       "exit_status": 127,
-      "output": "sh: gti: not found",
+      "output": "zsh:1: command not found: gti",
       "ran": "gti status",
       "rule": "no_command",
       "status": "ok",
@@ -68,7 +72,7 @@
     "ls_typo": {
       "correction": "ls -la",
       "exit_status": 127,
-      "output": "sh: sl: not found",
+      "output": "zsh:1: command not found: sl",
       "ran": "sl -la",
       "rule": "no_command",
       "status": "ok",
@@ -81,7 +85,7 @@
     "mkdir_parents": {
       "correction": "mkdir -p a/b/c",
       "exit_status": 1,
-      "output": "mkdir: can't create directory 'a/b/c': No such file or directory",
+      "output": "mkdir: a/b: No such file or directory",
       "ran": "mkdir a/b/c",
       "rule": "mkdir_p",
       "status": "ok",
@@ -92,7 +96,7 @@
     "not_on_path": {
       "correction": "~/.local/bin/hellotool",
       "exit_status": 127,
-      "output": "sh: hellotool: not found",
+      "output": "zsh:1: command not found: hellotool",
       "ran": "hellotool",
       "rule": "not_on_path",
       "status": "ok",
@@ -102,38 +106,45 @@
       ]
     },
     "npm": {
-      "reason": "npm is not installed",
-      "status": "na"
-    },
-    "package_manager": {
-      "correction": "apk add vim",
+      "correction": "npm run build",
       "exit_status": 1,
-      "output": "ERROR: 'isntall' is not an apk command. See 'apk --help'.",
-      "ran": "apk isntall vim",
-      "rule": "apk_unknown_command",
+      "output": "npm error Missing script: \"bulid\"\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error A complete log of this run can be found in: ~/.npm/_logs/2026-09-03T09_56_33_285Z-debug-0.log",
+      "ran": "npm run bulid",
+      "rule": "npm_missing_script",
       "status": "ok",
       "suggestions": [
-        "apk add vim",
-        "apk list vim",
-        "apk stats vim"
+        "npm run build"
+      ]
+    },
+    "package_manager": {
+      "correction": "brew install wget",
+      "exit_status": 1,
+      "output": "..]\n  brew uninstall FORMULA|CASK...\n  brew list [FORMULA|CASK...]\n\nTroubleshooting:\n  brew config\n  brew doctor\n  brew install --verbose --debug FORMULA|CASK\n\nContributing:\n  brew create URL [--no-fetch]\n  brew edit [FORMULA|CASK...]\n\nFurther help:\n  brew commands\n  brew help [COMMAND]\n  man brew\n  https://docs.brew.sh\n\n::error::Invalid usage: Unknown command: brew isntall%0ADid you mean install?",
+      "ran": "brew isntall wget",
+      "rule": "brew_unknown_command",
+      "status": "ok",
+      "suggestions": [
+        "brew install wget",
+        "brew reinstall wget",
+        "brew postinstall wget"
       ],
-      "tool": "apk"
+      "tool": "brew"
     },
     "permission": {
-      "correction": "sudo cat /etc/shadow",
+      "correction": "sudo cat /etc/master.passwd",
       "exit_status": 1,
-      "output": "cat: can't open '/etc/shadow': Permission denied",
-      "ran": "cat /etc/shadow",
+      "output": "cat: /etc/master.passwd: Permission denied",
+      "ran": "cat /etc/master.passwd",
       "rule": "sudo",
       "status": "ok",
       "suggestions": [
-        "sudo cat /etc/shadow"
+        "sudo cat /etc/master.passwd"
       ]
     },
     "rm_dir": {
       "correction": "rm -r emptydir",
       "exit_status": 1,
-      "output": "rm: 'emptydir' is a directory",
+      "output": "rm: emptydir: is a directory",
       "ran": "rm emptydir",
       "rule": "rm_dir",
       "status": "ok",
@@ -153,15 +164,15 @@
       ]
     }
   },
-  "label": "alpine",
+  "label": "macos-arm64",
   "latency_ms": 99,
-  "machine": "x86_64",
-  "python": "3.14.7",
+  "machine": "arm64",
+  "python": "3.12.10",
   "recorded_at": "2026-09-03",
   "recorded_by": "ci",
   "schema": 1,
-  "shell": "sh sh",
+  "shell": "zsh 5.9",
   "source": "checkout",
-  "system": "Alpine Linux v3.24",
+  "system": "macOS 26.6.2",
   "thebleep": "4.0.5"
 }

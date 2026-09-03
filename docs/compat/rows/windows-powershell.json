@@ -1,0 +1,145 @@
+{
+  "cells": {
+    "cargo": {
+      "exit_status": 0,
+      "output": "ly, and no default is configured.\r\nAt line:1 char:5\r\n+ & { cargo biuld } 2>&1 | Out-String -Width 200\r\n+     ~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (error: rustup c... is configured.:String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\nhelp: run 'rustup default stable' to download the latest stable release of Rust and set it as your default toolchain.",
+      "ran": "cargo biuld",
+      "rule": null,
+      "status": "miss",
+      "suggestions": []
+    },
+    "cd_parent": {
+      "reason": "PowerShell accepts `cd..` as it is",
+      "status": "na"
+    },
+    "cd_typo": {
+      "correction": "cd 'Documents'",
+      "exit_status": 0,
+      "output": "\\Temp\\thebleep-compat-0yoa1h6r\\scenario-p5nonxpz\\Documnets' because it does not exist.\r\nAt line:1 char:5\r\n+ & { cd Documnets } 2>&1 | Out-String -Width 200\r\n+     ~~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (C:\\Users\\runner...onxpz\\Documnets:String) [Set-Location], ItemNotFoundE    xception\r\n    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.SetLocationCommand",
+      "ran": "cd Documnets",
+      "rule": "cd_correction",
+      "status": "other",
+      "suggestions": [
+        "cd 'Documents'",
+        "mkdir -p Documnets; if ($?) { cd Documnets }"
+      ]
+    },
+    "chmod": {
+      "reason": "no execute bit on Windows",
+      "status": "na"
+    },
+    "docker": {
+      "correction": "docker 'ps'",
+      "exit_status": 0,
+      "output": "docker : docker: unknown command: docker pss\r\nAt line:1 char:5\r\n+ & { docker pss } 2>&1 | Out-String -Width 200\r\n+     ~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (docker: unknown command: docker pss:String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\n\r\nRun 'docker --help' for more information",
+      "ran": "docker pss",
+      "rule": "docker_not_command",
+      "status": "other",
+      "suggestions": [
+        "docker 'ps'",
+        "docker 'push'",
+        "docker 'stats'"
+      ]
+    },
+    "git_subcommand": {
+      "correction": "git 'push'",
+      "exit_status": 0,
+      "output": "git : git: 'psuh' is not a git command. See 'git --help'.\r\nAt line:1 char:5\r\n+ & { git psuh } 2>&1 | Out-String -Width 200\r\n+     ~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (git: 'psuh' is ...e 'git --help'.:String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\n\r\nThe most similar command is\r\n\tpush",
+      "ran": "git psuh",
+      "rule": "git_not_command",
+      "status": "other",
+      "suggestions": [
+        "git 'push'"
+      ]
+    },
+    "git_typo": {
+      "correction": "git status",
+      "exit_status": 0,
+      "output": " as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct \r\nand try again.\r\nAt line:1 char:5\r\n+ & { gti status } 2>&1 | Out-String -Width 200\r\n+     ~~~\r\n    + CategoryInfo          : ObjectNotFound: (gti:String) [], CommandNotFoundException\r\n    + FullyQualifiedErrorId : CommandNotFoundException",
+      "ran": "gti status",
+      "rule": "no_command",
+      "status": "ok",
+      "suggestions": [
+        "git status"
+      ]
+    },
+    "ls_typo": {
+      "correction": "ls",
+      "exit_status": 0,
+      "output": "ognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct \r\nand try again.\r\nAt line:1 char:5\r\n+ & { lss } 2>&1 | Out-String -Width 200\r\n+     ~~~\r\n    + CategoryInfo          : ObjectNotFound: (lss:String) [], CommandNotFoundException\r\n    + FullyQualifiedErrorId : CommandNotFoundException",
+      "ran": "lss",
+      "rule": "no_command",
+      "status": "ok",
+      "suggestions": [
+        "ls",
+        "less"
+      ]
+    },
+    "mkdir_parents": {
+      "reason": "PowerShell mkdir creates parents by itself",
+      "status": "na"
+    },
+    "not_on_path": {
+      "correction": "'~\\.local\\bin\\hellotool.cmd'",
+      "exit_status": 0,
+      "output": "e of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path \r\nis correct and try again.\r\nAt line:1 char:5\r\n+ & { hellotool } 2>&1 | Out-String -Width 200\r\n+     ~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (hellotool:String) [], CommandNotFoundException\r\n    + FullyQualifiedErrorId : CommandNotFoundException",
+      "ran": "hellotool",
+      "rule": "not_on_path",
+      "status": "ok",
+      "suggestions": [
+        "'~\\.local\\bin\\hellotool.cmd'",
+        "$env:PATH = '~\\.local\\bin' + [IO.Path]::PathSeparator + $env:PATH; if ($?) { hellotool }"
+      ]
+    },
+    "npm": {
+      "correction": "npm run 'build'",
+      "exit_status": 0,
+      "output": "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (npm error Missing script: \"bulid\":String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\nnpm error\r\nnpm error To see a list of scripts, run:\r\nnpm error   npm run\r\nnpm error A complete log of this run can be found in: C:\\npm\\cache\\_logs\\2026-09-03T09_56_08_878Z-debug-0.log",
+      "ran": "npm run bulid",
+      "rule": "npm_missing_script",
+      "status": "other",
+      "suggestions": [
+        "npm run 'build'"
+      ]
+    },
+    "package_manager": {
+      "exit_status": 0,
+      "output": "location\r\n  --verbose,--verbose-logs    Enables verbose logging for winget\r\n  --nowarn,--ignore-warnings  Suppresses warning outputs\r\n  --disable-interactivity     Disable interactive prompts\r\n  --proxy                     Set a proxy to use for this execution\r\n  --no-proxy                  Disable the use of proxy for this execution\r\n\r\nMore help can be found at: https://aka.ms/winget-command-help",
+      "ran": "winget isntall vim",
+      "rule": null,
+      "status": "miss",
+      "suggestions": [],
+      "tool": "winget"
+    },
+    "permission": {
+      "reason": "no sudo on Windows",
+      "status": "na"
+    },
+    "rm_dir": {
+      "reason": "PowerShell asks about a directory instead",
+      "status": "na"
+    },
+    "unknown_flag": {
+      "correction": "git status '--short'",
+      "exit_status": 0,
+      "output": "                        ignore changes to submodules, optional when: all, dirty, untracked. (Default: all)\r\n    --[no-]column[=<style>]\r\n                          list untracked files in columns\r\n    --no-renames          do not detect renames\r\n    --renames             opposite of --no-renames\r\n    -M, --find-renames[=<n>]\r\n                          detect renames, optionally set similarity index",
+      "ran": "git status --shrot",
+      "rule": "option_typo",
+      "status": "other",
+      "suggestions": [
+        "git status '--short'"
+      ]
+    }
+  },
+  "label": "windows-powershell",
+  "latency_ms": 172,
+  "machine": "AMD64",
+  "python": "3.12.10",
+  "recorded_at": "2026-09-03",
+  "recorded_by": "ci",
+  "schema": 1,
+  "shell": "powershell 5.1.26100.33296",
+  "source": "checkout",
+  "system": "Windows 10.0.26100",
+  "thebleep": "4.0.5"
+}
