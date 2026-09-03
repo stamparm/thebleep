@@ -68,7 +68,7 @@
     "ls_typo": {
       "correction": "ls -la",
       "exit_status": 1,
-      "output": "xonsh: For full traceback set: $XONSH_SHOW_TRACEBACK = True\nxonsh: subprocess mode: command not found: 'sl'\nDid you mean one of the following?\n    ls:  Alias\n    nl:  Command (nl)\n    sg:  Command (sg)\n    ln:  Command (ln)\n    sh:  Command (sh)",
+      "output": "xonsh: For full traceback set: $XONSH_SHOW_TRACEBACK = True\nxonsh: subprocess mode: command not found: 'sl'\nDid you mean one of the following?\n    ls:  Alias\n    ln:  Command (ln)\n    sg:  Command (sg)\n    sh:  Command (sh)\n    su:  Command (su)",
       "ran": "sl -la",
       "rule": "no_command",
       "status": "ok",
@@ -155,7 +155,7 @@
   },
   "kernel": "6.17.0-1022-azure",
   "label": "debian-13-xonsh",
-  "latency_ms": 50,
+  "latency_ms": 57,
   "machine": "x86_64",
   "python": "3.13.5",
   "recorded_at": "2026-09-03",

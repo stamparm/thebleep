@@ -153,7 +153,7 @@
   },
   "kernel": "6.17.0-1022-azure",
   "label": "arch",
-  "latency_ms": 84,
+  "latency_ms": 82,
   "machine": "x86_64",
   "python": "3.14.7",
   "recorded_at": "2026-09-03",
