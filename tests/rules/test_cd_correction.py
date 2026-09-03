@@ -1,6 +1,5 @@
 import pytest
 from thebleep.rules.cd_correction import get_new_command, match
-from thebleep.shells import shell
 from thebleep.types import Command
 
 
@@ -26,5 +25,32 @@ def test_environment_assignment_is_preserved(tmp_path, monkeypatch):
     command = Command('CDPATH= cd fop',
                       'cd: fop: No such file or directory')
 
-    assert get_new_command(command) == \
-        'CDPATH= cd {}'.format(shell.quote(str(tmp_path / 'foo')))
+    assert get_new_command(command) == 'CDPATH= cd foo'
+
+
+def test_a_relative_destination_stays_relative(tmp_path, monkeypatch):
+    """`cd Documnets` came back as `cd /home/me/projects/Documents`."""
+    tmp_path.joinpath('Documents').mkdir()
+    monkeypatch.chdir(str(tmp_path))
+    command = Command('cd Documnets',
+                      'cd: Documnets: No such file or directory')
+    assert get_new_command(command) == 'cd Documents'
+
+
+def test_dots_in_a_relative_destination_are_kept(tmp_path, monkeypatch):
+    tmp_path.joinpath('Documents').mkdir()
+    tmp_path.joinpath('here').mkdir()
+    monkeypatch.chdir(str(tmp_path.joinpath('here')))
+    command = Command('cd ../Documnets',
+                      'cd: ../Documnets: No such file or directory')
+    assert get_new_command(command) == 'cd ../Documents'
+
+
+def test_an_absolute_destination_stays_absolute(tmp_path, monkeypatch):
+    tmp_path.joinpath('Documents').mkdir()
+    monkeypatch.chdir(str(tmp_path))
+    typo = str(tmp_path.joinpath('Documnets'))
+    command = Command('cd ' + typo,
+                      'cd: ' + typo + ': No such file or directory')
+    assert get_new_command(command) == 'cd ' + str(
+        tmp_path.joinpath('Documents'))

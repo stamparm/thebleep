@@ -37,22 +37,31 @@ def get_new_command(command):
     if dest[-1] == '':
         dest = dest[:-1]
 
-    if dest[0] == '':
+    absolute = dest[0] == ''
+    if absolute:
         cwd = os.sep
         dest = dest[1:]
     else:
         cwd = os.getcwd()
+    # What was typed, spelling fixed. `cd Documnets` used to come back as
+    # `cd /home/me/projects/Documents`: right, and nothing like what anyone
+    # would have typed. A relative destination stays relative.
+    corrected = []
     for directory in dest:
         if directory == ".":
+            corrected.append(directory)
             continue
         elif directory == "..":
             cwd = os.path.split(cwd)[0]
+            corrected.append(directory)
             continue
         best_matches = get_close_matches(directory, _get_sub_dirs(cwd), cutoff=MAX_ALLOWED_DIFF)
         if best_matches:
             cwd = os.path.join(cwd, best_matches[0])
+            corrected.append(best_matches[0])
         else:
             return cd_mkdir.get_new_command(command)
+    fixed = cwd if absolute else os.path.join(*corrected)
     return replace_argument(command.script,
                             command.script_parts[start + 1],
-                            shell.quote(cwd))
+                            shell.quote(fixed))
