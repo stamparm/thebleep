@@ -137,8 +137,9 @@ entry_points = {'console_scripts': [
 
 setup(name='thebleep',
       version=VERSION,
-      description='Corrects your previous console command. The maintained'
-                  ' successor to The Fuck.',
+      description='Fixes the console command that just failed, or the one you'
+                  ' are about to run. Learns from you, explains itself, works'
+                  ' with coding agents. Successor to The Fuck.',
       long_description=long_description,
       long_description_content_type='text/markdown',
       author='Miroslav Stampar',
