@@ -197,3 +197,18 @@ def test_environment_assignment_is_not_used_as_the_app(mocker):
                 invalid_operation_apt3('instal')))[0] == \
         'DEBIAN_FRONTEND=noninteractive apt install vim'
     get_operations.assert_called_once_with('apt')
+
+
+def test_the_operation_is_read_where_it_is_not_the_last_word(mocker):
+    """Elvish appends its own exception after apt's output."""
+    from thebleep.rules import apt_invalid_operation
+    from thebleep.types import Command
+
+    mocker.patch.object(apt_invalid_operation, '_get_operations',
+                        return_value=['install', 'remove', 'update'])
+    output = (u'Error: Invalid operation isntall\n'
+              u'Exception: apt exited with 100\n'
+              u'  code from -c:1:1-20: apt isntall vim 2>&1\n')
+    assert apt_invalid_operation.match(Command('apt isntall vim', output))
+    assert apt_invalid_operation.get_new_command(
+        Command('apt isntall vim', output))[0] == 'apt install vim'

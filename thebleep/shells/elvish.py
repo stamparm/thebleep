@@ -98,10 +98,14 @@ class Elvish(Generic):
         return {}
 
     def how_to_configure(self):
-        home = os.path.expanduser('~')
-        base = os.environ.get('XDG_CONFIG_HOME') or os.path.join(home,
-                                                                 '.config')
-        config = os.path.join(base, 'elvish', 'rc.elv').replace(home, '~', 1)
+        # Written with forward slashes on every platform: this is a line for
+        # a person to read, not a path for `open`.
+        base = os.environ.get('XDG_CONFIG_HOME')
+        if base:
+            config = base.replace(os.path.expanduser('~'), '~', 1).replace(
+                '\\', '/') + '/elvish/rc.elv'
+        else:
+            config = '~/.config/elvish/rc.elv'
         return self._create_shell_configuration(
             content=self.app_alias_loader(get_alias()),
             path=config,

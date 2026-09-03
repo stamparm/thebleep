@@ -114,7 +114,7 @@ def _chmod(env):
     if env.powershell:
         return {'na': 'no execute bit on Windows'}
     return {'run': './script.sh',
-            'expect': r'^chmod \+x script\.sh && \./script\.sh$',
+            'expect': r'^chmod \+x script\.sh(?: &&|;) \./script\.sh$',
             'files': {'script.sh': ('#!/bin/sh\necho hi\n', False)}}
 
 

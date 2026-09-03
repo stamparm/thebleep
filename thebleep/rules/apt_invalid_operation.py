@@ -1,3 +1,4 @@
+import re
 from thebleep.specific.apt import apt_available
 from thebleep.specific.sudo import sudo_support
 from thebleep.utils import (command_word_index, for_app, eager,
@@ -11,6 +12,11 @@ enabled_by_default = apt_available
 # matched, so `apt instal vim` got nothing while `apt-get instal vim` worked,
 # and `apt` is the one people type. Both captured from the real programs.
 INVALID_OPERATION = 'Invalid operation'
+# The word apt refused, wherever in the output it is. This was the last word
+# of the output, which is the operation only while apt has the last word: a
+# shell that appends its own note -- Elvish's `Exception: apt exited with
+# 100` and the line that raised it -- put something else there.
+NAMED = re.compile(r'Invalid operation (\S+)')
 
 
 @sudo_support
@@ -57,7 +63,10 @@ def _get_operations(app):
 
 @sudo_support
 def get_new_command(command):
-    invalid_operation = command.output.split()[-1]
+    found = NAMED.search(command.output)
+    if not found:
+        return []
+    invalid_operation = found.group(1)
 
     if invalid_operation == 'uninstall':
         return [replace_argument(command.script, 'uninstall', 'remove')]

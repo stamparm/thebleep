@@ -140,14 +140,14 @@ aliases[{name!r}] = _thebleep_{name}'''.format(name=alias_name, words=words)
 
     def how_to_configure(self):
         home = os.path.expanduser('~')
-        xdg = os.path.join(
-            os.environ.get('XDG_CONFIG_HOME') or os.path.join(home, '.config'),
-            'xonsh', 'rc.xsh')
+        base = os.environ.get('XDG_CONFIG_HOME') or os.path.join(home, '.config')
+        xdg = os.path.join(base, 'xonsh', 'rc.xsh')
         if os.path.exists(os.path.join(home, '.xonshrc')) \
                 and not os.path.exists(xdg):
             config = '~/.xonshrc'
         else:
-            config = xdg.replace(home, '~', 1)
+            # Forward slashes on every platform: a line for a person to read.
+            config = xdg.replace(home, '~', 1).replace('\\', '/')
         return self._create_shell_configuration(
             content=self.app_alias_loader(get_alias()),
             path=config,
