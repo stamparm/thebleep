@@ -79,6 +79,50 @@ thebleep --alias-loader fuck >> ~/.bashrc
 Python 3.9 through 3.14 on Linux, macOS and Windows; Bash, Zsh, Fish, Nushell,
 tcsh, ksh, xonsh, Elvish and PowerShell. [Supported everything](#supported-everything).
 
+## Where it works
+
+The same slips, typed into a real shell on each of these, and what came back.
+
+<!-- compat: written by ci/compat_matrix.py render -->
+| | `gti status` | `git psuh` | `sl -la` | `git status --shrot` | `apt isntall`, `dnf`, `apk`… | permission denied | `mkdir a/b/c` | `./script.sh` without +x | `cd Documnets` | `rm` a directory | installed, not on PATH | `cd..` | `docker pss` | `npm run bulid` | `cargo biuld` | ms |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|--:|
+| **Debian 13** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 54 |
+| **Debian 13 (elvish)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 42 |
+| **Debian 13 (ksh93)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 64 |
+| **Debian 13 (mksh)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 66 |
+| **Debian 13 (xonsh)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 57 |
+| **Ubuntu 24.04.4 LTS** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 52 |
+| **Ubuntu 24.04.4 LTS · by hand** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 45 |
+| **Ubuntu 24.04.4 LTS · GitHub runner** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | 68 |
+| **Ubuntu 24.04.4 LTS on WSL 2** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ✅ | ➖ | 2283 |
+| **Fedora Linux 44** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 82 |
+| **AlmaLinux 9.8** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 41 |
+| **Arch Linux** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 82 |
+| **openSUSE Tumbleweed** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 56 |
+| **Alpine Linux v3.24 (sh)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 118 |
+| **Void Linux** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 91 |
+| **FreeBSD 14.3-RELEASE (sh)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 83 |
+| **OpenBSD 7.9** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 240 |
+| **NetBSD 11.0** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 140 |
+| **macOS 26.5.2** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ✅ | ➖ | 91 |
+| **macOS 15.7.9** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ✅ | ➖ | 117 |
+| **Windows Server 2025 (PowerShell 5.1)** | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | ✅ | ➖ | ✅ | ➖ | ✅ | ✅ | ➖ | 171 |
+| **Windows Server 2025 (PowerShell 7.6)** | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | ✅ | ➖ | ✅ | ➖ | ✅ | ✅ | ➖ | 175 |
+
+22 platforms, 266 of 266 applicable slips corrected. ✅ the first suggestion was the right command; ➖ the slip cannot happen there; ❌ it was not corrected. *ms* is the wall time of a command-only correction, Python start included, median of 5 runs; the WSL row was recorded on a shared Windows runner, where WSL starts a process far slower than a laptop does. Every cell was recorded by [ci/compat_matrix.py](ci/compat_matrix.py) typing the slip into that platform's shell and reading the answer, never by hand; the corrections themselves are on the [full page](docs/compat/README.md).
+<!-- end compat -->
+
+The rows are recorded by
+[a weekly workflow](.github/workflows/compat-matrix.yml) that boots each
+platform -- a container for the Linux distributions, a runner for macOS and
+Windows, a virtual machine for the BSDs -- installs The Bleep, and runs
+[ci/compat_matrix.py](ci/compat_matrix.py). That script types each slip into
+the platform's shell, keeps what the shell printed, hands it to the correction
+engine exactly as `bleep` would, and writes down the first suggestion. It never
+runs one. The [full page](docs/compat/README.md) has every correction as text,
+with the shell and Python version of each row; a row can also be recorded on a
+machine CI cannot reach by running the same script there.
+
 ## Measured against The Fuck
 
 The Fuck 3.32 is the last release of the tool this grew out of: January 2022,
@@ -171,50 +215,6 @@ make the answer a fact about your machine — `PATH`, the shell history, and
 Debian's `command-not-found` database, which would have `sl` answered with
 `apt-get install sl` on a machine that has it and `ls` on one that does not.
 Both tools are given the identical question.
-
-## Where it works
-
-The same slips, typed into a real shell on each of these, and what came back.
-
-<!-- compat: written by ci/compat_matrix.py render -->
-| | `gti status` | `git psuh` | `sl -la` | `git status --shrot` | `apt isntall`, `dnf`, `apk`… | permission denied | `mkdir a/b/c` | `./script.sh` without +x | `cd Documnets` | `rm` a directory | installed, not on PATH | `cd..` | `docker pss` | `npm run bulid` | `cargo biuld` | ms |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|--:|
-| **Debian 13** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 54 |
-| **Debian 13 (elvish)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 42 |
-| **Debian 13 (ksh93)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 64 |
-| **Debian 13 (mksh)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 66 |
-| **Debian 13 (xonsh)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 57 |
-| **Ubuntu 24.04.4 LTS** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 52 |
-| **Ubuntu 24.04.4 LTS · by hand** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 45 |
-| **Ubuntu 24.04.4 LTS · GitHub runner** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | 68 |
-| **Ubuntu 24.04.4 LTS on WSL 2** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ✅ | ➖ | 2283 |
-| **Fedora Linux 44** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 82 |
-| **AlmaLinux 9.8** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 41 |
-| **Arch Linux** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 82 |
-| **openSUSE Tumbleweed** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 56 |
-| **Alpine Linux v3.24 (sh)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 118 |
-| **Void Linux** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 91 |
-| **FreeBSD 14.3-RELEASE (sh)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 83 |
-| **OpenBSD 7.9** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 240 |
-| **NetBSD 11.0** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 140 |
-| **macOS 26.5.2** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ✅ | ➖ | 91 |
-| **macOS 15.7.9** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ✅ | ➖ | 117 |
-| **Windows Server 2025 (PowerShell 5.1)** | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | ✅ | ➖ | ✅ | ➖ | ✅ | ✅ | ➖ | 171 |
-| **Windows Server 2025 (PowerShell 7.6)** | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | ✅ | ➖ | ✅ | ➖ | ✅ | ✅ | ➖ | 175 |
-
-22 platforms, 266 of 266 applicable slips corrected. ✅ the first suggestion was the right command; ➖ the slip cannot happen there; ❌ it was not corrected. *ms* is the wall time of a command-only correction, Python start included, median of 5 runs; the WSL row was recorded on a shared Windows runner, where WSL starts a process far slower than a laptop does. Every cell was recorded by [ci/compat_matrix.py](ci/compat_matrix.py) typing the slip into that platform's shell and reading the answer, never by hand; the corrections themselves are on the [full page](docs/compat/README.md).
-<!-- end compat -->
-
-The rows are recorded by
-[a weekly workflow](.github/workflows/compat-matrix.yml) that boots each
-platform -- a container for the Linux distributions, a runner for macOS and
-Windows, a virtual machine for the BSDs -- installs The Bleep, and runs
-[ci/compat_matrix.py](ci/compat_matrix.py). That script types each slip into
-the platform's shell, keeps what the shell printed, hands it to the correction
-engine exactly as `bleep` would, and writes down the first suggestion. It never
-runs one. The [full page](docs/compat/README.md) has every correction as text,
-with the shell and Python version of each row; a row can also be recorded on a
-machine CI cannot reach by running the same script there.
 
 ## Contents
 
@@ -522,18 +522,15 @@ that would work everywhere is `TIOCSTI`, which pushes characters into another
 process's terminal as though they had been typed. Modern Linux can refuse it
 outright, and does by default — for good reasons that apply here too.
 
-| Shell | How | What you get |
+| Shell | Where <kbd>tab</kbd> puts the correction | Through |
 | --- | --- | --- |
-| Zsh | `print -z` | your next prompt, already filled in |
-| Fish | `commandline --replace` | your next prompt, already filled in |
-| Nushell ≥ 0.87 | `commandline edit --replace` | every correction, always |
-| Elvish | `edit:current-command` | your next prompt, already filled in |
-| Bash ≥ 4.0 | `read -e -i` | a readline prompt, already filled in |
-| PowerShell | `PSConsoleReadLine::AddToHistory` | press <kbd>↑</kbd> to bring it up |
-| Bash 3.2 (macOS system bash) | — | not offered |
-| tcsh | — | not offered |
-| ksh | — | not offered |
-| xonsh | — | not offered |
+| Zsh | your next prompt, already filled in | `print -z` |
+| Fish | your next prompt, already filled in | `commandline --replace` |
+| Elvish | your next prompt, already filled in | `edit:current-command` |
+| Nushell ≥ 0.87 | your next prompt, every correction, always | `commandline edit --replace` |
+| Bash ≥ 4.0 | a readline prompt, already filled in | `read -e -i` |
+| PowerShell | your history; <kbd>↑</kbd> brings it up | `PSConsoleReadLine::AddToHistory` |
+| tcsh, ksh, xonsh, Bash 3.2 | corrections run the usual way, after your <kbd>enter</kbd>; these line editors take no text from a command, so there is no <kbd>tab</kbd> step and the prompt does not show one | |
 
 Bash is the one that is close rather than exact. It has no way to write the
 *next* prompt's buffer, so what you get is readline itself — your keymap, your
