@@ -179,11 +179,19 @@ The same slips, typed into a real shell on each of these, and what came back.
 <!-- compat: written by ci/compat_matrix.py render -->
 | | `gti status` | `git psuh` | `sl -la` | `git status --shrot` | `apt isntall`, `dnf`, `apk`… | permission denied | `mkdir a/b/c` | `./script.sh` without +x | `cd Documnets` | `rm` a directory | installed, not on PATH | `cd..` | `docker pss` | `npm run bulid` | `cargo biuld` | ms |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|--:|
+<<<<<<< Updated upstream
 | **Debian 13** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 56 |
 | **Debian 13 (ksh93)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 61 |
 | **Debian 13 (mksh)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 61 |
 | **Debian 13 (xonsh)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 50 |
 | **Ubuntu 24.04.4 LTS** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 60 |
+=======
+| **Debian 13** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 37 |
+| **Debian 13 (elvish)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 36 |
+| **Debian 13 (ksh93)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 62 |
+| **Debian 13 (mksh)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 64 |
+| **Ubuntu 24.04.4 LTS** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 62 |
+>>>>>>> Stashed changes
 | **Ubuntu 24.04.4 LTS · by hand** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 45 |
 | **Ubuntu 24.04.4 LTS · GitHub runner** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | 68 |
 | **Ubuntu 24.04.4 LTS on WSL 2** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ✅ | ➖ | 2329 |

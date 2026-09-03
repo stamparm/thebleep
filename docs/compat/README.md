@@ -34,6 +34,30 @@ Command-only correction in 56 ms, median of 5 runs, Python start included.
 | `npm run bulid` |  | ➖ npm is not installed |
 | `cargo biuld` |  | ➖ cargo is not installed |
 
+## Debian 13 (elvish)
+
+`debian-13-elvish` · elvish 0.21.0+Debian-2+b7 · Python 3.13.5 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
+
+Command-only correction in 36 ms, median of 5 runs, Python start included.
+
+| slip | typed | answer |
+|---|---|---|
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✅ `apt install vim` |
+| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh; ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` |  | ➖ docker is not installed |
+| `npm run bulid` |  | ➖ npm is not installed |
+| `cargo biuld` |  | ➖ cargo is not installed |
+
 ## Debian 13 (ksh93)
 
 `debian-13-ksh93` · ksh93 93u+m/1.0.10 · Python 3.13.5 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
