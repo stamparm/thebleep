@@ -104,7 +104,7 @@
     "npm": {
       "correction": "npm run build",
       "exit_status": 1,
-      "output": "npm error Missing script: \"bulid\"\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error A complete log of this run can be found in: ~/.npm/_logs/2026-09-03T12_27_02_546Z-debug-0.log",
+      "output": "npm error Missing script: \"bulid\"\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error A complete log of this run can be found in: ~/.npm/_logs/2026-09-03T12_36_58_522Z-debug-0.log",
       "ran": "npm run bulid",
       "rule": "npm_missing_script",
       "status": "ok",
@@ -160,8 +160,9 @@
       ]
     }
   },
+  "kernel": "25.5.0",
   "label": "macos-arm64",
-  "latency_ms": 94,
+  "latency_ms": 88,
   "machine": "arm64",
   "python": "3.12.10",
   "recorded_at": "2026-09-03",

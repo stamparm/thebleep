@@ -152,6 +152,7 @@
       ]
     }
   },
+  "kernel": "11.0",
   "label": "netbsd",
   "latency_ms": 140,
   "machine": "amd64",

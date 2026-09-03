@@ -153,8 +153,9 @@
       ]
     }
   },
+  "kernel": "6.17.0-1022-azure",
   "label": "almalinux-9",
-  "latency_ms": 66,
+  "latency_ms": 63,
   "machine": "x86_64",
   "python": "3.9.25",
   "recorded_at": "2026-09-03",

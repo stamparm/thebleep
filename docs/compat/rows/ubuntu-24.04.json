@@ -153,8 +153,9 @@
       ]
     }
   },
+  "kernel": "6.17.0-1022-azure",
   "label": "ubuntu-24.04",
-  "latency_ms": 60,
+  "latency_ms": 38,
   "machine": "x86_64",
   "python": "3.12.3",
   "recorded_at": "2026-09-03",

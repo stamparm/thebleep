@@ -113,7 +113,7 @@
     "npm": {
       "correction": "npm run build",
       "exit_status": 1,
-      "output": "npm error Missing script: \"bulid\"\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error A complete log of this run can be found in: ~/.npm/_logs/2026-09-03T12_26_15_111Z-debug-0.log",
+      "output": "npm error Missing script: \"bulid\"\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error A complete log of this run can be found in: ~/.npm/_logs/2026-09-03T12_36_38_831Z-debug-0.log",
       "ran": "npm run bulid",
       "rule": "npm_missing_script",
       "status": "ok",
@@ -169,8 +169,9 @@
       ]
     }
   },
+  "kernel": "6.17.0-1022-azure",
   "label": "ubuntu-runner",
-  "latency_ms": 71,
+  "latency_ms": 65,
   "machine": "x86_64",
   "python": "3.12.14",
   "recorded_at": "2026-09-03",
