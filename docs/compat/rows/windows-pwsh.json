@@ -11,7 +11,7 @@
     "cd_typo": {
       "correction": "cd Documents",
       "exit_status": 0,
-      "output": "Set-Location: Cannot find path 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\thebleep-compat-czyh0gs5\\scenario-82eah5j6\\Documnets' because it does not exist.",
+      "output": "Set-Location: Cannot find path 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\thebleep-compat-x7i_gi9s\\scenario-lh5duj2p\\Documnets' because it does not exist.",
       "ran": "cd Documnets",
       "rule": "cd_correction",
       "status": "ok",
@@ -90,7 +90,7 @@
     "npm": {
       "correction": "npm run build",
       "exit_status": 0,
-      "output": "npm error Missing script: \"bulid\"\r\nnpm error\r\nnpm error To see a list of scripts, run:\r\nnpm error   npm run\r\nnpm error A complete log of this run can be found in: C:\\npm\\cache\\_logs\\2026-09-03T13_35_54_367Z-debug-0.log",
+      "output": "npm error Missing script: \"bulid\"\r\nnpm error\r\nnpm error To see a list of scripts, run:\r\nnpm error   npm run\r\nnpm error A complete log of this run can be found in: C:\\npm\\cache\\_logs\\2026-09-03T14_06_02_547Z-debug-0.log",
       "ran": "npm run bulid",
       "rule": "npm_missing_script",
       "status": "ok",
@@ -134,7 +134,7 @@
   },
   "kernel": "2025Server",
   "label": "windows-pwsh",
-  "latency_ms": 155,
+  "latency_ms": 166,
   "machine": "AMD64",
   "python": "3.12.10",
   "recorded_at": "2026-09-03",

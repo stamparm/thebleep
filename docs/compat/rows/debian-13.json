@@ -155,7 +155,7 @@
   },
   "kernel": "6.17.0-1022-azure",
   "label": "debian-13",
-  "latency_ms": 37,
+  "latency_ms": 56,
   "machine": "x86_64",
   "python": "3.13.5",
   "recorded_at": "2026-09-03",

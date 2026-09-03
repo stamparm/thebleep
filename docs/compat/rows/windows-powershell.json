@@ -11,7 +11,7 @@
     "cd_typo": {
       "correction": "cd Documents",
       "exit_status": 0,
-      "output": "cd : Cannot find path 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\thebleep-compat-n1y2_5aw\\scenario-mttxaw6y\\Documnets' because it does not exist.\r\nAt line:1 char:5\r\n+ & { cd Documnets } 2>&1 | Out-String -Width 200\r\n+     ~~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (C:\\Users\\runner...xaw6y\\Documnets:String) [Set-Location], ItemNotFoundE    xception\r\n    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.SetLocationCommand",
+      "output": "cd : Cannot find path 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\thebleep-compat-jda96mgu\\scenario-7h3qd49u\\Documnets' because it does not exist.\r\nAt line:1 char:5\r\n+ & { cd Documnets } 2>&1 | Out-String -Width 200\r\n+     ~~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (C:\\Users\\runner...qd49u\\Documnets:String) [Set-Location], ItemNotFoundE    xception\r\n    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.SetLocationCommand",
       "ran": "cd Documnets",
       "rule": "cd_correction",
       "status": "ok",
@@ -90,7 +90,7 @@
     "npm": {
       "correction": "npm run build",
       "exit_status": 0,
-      "output": "node.exe : npm error Missing script: \"bulid\"\r\nAt line:1 char:1\r\n+ & \"C:\\Program Files\\nodejs/node.exe\" \"C:\\Program Files\\nodejs/node_mo ...\r\n+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (npm error Missing script: \"bulid\":String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\nnpm error\r\nnpm error To see a list of scripts, run:\r\nnpm error   npm run\r\nnpm error A complete log of this run can be found in: C:\\npm\\cache\\_logs\\2026-09-03T13_35_55_184Z-debug-0.log",
+      "output": "node.exe : npm error Missing script: \"bulid\"\r\nAt line:1 char:1\r\n+ & \"C:\\Program Files\\nodejs/node.exe\" \"C:\\Program Files\\nodejs/node_mo ...\r\n+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (npm error Missing script: \"bulid\":String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\nnpm error\r\nnpm error To see a list of scripts, run:\r\nnpm error   npm run\r\nnpm error A complete log of this run can be found in: C:\\npm\\cache\\_logs\\2026-09-03T14_05_49_336Z-debug-0.log",
       "ran": "npm run bulid",
       "rule": "npm_missing_script",
       "status": "ok",

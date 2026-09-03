@@ -155,7 +155,7 @@
   },
   "kernel": "6.17.0-1022-azure",
   "label": "opensuse-tumbleweed",
-  "latency_ms": 70,
+  "latency_ms": 56,
   "machine": "x86_64",
   "python": "3.13.14",
   "recorded_at": "2026-09-03",
