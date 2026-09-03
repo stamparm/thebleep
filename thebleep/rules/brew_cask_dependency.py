@@ -13,7 +13,8 @@ CASK_INSTALL = (u'brew install --cask', u'brew cask install')
 @for_app('brew')
 def match(command):
     return (u'install' in command.script_parts
-            and any(line in command.output for line in CASK_INSTALL))
+            and any(line in command.output for line in CASK_INSTALL)
+            and bool(_get_cask_install_lines(command.output)))
 
 
 @eager
@@ -24,17 +25,14 @@ def _get_cask_install_lines(output):
             yield line
 
 
-def _get_script_for_brew_cask(output):
-    cask_install_lines = _get_cask_install_lines(output)
-    if len(cask_install_lines) > 1:
-        return shell.and_(*cask_install_lines)
-    else:
-        return cask_install_lines[0]
-
-
 def get_new_command(command):
-    brew_cask_script = _get_script_for_brew_cask(command.output)
-    return shell.and_(quote_words(brew_cask_script), command.script)
+    # Each line quoted on its own and *then* chained: quoting the chain made
+    # `&&` a word, and brew was asked to install a cask by that name.
+    lines = _get_cask_install_lines(command.output)
+    if not lines:
+        return []
+    return shell.and_(*([quote_words(line) for line in lines]
+                        + [command.script]))
 
 
 enabled_by_default = brew_available

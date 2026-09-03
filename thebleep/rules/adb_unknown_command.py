@@ -43,6 +43,7 @@ _ADB_COMMANDS = (
 
 def match(command):
     if not (is_app(command, 'adb')
+            and 'Android Debug Bridge version' in command.output
             and command.output.startswith('Android Debug Bridge version')):
         return False
 

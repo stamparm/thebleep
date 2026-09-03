@@ -7,6 +7,7 @@ def match(command):
     parts = command.script_parts
     start = command_word_index(parts)
     return (
+        'cat: ' in command.output and
         command.output.startswith('cat: ') and
         os.path.isdir(parts[start + 1])
     )

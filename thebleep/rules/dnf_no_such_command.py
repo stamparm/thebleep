@@ -24,8 +24,10 @@ def _get_operations():
 
 @sudo_support
 def get_new_command(command):
-    misspelled_command = regex.findall(command.output)[0]
-    return replace_command(command, misspelled_command, _get_operations())
+    found = regex.findall(command.output)
+    if not found:
+        return []
+    return replace_command(command, found[0], _get_operations())
 
 
 enabled_by_default = dnf_available

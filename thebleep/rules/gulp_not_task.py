@@ -13,6 +13,10 @@ def get_gulp_tasks():
 
 
 def get_new_command(command):
-    wrong_task = re.findall(r"Task '(\w+)' is not in your gulpfile",
-                            command.output)[0]
-    return replace_command(command, wrong_task, get_gulp_tasks())
+    # `[^']+`, not `\w+`: gulp tasks are `build-css` and `build:css` as often
+    # as not, and `\w+` could not match them.
+    found = re.findall(r"Task '([^']+)' is not in your gulpfile",
+                       command.output)
+    if not found:
+        return []
+    return replace_command(command, found[0], get_gulp_tasks())

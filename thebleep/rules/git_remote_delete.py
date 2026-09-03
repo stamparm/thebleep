@@ -1,6 +1,9 @@
 from thebleep.specific.git import git_subcommand_index, git_support
 from thebleep.utils import replace_argument
 
+# Nothing here reads the output, so a declined replay is no reason to skip it.
+requires_output = False
+
 
 @git_support
 def match(command):

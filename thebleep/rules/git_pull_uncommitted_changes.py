@@ -12,4 +12,5 @@ def match(command):
 
 @git_support
 def get_new_command(command):
-    return shell.and_('git stash', 'git pull', 'git stash pop')
+    # The user's own pull, arguments and all, not a bare `git pull`.
+    return shell.and_('git stash', command.script, 'git stash pop')

@@ -55,3 +55,20 @@ def test_get_new_command_quotes_output_words():
 
     assert get_new_command(command) == (
         "brew install --cask 'a;touch' && brew install sshfs")
+
+
+def test_several_casks_are_each_quoted_then_chained():
+    """Quoting the joined chain made `&&` a word for brew to install."""
+    from thebleep.shells import shell
+
+    output = ('Error: sshfs: Cask dependencies:\n'
+              '  brew install --cask osxfuse\n'
+              '  brew install --cask foo\n')
+    got = get_new_command(Command('brew install sshfs', output))
+    assert got == shell.and_('brew install --cask osxfuse',
+                             'brew install --cask foo', 'brew install sshfs')
+
+
+def test_a_mention_without_a_line_of_its_own_is_left_alone():
+    output = 'run `brew install --cask osxfuse` first'
+    assert not match(Command('brew install sshfs', output))

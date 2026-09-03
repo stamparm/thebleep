@@ -12,7 +12,8 @@ def match(command):
 
 
 def _get_unknown_command(command):
-    return re.findall(r'Unknown command (\S+)', command.output)[0]
+    found = re.findall(r'Unknown command (\S+)', command.output)
+    return found[0] if found else None
 
 
 @eager
@@ -32,5 +33,7 @@ if which('gem'):
 
 def get_new_command(command):
     unknown_command = _get_unknown_command(command)
+    if unknown_command is None:
+        return []
     all_commands = _get_all_commands()
     return replace_command(command, unknown_command, all_commands)

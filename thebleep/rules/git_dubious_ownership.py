@@ -19,7 +19,11 @@ def match(command):
 def get_new_command(command):
     directory = EXCEPTION.search(command.output).group(1)
 
-    # git prints the path unquoted, which does not survive a space in it.
+    # git quotes the path in its hint when it needs quoting (a space, a
+    # Windows `%(prefix)//` share), in shell single quotes with `'\\''` for an
+    # embedded quote. Undo that, so the path is quoted once, by us.
+    if len(directory) >= 2 and directory[0] == directory[-1] == "'":
+        directory = directory[1:-1].replace("'\\''", "'")
     return shell.and_(
         u'git config --global --add safe.directory {}'.format(
             shell.quote(directory)),

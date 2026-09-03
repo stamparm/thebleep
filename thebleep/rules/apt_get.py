@@ -83,7 +83,7 @@ def get_new_command(command):
                       command.script)
 
 
-# After `no_command`, at 3000: a typo of something already installed beats
+# After `no_command`, at 3100: a typo of something already installed beats
 # installing a look-alike package, and only outranks the guess-tier rules
 # below `no_command` because those have nothing to say about a name apt
 # recognises.
