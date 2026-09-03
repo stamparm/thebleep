@@ -153,7 +153,7 @@
     }
   },
   "label": "openbsd",
-  "latency_ms": 260,
+  "latency_ms": 250,
   "machine": "amd64",
   "python": "3.13.14",
   "recorded_at": "2026-09-03",

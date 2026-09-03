@@ -152,7 +152,7 @@
     }
   },
   "label": "freebsd",
-  "latency_ms": 84,
+  "latency_ms": 66,
   "machine": "amd64",
   "python": "3.12.14",
   "recorded_at": "2026-09-03",

@@ -154,7 +154,7 @@
     }
   },
   "label": "debian-13",
-  "latency_ms": 57,
+  "latency_ms": 55,
   "machine": "x86_64",
   "python": "3.13.5",
   "recorded_at": "2026-09-03",
