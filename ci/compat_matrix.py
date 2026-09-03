@@ -533,7 +533,7 @@ def record(args):
 # Rendering
 # --------------------------------------------------------------------------
 
-MARKS = {'ok': u'✓', 'na': u'—', 'miss': u'✗', 'other': u'✗', 'error': u'✗'}
+MARKS = {'ok': u'✅', 'na': u'➖', 'miss': u'❌', 'other': u'❌', 'error': u'❌'}
 
 
 def load_rows(directory=ROWS):
@@ -608,9 +608,9 @@ def _legend(rows):
                     if cell['status'] == 'ok')
     applicable = sum(1 for row in rows for cell in row['cells'].values()
                      if cell['status'] != 'na')
-    return (u'{} platforms, {} of {} applicable slips corrected. ✓ the first '
-            u'suggestion was the right command; — the slip cannot happen '
-            u'there; ✗ it was not corrected. *ms* is the wall time of a '
+    return (u'{} platforms, {} of {} applicable slips corrected. ✅ the first '
+            u'suggestion was the right command; ➖ the slip cannot happen '
+            u'there; ❌ it was not corrected. *ms* is the wall time of a '
             u'command-only correction, Python start included, median of '
             u'{} runs; the WSL row was recorded on a shared Windows runner, '
             u'where WSL starts a process far slower than a laptop does. '
@@ -629,14 +629,14 @@ def block(rows):
 def _cell_text(cell):
     status = cell['status']
     if status == 'ok':
-        return u'✓ `{}`'.format(cell['correction'])
+        return u'✅ `{}`'.format(cell['correction'])
     if status == 'na':
-        return u'— {}'.format(cell['reason'])
+        return u'➖ {}'.format(cell['reason'])
     if status == 'miss':
-        return u'✗ nothing suggested'
+        return u'❌ nothing suggested'
     if status == 'other':
-        return u'✗ suggested `{}`'.format(cell['correction'])
-    return u'✗ error: {}'.format(cell.get('reason', ''))
+        return u'❌ suggested `{}`'.format(cell['correction'])
+    return u'❌ error: {}'.format(cell.get('reason', ''))
 
 
 def page(rows):

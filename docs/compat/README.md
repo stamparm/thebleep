@@ -18,21 +18,21 @@ Command-only correction in 43 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `sl -la` | ✓ `ls -la` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✓ `apt install vim` |
-| permission denied | `cat /etc/shadow` | ✓ `sudo cat /etc/shadow` |
-| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
-| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
-| installed, not on PATH | `hellotool` | ✓ `~/.local/bin/hellotool` |
-| `cd..` | `cd..` | ✓ `cd ..` |
-| `docker pss` |  | — docker is not installed |
-| `npm run bulid` |  | — npm is not installed |
-| `cargo biuld` |  | — cargo is not installed |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✅ `apt install vim` |
+| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` |  | ➖ docker is not installed |
+| `npm run bulid` |  | ➖ npm is not installed |
+| `cargo biuld` |  | ➖ cargo is not installed |
 
 ## Ubuntu 24.04.4 LTS
 
@@ -42,21 +42,21 @@ Command-only correction in 59 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `sl -la` | ✓ `ls -la` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✓ `apt install vim` |
-| permission denied | `cat /etc/shadow` | ✓ `sudo cat /etc/shadow` |
-| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
-| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
-| installed, not on PATH | `hellotool` | ✓ `~/.local/bin/hellotool` |
-| `cd..` | `cd..` | ✓ `cd ..` |
-| `docker pss` |  | — docker is not installed |
-| `npm run bulid` |  | — npm is not installed |
-| `cargo biuld` |  | — cargo is not installed |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✅ `apt install vim` |
+| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` |  | ➖ docker is not installed |
+| `npm run bulid` |  | ➖ npm is not installed |
+| `cargo biuld` |  | ➖ cargo is not installed |
 
 ## Ubuntu 24.04.4 LTS · by hand
 
@@ -66,21 +66,21 @@ Command-only correction in 45 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `sl -la` | ✓ `ls -la` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✓ `apt install vim` |
-| permission denied | `cat /etc/shadow` | ✓ `sudo cat /etc/shadow` |
-| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
-| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
-| installed, not on PATH | `hellotool` | ✓ `~/.local/bin/hellotool` |
-| `cd..` | `cd..` | ✓ `cd ..` |
-| `docker pss` | `docker pss` | ✓ `docker ps` |
-| `npm run bulid` | `npm run bulid` | ✓ `npm run build` |
-| `cargo biuld` | `cargo biuld` | ✓ `cargo build` |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✅ `apt install vim` |
+| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` | `docker pss` | ✅ `docker ps` |
+| `npm run bulid` | `npm run bulid` | ✅ `npm run build` |
+| `cargo biuld` | `cargo biuld` | ✅ `cargo build` |
 
 ## Ubuntu 24.04.4 LTS · GitHub runner
 
@@ -90,21 +90,21 @@ Command-only correction in 67 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `sl -la` | ✓ `ls -la` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✓ `apt install vim` |
-| permission denied | `cat /etc/shadow` | ✓ `sudo cat /etc/shadow` |
-| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
-| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
-| installed, not on PATH | `hellotool` | ✓ `~/.local/bin/hellotool` |
-| `cd..` | `cd..` | ✓ `cd ..` |
-| `docker pss` | `docker pss` | ✓ `docker ps` |
-| `npm run bulid` | `npm run bulid` | ✓ `npm run build` |
-| `cargo biuld` |  | — cargo has no toolchain here |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✅ `apt install vim` |
+| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` | `docker pss` | ✅ `docker ps` |
+| `npm run bulid` | `npm run bulid` | ✅ `npm run build` |
+| `cargo biuld` |  | ➖ cargo has no toolchain here |
 
 ## Ubuntu 24.04.4 LTS on WSL 2
 
@@ -114,21 +114,21 @@ Command-only correction in 1111 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `sl -la` | ✓ `ls -la` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✓ `apt install vim` |
-| permission denied | `cat /etc/shadow` | ✓ `sudo cat /etc/shadow` |
-| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
-| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
-| installed, not on PATH | `hellotool` | ✓ `~/.local/bin/hellotool` |
-| `cd..` | `cd..` | ✓ `cd ..` |
-| `docker pss` |  | — docker is not installed |
-| `npm run bulid` | `npm run bulid` | ✓ `npm run build` |
-| `cargo biuld` |  | — cargo is not installed |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✅ `apt install vim` |
+| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` |  | ➖ docker is not installed |
+| `npm run bulid` | `npm run bulid` | ✅ `npm run build` |
+| `cargo biuld` |  | ➖ cargo is not installed |
 
 ## Fedora Linux 44
 
@@ -138,21 +138,21 @@ Command-only correction in 75 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `sl -la` | ✓ `ls -la` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `dnf isntall vim` | ✓ `dnf install vim` |
-| permission denied | `cat /etc/shadow` | ✓ `sudo cat /etc/shadow` |
-| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
-| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
-| installed, not on PATH | `hellotool` | ✓ `~/.local/bin/hellotool` |
-| `cd..` | `cd..` | ✓ `cd ..` |
-| `docker pss` |  | — docker is not installed |
-| `npm run bulid` |  | — npm is not installed |
-| `cargo biuld` |  | — cargo is not installed |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `dnf isntall vim` | ✅ `dnf install vim` |
+| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` |  | ➖ docker is not installed |
+| `npm run bulid` |  | ➖ npm is not installed |
+| `cargo biuld` |  | ➖ cargo is not installed |
 
 ## AlmaLinux 9.8
 
@@ -162,21 +162,21 @@ Command-only correction in 64 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `sl -la` | ✓ `ls -la` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `dnf isntall vim` | ✓ `dnf install vim` |
-| permission denied | `cat /etc/shadow` | ✓ `sudo cat /etc/shadow` |
-| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
-| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
-| installed, not on PATH | `hellotool` | ✓ `~/.local/bin/hellotool` |
-| `cd..` | `cd..` | ✓ `cd ..` |
-| `docker pss` |  | — docker is not installed |
-| `npm run bulid` |  | — npm is not installed |
-| `cargo biuld` |  | — cargo is not installed |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `dnf isntall vim` | ✅ `dnf install vim` |
+| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` |  | ➖ docker is not installed |
+| `npm run bulid` |  | ➖ npm is not installed |
+| `cargo biuld` |  | ➖ cargo is not installed |
 
 ## Arch Linux
 
@@ -186,21 +186,21 @@ Command-only correction in 64 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `sl -la` | ✓ `ls -la` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `pacman -s vim` | ✓ `pacman -S vim` |
-| permission denied | `cat /etc/shadow` | ✓ `sudo cat /etc/shadow` |
-| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
-| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
-| installed, not on PATH | `hellotool` | ✓ `~/.local/bin/hellotool` |
-| `cd..` | `cd..` | ✓ `cd ..` |
-| `docker pss` |  | — docker is not installed |
-| `npm run bulid` |  | — npm is not installed |
-| `cargo biuld` |  | — cargo is not installed |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `pacman -s vim` | ✅ `pacman -S vim` |
+| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` |  | ➖ docker is not installed |
+| `npm run bulid` |  | ➖ npm is not installed |
+| `cargo biuld` |  | ➖ cargo is not installed |
 
 ## openSUSE Tumbleweed
 
@@ -210,21 +210,21 @@ Command-only correction in 48 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `sl -la` | ✓ `ls -la` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `zypper isntall vim` | ✓ `zypper install vim` |
-| permission denied | `cat /etc/shadow` | ✓ `sudo cat /etc/shadow` |
-| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
-| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
-| installed, not on PATH | `hellotool` | ✓ `~/.local/bin/hellotool` |
-| `cd..` | `cd..` | ✓ `cd ..` |
-| `docker pss` |  | — docker is not installed |
-| `npm run bulid` |  | — npm is not installed |
-| `cargo biuld` |  | — cargo is not installed |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `zypper isntall vim` | ✅ `zypper install vim` |
+| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` |  | ➖ docker is not installed |
+| `npm run bulid` |  | ➖ npm is not installed |
+| `cargo biuld` |  | ➖ cargo is not installed |
 
 ## Alpine Linux v3.24 (sh)
 
@@ -234,21 +234,21 @@ Command-only correction in 120 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `sl -la` | ✓ `ls -la` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `apk isntall vim` | ✓ `apk add vim` |
-| permission denied | `cat /etc/shadow` | ✓ `sudo cat /etc/shadow` |
-| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
-| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
-| installed, not on PATH | `hellotool` | ✓ `~/.local/bin/hellotool` |
-| `cd..` | `cd..` | ✓ `cd ..` |
-| `docker pss` |  | — docker is not installed |
-| `npm run bulid` |  | — npm is not installed |
-| `cargo biuld` |  | — cargo is not installed |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `apk isntall vim` | ✅ `apk add vim` |
+| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` |  | ➖ docker is not installed |
+| `npm run bulid` |  | ➖ npm is not installed |
+| `cargo biuld` |  | ➖ cargo is not installed |
 
 ## Void Linux
 
@@ -258,21 +258,21 @@ Command-only correction in 55 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `sl -la` | ✓ `ls -la` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `xbps-instal -S vim` | ✓ `xbps-install -S vim` |
-| permission denied | `cat /etc/sudoers` | ✓ `sudo cat /etc/sudoers` |
-| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
-| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
-| installed, not on PATH | `hellotool` | ✓ `~/.local/bin/hellotool` |
-| `cd..` | `cd..` | ✓ `cd ..` |
-| `docker pss` |  | — docker is not installed |
-| `npm run bulid` |  | — npm is not installed |
-| `cargo biuld` |  | — cargo is not installed |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `xbps-instal -S vim` | ✅ `xbps-install -S vim` |
+| permission denied | `cat /etc/sudoers` | ✅ `sudo cat /etc/sudoers` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` |  | ➖ docker is not installed |
+| `npm run bulid` |  | ➖ npm is not installed |
+| `cargo biuld` |  | ➖ cargo is not installed |
 
 ## FreeBSD 14.3-RELEASE (sh)
 
@@ -282,21 +282,21 @@ Command-only correction in 81 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `sl -la` | ✓ `ls -la` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `pkg isntall vim` | ✓ `pkg install vim` |
-| permission denied | `cat /etc/master.passwd` | ✓ `sudo cat /etc/master.passwd` |
-| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
-| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
-| installed, not on PATH | `hellotool` | ✓ `~/.local/bin/hellotool` |
-| `cd..` | `cd..` | ✓ `cd ..` |
-| `docker pss` |  | — docker is not installed |
-| `npm run bulid` |  | — npm is not installed |
-| `cargo biuld` |  | — cargo is not installed |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `pkg isntall vim` | ✅ `pkg install vim` |
+| permission denied | `cat /etc/master.passwd` | ✅ `sudo cat /etc/master.passwd` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` |  | ➖ docker is not installed |
+| `npm run bulid` |  | ➖ npm is not installed |
+| `cargo biuld` |  | ➖ cargo is not installed |
 
 ## OpenBSD 7.9 (sh)
 
@@ -306,21 +306,21 @@ Command-only correction in 270 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `sl -la` | ✓ `ls -la` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `pkg_ad vim` | ✓ `pkg_add vim` |
-| permission denied | `cat /etc/master.passwd` | ✓ `sudo cat /etc/master.passwd` |
-| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
-| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
-| installed, not on PATH | `hellotool` | ✓ `~/.local/bin/hellotool` |
-| `cd..` | `cd..` | ✓ `cd ..` |
-| `docker pss` |  | — docker is not installed |
-| `npm run bulid` |  | — npm is not installed |
-| `cargo biuld` |  | — cargo is not installed |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `pkg_ad vim` | ✅ `pkg_add vim` |
+| permission denied | `cat /etc/master.passwd` | ✅ `sudo cat /etc/master.passwd` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` |  | ➖ docker is not installed |
+| `npm run bulid` |  | ➖ npm is not installed |
+| `cargo biuld` |  | ➖ cargo is not installed |
 
 ## NetBSD 11.0
 
@@ -330,21 +330,21 @@ Command-only correction in 110 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `sl -la` | ✓ `ls -la` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `pkg_ad vim` | ✓ `pkg_add vim` |
-| permission denied | `cat /etc/master.passwd` | ✓ `sudo cat /etc/master.passwd` |
-| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
-| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
-| installed, not on PATH | `hellotool` | ✓ `~/.local/bin/hellotool` |
-| `cd..` | `cd..` | ✓ `cd ..` |
-| `docker pss` |  | — docker is not installed |
-| `npm run bulid` |  | — npm is not installed |
-| `cargo biuld` |  | — cargo is not installed |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `pkg_ad vim` | ✅ `pkg_add vim` |
+| permission denied | `cat /etc/master.passwd` | ✅ `sudo cat /etc/master.passwd` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` |  | ➖ docker is not installed |
+| `npm run bulid` |  | ➖ npm is not installed |
+| `cargo biuld` |  | ➖ cargo is not installed |
 
 ## macOS 26.5.2
 
@@ -354,21 +354,21 @@ Command-only correction in 151 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `sl -la` | ✓ `ls -la` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `brew isntall wget` | ✓ `brew install wget` |
-| permission denied | `cat /etc/master.passwd` | ✓ `sudo cat /etc/master.passwd` |
-| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
-| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
-| installed, not on PATH | `hellotool` | ✓ `~/.local/bin/hellotool` |
-| `cd..` | `cd..` | ✓ `cd ..` |
-| `docker pss` |  | — docker is not installed |
-| `npm run bulid` | `npm run bulid` | ✓ `npm run build` |
-| `cargo biuld` |  | — cargo has no toolchain here |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `brew isntall wget` | ✅ `brew install wget` |
+| permission denied | `cat /etc/master.passwd` | ✅ `sudo cat /etc/master.passwd` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` |  | ➖ docker is not installed |
+| `npm run bulid` | `npm run bulid` | ✅ `npm run build` |
+| `cargo biuld` |  | ➖ cargo has no toolchain here |
 
 ## macOS 15.7.9
 
@@ -378,21 +378,21 @@ Command-only correction in 136 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `sl -la` | ✓ `ls -la` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `brew isntall wget` | ✓ `brew install wget` |
-| permission denied | `cat /etc/master.passwd` | ✓ `sudo cat /etc/master.passwd` |
-| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
-| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
-| installed, not on PATH | `hellotool` | ✓ `~/.local/bin/hellotool` |
-| `cd..` | `cd..` | ✓ `cd ..` |
-| `docker pss` |  | — docker is not installed |
-| `npm run bulid` | `npm run bulid` | ✓ `npm run build` |
-| `cargo biuld` |  | — cargo has no toolchain here |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `brew isntall wget` | ✅ `brew install wget` |
+| permission denied | `cat /etc/master.passwd` | ✅ `sudo cat /etc/master.passwd` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` |  | ➖ docker is not installed |
+| `npm run bulid` | `npm run bulid` | ✅ `npm run build` |
+| `cargo biuld` |  | ➖ cargo has no toolchain here |
 
 ## Windows Server 2025 (PowerShell 5.1)
 
@@ -402,21 +402,21 @@ Command-only correction in 167 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `lss` | ✓ `ls` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `winget isntall vim` | ✓ `winget install vim` |
-| permission denied |  | — no sudo on Windows |
-| `mkdir a/b/c` |  | — PowerShell mkdir creates parents by itself |
-| `./script.sh` without +x |  | — no execute bit on Windows |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory |  | — PowerShell asks about a directory instead |
-| installed, not on PATH | `hellotool` | ✓ `'~\.local\bin\hellotool.cmd'` |
-| `cd..` |  | — PowerShell accepts `cd..` as it is |
-| `docker pss` | `docker pss` | ✓ `docker ps` |
-| `npm run bulid` | `npm run bulid` | ✓ `npm run build` |
-| `cargo biuld` |  | — cargo has no toolchain here |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `lss` | ✅ `ls` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `winget isntall vim` | ✅ `winget install vim` |
+| permission denied |  | ➖ no sudo on Windows |
+| `mkdir a/b/c` |  | ➖ PowerShell mkdir creates parents by itself |
+| `./script.sh` without +x |  | ➖ no execute bit on Windows |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory |  | ➖ PowerShell asks about a directory instead |
+| installed, not on PATH | `hellotool` | ✅ `'~\.local\bin\hellotool.cmd'` |
+| `cd..` |  | ➖ PowerShell accepts `cd..` as it is |
+| `docker pss` | `docker pss` | ✅ `docker ps` |
+| `npm run bulid` | `npm run bulid` | ✅ `npm run build` |
+| `cargo biuld` |  | ➖ cargo has no toolchain here |
 
 ## Windows Server 2025 (PowerShell 7.6)
 
@@ -426,18 +426,18 @@ Command-only correction in 163 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
-| `gti status` | `gti status` | ✓ `git status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `lss` | ✓ `ls` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `winget isntall vim` | ✓ `winget install vim` |
-| permission denied |  | — no sudo on Windows |
-| `mkdir a/b/c` |  | — PowerShell mkdir creates parents by itself |
-| `./script.sh` without +x |  | — no execute bit on Windows |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory |  | — PowerShell asks about a directory instead |
-| installed, not on PATH | `hellotool` | ✓ `'~\.local\bin\hellotool.cmd'` |
-| `cd..` |  | — PowerShell accepts `cd..` as it is |
-| `docker pss` | `docker pss` | ✓ `docker ps` |
-| `npm run bulid` | `npm run bulid` | ✓ `npm run build` |
-| `cargo biuld` |  | — cargo has no toolchain here |
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `lss` | ✅ `ls` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `winget isntall vim` | ✅ `winget install vim` |
+| permission denied |  | ➖ no sudo on Windows |
+| `mkdir a/b/c` |  | ➖ PowerShell mkdir creates parents by itself |
+| `./script.sh` without +x |  | ➖ no execute bit on Windows |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory |  | ➖ PowerShell asks about a directory instead |
+| installed, not on PATH | `hellotool` | ✅ `'~\.local\bin\hellotool.cmd'` |
+| `cd..` |  | ➖ PowerShell accepts `cd..` as it is |
+| `docker pss` | `docker pss` | ✅ `docker ps` |
+| `npm run bulid` | `npm run bulid` | ✅ `npm run build` |
+| `cargo biuld` |  | ➖ cargo has no toolchain here |
