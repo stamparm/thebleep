@@ -120,7 +120,7 @@ def get_rules(command=None):
                   key=lambda rule: rule.priority)
 
 
-def _worth_offering(corrected, command):
+def _worth_offering(corrected, script):
     """Whether this suggestion is different from what the user already typed.
 
     Offering somebody their own command back is not a correction. It happens:
@@ -138,8 +138,8 @@ def _worth_offering(corrected, command):
     # and then failed to find anything to replace could put an empty entry in
     # the selector: it looked different from the failed command, so the
     # unchanged-command check above did not catch it.
-    script = corrected.script.strip()
-    return corrected.side_effect or bool(script) and script != command.strip()
+    offered = corrected.script.strip()
+    return corrected.side_effect or bool(offered) and offered != script.strip()
 
 
 def organize_commands(corrected_commands, script=''):

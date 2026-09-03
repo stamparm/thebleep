@@ -31,13 +31,21 @@ class colorama(object):
         RESET_ALL = '\033[0m'
 
 
-def _ansi_supported():
+def _ansi_supported(stream=None):
     """Whether the stream we colour is something that renders colour.
 
     Colorama used to answer this by wrapping the stream and stripping codes
     from it; asking the stream directly is the same answer for less work.
+    stderr, the stream nearly everything here writes to, is asked once; a
+    caller writing to stdout -- the doctor report, the configuration advice --
+    asks about stdout, so `bleep --doctor > report.txt` gets no escapes.
 
     """
+    if stream is not None and stream is not sys.stderr:
+        try:
+            return bool(stream.isatty())
+        except (AttributeError, ValueError):
+            return False
     if _ansi_supported.cached is None:
         try:
             _ansi_supported.cached = bool(sys.stderr.isatty())
@@ -49,7 +57,7 @@ def _ansi_supported():
 _ansi_supported.cached = None
 
 
-def color(color_):
+def color(color_, stream=None):
     """Utility for ability to disabling colored output.
 
     The one place an escape code is produced, and therefore the one place that
@@ -62,10 +70,10 @@ def color(color_):
     if settings.no_colors:
         return ''
 
-    return escape(color_)
+    return escape(color_, stream)
 
 
-def escape(sequence):
+def escape(sequence, stream=None):
     """An escape sequence that is not a colour, for a console that renders it.
 
     `no_colors` says do not colour; it does not say do not move the cursor.
@@ -79,7 +87,7 @@ def escape(sequence):
     front of every suggestion.
 
     """
-    if not _ansi_supported():
+    if not _ansi_supported(stream):
         return ''
 
     init_colors()
@@ -261,32 +269,32 @@ class debug_time(object):
 
 def how_to_configure_alias(configuration_details):
     print(u"Seems like {bold}bleep{reset} alias isn't configured!".format(
-        bold=color(colorama.Style.BRIGHT),
-        reset=color(colorama.Style.RESET_ALL)))
+        bold=color(colorama.Style.BRIGHT, sys.stdout),
+        reset=color(colorama.Style.RESET_ALL, sys.stdout)))
 
     if configuration_details:
         # On its own lines, indented: what goes in a startup file is a few
         # lines of shell, and reading it out of the middle of a sentence is
         # harder than it needs to be.
         print(u"\nPut this in your {bold}{path}{reset}:\n".format(
-            bold=color(colorama.Style.BRIGHT),
-            reset=color(colorama.Style.RESET_ALL),
+            bold=color(colorama.Style.BRIGHT, sys.stdout),
+            reset=color(colorama.Style.RESET_ALL, sys.stdout),
             path=configuration_details.path))
         for line in configuration_details.content.split(u'\n'):
             print(u'    {}'.format(line))
         print(
             u"\nThen apply it with {bold}{reload}{reset}, or restart your"
             u" shell.".format(
-                bold=color(colorama.Style.BRIGHT),
-                reset=color(colorama.Style.RESET_ALL),
+                bold=color(colorama.Style.BRIGHT, sys.stdout),
+                reset=color(colorama.Style.RESET_ALL, sys.stdout),
                 reload=configuration_details.reload))
 
         if configuration_details.can_configure_automatically:
             print(
                 u"Or run {bold}bleep{reset} a second time to configure"
                 u" it automatically.".format(
-                    bold=color(colorama.Style.BRIGHT),
-                    reset=color(colorama.Style.RESET_ALL)))
+                    bold=color(colorama.Style.BRIGHT, sys.stdout),
+                    reset=color(colorama.Style.RESET_ALL, sys.stdout)))
 
     # A heading GitHub makes an anchor for by itself. It used to be
     # `#manual-installation`, which existed only as a hand-written `<a name=...>`
@@ -300,8 +308,8 @@ def already_configured(configuration_details):
         u"Seems like {bold}bleep{reset} alias already configured!\n"
         u"For applying changes run {bold}{reload}{reset}"
         u" or restart your shell.".format(
-            bold=color(colorama.Style.BRIGHT),
-            reset=color(colorama.Style.RESET_ALL),
+            bold=color(colorama.Style.BRIGHT, sys.stdout),
+            reset=color(colorama.Style.RESET_ALL, sys.stdout),
             reload=configuration_details.reload))
 
 
@@ -310,8 +318,8 @@ def configured_successfully(configuration_details):
         u"{bold}bleep{reset} alias configured successfully!\n"
         u"For applying changes run {bold}{reload}{reset}"
         u" or restart your shell.".format(
-            bold=color(colorama.Style.BRIGHT),
-            reset=color(colorama.Style.RESET_ALL),
+            bold=color(colorama.Style.BRIGHT, sys.stdout),
+            reset=color(colorama.Style.RESET_ALL, sys.stdout),
             reload=configuration_details.reload))
 
 
@@ -328,11 +336,11 @@ def doctor_report(lines):
     for label, value, status, advice in lines:
         if status == 'warn':
             problems += 1
-            mark = u'{}!{}'.format(color(colorama.Fore.RED),
-                                   color(colorama.Style.RESET_ALL))
+            mark = u'{}!{}'.format(color(colorama.Fore.RED, sys.stdout),
+                                   color(colorama.Style.RESET_ALL, sys.stdout))
         elif status == 'note':
-            mark = u'{}-{}'.format(color(colorama.Fore.BLUE),
-                                   color(colorama.Style.RESET_ALL))
+            mark = u'{}-{}'.format(color(colorama.Fore.BLUE, sys.stdout),
+                                   color(colorama.Style.RESET_ALL, sys.stdout))
         else:
             mark = u' '
         print(u'{mark} {label}{pad}  {value}'.format(
@@ -348,12 +356,12 @@ def doctor_report(lines):
     if problems:
         print(u'{red}{count} thing{plural} to look at.{reset}'.format(
             count=problems, plural='' if problems == 1 else 's',
-            red=color(colorama.Fore.RED),
-            reset=color(colorama.Style.RESET_ALL)))
+            red=color(colorama.Fore.RED, sys.stdout),
+            reset=color(colorama.Style.RESET_ALL, sys.stdout)))
     else:
         print(u'{green}Everything looks good.{reset}'.format(
-            green=color(colorama.Fore.GREEN),
-            reset=color(colorama.Style.RESET_ALL)))
+            green=color(colorama.Fore.GREEN, sys.stdout),
+            reset=color(colorama.Style.RESET_ALL, sys.stdout)))
 
 
 def _wrapped(text, indent, width=76):

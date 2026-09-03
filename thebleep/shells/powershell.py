@@ -5,6 +5,7 @@ from .generic import Generic, ShellConfiguration
 
 class Powershell(Generic):
     friendly_name = 'PowerShell'
+    dialect = 'powershell'
 
     def split_command(self, command):
         """Hide PowerShell's call operator from rule argument handling."""

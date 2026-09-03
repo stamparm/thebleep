@@ -296,8 +296,7 @@ def _has_unsupported_syntax(script):
     from .command_model import parse
     from .shells import shell
 
-    shell_name = 'powershell' if type(shell).__name__ == 'Powershell' else 'posix'
-    model = parse(script, shell_name)
+    model = parse(script, getattr(shell, 'dialect', 'posix'))
     if not model.complete or len(model.segments) != 1:
         return True
 

@@ -29,12 +29,6 @@ def _load_difflib():
         difflib_get_close_matches = get_close_matches
 
 
-# Binary: nothing is ever written through this object -- it is only handed
-# to Popen as a descriptor to throw output at -- and text mode would make
-# it depend on the machine's default encoding for no reason.
-DEVNULL = open(os.devnull, 'wb')
-
-
 # How long a rule may wait for a program to tell it something. Every one of
 # these is the same shape of question -- "what subcommands do you have?", "what
 # tasks are there?" -- asked of a program that answers from a list it already
@@ -180,7 +174,7 @@ def tool_lines(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False,
     if not _tool_probe_state().get():
         return ([], False) if return_truncated else []
 
-    from subprocess import PIPE, Popen, STDOUT, TimeoutExpired
+    from subprocess import PIPE, Popen, STDOUT, TimeoutExpired, DEVNULL
 
     try:
         process = Popen(arguments, stdin=DEVNULL, stdout=PIPE,
@@ -531,9 +525,12 @@ def _executable_extensions():
     if os.name != 'nt':
         return ()
 
-    # PATHEXT is semicolon-separated whatever `os.pathsep` says.
-    return tuple(extension.lower()
-                 for extension in os.environ.get('PATHEXT', '').split(';')
+    # PATHEXT is semicolon-separated whatever `os.pathsep` says, and falls
+    # back to the same list `which` uses: without it, every file on PATH was
+    # a candidate and `pnpm.cmd` was compared against the typo with its
+    # extension on.
+    source = os.environ.get('PATHEXT') or DEFAULT_PATHEXT
+    return tuple(extension.lower() for extension in source.split(';')
                  if extension.startswith('.'))
 
 
@@ -1174,7 +1171,7 @@ def format_raw_script(raw_script):
         # PowerShell treats a quoted string at the start as a string
         # expression, not a command. Keep an ordinary command name bare, but
         # use its call operator when quoting is needed for an executable path.
-        if getattr(shell, 'friendly_name', None) == 'PowerShell':
+        if getattr(shell, 'dialect', 'posix') == 'powershell':
             first = raw_script[0]
             if not re.match(r'^[A-Za-z0-9_./:+%=-]+$', first):
                 parts.insert(0, '&')

@@ -219,14 +219,13 @@ def _match_body_expression(node):
 
 
 def _extract_metadata(source, path):
-    _load_ast()
-
     """Reads what dispatch needs from a rule's syntax tree.
 
     Anything that isn't a plain literal is reported as unknown, which makes the
     rule a candidate for every command — slower, never wrong.
 
     """
+    _load_ast()
     meta = {'apps': None, 'enabled': None, 'priority': None,
             'requires_output': None, 'output': ()}
     tree = ast.parse(source, filename=path)
@@ -267,13 +266,7 @@ def _build_entry(path):
              'mtime': int(stat.st_mtime_ns),
              'size': int(stat.st_size),
              'code': marshal.dumps(compile(source, str(path), 'exec'))}
-    try:
-        entry.update(_extract_metadata(source, str(path)))
-    except SyntaxError:
-        # A rule that doesn't parse won't execute either, but that is the
-        # loader's problem to report, not ours.
-        entry.update({'apps': None, 'enabled': None, 'priority': None,
-                      'requires_output': None})
+    entry.update(_extract_metadata(source, str(path)))
     return entry
 
 
@@ -574,6 +567,18 @@ def get_rules_for(command, paths, stats=None):
                 damaged = rule is not None
         if rule is not None and rule.is_enabled:
             rules.append(rule)
+
+    # A rule file the pack could not compile is not in `entries` at all, and
+    # used to vanish with a debug line: with the pack on (the default), a
+    # broken rule in `~/.config/thebleep/rules` was never reported, while
+    # `THEBLEEP_NO_RULE_PACK=true` printed the loader's warning. The loader
+    # is asked about it here, so the warning is the same either way.
+    for path in paths:
+        if str(path) not in entries and \
+                os.path.basename(str(path)) != '__init__.py':
+            rule = Rule.from_path(path)
+            if rule is not None and rule.is_enabled:
+                rules.append(rule)
 
     if damaged:
         # The source loaded, so it is the pack that is wrong rather than the

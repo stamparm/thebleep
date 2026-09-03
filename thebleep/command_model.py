@@ -251,6 +251,11 @@ def _scan(script, start, end, shell_name):
                     token, index, nested_complete = nested
                     tokens.append(token)
                     complete = complete and nested_complete
+                    # Still inside the quotes: what follows the substitution
+                    # up to the closing quote is the rest of this word, and
+                    # used to be dropped, which left the segment ending in
+                    # an unbalanced quote.
+                    current = index
                     continue
             if character == quote:
                 quote = None

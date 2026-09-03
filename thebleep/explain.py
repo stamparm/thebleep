@@ -26,7 +26,7 @@ description for this to work.
 """
 
 import os
-from . import logs, risk
+from . import risk
 from .utils import without_control_sequences
 
 
@@ -218,7 +218,3 @@ def describe(corrected_command, command=None, include_assessment=False):
                                  ' {}'.format(first[0])))
 
     return lines
-
-
-def show(corrected_command, command=None):
-    logs.explanation(describe(corrected_command, command))

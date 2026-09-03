@@ -104,6 +104,10 @@ def instant_log_path():
 
 
 class Generic(object):
+    # Which command-line grammar `command_model` parses this shell with. Every
+    # shell here but PowerShell is POSIX enough for the one parser.
+    dialect = 'posix'
+
     friendly_name = 'Generic Shell'
 
     def _shell_name(self):

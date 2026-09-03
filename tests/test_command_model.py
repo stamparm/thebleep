@@ -86,3 +86,16 @@ def test_replacement_uses_the_original_span():
 def test_non_string_scripts_are_rejected():
     with pytest.raises(TypeError):
         parse(['echo', 'hi'])
+
+
+def test_a_substitution_inside_quotes_keeps_the_rest_of_the_word():
+    """`echo "a $(b) c" && git st`: the ` c"` after the substitution used to be
+    dropped, which left the first segment ending in an unbalanced quote."""
+    from thebleep.command_model import parse
+
+    model = parse('echo "a $(b) c" && git st', 'posix')
+    assert model.complete
+    first = model.segments[0]
+    assert 'echo "a $(b) c"' == 'echo "a $(b) c" && git st'[first.start:first.end]
+    assert [token.kind for token in first.tokens] == [
+        'word', 'word', 'substitution', 'word']

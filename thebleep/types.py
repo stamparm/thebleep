@@ -93,10 +93,8 @@ class Command(object):
         if not hasattr(self, '_command_model'):
             from .command_model import parse
 
-            name = type(shell).__name__.lower()
-            if name not in ('powershell',):
-                name = 'posix'
-            self._command_model = parse(self.script, name)
+            self._command_model = parse(
+                self.script, getattr(shell, 'dialect', 'posix'))
         return self._command_model
 
     def __eq__(self, other):
