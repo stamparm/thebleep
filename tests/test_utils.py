@@ -105,7 +105,12 @@ class TestWhich(object):
     @pytest.mark.parametrize('program', [
         'python', 'python3', 'sh', 'ls', 'sort',
         'definitely-not-a-real-program-9d3f', '',
-        'thebleep/utils.py', './setup.py', '/bin/sh', '/bin', '/'])
+        'thebleep/utils.py',
+        # Windows `shutil.which` answers a `./`-relative script differently
+        # across Python versions; the directory-bearing case above covers it.
+        pytest.param('./setup.py', marks=pytest.mark.skipif(
+            os.name == 'nt', reason='shutil.which and ./ differ on Windows')),
+        '/bin/sh', '/bin', '/'])
     def test_it_agrees_with_shutil(self, program):
         import shutil
 
