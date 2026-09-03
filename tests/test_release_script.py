@@ -17,6 +17,7 @@ the three files, so a test cannot touch the real ones.
 
 import io
 import os
+import re
 import shutil
 import sys
 import pytest
@@ -69,6 +70,18 @@ def a_tree(release, source_root, tmpdir, monkeypatch):
         shutil.copyfile(str(source_root.joinpath(name)),
                         str(tmpdir.join(name)))
     monkeypatch.setattr(release, 'HERE', str(tmpdir))
+
+    # On the commit that *is* a release the real CHANGELOG leads with a dated
+    # heading, and these tests are about the script, not about which day the
+    # suite happens to run on. Give the copy the open section the script needs;
+    # the test for a closed one closes it again itself.
+    changelog = tmpdir.join('CHANGELOG.md')
+    text = changelog.read_text('utf-8')
+    heading = re.search(r'(?m)^## \S+ — .+$', text)
+    if heading is None or 'unreleased' not in heading.group(0):
+        text = (text[:heading.start()] + u'## 9.9.9 — unreleased\n\n'
+                + text[heading.start():])
+        changelog.write_text(text, 'utf-8')
 
     class Tree(object):
         path = str(tmpdir)

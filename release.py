@@ -87,7 +87,7 @@ def today():
     return datetime.date.today().isoformat()
 
 
-def check_next_section_is_open(pattern, text):
+def check_next_section_is_open(pattern, text, version='<next>'):
     """The CHANGELOG heading about to be relabelled must be the *next*
     release's.
 
@@ -104,7 +104,7 @@ def check_next_section_is_open(pattern, text):
         sys.exit("release.py: CHANGELOG.md's first heading is not the "
                  "unreleased section. Open one -- `## {} — unreleased` -- so "
                  "this relabels the release to come instead of the one that "
-                 "already shipped.".format(today()))
+                 "already shipped.".format(version))
 
 
 def set_version(version, date):
@@ -115,7 +115,7 @@ def set_version(version, date):
     texts = {path: read(path) for path, _, _ in STATES_THE_VERSION}
     for path, pattern, _ in STATES_THE_VERSION:
         if path == 'CHANGELOG.md':
-            check_next_section_is_open(pattern, texts[path])
+            check_next_section_is_open(pattern, texts[path], version)
 
     for path, pattern, replacement in STATES_THE_VERSION:
         text = texts[path]
