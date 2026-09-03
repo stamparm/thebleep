@@ -439,6 +439,9 @@ def _shell_version(shell):
         'zsh': ['zsh', '-c', 'echo $ZSH_VERSION'],
         'fish': ['fish', '--version'],
         'sh': ['sh', '-c', 'echo sh'],
+        'ksh': ['ksh', '-c', 'echo "$KSH_VERSION"'],
+        'ksh93': ['ksh93', '-c', 'echo "$KSH_VERSION"'],
+        'mksh': ['mksh', '-c', 'echo "$KSH_VERSION"'],
         'pwsh': ['pwsh', '-NoProfile', '-Command',
                  '$PSVersionTable.PSVersion.ToString()'],
         'powershell': ['powershell', '-NoProfile', '-Command',
@@ -450,7 +453,12 @@ def _shell_version(shell):
                               ).stdout.decode('utf-8', 'replace').strip()
     except (KeyError, OSError, subprocess.TimeoutExpired):
         text = ''
-    text = text.replace('fish, version ', '')
+    text = text.replace('fish, version ', '').replace('@(#)', '')
+    # `Version AJM 93u+m/1.0.10 2024-08-01` and `MIRBSD KSH R59 2025/04/26`
+    # both say more than a version column wants.
+    found = re.search(r'\d[\w.+/-]*\d', text)
+    if shell in ('ksh', 'ksh93', 'mksh') and found:
+        text = found.group(0)
     return u'{} {}'.format(shell, text).strip()
 
 
@@ -574,7 +582,8 @@ def _row_name(row):
                  ' on WSL 2' if 'WSL2' in kernel else ' on WSL')
     elif 'runner' in row['label']:
         name += u' · GitHub runner'
-    usual = 'zsh' if 'macos' in row['system'].lower() else 'bash'
+    usual = ('zsh' if 'macos' in row['system'].lower() else
+             'ksh' if 'openbsd' in row['system'].lower() else 'bash')
     if shell in POWERSHELLS:
         name += u' (PowerShell {})'.format('.'.join(version.split('.')[:2]))
     elif shell and shell != usual:
