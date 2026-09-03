@@ -153,9 +153,9 @@
       ]
     }
   },
-  "kernel": "6.8.0-138-generic",
+  "kernel": "6.17.0-1022-azure",
   "label": "debian-13-ksh93",
-  "latency_ms": 42,
+  "latency_ms": 62,
   "machine": "x86_64",
   "python": "3.13.5",
   "recorded_at": "2026-09-03",

@@ -154,7 +154,7 @@
   },
   "kernel": "11.0",
   "label": "netbsd",
-  "latency_ms": 110,
+  "latency_ms": 140,
   "machine": "amd64",
   "python": "3.12.13",
   "recorded_at": "2026-09-03",

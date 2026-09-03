@@ -153,7 +153,7 @@
   },
   "kernel": "6.17.0-1022-azure",
   "label": "void",
-  "latency_ms": 55,
+  "latency_ms": 73,
   "machine": "x86_64",
   "python": "3.14.7",
   "recorded_at": "2026-09-03",
