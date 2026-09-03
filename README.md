@@ -1,10 +1,17 @@
 # The Bleep [![Version][version-badge]][version-link] [![Build Status][workflow-badge]][workflow-link] [![MIT License][license-badge]](LICENSE.md)
 
-**The maintained successor to [The Fuck](https://github.com/nvbn/thefuck).**
-
 Type the command wrong. Type `bleep`. Run the right one.
 
 ![The Bleep correcting a mistyped command](assets/demo.svg)
+
+*The Bleep* corrects console commands: the one that just failed and, if you
+let it, the one you are about to run. It reads what the tool printed, what
+your project declares and what your manual pages say, offers the fix with a
+confidence and a reason beside it, and never runs anything you did not see
+first. It grew out of [The Fuck](https://github.com/nvbn/thefuck) by Vladimir
+Iakovlev and its contributors, whose work stays credited in its history; it
+keeps their rules, settings and alias, and [what changed](#for-the-fuck-users)
+is at the end.
 
 ## Get it
 
@@ -28,13 +35,56 @@ have:
 thebleep --alias-loader fuck >> ~/.bashrc
 ```
 
-## Why not just The Fuck
+## What it does
 
-Because the idea deserves better than its last release. *The Fuck* 3.32 is from
-January 2022: it cannot start on Python 3.12 or newer, over three hundred
-issues are open on it, and a good number of its rules quietly stopped matching
-when the tools they correct changed what they print. *The Bleep* is the same
-tool, maintained — and several times quicker about it.
+- **Fixes the typo before it runs.** Return on `gti status` in zsh, fish or
+  PowerShell replaces the line with `git status` and waits for a second
+  return; bash has the fix waiting at the next prompt. Nobody types `bleep`
+  for the commonest mistake there is. [Without typing bleep](#without-typing-bleep).
+- **Reads the answer off the screen.** When git says `the most similar command
+  is status`, or npm lists the scripts, or `ls --sort=nmae` prints what `--sort`
+  accepts, nothing is guessed; it is read. [How it works](#how-it-works).
+- **Corrects tools that say nothing.** Go's `flag`, Ruby's optparse, Perl's
+  Getopt and every hand-rolled parser print no did-you-mean, so the options
+  and subcommands come from the program's manual page and fish completion
+  instead. [Words from the manual](#words-from-the-manual).
+- **Knows where things are.** `cargo build` becomes `~/.cargo/bin/cargo build`
+  when cargo is installed off `PATH`; `npm run build` in the wrong directory
+  becomes `cd app && npm run build`. [Installed, but not on PATH](#installed-but-not-on-path).
+- **Shows its work.** Three suggestions at once, the changed words highlighted,
+  a confidence and its basis on every row, and <kbd>?</kbd> for which rule,
+  what it matched and what accepting does. [The list](#the-list),
+  [Why am I being told this](#why-am-i-being-told-this).
+- **Runs unasked only when it should.** `auto_run_confidence` lets a
+  correction the tool itself named run without the prompt, and nothing with
+  `sudo`, `rm`, `--force` or a side effect ever does.
+  [Running the correction without asking](#running-the-correction-without-asking).
+- **Learns from you, and only you.** `--learn-last` keeps a fix you accepted,
+  `--learn-from-history` finds the ones you have been making by hand, and a
+  repository can ship its own. Local, bounded, never uploaded.
+  [Learned corrections](#learned-corrections).
+- **Works for agents too.** A structured API, an MCP server and hooks for
+  Claude Code and Cursor that refuse an agent's misspelled command with the fix
+  as the reason, so no turn is spent on `command not found`.
+  [Structured API](#structured-api), [Under a coding agent](#under-a-coding-agent).
+- **Remembers, reports, diagnoses.** `--pick` corrects one of the last five
+  failures from its captured output; `--why` explains failures that are not
+  typos; `--stats` says what it has done for you; `--doctor` is the bug report
+  in one screen. [Recent failures](#recent-failures), [thebleep --stats](#thebleep---stats),
+  [thebleep --doctor](#thebleep---doctor).
+- **Safe by default.** It asks before running your previous command a second
+  time, quotes everything it reads out of a tool, and says nothing when
+  nothing is right. [Safe by default](#safe-by-default).
+
+Python 3.9 through 3.14 on Linux, macOS and Windows; Bash, Zsh, Fish, Nushell,
+tcsh and PowerShell. [Supported everything](#supported-everything).
+
+## Measured against The Fuck
+
+The Fuck 3.32 is the last release of the tool this grew out of: January 2022,
+unable to start on Python 3.12 or newer, with a good number of rules that
+quietly stopped matching when the tools they correct changed what they print.
+The comparison is the honest baseline, and the harness is in the repository.
 
 Same machine, same Python 3.11, 30 runs each, medians:
 
@@ -122,52 +172,6 @@ Debian's `command-not-found` database, which would have `sl` answered with
 `apt-get install sl` on a machine that has it and `ls` on one that does not.
 Both tools are given the identical question.
 
-The rest of the reasons:
-
-- **Python 3.9 through 3.14**, tested on Linux, macOS and Windows on every one
-  of them — and Bash, Zsh, Fish, tcsh and PowerShell as before, with
-  Nushell added. [Supported everything](#supported-everything).
-- **30 items from *The Fuck*'s backlog are fixed here**, issues and pull
-  requests, four of them command injections — plus the rules that had rotted
-  against current
-  `git`, `npm`, `docker`, `cargo`, `brew`, `gem`, `az`, `gradle` and
-  `terraform`. [What's fixed](#whats-fixed).
-- **It asks before running your previous command a second time.** Reading what
-  your command printed used to mean running it again, side effects and all.
-  [Safe by default](#safe-by-default).
-- **Press tab to edit the correction instead of running it.** The suggestion
-  lands in your own command line, with the cursor at the end of it, and nothing
-  runs until you press return. [Edit before you run](#edit-before-you-run).
-- **Press `?` to be told why.** Which rule made the suggestion, what it saw,
-  and whether accepting it does anything besides run the command.
-  [Why am I being told this](#why-am-i-being-told-this).
-- **It remembers the last five failed commands.** `thebleep --pick` lists them
-  with their shell, exit status, directory and age; `thebleep --pick 2`
-  corrects one using its captured output and working directory, without
-  replaying it. `thebleep --forget 2` removes one record; `--clear-cache`
-  removes them all. The records are local and bounded.
-- **It can learn an explicit correction.** After accepting a one-word fix,
-  `thebleep --learn-last` saves it locally for the executable; `global` and
-  `repository` scopes are available when the same correction should travel
-  further. `thebleep --learned` lists the entries and
-  `thebleep --forget-learning 2` removes one.
-- **A structured Python API.** IDEs and agents can supply a command and its
-  captured output without asking The Bleep to run anything again.
-  [Structured API](#structured-api).
-- **It can explain failures that are not typos.** `--why` recognises a small,
-  deterministic set of error fingerprints and suggests read-only next steps;
-  unknown failures remain an abstention.
-  [Structured API](#structured-api).
-- **`thebleep --doctor`** answers the questions a bug report usually starts
-  with, in one screen you can paste anywhere.
-  [Diagnostics](#thebleep---doctor).
-- **Nothing to relearn.** The same rules and settings, and the same `fuck` alias
-  if you want it; seven rules are deliberately less eager, all in the direction
-  of doing only what they say. [Coming from The Fuck](#coming-from-the-fuck).
-
-*The Bleep* is based on the original codebase by Vladimir Iakovlev and its
-contributors; their work and history remain fully credited.
-
 ## Contents
 
 1. [Safe by default](#safe-by-default)
@@ -181,20 +185,19 @@ contributors; their work and history remain fully credited.
 9. [Structured API](#structured-api)
 10. [Under a coding agent](#under-a-coding-agent)
 11. [thebleep --doctor](#thebleep---doctor)
-12. [Coming from The Fuck](#coming-from-the-fuck)
-13. [What's fixed](#whats-fixed)
-14. [Supported everything](#supported-everything)
-15. [Installation](#installation)
-16. [Updating](#updating)
-17. [Uninstall](#uninstall)
-18. [How it works](#how-it-works)
-19. [Creating your own rules](#creating-your-own-rules)
-20. [Settings](#settings)
-21. [Third-party packages with rules](#third-party-packages-with-rules)
-22. [Experimental instant mode](#experimental-instant-mode)
-23. [Performance](#performance)
-24. [Developing](#developing)
-25. [License](#license-mit)
+12. [For The Fuck users](#for-the-fuck-users)
+13. [Supported everything](#supported-everything)
+14. [Installation](#installation)
+15. [Updating](#updating)
+16. [Uninstall](#uninstall)
+17. [How it works](#how-it-works)
+18. [Creating your own rules](#creating-your-own-rules)
+19. [Settings](#settings)
+20. [Third-party packages with rules](#third-party-packages-with-rules)
+21. [Experimental instant mode](#experimental-instant-mode)
+22. [Performance](#performance)
+23. [Developing](#developing)
+24. [License](#license-mit)
 
 ## Safe by default
 
@@ -945,7 +948,9 @@ it can describe it is describing a different machine.
 
 ##### [Back to Contents](#contents)
 
-## Coming from The Fuck
+## For The Fuck users
+
+### Switching
 
 Nothing is relearned. The rules, the settings and the flags are the ones you
 already know; the names changed and the config moved.
@@ -1001,15 +1006,13 @@ agree to is what runs:
   quote appeared and rewrite them, so `git commit -m "it's fine"` became
   `git commit -m "it"s fine"`.
 
-##### [Back to Contents](#contents)
-
-## What's fixed
+### What was fixed on the way
 
 Every commit that fixes a reported problem names the issue it fixes, so this is
 `git log --grep 'nvbn/thefuck#'` rather than a claim in a README. Thirty
-upstream backlog items so far — half of them issues and half of them pull
-requests nobody merged — every one of them linked below, and the rest found by
-running the tools.
+upstream backlog items so far — **30 items from *The Fuck*'s tracker**, half
+of them issues and half of them pull requests nobody merged — every one of them
+linked below, and the rest found by running the tools.
 
 **It starts on current Python.** `distutils` was removed in 3.12 and *The Fuck*
 imports it, so it cannot run there at all; `pkg_resources` and `imp` were going
@@ -2000,7 +2003,7 @@ What is fixed rather than documented:
 
 ## Performance
 
-The numbers are [at the top](#why-not-just-the-fuck), and they are meant to be
+The numbers are [at the top](#measured-against-the-fuck), and they are meant to be
 checked rather than believed. Same machine, same Python, 30 runs each, medians,
 measured with the harness in [`bench/`](bench/README.md); the run they come from
 is committed as [`bench/results/final.json`](bench/results/final.json), and the
