@@ -1,7 +1,7 @@
-from thebleep.specific.archlinux import archlinux_env
+from thebleep.specific.archlinux import HELPERS
 from thebleep.specific.sudo import sudo_support
 from thebleep.utils import (command_word_index, for_app,
-                            replace_argument_prefix)
+                            replace_argument_prefix, which)
 
 
 INVALID_OPTIONS = "surqfdvt"
@@ -32,8 +32,9 @@ def get_new_command(command):
                                    separator='')
 
 
-# The pair, not the tuple: `archlinux_env()` answers with (enabled, helper), and
-# a two-element tuple is truthy, so this rule was on everywhere -- including
-# machines with no `pacman` at all, where its own `@for_app` was the only thing
-# stopping it.
-enabled_by_default, _ = archlinux_env()
+# On wherever pacman is. This used to take `archlinux_env()`'s answer, which is
+# "is pkgfile installed" -- the question the *package-for-a-command* rule has
+# to ask, and one a stock Arch answers no to. Fixing a lower-case `-s` needs
+# nothing but pacman itself, so `pacman -s vim` got no correction on most of
+# the machines that have pacman.
+enabled_by_default = any(which(name) for name in ('pacman',) + HELPERS)

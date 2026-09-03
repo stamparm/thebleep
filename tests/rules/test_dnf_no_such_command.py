@@ -187,3 +187,57 @@ def test_get_operations(set_help):
 def test_get_new_command(set_help, output, script, result):
     set_help(help_text)
     assert result in get_new_command(Command(script, output))
+
+
+# dnf 5, from `fedora:latest` (Fedora 44, dnf5 5.4.3.0): `dnf isntall vim`,
+# verbatim, and the shape of its `--help`.
+DNF5_UNKNOWN = u'''Unknown argument "isntall" for command "dnf5". Add "--help" \
+for more information about the arguments.
+It could be a command provided by a plugin, try: dnf5 install \
+'dnf5-command(isntall)'
+'''
+
+DNF5_HELP = u'''Usage:
+  dnf5 [GLOBAL OPTIONS] <COMMAND> ...
+
+Description:
+  DNF5 is a program for maintaining packages.
+
+Software Management Commands:
+  do                                     Do transaction
+  install                                Install software
+  upgrade                                Upgrade software
+  remove                                 Remove (uninstall) software
+  distro-sync                            Upgrade or downgrade installed software
+
+Query Commands:
+  leaves                                 List groups of installed packages
+  search                                 Search for software matching all specified strings
+  list                                   Lists packages depending on the packages' relation
+
+Compatibility Aliases:
+  check-update                           Alias for 'check-upgrade'
+  if                                     Alias for 'info'
+'''
+
+
+def test_dnf5_wording_matches():
+    assert match(Command('dnf isntall vim', DNF5_UNKNOWN))
+    assert match(Command('dnf5 isntall vim', DNF5_UNKNOWN))
+
+
+def test_dnf5_help_is_parsed():
+    from thebleep.rules.dnf_no_such_command import _parse_operations
+
+    assert _parse_operations(DNF5_HELP) == [
+        'do', 'install', 'upgrade', 'remove', 'distro-sync', 'leaves',
+        'search', 'list', 'check-update', 'if']
+
+
+def test_dnf5_typo_is_corrected(mocker):
+    mocker.patch('thebleep.rules.dnf_no_such_command.tool_output',
+                 return_value=DNF5_HELP)
+    assert get_new_command(Command('dnf isntall vim', DNF5_UNKNOWN))[0] == \
+        'dnf install vim'
+    assert get_new_command(Command('sudo dnf isntall vim', DNF5_UNKNOWN))[0] \
+        == 'sudo dnf install vim'

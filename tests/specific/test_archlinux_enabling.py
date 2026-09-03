@@ -52,9 +52,17 @@ def test_off_where_there_is_no_pacman(enabled_where):
 
 
 def test_off_on_arch_without_pkgfile(enabled_where):
-    """`pkgfile` is what the two lookup rules need; without it they stay off."""
-    for name, enabled in enabled_where({'pacman'}).items():
-        assert not enabled, name
+    """`pkgfile` is what the two lookup rules need; without it they stay off.
+
+    The option rule is the exception: fixing `pacman -s` needs only pacman, and
+    a stock Arch has no pkgfile, so tying it to pkgfile left `pacman -s vim`
+    uncorrected on most machines that have pacman.
+
+    """
+    enabled = enabled_where({'pacman'})
+    assert enabled.pop('pacman_invalid_option')
+    for name, on in enabled.items():
+        assert not on, name
 
 
 def test_on_on_arch_with_pkgfile(enabled_where):
