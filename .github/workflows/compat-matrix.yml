@@ -51,6 +51,8 @@ jobs:
           # shell then, and says so.
           - { image: 'debian:13', label: debian-13-ksh93, shell: ksh93 }
           - { image: 'debian:13', label: debian-13-mksh, shell: mksh }
+          - { image: 'debian:13', label: debian-13-xonsh, shell: xonsh }
+          - { image: 'debian:13', label: debian-13-elvish, shell: elvish }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Record the row in a container

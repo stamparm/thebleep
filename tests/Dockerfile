@@ -1,7 +1,7 @@
 ARG PYTHON_VERSION=3
 FROM python:${PYTHON_VERSION}
 RUN apt-get update -y
-RUN apt-get install -yy --no-install-recommends --no-install-suggests fish tcsh zsh mksh ksh93u+m curl ca-certificates
+RUN apt-get install -yy --no-install-recommends --no-install-suggests fish tcsh zsh mksh ksh93u+m elvish curl ca-certificates
 # Nushell is not packaged in Debian, so it comes from the project's own release.
 #
 # Nothing here may fail the build. This image is what drives bash, zsh, fish and
@@ -32,5 +32,7 @@ RUN set -eu; \
     fi; \
     rm -rf /tmp/nu /tmp/nu.tgz
 RUN pip install --upgrade pip
+# xonsh is a Python program, so it comes from the same index as the tests.
+RUN pip install xonsh
 COPY . /src
 RUN pip install /src

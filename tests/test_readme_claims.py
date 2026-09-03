@@ -349,7 +349,9 @@ def test_the_startup_files_agree_with_the_shells_and_the_installer(
                         ('fish', '~/.config/fish/config.fish'),
                         ('nu', '~/.config/nushell/config.nu'),
                         ('ksh', '~/.kshrc'),
-                        ('mksh', '~/.mkshrc')):
+                        ('mksh', '~/.mkshrc'),
+                        ('xonsh', '~/.config/xonsh/rc.xsh'),
+                        ('elvish', '~/.config/elvish/rc.elv')):
         assert path in installer, '{} is not in install.sh'.format(path)
         assert path in readme, '{} is not in the README'.format(path)
 

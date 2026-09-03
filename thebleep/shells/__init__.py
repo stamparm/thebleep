@@ -11,11 +11,13 @@ from ..const import SHELLS as shells  # noqa: F401  (re-exported by name)
 
 # Class name -> the module it lives in.
 _MODULES = {'Bash': 'bash',
+            'Elvish': 'elvish',
             'Fish': 'fish',
             'Generic': 'generic',
             'Ksh': 'ksh',
             'Nushell': 'nushell',
             'Tcsh': 'tcsh',
+            'Xonsh': 'xonsh',
             'Zsh': 'zsh',
             'Powershell': 'powershell'}
 

@@ -82,6 +82,8 @@ SHELLS = {'bash': 'Bash',
           'lksh': 'Ksh',
           'pdksh': 'Ksh',
           'nu': 'Nushell',
+          'xonsh': 'Xonsh',
+          'elvish': 'Elvish',
           'powershell': 'Powershell',
           'pwsh': 'Powershell'}
 

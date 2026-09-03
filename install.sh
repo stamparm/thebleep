@@ -251,6 +251,8 @@ case "$shell" in
     # ksh93 and OpenBSD's ksh read $ENV, ~/.kshrc by convention; mksh ~/.mkshrc.
     mksh) rc="~/.mkshrc" ;;
     ksh|ksh93|oksh|lksh|pdksh) rc="~/.kshrc" ;;
+    xonsh) rc="~/.config/xonsh/rc.xsh" ;;
+    elvish) rc="~/.config/elvish/rc.elv" ;;
     *) rc="" ;;
 esac
 
@@ -276,6 +278,8 @@ else
     say "    fish        $PACKAGE --alias-loader $ALIAS >> ~/.config/fish/config.fish"
     say "    tcsh        $PACKAGE --alias-loader $ALIAS >> ~/.cshrc"
     say "    ksh         $PACKAGE --alias-loader $ALIAS >> ~/.kshrc"
+    say "    xonsh       $PACKAGE --alias-loader $ALIAS >> ~/.config/xonsh/rc.xsh"
+    say "    elvish      $PACKAGE --alias-loader $ALIAS >> ~/.config/elvish/rc.elv"
     say "    nushell     $PACKAGE --alias-loader $ALIAS >> ~/.config/nushell/config.nu"
     say "    powershell  $PACKAGE --alias-loader $ALIAS | Add-Content \$PROFILE"
     say ""

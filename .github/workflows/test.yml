@@ -90,7 +90,7 @@ jobs:
       - run: |
           pip install -Ur requirements.txt
           pip install -e .
-      - name: Bash, Zsh, Fish, tcsh and ksh, typing into a real terminal
+      - name: Bash, Zsh, Fish, tcsh, ksh, xonsh and Elvish, typing into a real terminal
         run: |
           docker build -t thebleep/python3 -f tests/Dockerfile --build-arg PYTHON_VERSION=3 .
           # Not tests/functional/test_powershell.py: it pulls a 300 MB image to

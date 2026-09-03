@@ -270,6 +270,8 @@ def _shell_command(shell, script):
                 '& { ' + script + ' } 2>&1 | Out-String -Width 200']
     if shell == 'fish':
         return [shell, '--no-config', '-c', script + ' 2>&1']
+    if shell == 'xonsh':
+        return [shell, '--no-rc', '-c', script + ' 2>&1']
     return [shell, '-c', script + ' 2>&1']
 
 
@@ -442,6 +444,8 @@ def _shell_version(shell):
         'ksh': ['ksh', '-c', 'echo "$KSH_VERSION"'],
         'ksh93': ['ksh93', '-c', 'echo "$KSH_VERSION"'],
         'mksh': ['mksh', '-c', 'echo "$KSH_VERSION"'],
+        'xonsh': ['xonsh', '--version'],
+        'elvish': ['elvish', '-version'],
         'pwsh': ['pwsh', '-NoProfile', '-Command',
                  '$PSVersionTable.PSVersion.ToString()'],
         'powershell': ['powershell', '-NoProfile', '-Command',
@@ -453,7 +457,8 @@ def _shell_version(shell):
                               ).stdout.decode('utf-8', 'replace').strip()
     except (KeyError, OSError, subprocess.TimeoutExpired):
         text = ''
-    text = text.replace('fish, version ', '').replace('@(#)', '')
+    text = text.replace('fish, version ', '').replace('@(#)', '').replace(
+        'xonsh/', '')
     # `Version AJM 93u+m/1.0.10 2024-08-01` and `MIRBSD KSH R59 2025/04/26`
     # both say more than a version column wants.
     found = re.search(r'\d[\w.+/-]*\d', text)

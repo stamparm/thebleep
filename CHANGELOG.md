@@ -10,6 +10,18 @@
   `$KSH_VERSION` for the version, and `~/.kshrc` or `~/.mkshrc` for the
   startup file. Exercised end to end in containers, under ksh93u+m and mksh.
 
+- **xonsh.** The alias is a Python function that reads the failed command
+  from `__xonsh__.history`, hands the aliases over in the environment, and
+  runs the correction with `execx`; history is read from xonsh's JSON session
+  files, and the startup file is `~/.config/xonsh/rc.xsh`. Exercised end to
+  end in a container.
+
+- **Elvish.** A function that reads the failed command from
+  `edit:command-history`, runs The Bleep through `sh -c` so the exit status
+  survives Elvish's exceptions, and either `eval`s the correction or writes it
+  into the line editor with `edit:current-command` -- so Elvish gets editing
+  before running, like Zsh and Fish. Corrections join with `;`, Elvish's `&&`.
+
 - **Where it works.** A table in the README, recorded rather than claimed:
   fifteen everyday slips typed into a real shell on eighteen platforms --
   nine Linux distributions, macOS on both architectures, Windows in both
