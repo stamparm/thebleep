@@ -400,8 +400,35 @@ def _describe_system():
     if system == 'Darwin':
         return 'macOS ' + platform.mac_ver()[0]
     if system == 'Windows':
-        return 'Windows ' + platform.version()
+        return _windows_name()
     return '{} {}'.format(system, platform.release())
+
+
+def _windows_name():
+    """`Windows Server 2025` or `Windows 11`, not the build number.
+
+    The registry's ProductName still says "Windows 10" on Windows 11, so the
+    build decides for the client editions: 22000 was the first Windows 11.
+
+    """
+    name = ''
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
+                            r'SOFTWARE\Microsoft\Windows NT\CurrentVersion'
+                            ) as key:
+            name = winreg.QueryValueEx(key, 'ProductName')[0]
+    except Exception:                                          # noqa: BLE001
+        pass
+    try:
+        build = int(platform.version().split('.')[2])
+    except (IndexError, ValueError):
+        build = 0
+    if 'Server' in name:
+        return ' '.join(name.split()[:3])
+    if build >= 22000:
+        return 'Windows 11'
+    return name or 'Windows ' + platform.version()
 
 
 def _shell_version(shell):
@@ -462,6 +489,7 @@ def record(args):
         'label': args.label,
         'system': _describe_system(),
         'machine': platform.machine(),
+        'kernel': platform.release(),
         'shell': _shell_version(shell),
         'python': platform.python_version(),
         'thebleep': _thebleep_version(),
@@ -537,11 +565,17 @@ def _row_name(row):
     # person rather than by the workflow.
     name = re.sub(r'\s*\([^)]*\)', '', row['system']).replace(
         'GNU/Linux ', '')
-    shell = row['shell'].split()[0] if row['shell'] else ''
+    shell, _, version = (row['shell'] or '').partition(' ')
     if 'wsl' in row['label']:
-        name += ' on WSL'
+        kernel = row.get('kernel', '')
+        name += (' on WSL 1' if kernel.endswith('Microsoft') else
+                 ' on WSL 2' if 'WSL2' in kernel else ' on WSL')
+    elif 'runner' in row['label']:
+        name += u' · GitHub runner'
     usual = 'zsh' if 'macos' in row['system'].lower() else 'bash'
-    if shell and shell != usual:
+    if shell in POWERSHELLS:
+        name += u' (PowerShell {})'.format('.'.join(version.split('.')[:2]))
+    elif shell and shell != usual:
         name += u' ({})'.format(shell)
     if row.get('recorded_by') == 'hand':
         name += u' · by hand'
@@ -576,7 +610,8 @@ def _legend(rows):
             u'suggestion was the right command; — the slip cannot happen '
             u'there; ✗ it was not corrected. *ms* is the wall time of a '
             u'command-only correction, Python start included, median of '
-            u'{} runs. Every cell was recorded by '
+            u'{} runs; the WSL row runs WSL 1 on a shared runner, where '
+            u'starting any process is slow. Every cell was recorded by '
             u'[ci/compat_matrix.py](ci/compat_matrix.py) typing the slip '
             u'into that platform\'s shell and reading the answer, never by '
             u'hand; the corrections themselves are on the [full page]'

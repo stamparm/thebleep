@@ -82,7 +82,7 @@ Command-only correction in 45 ms, median of 5 runs, Python start included.
 | `npm run bulid` | `npm run bulid` | ✓ `npm run build` |
 | `cargo biuld` | `cargo biuld` | ✓ `cargo build` |
 
-## Ubuntu 24.04.4 LTS
+## Ubuntu 24.04.4 LTS · GitHub runner
 
 `ubuntu-runner` · bash 5.2.21(1)-release · Python 3.12.14 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
 
@@ -394,7 +394,7 @@ Command-only correction in 213 ms, median of 5 runs, Python start included.
 | `npm run bulid` | `npm run bulid` | ✓ `npm run build` |
 | `cargo biuld` |  | — cargo has no toolchain here |
 
-## Windows 10.0.26100 (powershell)
+## Windows 10.0.26100 (PowerShell 5.1)
 
 `windows-powershell` · powershell 5.1.26100.33296 · Python 3.12.10 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
 
@@ -418,7 +418,7 @@ Command-only correction in 161 ms, median of 5 runs, Python start included.
 | `npm run bulid` | `npm run bulid` | ✓ `npm run build` |
 | `cargo biuld` |  | — cargo has no toolchain here |
 
-## Windows 10.0.26100 (pwsh)
+## Windows 10.0.26100 (PowerShell 7.6)
 
 `windows-pwsh` · pwsh 7.6.5 · Python 3.12.10 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
 
