@@ -60,15 +60,28 @@ def _without_sudo(script):
     return script
 
 
+def _privilege_command():
+    """`sudo`, or `doas` on a machine that has doas and no sudo: OpenBSD,
+    and the Linux and BSD boxes that chose it. `sudo` still wins where both
+    are installed, because that is what the matrix's rows and most people's
+    fingers expect."""
+    from thebleep.utils import which
+
+    if not which('sudo') and which('doas'):
+        return 'doas'
+    return 'sudo'
+
+
 def get_new_command(command):
     # Anything that goes inside `sh -c` is run again, by root this time, so it
     # is quoted as one argument: without that, a quote in the script ends the
     # `sh -c` argument early and the rest of the line runs as separate
     # commands, and text the user had quoted as data becomes code.
+    become = _privilege_command()
     if '&&' in command.script:
-        return u'sudo sh -c {}'.format(shell.quote(
+        return u'{} sh -c {}'.format(become, shell.quote(
             _without_sudo(command.script)))
     elif '>' in command.script:
-        return u'sudo sh -c {}'.format(shell.quote(command.script))
+        return u'{} sh -c {}'.format(become, shell.quote(command.script))
     else:
-        return u'sudo {}'.format(command.script)
+        return u'{} {}'.format(become, command.script)

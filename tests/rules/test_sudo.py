@@ -61,3 +61,27 @@ def test_the_script_reaches_root_exactly_as_it_was_typed(script):
     assert argv[:3] == ['sudo', 'sh', '-c'], 'the script escaped its argument'
     assert len(argv) == 4, 'the script split into more than one command'
     assert argv[3] == script
+
+
+def test_doas_where_there_is_no_sudo(mocker):
+    """OpenBSD has doas and no sudo; `sudo cat /etc/master.passwd` there is a
+    second command not found."""
+    from thebleep.rules import sudo
+    from thebleep.types import Command
+
+    mocker.patch('thebleep.utils.which',
+                 side_effect=lambda name: '/usr/bin/doas' if name == 'doas'
+                 else None)
+    command = Command('cat /etc/master.passwd',
+                      'cat: /etc/master.passwd: Permission denied')
+    assert sudo.get_new_command(command) == 'doas cat /etc/master.passwd'
+
+
+def test_sudo_wins_where_both_are_installed(mocker):
+    from thebleep.rules import sudo
+    from thebleep.types import Command
+
+    mocker.patch('thebleep.utils.which',
+                 side_effect=lambda name: '/usr/bin/' + name)
+    command = Command('cat /etc/shadow', 'cat: /etc/shadow: Permission denied')
+    assert sudo.get_new_command(command) == 'sudo cat /etc/shadow'
