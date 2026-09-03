@@ -33,6 +33,6 @@ RUN set -eu; \
     rm -rf /tmp/nu /tmp/nu.tgz
 RUN pip install --upgrade pip
 # xonsh is a Python program, so it comes from the same index as the tests.
-RUN pip install xonsh
+RUN pip install 'xonsh[full]'
 COPY . /src
 RUN pip install /src

@@ -12,8 +12,6 @@ def proc(request, spawnu, TIMEOUT):
     # xonsh loses what is typed while it starts up and prints its welcome, so
     # nothing is sent until the banner has been seen and the prompt is up.
     assert proc.expect([TIMEOUT, u'Welcome to the xonsh shell'])
-    assert proc.expect([TIMEOUT, u'install prompt_toolkit'])
-    proc.sendline(u'')
     assert proc.expect([TIMEOUT, u'@#'])
     proc.sendline(u'$PYTHONIOENCODING = "utf8"')
     # `--alias` prints Python; `execx` runs it in this shell.

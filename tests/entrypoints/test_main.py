@@ -133,10 +133,10 @@ class TestShellOverride(object):
     def test_an_unknown_name_is_refused_with_the_known_ones(
             self, main_module, capsys):
         with pytest.raises(SystemExit) as exc_info:
-            main_module._use_shell('elvish')
+            main_module._use_shell('rc')
         assert exc_info.value.code == 2
         message = capsys.readouterr()[1]
-        assert "Unknown shell 'elvish'" in message
+        assert "Unknown shell 'rc'" in message
         assert 'bash' in message and 'zsh' in message
 
     def test_it_does_not_go_looking_for_the_shell(self, main_module, mocker,
