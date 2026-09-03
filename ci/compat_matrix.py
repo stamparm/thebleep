@@ -215,7 +215,7 @@ SCENARIOS = [
     ('ls_typo', u'`sl -la`', _ls_typo),
     ('unknown_flag', u'`git status --shrot`', _unknown_flag),
     ('package_manager', u'`apt isntall`, `dnf`, `apk`…', _package_manager),
-    ('permission', u'permission denied', _permission),
+    ('permission', u'needs `sudo`', _permission),
     ('mkdir_parents', u'`mkdir a/b/c`', _mkdir_parents),
     ('chmod', u'`./script.sh` without +x', _chmod),
     ('cd_typo', u'`cd Documnets`', _cd_typo),

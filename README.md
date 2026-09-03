@@ -84,7 +84,7 @@ tcsh, ksh, xonsh, Elvish and PowerShell. [Supported everything](#supported-every
 The same slips, typed into a real shell on each of these, and what came back.
 
 <!-- compat: written by ci/compat_matrix.py render -->
-| | `gti status` | `git psuh` | `sl -la` | `git status --shrot` | `apt isntall`, `dnf`, `apk`… | permission denied | `mkdir a/b/c` | `./script.sh` without +x | `cd Documnets` | `rm` a directory | installed, not on PATH | `cd..` | `docker pss` | `npm run bulid` | `cargo biuld` | ms |
+| | `gti status` | `git psuh` | `sl -la` | `git status --shrot` | `apt isntall`, `dnf`, `apk`… | needs `sudo` | `mkdir a/b/c` | `./script.sh` without +x | `cd Documnets` | `rm` a directory | installed, not on PATH | `cd..` | `docker pss` | `npm run bulid` | `cargo biuld` | ms |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|--:|
 | **Debian 13** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 54 |
 | **Debian 13 (elvish)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 42 |

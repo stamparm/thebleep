@@ -23,7 +23,7 @@ Command-only correction in 54 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✅ `apt install vim` |
-| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| needs `sudo` | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -47,7 +47,7 @@ Command-only correction in 42 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✅ `apt install vim` |
-| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| needs `sudo` | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh; ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -71,7 +71,7 @@ Command-only correction in 64 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✅ `apt install vim` |
-| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| needs `sudo` | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -95,7 +95,7 @@ Command-only correction in 66 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✅ `apt install vim` |
-| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| needs `sudo` | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -119,7 +119,7 @@ Command-only correction in 57 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✅ `apt install vim` |
-| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| needs `sudo` | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -143,7 +143,7 @@ Command-only correction in 52 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✅ `apt install vim` |
-| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| needs `sudo` | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -167,7 +167,7 @@ Command-only correction in 45 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✅ `apt install vim` |
-| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| needs `sudo` | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -191,7 +191,7 @@ Command-only correction in 68 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✅ `apt install vim` |
-| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| needs `sudo` | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -215,7 +215,7 @@ Command-only correction in 2283 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `apt isntall vim` | ✅ `apt install vim` |
-| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| needs `sudo` | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -239,7 +239,7 @@ Command-only correction in 82 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `dnf isntall vim` | ✅ `dnf install vim` |
-| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| needs `sudo` | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -263,7 +263,7 @@ Command-only correction in 41 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `dnf isntall vim` | ✅ `dnf install vim` |
-| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| needs `sudo` | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -287,7 +287,7 @@ Command-only correction in 82 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `pacman -s vim` | ✅ `pacman -S vim` |
-| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| needs `sudo` | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -311,7 +311,7 @@ Command-only correction in 56 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `zypper isntall vim` | ✅ `zypper install vim` |
-| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| needs `sudo` | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -335,7 +335,7 @@ Command-only correction in 118 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `apk isntall vim` | ✅ `apk add vim` |
-| permission denied | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
+| needs `sudo` | `cat /etc/shadow` | ✅ `sudo cat /etc/shadow` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -359,7 +359,7 @@ Command-only correction in 91 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `xbps-instal -S vim` | ✅ `xbps-install -S vim` |
-| permission denied | `cat /etc/sudoers` | ✅ `sudo cat /etc/sudoers` |
+| needs `sudo` | `cat /etc/sudoers` | ✅ `sudo cat /etc/sudoers` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -383,7 +383,7 @@ Command-only correction in 83 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `pkg isntall vim` | ✅ `pkg install vim` |
-| permission denied | `cat /etc/master.passwd` | ✅ `sudo cat /etc/master.passwd` |
+| needs `sudo` | `cat /etc/master.passwd` | ✅ `sudo cat /etc/master.passwd` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -407,7 +407,7 @@ Command-only correction in 240 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `pkg_ad vim` | ✅ `pkg_add vim` |
-| permission denied | `cat /etc/master.passwd` | ✅ `sudo cat /etc/master.passwd` |
+| needs `sudo` | `cat /etc/master.passwd` | ✅ `sudo cat /etc/master.passwd` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -431,7 +431,7 @@ Command-only correction in 140 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `pkg_ad vim` | ✅ `pkg_add vim` |
-| permission denied | `cat /etc/master.passwd` | ✅ `sudo cat /etc/master.passwd` |
+| needs `sudo` | `cat /etc/master.passwd` | ✅ `sudo cat /etc/master.passwd` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -455,7 +455,7 @@ Command-only correction in 91 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `brew isntall wget` | ✅ `brew install wget` |
-| permission denied | `cat /etc/master.passwd` | ✅ `sudo cat /etc/master.passwd` |
+| needs `sudo` | `cat /etc/master.passwd` | ✅ `sudo cat /etc/master.passwd` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -479,7 +479,7 @@ Command-only correction in 117 ms, median of 5 runs, Python start included.
 | `sl -la` | `sl -la` | ✅ `ls -la` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `brew isntall wget` | ✅ `brew install wget` |
-| permission denied | `cat /etc/master.passwd` | ✅ `sudo cat /etc/master.passwd` |
+| needs `sudo` | `cat /etc/master.passwd` | ✅ `sudo cat /etc/master.passwd` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✅ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -503,7 +503,7 @@ Command-only correction in 171 ms, median of 5 runs, Python start included.
 | `sl -la` | `lss` | ✅ `ls` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `winget isntall vim` | ✅ `winget install vim` |
-| permission denied |  | ➖ no sudo on Windows |
+| needs `sudo` |  | ➖ no sudo on Windows |
 | `mkdir a/b/c` |  | ➖ PowerShell mkdir creates parents by itself |
 | `./script.sh` without +x |  | ➖ no execute bit on Windows |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
@@ -527,7 +527,7 @@ Command-only correction in 175 ms, median of 5 runs, Python start included.
 | `sl -la` | `lss` | ✅ `ls` |
 | `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `winget isntall vim` | ✅ `winget install vim` |
-| permission denied |  | ➖ no sudo on Windows |
+| needs `sudo` |  | ➖ no sudo on Windows |
 | `mkdir a/b/c` |  | ➖ PowerShell mkdir creates parents by itself |
 | `./script.sh` without +x |  | ➖ no execute bit on Windows |
 | `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
