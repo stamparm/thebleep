@@ -154,7 +154,7 @@
     }
   },
   "label": "fedora",
-  "latency_ms": 82,
+  "latency_ms": 81,
   "machine": "x86_64",
   "python": "3.14.7",
   "recorded_at": "2026-09-03",

@@ -14,7 +14,7 @@ by a person running the same script on a machine CI cannot reach.
 
 `debian-13` · bash 5.2.37(1)-release · Python 3.13.5 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
 
-Command-only correction in 56 ms, median of 5 runs, Python start included.
+Command-only correction in 57 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -86,7 +86,7 @@ Command-only correction in 45 ms, median of 5 runs, Python start included.
 
 `ubuntu-runner` · bash 5.2.21(1)-release · Python 3.12.14 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
 
-Command-only correction in 65 ms, median of 5 runs, Python start included.
+Command-only correction in 48 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -110,7 +110,7 @@ Command-only correction in 65 ms, median of 5 runs, Python start included.
 
 `fedora` · bash 5.3.9(1)-release · Python 3.14.7 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
 
-Command-only correction in 82 ms, median of 5 runs, Python start included.
+Command-only correction in 81 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -134,7 +134,7 @@ Command-only correction in 82 ms, median of 5 runs, Python start included.
 
 `almalinux-9` · bash 5.1.8(1)-release · Python 3.9.25 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
 
-Command-only correction in 67 ms, median of 5 runs, Python start included.
+Command-only correction in 55 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -158,7 +158,7 @@ Command-only correction in 67 ms, median of 5 runs, Python start included.
 
 `arch` · bash 5.3.15(1)-release · Python 3.14.7 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
 
-Command-only correction in 83 ms, median of 5 runs, Python start included.
+Command-only correction in 64 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -182,7 +182,7 @@ Command-only correction in 83 ms, median of 5 runs, Python start included.
 
 `opensuse-tumbleweed` · bash 5.3.15(1)-release · Python 3.13.14 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
 
-Command-only correction in 52 ms, median of 5 runs, Python start included.
+Command-only correction in 74 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -206,7 +206,7 @@ Command-only correction in 52 ms, median of 5 runs, Python start included.
 
 `alpine` · sh sh · Python 3.14.7 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
 
-Command-only correction in 116 ms, median of 5 runs, Python start included.
+Command-only correction in 85 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -230,7 +230,7 @@ Command-only correction in 116 ms, median of 5 runs, Python start included.
 
 `void` · bash 5.3.0(1)-release · Python 3.14.7 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
 
-Command-only correction in 89 ms, median of 5 runs, Python start included.
+Command-only correction in 85 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -240,6 +240,30 @@ Command-only correction in 89 ms, median of 5 runs, Python start included.
 | `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
 | `apt isntall`, `dnf`, `apk`… | `xbps-instal -S vim` | ✓ `xbps-install -S vim` |
 | permission denied | `cat /etc/sudoers` | ✓ `sudo cat /etc/sudoers` |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
+| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
+| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✓ `~/.local/bin/hellotool` |
+| `cd..` | `cd..` | ✓ `cd ..` |
+| `docker pss` |  | — docker is not installed |
+| `npm run bulid` |  | — npm is not installed |
+| `cargo biuld` |  | — cargo is not installed |
+
+## FreeBSD 14.3-RELEASE (sh)
+
+`freebsd` · sh sh · Python 3.12.14 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
+
+Command-only correction in 84 ms, median of 5 runs, Python start included.
+
+| slip | typed | answer |
+|---|---|---|
+| `gti status` | `gti status` | ✓ `git status` |
+| `git psuh` | `git psuh` | ✓ `git push` |
+| `sl -la` | `sl -la` | ✓ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `pkg isntall vim` | ✓ `pkg install vim` |
+| permission denied | `cat /etc/master.passwd` | ✓ `sudo cat /etc/master.passwd` |
 | `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
 | `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
 | `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
@@ -278,7 +302,7 @@ Command-only correction in 260 ms, median of 5 runs, Python start included.
 
 `netbsd` · bash 5.3.15(1)-release · Python 3.12.13 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
 
-Command-only correction in 151 ms, median of 5 runs, Python start included.
+Command-only correction in 120 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -302,7 +326,7 @@ Command-only correction in 151 ms, median of 5 runs, Python start included.
 
 `macos-arm64` · zsh 5.9 · Python 3.12.10 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
 
-Command-only correction in 97 ms, median of 5 runs, Python start included.
+Command-only correction in 108 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -326,7 +350,7 @@ Command-only correction in 97 ms, median of 5 runs, Python start included.
 
 `macos-intel` · zsh 5.9 · Python 3.12.10 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
 
-Command-only correction in 127 ms, median of 5 runs, Python start included.
+Command-only correction in 223 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -350,7 +374,7 @@ Command-only correction in 127 ms, median of 5 runs, Python start included.
 
 `windows-powershell` · powershell 5.1.26100.33296 · Python 3.12.10 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
 
-Command-only correction in 167 ms, median of 5 runs, Python start included.
+Command-only correction in 175 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -366,7 +390,7 @@ Command-only correction in 167 ms, median of 5 runs, Python start included.
 | `rm` a directory |  | — PowerShell asks about a directory instead |
 | installed, not on PATH | `hellotool` | ✓ `'~\.local\bin\hellotool.cmd'` |
 | `cd..` |  | — PowerShell accepts `cd..` as it is |
-| `docker pss` | `docker pss` | ✓ `docker ps` |
+| `docker pss` | `docker pss` | ✗ suggested `docker --help` |
 | `npm run bulid` | `npm run bulid` | ✓ `npm run build` |
 | `cargo biuld` |  | — cargo has no toolchain here |
 
@@ -374,7 +398,7 @@ Command-only correction in 167 ms, median of 5 runs, Python start included.
 
 `windows-pwsh` · pwsh 7.6.5 · Python 3.12.10 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
 
-Command-only correction in 163 ms, median of 5 runs, Python start included.
+Command-only correction in 181 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -390,6 +414,6 @@ Command-only correction in 163 ms, median of 5 runs, Python start included.
 | `rm` a directory |  | — PowerShell asks about a directory instead |
 | installed, not on PATH | `hellotool` | ✓ `'~\.local\bin\hellotool.cmd'` |
 | `cd..` |  | — PowerShell accepts `cd..` as it is |
-| `docker pss` | `docker pss` | ✓ `docker ps` |
+| `docker pss` | `docker pss` | ✗ suggested `docker --help` |
 | `npm run bulid` | `npm run bulid` | ✓ `npm run build` |
 | `cargo biuld` |  | — cargo has no toolchain here |

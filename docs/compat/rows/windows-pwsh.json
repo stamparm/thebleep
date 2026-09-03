@@ -11,7 +11,7 @@
     "cd_typo": {
       "correction": "cd Documents",
       "exit_status": 0,
-      "output": "Set-Location: Cannot find path 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\thebleep-compat-igzq6o0q\\scenario-ub3km844\\Documnets' because it does not exist.",
+      "output": "Set-Location: Cannot find path 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\thebleep-compat-fewkky5l\\scenario-5vftvuk7\\Documnets' because it does not exist.",
       "ran": "cd Documnets",
       "rule": "cd_correction",
       "status": "ok",
@@ -25,16 +25,14 @@
       "status": "na"
     },
     "docker": {
-      "correction": "docker ps",
+      "correction": "docker --help",
       "exit_status": 0,
       "output": "docker: unknown command: docker pss\r\n\r\nRun 'docker --help' for more information",
       "ran": "docker pss",
-      "rule": "docker_not_command",
-      "status": "ok",
+      "rule": "long_form_help",
+      "status": "other",
       "suggestions": [
-        "docker ps",
-        "docker push",
-        "docker stats"
+        "docker --help"
       ]
     },
     "git_subcommand": {
@@ -90,7 +88,7 @@
     "npm": {
       "correction": "npm run build",
       "exit_status": 0,
-      "output": "npm error Missing script: \"bulid\"\r\nnpm error\r\nnpm error To see a list of scripts, run:\r\nnpm error   npm run\r\nnpm error A complete log of this run can be found in: C:\\npm\\cache\\_logs\\2026-09-03T11_50_52_841Z-debug-0.log",
+      "output": "npm error Missing script: \"bulid\"\r\nnpm error\r\nnpm error To see a list of scripts, run:\r\nnpm error   npm run\r\nnpm error A complete log of this run can be found in: C:\\npm\\cache\\_logs\\2026-09-03T12_05_49_770Z-debug-0.log",
       "ran": "npm run bulid",
       "rule": "npm_missing_script",
       "status": "ok",
@@ -133,7 +131,7 @@
     }
   },
   "label": "windows-pwsh",
-  "latency_ms": 163,
+  "latency_ms": 181,
   "machine": "AMD64",
   "python": "3.12.10",
   "recorded_at": "2026-09-03",

@@ -154,7 +154,7 @@
     }
   },
   "label": "almalinux-9",
-  "latency_ms": 67,
+  "latency_ms": 55,
   "machine": "x86_64",
   "python": "3.9.25",
   "recorded_at": "2026-09-03",

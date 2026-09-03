@@ -154,7 +154,7 @@
     }
   },
   "label": "alpine",
-  "latency_ms": 116,
+  "latency_ms": 85,
   "machine": "x86_64",
   "python": "3.14.7",
   "recorded_at": "2026-09-03",

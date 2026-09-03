@@ -11,7 +11,7 @@
     "cd_typo": {
       "correction": "cd Documents",
       "exit_status": 0,
-      "output": "cd : Cannot find path 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\thebleep-compat-xirp4b8f\\scenario-_ms75xxb\\Documnets' because it does not exist.\r\nAt line:1 char:5\r\n+ & { cd Documnets } 2>&1 | Out-String -Width 200\r\n+     ~~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (C:\\Users\\runner...75xxb\\Documnets:String) [Set-Location], ItemNotFoundE    xception\r\n    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.SetLocationCommand",
+      "output": "cd : Cannot find path 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\thebleep-compat-i31kaety\\scenario-o4lrs35k\\Documnets' because it does not exist.\r\nAt line:1 char:5\r\n+ & { cd Documnets } 2>&1 | Out-String -Width 200\r\n+     ~~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (C:\\Users\\runner...rs35k\\Documnets:String) [Set-Location], ItemNotFoundE    xception\r\n    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.SetLocationCommand",
       "ran": "cd Documnets",
       "rule": "cd_correction",
       "status": "ok",
@@ -25,16 +25,14 @@
       "status": "na"
     },
     "docker": {
-      "correction": "docker ps",
+      "correction": "docker --help",
       "exit_status": 0,
       "output": "docker : docker: unknown command: docker pss\r\nAt line:1 char:5\r\n+ & { docker pss } 2>&1 | Out-String -Width 200\r\n+     ~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (docker: unknown command: docker pss:String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\n\r\nRun 'docker --help' for more information",
       "ran": "docker pss",
-      "rule": "docker_not_command",
-      "status": "ok",
+      "rule": "long_form_help",
+      "status": "other",
       "suggestions": [
-        "docker ps",
-        "docker push",
-        "docker stats"
+        "docker --help"
       ]
     },
     "git_subcommand": {
@@ -90,7 +88,7 @@
     "npm": {
       "correction": "npm run build",
       "exit_status": 0,
-      "output": "node.exe : npm error Missing script: \"bulid\"\r\nAt line:1 char:1\r\n+ & \"C:\\Program Files\\nodejs/node.exe\" \"C:\\Program Files\\nodejs/node_mo ...\r\n+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (npm error Missing script: \"bulid\":String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\nnpm error\r\nnpm error To see a list of scripts, run:\r\nnpm error   npm run\r\nnpm error A complete log of this run can be found in: C:\\npm\\cache\\_logs\\2026-09-03T11_52_21_443Z-debug-0.log",
+      "output": "node.exe : npm error Missing script: \"bulid\"\r\nAt line:1 char:1\r\n+ & \"C:\\Program Files\\nodejs/node.exe\" \"C:\\Program Files\\nodejs/node_mo ...\r\n+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (npm error Missing script: \"bulid\":String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\nnpm error\r\nnpm error To see a list of scripts, run:\r\nnpm error   npm run\r\nnpm error A complete log of this run can be found in: C:\\npm\\cache\\_logs\\2026-09-03T12_05_48_867Z-debug-0.log",
       "ran": "npm run bulid",
       "rule": "npm_missing_script",
       "status": "ok",
@@ -133,7 +131,7 @@
     }
   },
   "label": "windows-powershell",
-  "latency_ms": 167,
+  "latency_ms": 175,
   "machine": "AMD64",
   "python": "3.12.10",
   "recorded_at": "2026-09-03",

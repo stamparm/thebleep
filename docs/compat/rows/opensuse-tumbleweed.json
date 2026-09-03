@@ -154,7 +154,7 @@
     }
   },
   "label": "opensuse-tumbleweed",
-  "latency_ms": 52,
+  "latency_ms": 74,
   "machine": "x86_64",
   "python": "3.13.14",
   "recorded_at": "2026-09-03",
