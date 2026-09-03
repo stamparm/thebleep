@@ -250,30 +250,6 @@ Command-only correction in 89 ms, median of 5 runs, Python start included.
 | `npm run bulid` |  | — npm is not installed |
 | `cargo biuld` |  | — cargo is not installed |
 
-## FreeBSD 14.3-RELEASE (sh)
-
-`freebsd` · sh sh · Python 3.12.14 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout
-
-Command-only correction in 82 ms, median of 5 runs, Python start included.
-
-| slip | typed | answer |
-|---|---|---|
-| `gti status` | `gti status` | ✗ suggested `sudo gti status` |
-| `git psuh` | `git psuh` | ✓ `git push` |
-| `sl -la` | `sl -la` | ✗ suggested `sudo sl -la` |
-| `git status --shrot` | `git status --shrot` | ✓ `git status --short` |
-| `apt isntall`, `dnf`, `apk`… | `pkg isntall vim` | ✓ `pkg install vim` |
-| permission denied | `cat /etc/master.passwd` | ✓ `sudo cat /etc/master.passwd` |
-| `mkdir a/b/c` | `mkdir a/b/c` | ✓ `mkdir -p a/b/c` |
-| `./script.sh` without +x | `./script.sh` | ✓ `chmod +x script.sh && ./script.sh` |
-| `cd Documnets` | `cd Documnets` | ✓ `cd Documents` |
-| `rm` a directory | `rm emptydir` | ✓ `rm -r emptydir` |
-| installed, not on PATH | `hellotool` | ✗ suggested `sudo hellotool` |
-| `cd..` | `cd..` | ✓ `cd ..` |
-| `docker pss` |  | — docker is not installed |
-| `npm run bulid` |  | — npm is not installed |
-| `cargo biuld` |  | — cargo is not installed |
-
 ## OpenBSD 7.9 (sh)
 
 `openbsd` · sh sh · Python 3.13.14 · The Bleep 4.0.5 · recorded 2026-09-03 by ci from checkout

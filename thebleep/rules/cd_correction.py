@@ -46,9 +46,11 @@ def get_new_command(command):
     absolute = os.path.isabs(typed)
     if absolute:
         # `/x` splits to ['', 'x']; `C:\x` to ['C:', 'x'].
+        root = dest[0] + separator
         cwd = (dest[0] + os.sep) if dest[0] else os.sep
         dest = dest[1:]
     else:
+        root = ''
         cwd = os.getcwd()
     # What was typed, spelling fixed. `cd Documnets` used to come back as
     # `cd /home/me/projects/Documents`: right, and nothing like what anyone
@@ -68,7 +70,7 @@ def get_new_command(command):
             corrected.append(best_matches[0])
         else:
             return cd_mkdir.get_new_command(command)
-    fixed = cwd if absolute else separator.join(corrected)
+    fixed = root + separator.join(corrected)
     return replace_argument(command.script,
                             command.script_parts[start + 1],
                             shell.quote(fixed))

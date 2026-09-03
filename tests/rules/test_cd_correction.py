@@ -49,8 +49,10 @@ def test_dots_in_a_relative_destination_are_kept(tmp_path, monkeypatch):
 def test_an_absolute_destination_stays_absolute(tmp_path, monkeypatch):
     tmp_path.joinpath('Documents').mkdir()
     monkeypatch.chdir(str(tmp_path))
-    typo = str(tmp_path.joinpath('Documnets'))
+    # Forward slashes, which Windows takes too: the generic shell splits the
+    # script the POSIX way, and a backslash there is an escape.
+    typo = tmp_path.joinpath('Documnets').as_posix()
     command = Command('cd ' + typo,
                       'cd: ' + typo + ': No such file or directory')
-    assert get_new_command(command) == 'cd ' + str(
-        tmp_path.joinpath('Documents'))
+    assert get_new_command(command) == 'cd ' + tmp_path.joinpath(
+        'Documents').as_posix()
