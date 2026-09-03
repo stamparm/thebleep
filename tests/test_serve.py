@@ -69,7 +69,12 @@ class TestServing(object):
         connection.settimeout(3)
         connection.connect(serve.socket_path('zsh'))
         connection.sendall(b'not json at all\n')
-        connection.shutdown(socket.SHUT_WR)
+        try:
+            connection.shutdown(socket.SHUT_WR)
+        except OSError:
+            # macOS refuses the shutdown when the server has already answered
+            # and hung up; the answer is still there to read.
+            pass
         assert connection.recv(100) == b'error\n'
         connection.close()
 
