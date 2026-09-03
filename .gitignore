@@ -102,3 +102,6 @@ venv/
 /*.tar.gz
 /*.tar.bz2
 /*.zip
+
+# The maintainer's own notes, kept beside the checkout and never shipped.
+AGENTS.md

@@ -74,7 +74,12 @@ def set_shell(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def os_environ(monkeypatch):
-    env = {'PATH': os.environ['PATH']}
+def os_environ(monkeypatch, tmp_path):
+    """A near-empty environment, with a cache and config directory of the
+    test's own: without them the fallback is `~/.cache` and `~/.config` in
+    the real home, and a few tests were leaving `executables.cache` there."""
+    env = {'PATH': os.environ['PATH'],
+           'XDG_CACHE_HOME': str(tmp_path / 'cache'),
+           'XDG_CONFIG_HOME': str(tmp_path / 'config')}
     monkeypatch.setattr('os.environ', env)
     return env

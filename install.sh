@@ -44,8 +44,14 @@ for argument in "$@"; do
         --dry-run) DRY_RUN="yes" ;;
         --dev) DEV="yes" ;;
         -h|--help)
-            awk 'NR > 2 && /^#/ { sub(/^# ?/, ""); print; next }
-                 NR > 2 { exit }' "$0"
+            # Piped through `sh -s`, $0 is `sh` and there is no file to read
+            # the usage out of.
+            if [ -f "$0" ]; then
+                awk 'NR > 2 && /^#/ { sub(/^# ?/, ""); print; next }
+                     NR > 2 { exit }' "$0"
+            else
+                echo "usage: see the comment at the top of install.sh"
+            fi
             exit 0
             ;;
         *) echo "install.sh: unknown option $argument" >&2; exit 2 ;;
@@ -207,7 +213,7 @@ else
         say "Installed: $(command -v "$PACKAGE")"
     else
         for directory in "${UV_TOOL_BIN_DIR:-}" "${PIPX_BIN_DIR:-}" \
-                         "$HOME/.local/bin"; do
+                         "${HOME:-}/.local/bin"; do
             [ -n "$directory" ] || continue
             if [ -x "$directory/$PACKAGE" ]; then
                 say "Installed: $directory/$PACKAGE"
@@ -239,7 +245,7 @@ case "$shell" in
     zsh) rc="~/.zshrc" ;;
     fish) rc="~/.config/fish/config.fish" ;;
     # tcsh reads ~/.tcshrc when there is one and ~/.cshrc otherwise.
-    tcsh|csh) if [ -f "$HOME/.tcshrc" ]; then rc="~/.tcshrc"
+    tcsh|csh) if [ -f "${HOME:-}/.tcshrc" ]; then rc="~/.tcshrc"
               else rc="~/.cshrc"; fi ;;
     nu) rc="~/.config/nushell/config.nu" ;;
     *) rc="" ;;

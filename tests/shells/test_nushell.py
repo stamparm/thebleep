@@ -105,6 +105,7 @@ class TestNushell(object):
     ])
     def test_the_platform_answers_when_xdg_says_nothing(
             self, shell, os_environ, a_home, monkeypatch, platform, under):
+        os_environ.pop('XDG_CONFIG_HOME', None)
         """Every branch is checked from here, not only the one we run on.
 
         The macOS branch was wrong and only the macOS runner said so, which is
@@ -116,6 +117,7 @@ class TestNushell(object):
         assert shell._config_dirs()[0] == os.path.join(a_home, *under)
 
     def test_windows_uses_appdata(self, shell, os_environ, monkeypatch):
+        os_environ.pop('XDG_CONFIG_HOME', None)
         monkeypatch.setattr('sys.platform', 'win32')
         monkeypatch.setattr('os.name', 'nt')
         os_environ['APPDATA'] = os.path.join('C:', 'Users', 'x', 'AppData')
@@ -234,6 +236,7 @@ class TestWithNowhereToLook(object):
 
     @pytest.fixture
     def shell(self):
+        os.environ.pop('XDG_CONFIG_HOME', None)
         return Nushell()
 
     @pytest.fixture(autouse=True)

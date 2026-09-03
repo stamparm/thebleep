@@ -85,7 +85,10 @@ jobs:
                 --output /out/command-inventory.json'
           status=$?
           set -e
-          cp "$RUNNER_TEMP/command-inventory.json" command-inventory.json
+          # Only when the script got as far as writing it: a `cp` of a file
+          # that is not there would fail here and hide the real status.
+          [ -f "$RUNNER_TEMP/command-inventory.json" ] && \
+              cp "$RUNNER_TEMP/command-inventory.json" command-inventory.json
           exit "$status"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         if: always()

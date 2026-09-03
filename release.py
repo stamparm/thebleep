@@ -338,6 +338,9 @@ def smoke_test(version):
 
 
 def main(argv):
+    # Every gate and the build run in the current directory; the files are
+    # read from HERE. Make the two the same place.
+    os.chdir(HERE)
     if len(argv) != 2 or not re.match(r'^\d+\.\d+(\.\d+)?$', argv[1]):
         sys.exit(__doc__.strip())
     version = argv[1]
