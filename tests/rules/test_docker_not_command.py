@@ -355,3 +355,21 @@ def test_commands_under_every_heading_are_found():
                  'Global Options:\n'
                  '  --config string   Location of client config files\n')
     assert _parse_commands(help_text.split('\n')) == ['run', 'ps', 'image']
+
+
+def test_the_top_level_commands_are_known_when_the_help_is_not(mocker):
+    """docker's help on a cold Windows runner outran the probe, and
+    `docker pss` got nothing while the answer was one word away."""
+    from thebleep.rules import docker_not_command
+
+    mocker.patch('thebleep.rules.docker_not_command.tool_lines',
+                 return_value=[])
+    mocker.patch.object(docker_not_command, 'get_docker_commands',
+                        docker_not_command.get_docker_commands.__wrapped__
+                        if hasattr(docker_not_command.get_docker_commands,
+                                   '__wrapped__')
+                        else docker_not_command.get_docker_commands)
+    command = Command('docker pss', u"docker: unknown command: docker pss\n\n"
+                      u"Run 'docker --help' for more information")
+    assert get_new_command(command)[0] == 'docker ps'
+    assert docker_not_command.get_docker_commands(('image',)) == []

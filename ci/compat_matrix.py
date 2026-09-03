@@ -44,7 +44,9 @@ PAGE = os.path.join(ROOT, 'docs', 'compat', 'README.md')
 README = os.path.join(ROOT, 'README.md')
 BEGIN = u'<!-- compat: written by ci/compat_matrix.py render -->'
 END = u'<!-- end compat -->'
-TIMEOUT = 10
+# The slip itself gets a minute: npm on a cold Windows runner, or under WSL 1,
+# takes longer than ten seconds just to say the script is missing.
+TIMEOUT = 60
 LATENCY_RUNS = 5
 
 POSIX_SHELLS = ('bash', 'zsh', 'fish', 'sh')

@@ -39,14 +39,32 @@ def _parse_commands(lines):
     return commands
 
 
+# What `docker` has accepted at the top level for years, for when its help
+# cannot be read in time: the CLI on a cold Windows runner took longer than
+# the probe allows, and `docker pss` got nothing while `docker --help` was
+# right there in the output. The help, when it answers, wins.
+FALLBACK_COMMANDS = (
+    'attach', 'build', 'builder', 'buildx', 'commit', 'compose', 'config',
+    'container', 'context', 'cp', 'create', 'diff', 'events', 'exec', 'export',
+    'history', 'image', 'images', 'import', 'info', 'inspect', 'kill', 'load',
+    'login', 'logout', 'logs', 'manifest', 'network', 'node', 'pause', 'plugin',
+    'port', 'ps', 'pull', 'push', 'rename', 'restart', 'rm', 'rmi', 'run',
+    'save', 'search', 'secret', 'service', 'stack', 'start', 'stats', 'stop',
+    'swarm', 'system', 'tag', 'top', 'trust', 'unpause', 'update', 'version',
+    'volume', 'wait')
+
+
 def get_docker_commands(prefix=()):
     """What `docker <prefix>` accepts next, according to docker."""
     # Old versions of docker write their help to stdout, newer ones to
     # stderr, so both are read. Reading one and merely opening the other is
     # the deadlock: whichever docker did not choose fills up and blocks.
-    return _parse_commands(
+    commands = _parse_commands(
         tool_lines(('docker',) + tuple(prefix) + ('--help',),
                    merge_stderr=True))
+    if not commands and not prefix:
+        return list(FALLBACK_COMMANDS)
+    return commands
 
 
 if which('docker'):
