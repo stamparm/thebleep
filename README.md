@@ -198,7 +198,7 @@ The same slips, typed into a real shell on each of these, and what came back.
 | **Windows Server 2025 (PowerShell 5.1)** | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | ✓ | — | ✓ | — | ✓ | ✓ | — | 167 |
 | **Windows Server 2025 (PowerShell 7.6)** | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | ✓ | — | ✓ | — | ✓ | ✓ | — | 163 |
 
-18 platforms, 218 of 218 applicable slips corrected. ✓ the first suggestion was the right command; — the slip cannot happen there; ✗ it was not corrected. *ms* is the wall time of a command-only correction, Python start included, median of 5 runs; the WSL row runs WSL 1 on a shared runner, where starting any process is slow. Every cell was recorded by [ci/compat_matrix.py](ci/compat_matrix.py) typing the slip into that platform's shell and reading the answer, never by hand; the corrections themselves are on the [full page](docs/compat/README.md).
+18 platforms, 218 of 218 applicable slips corrected. ✓ the first suggestion was the right command; — the slip cannot happen there; ✗ it was not corrected. *ms* is the wall time of a command-only correction, Python start included, median of 5 runs; the WSL row was recorded on a shared Windows runner, where WSL starts a process far slower than a laptop does. Every cell was recorded by [ci/compat_matrix.py](ci/compat_matrix.py) typing the slip into that platform's shell and reading the answer, never by hand; the corrections themselves are on the [full page](docs/compat/README.md).
 <!-- end compat -->
 
 The rows are recorded by
