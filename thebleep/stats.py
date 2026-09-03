@@ -18,8 +18,6 @@ starts it over.
 import os
 import time
 
-from .conf import settings
-
 FORMAT = 1
 FILE = 'stats.json'
 MAX_FILE = 256 * 1024
@@ -28,12 +26,9 @@ COUNTERS = ('accepted', 'edited', 'trusted', 'abstained')
 
 
 def _path():
-    user_dir = settings.user_dir
-    if user_dir is None:
-        user_dir = settings._get_user_dir_path()
-        settings.user_dir = user_dir
-    path = user_dir.joinpath(FILE)
-    return None if path.parts[:1] == ('~',) else path
+    from .learning import user_file
+
+    return user_file(FILE)
 
 
 def _empty():

@@ -79,7 +79,11 @@ def json_output(args):
     if output is False:
         return 2
 
-    previous = os.getcwd()
+    try:
+        previous = os.getcwd()
+    except OSError:
+        # A shell can be left in a directory that was removed under it.
+        previous = None
     try:
         if args.cwd:
             os.chdir(args.cwd)
@@ -90,7 +94,8 @@ def json_output(args):
         logs.failed('Could not use {}: {}'.format(args.cwd, error))
         return 2
     finally:
-        os.chdir(previous)
+        if previous is not None:
+            os.chdir(previous)
 
     print(json.dumps(result, sort_keys=True))
     return 0

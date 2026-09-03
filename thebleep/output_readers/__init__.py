@@ -56,4 +56,4 @@ def _read(script, expanded):
     # Backends are ordered shell logger -> instant log -> replay. A reader that
     # cannot answer returns None, so the next one gets the same command and the
     # replay backend remains the final, consent-gated fallback.
-    return backends.read(script, expanded, _shell_logger_available)
+    return backends.read(script, expanded)

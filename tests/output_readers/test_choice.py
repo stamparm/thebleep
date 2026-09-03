@@ -83,9 +83,16 @@ def test_no_answer_and_no_consent_runs_nothing(recorded, allowed, rerun):
 
 def test_the_shell_logger_still_wins_over_both(recorded, allowed, rerun,
                                                mocker):
-    mocker.patch.object(output_readers, '_shell_logger_available',
+    # Configured (the socket variable is set) and available (it answers):
+    # the real path asks both, in that order.
+    import os
+
+    from thebleep import const
+    from thebleep.output_readers import backends, shell_logger
+
+    os.environ[const.SHELL_LOGGER_SOCKET_ENV] = '/tmp/thebleep-test.sock'
+    mocker.patch.object(backends, '_shell_logger_available',
                         return_value=True)
-    from thebleep.output_readers import shell_logger
 
     mocker.patch.object(shell_logger, 'get_output', return_value=u'logged')
     assert output_readers.get_output(u'ehco x', u'ehco x') == u'logged'

@@ -133,14 +133,14 @@ def _is_second_run():
 def _is_already_configured(configuration_details):
     """Returns `True` when alias already in shell config."""
     path = expanduser(configuration_details.path)
-    with path.open('r') as shell_config:
+    with path.open('r', encoding='utf-8', errors='replace') as shell_config:
         return configuration_details.content in shell_config.read()
 
 
 def _configure(configuration_details):
     """Adds alias to shell config."""
     path = expanduser(configuration_details.path)
-    with path.open('a') as shell_config:
+    with path.open('a', encoding='utf-8') as shell_config:
         shell_config.write(u'\n')
         shell_config.write(configuration_details.content)
         shell_config.write(u'\n')

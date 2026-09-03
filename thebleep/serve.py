@@ -115,14 +115,24 @@ def _answer(request):
         payload = json.loads(request.decode('utf-8'))
         script = payload.get('script')
         aliases = payload.get('aliases')
+        cwd = payload.get('cwd')
     except (ValueError, AttributeError, UnicodeDecodeError):
-        return b'none\n'
+        # Not "no correction": a question that could not be read, which the
+        # client answers by asking Python directly.
+        return b'error\n'
     if not isinstance(script, str) or not script.strip():
         return b'none\n'
     if isinstance(aliases, str):
         os.environ['TB_SHELL_ALIASES'] = aliases
     else:
         os.environ.pop('TB_SHELL_ALIASES', None)
+    # The rules read the project around the *client's* directory, not the
+    # one the server happened to start in.
+    if isinstance(cwd, str) and cwd:
+        try:
+            os.chdir(cwd)
+        except OSError:
+            return b'error\n'
 
     # Answers memoized for one process are answers for one question here:
     # the alias list and PATH may have changed since the last one.
@@ -208,7 +218,7 @@ def serve(shell_name, idle=IDLE_SECONDS, ready=None):
                 return 0
             with connection:
                 request = _read_request(connection)
-                response = b'none\n' if request is None else _answer(request)
+                response = b'error\n' if request is None else _answer(request)
                 try:
                     connection.sendall(response)
                 except OSError:
@@ -221,7 +231,7 @@ def serve(shell_name, idle=IDLE_SECONDS, ready=None):
             pass
 
 
-def ask(shell_name, script, aliases=None, timeout=1.0):
+def ask(shell_name, script, aliases=None, timeout=1.0, cwd=None):
     """A client, for tests and for a shell with no socket client of its own.
     Returns the correction, None for "no correction", or raises OSError when
     there is no server."""
@@ -229,9 +239,9 @@ def ask(shell_name, script, aliases=None, timeout=1.0):
     connection.settimeout(timeout)
     try:
         connection.connect(socket_path(shell_name))
-        connection.sendall(json.dumps({'script': script,
-                                       'aliases': aliases}).encode('utf-8')
-                           + b'\n')
+        connection.sendall(json.dumps({'script': script, 'aliases': aliases,
+                                       'cwd': cwd or os.getcwd()})
+                           .encode('utf-8') + b'\n')
         try:
             connection.shutdown(socket.SHUT_WR)
         except OSError:
@@ -248,6 +258,8 @@ def ask(shell_name, script, aliases=None, timeout=1.0):
         connection.close()
     response = b''.join(chunks)
     status, _, body = response.partition(b'\n')
+    if status == b'error':
+        raise OSError('the server could not read the question')
     if status != b'ok':
         return None
     return body.decode('utf-8', 'replace')

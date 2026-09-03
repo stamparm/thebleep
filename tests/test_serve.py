@@ -63,18 +63,28 @@ class TestServing(object):
         serve.ask('zsh', 'gti status')
         assert 'TB_SHELL_ALIASES' not in os.environ
 
-    def test_garbage_is_answered_none(self, server):
+    def test_garbage_is_an_error_not_a_no(self, server):
+        """`none` would end the client's search; `error` sends it to Python."""
         connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         connection.settimeout(3)
         connection.connect(serve.socket_path('zsh'))
         connection.sendall(b'not json at all\n')
         connection.shutdown(socket.SHUT_WR)
-        assert connection.recv(100) == b'none\n'
+        assert connection.recv(100) == b'error\n'
         connection.close()
 
-    def test_a_request_too_large_is_answered_none(self, server, mocker):
+    def test_a_request_too_large_is_an_error(self, server, mocker):
         mocker.patch.object(serve, 'MAX_REQUEST', 10)
-        assert serve.ask('zsh', 'gti status' * 5) is None
+        with pytest.raises(OSError):
+            serve.ask('zsh', 'gti status' * 5)
+
+    def test_the_question_carries_its_directory(self, server, tmpdir, mocker):
+        seen = {}
+        mocker.patch('thebleep.serve.correct',
+                     side_effect=lambda script: seen.setdefault(
+                         'cwd', os.getcwd()) and None)
+        serve.ask('zsh', 'gti status', cwd=str(tmpdir))
+        assert os.path.samefile(seen['cwd'], str(tmpdir))
 
     def test_many_questions(self, server):
         for _ in range(20):

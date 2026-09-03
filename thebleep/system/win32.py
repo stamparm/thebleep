@@ -55,9 +55,11 @@ def get_key():
     Ctrl+C means the same thing on both.
 
     """
+    prefixed = False
     try:
         ch = msvcrt.getwch()
         if ch in ('\x00', '\xe0'):  # arrow or function key prefix?
+            prefixed = True
             ch = msvcrt.getwch()  # second call returns the actual key code
     except KeyboardInterrupt:
         return const.KEY_CTRL_C
@@ -66,9 +68,10 @@ def get_key():
         return const.KEY_MAPPING[ch]
     if ch == '\x1b':
         return const.KEY_ESCAPE
-    if ch == 'H':
+    # Only after the prefix: a plain capital H or P is a letter, not an arrow.
+    if prefixed and ch == 'H':
         return const.KEY_UP
-    if ch == 'P':
+    if prefixed and ch == 'P':
         return const.KEY_DOWN
 
     return ch
@@ -84,14 +87,3 @@ def open_command(arg):
     from ..shells import shell
 
     return 'cmd /c start ' + shell.quote(arg)
-
-
-# `Path.expanduser = ...` used to be here, replacing pathlib's own with one
-# built on `os.path.expanduser`, for http://bugs.python.org/issue19776 -- which
-# was fixed in Python 3.5, four releases before the oldest one this supports.
-#
-# It was also a monkeypatch of the standard library for the whole process,
-# imposed on every other package in the interpreter, and it changed the
-# behaviour: pathlib raises RuntimeError when it cannot work out where home is,
-# and `os.path.expanduser` quietly hands back the `~` unexpanded, which is a
-# path that does not exist and is much harder to explain.

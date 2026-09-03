@@ -118,7 +118,8 @@ __thebleep_fixed() {{
         fd=$REPLY
         __thebleep_json "$1"; local script=$REPLY
         __thebleep_json "$TB_SHELL_ALIASES"; local aliases=$REPLY
-        print -r -- "{{\\"script\\": \\"$script\\", \\"aliases\\": \\"$aliases\\"}}" >&$fd
+        __thebleep_json "$PWD"; local cwd=$REPLY
+        print -r -- "{{\\"script\\": \\"$script\\", \\"aliases\\": \\"$aliases\\", \\"cwd\\": \\"$cwd\\"}}" >&$fd
         IFS= read -r answer <&$fd
         REPLY=$(cat <&$fd)
         exec {{fd}}>&-
@@ -155,7 +156,7 @@ __thebleep_ambient_accept_line() {{
         TB_SHELL_ALIASES=$(alias)
         TB_HISTORY=
         {fit_transport}
-        if __thebleep_fixed "$BUFFER" && [[ $REPLY != $BUFFER ]]; then
+        if __thebleep_fixed "$BUFFER" && [[ $REPLY != "$BUFFER" ]]; then
             fixed=$REPLY
             zle -M "bleep: $first is not a command; return runs \\`$fixed\\`, ctrl+_ puts yours back"
             BUFFER=$fixed

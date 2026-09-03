@@ -17,7 +17,7 @@ NAME = re.compile(r'^[^\W\d][\w-]*$', re.UNICODE)
 
 def _checked(name):
     """`name`, or nothing at all and a message saying why."""
-    if NAME.match(name):
+    if NAME.fullmatch(name):
         return name
 
     failed(u'{!r} cannot be the name of the alias: a name is a letter or an '

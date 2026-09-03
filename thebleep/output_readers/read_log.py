@@ -164,7 +164,7 @@ def _wrapped_together(script_line, lines, width):
     return text
 
 
-_PROMPT_ENDS = '$#>%\u276f\u279c\u03bb\u2192\u00bb'
+from .pane import PROMPT_ENDS as _PROMPT_ENDS  # noqa: E402
 
 
 def _prompt_prefix():

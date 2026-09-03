@@ -49,7 +49,10 @@ def capture(arguments, name):
 
 def _prompt():
     """A rendered prompt supplied by an integration, when available."""
-    prompt = os.environ.get('TB_PROMPT') or os.environ.get('PS1')
+    # Only a prompt an integration rendered: `PS1`, when exported, is the
+    # unexpanded template (`\\u@\\h:\\w\\$`), which no captured line begins
+    # with.
+    prompt = os.environ.get('TB_PROMPT')
     if not prompt:
         return None
     prompt = prompt.replace(const.USER_COMMAND_MARK, '')
@@ -73,10 +76,17 @@ def _command_prompt(line, script, prompt):
 
 
 def _is_prompt_line(line, prompt, command_prompt):
+    """Whether `line` is the prompt that ended the failed command's output.
+
+    The capture is taken while `bleep` itself is running, so the line after
+    the output is not a bare prompt but the prompt with `bleep` typed on it,
+    and a capture where the user had already typed the next command looks the
+    same. Equality alone never ended the output in the real shape.
+
+    """
     text = line.rstrip()
-    if prompt:
-        return text == prompt.rstrip()
-    return text == command_prompt.rstrip()
+    ending = (prompt or command_prompt).rstrip()
+    return text == ending or text.startswith(ending + ' ')
 
 
 def output(script, capture_text):

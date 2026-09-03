@@ -3,8 +3,8 @@ import os
 import sys
 from .. import logs
 from ..conf import settings
-from ..const import ARGUMENT_PLACEHOLDER, EXIT_EDIT, USER_COMMAND_MARK, \
-    get_alias
+from ..const import ARGUMENT_PLACEHOLDER, EXIT_EDIT, TRANSPORT_LIMIT, \
+    USER_COMMAND_MARK, get_alias
 from ..utils import cache, tool_lines, tool_output
 from .generic import Generic, instant_log_path
 
@@ -143,7 +143,7 @@ exit
                 '  end\n'
                 '  set -l broken_command $history[1]\n'
                 '  set -l shell_aliases (alias | string collect)\n'
-                '  if test (string length -- "$shell_aliases") -gt 32000\n'
+                '  if test (string length -- "$shell_aliases") -gt {limit}\n'
                 '    set shell_aliases\n'
                 '  end\n'
                 '  env TB_SHELL=fish TB_ALIAS={0} TB_CAN_EDIT=1'
@@ -158,7 +158,7 @@ exit
                 '  end\n'
                 'end').format(alias_name, alter_history, ARGUMENT_PLACEHOLDER,
                               EXIT_EDIT, self._edit_line(),
-                              self._invocation())
+                              self._invocation(), limit=TRANSPORT_LIMIT)
 
     def can_edit_buffer(self):
         return True
@@ -168,7 +168,7 @@ exit
         return '''
 function __thebleep_inline
     set -l shell_aliases (alias | string collect)
-    if test (string length -- "$shell_aliases") -gt 32000
+    if test (string length -- "$shell_aliases") -gt {limit}
         set shell_aliases
     end
     set -l fixed (env TB_SHELL=fish TB_SHELL_ALIASES="$shell_aliases" {command} --inline --command (commandline) | string collect)
@@ -177,7 +177,7 @@ function __thebleep_inline
     end
 end
 bind \\e\\e __thebleep_inline
-'''.format(command=self._invocation())
+'''.format(command=self._invocation(), limit=TRANSPORT_LIMIT)
 
     def ambient_binding(self):
         """Correct a misspelled program before it runs, on return.
@@ -195,7 +195,7 @@ function __thebleep_ambient_execute
     set -l first (string split -m1 ' ' -- (string trim -l -- "$buffer"))[1]
     if test -n "$first"; and not string match -qr '[/=$\\'"`]' -- "$first"; and not type -q -- "$first"
         set -l shell_aliases (alias | string collect)
-        if test (string length -- "$shell_aliases") -gt 32000
+        if test (string length -- "$shell_aliases") -gt {limit}
             set shell_aliases
         end
         set -l fixed (env TB_SHELL=fish TB_SHELL_ALIASES="$shell_aliases" {command} --inline --command "$buffer" 2>/dev/null | string collect)
@@ -214,7 +214,7 @@ if bind -M insert >/dev/null 2>&1
     bind -M insert \\r __thebleep_ambient_execute
     bind -M insert \\n __thebleep_ambient_execute
 end
-'''.format(command=self._invocation())
+'''.format(command=self._invocation(), limit=TRANSPORT_LIMIT)
 
     def _edit_line(self):
         """`commandline -r` writes fish's own line editor.
