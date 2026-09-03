@@ -205,6 +205,16 @@
 
 ### Security
 
+- **A repository's shipped correction is never run unasked.** It scored like a
+  correction the user taught, so with `auto_run_confidence` on, a clone could
+  have turned a typo into `./.thebleep/x` and run it. Trust mode refuses
+  shipped corrections, and a shipped pair may only change the program to a
+  bare name that is already on `PATH`.
+
+- **`long_form_help` quotes the line it repeats.** The tool's own
+  `Try 'x --help'` line went into the suggestion verbatim; a build whose output
+  somebody else controls could have put shell syntax between those quotes.
+
 - **Dispatcher listings are bounded and conservative.** A listing that exceeds
   the output limit is not treated as complete, so replay never infers that a
   subcommand is harmless from a truncated answer.
@@ -242,6 +252,49 @@
   writer.
 
 ### Fixed
+
+- **Pane capture ends the output at the right prompt.** The tmux, kitty,
+  WezTerm and Zellij readers looked for a bare prompt after the failed
+  command, but the capture is taken while `bleep` itself is running, so the
+  line there is the prompt with `bleep` typed on it, and they never answered
+  in the real shape. Zellij was also asked with a `--pane-id` flag its
+  `dump-screen` does not have; it now dumps to a file.
+
+- **A substitution inside quotes keeps the rest of its word.** In
+  `echo "a $(b) c" && git st` the ` c"` after the substitution was dropped,
+  leaving the first segment ending in an unbalanced quote.
+
+- **A rule file that will not compile is reported.** With the rule pack on,
+  the default, such a file in `~/.config/thebleep/rules` vanished with a debug
+  line; the loader's warning now prints either way.
+
+- **`--doctor` redirected to a file carries no colour escapes.** Colour now
+  follows the stream being written to, not only stderr.
+
+- **Rules that raised where they should abstain.** `brew_cask_dependency`
+  quoted its `&&` chain and asked brew to install a cask by that name;
+  `gulp_not_task` and `git_push_without_commits` could not match hyphenated
+  names; `git_pull_uncommitted_changes` dropped the user's arguments;
+  `git_dubious_ownership` quoted a path git had already quoted;
+  `ln_no_hard_link` and `ag_literal` never matched after a replay;
+  `sed_unterminated_s` re-quoted the whole line and made `> out` an argument;
+  `not_on_path` lost the quoting in front of the program;
+  `port_already_in_use` could aim `kill` at a client of the port rather than
+  its listener; `touch`, `open`, `mercurial`, `javac`, `python_execute`,
+  `pacman_not_found`, `rails_migrations_pending`, `wrong_hyphen_before_subcommand`
+  and a dozen others now return nothing on odd output instead of raising.
+
+- **The warm server answers for the client's directory**, and treats a
+  question it cannot read as an error the client falls back from, not as
+  "no correction".
+
+- **Smaller ones.** Capital H and P are letters on Windows, not arrows; a
+  startup file with non-ASCII in it no longer raises when the alias is
+  configured for you; `--json` survives a removed working directory;
+  `--alias` refuses a name with a trailing newline; the test suite keeps out
+  of the real `~/.cache` and `~/.config`; `release.py` works from any
+  directory; `install.sh --help` works when piped and the script survives an
+  unset `HOME`.
 
 - **Capture backend status now has one source of truth.** Runtime selection and
   `--doctor` use the same configured/available predicates, and explicit false
