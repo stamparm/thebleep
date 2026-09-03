@@ -19,12 +19,20 @@ def test_match(script):
 
 
 @pytest.mark.parametrize('script', ['gitbranch', 'ls-la'])
-def test_the_certain_splits_are_the_other_rules(script):
+def test_the_certain_splits_are_the_other_rules(script, mocker):
     """A flag, or a subcommand git itself listed: not a guess, so it is
     answered by `missing_space_before_known_subcommand` in front of the
-    spelling correction rather than by this behind it."""
+    spelling correction rather than by this behind it.
+
+    What git lists is stood in for: asked of the real git, this was a test of
+    whether a cold Windows runner could start git inside the probe timeout,
+    and once it could not.
+
+    """
     from thebleep.rules import missing_space_before_known_subcommand as known
 
+    mocker.patch('thebleep.replay._subcommands',
+                 return_value={'branch', 'status', 'push'})
     assert not match(Command(script, ''))
     assert known.match(Command(script, ''))
 

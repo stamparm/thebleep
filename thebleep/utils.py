@@ -33,7 +33,10 @@ def _load_difflib():
 # these is the same shape of question -- "what subcommands do you have?", "what
 # tasks are there?" -- asked of a program that answers from a list it already
 # has, so anything approaching this is a program that is not going to answer.
-TOOL_TIMEOUT = 5
+# Starting a process costs more on Windows, and the first start of a large
+# CLI (docker, git's help) on a cold machine more still; five seconds there
+# meant a helper that would have answered was cut off.
+TOOL_TIMEOUT = 10 if os.name == 'nt' else 5
 
 # And how much of the answer to keep. `gradle tasks` on a large build prints a
 # few hundred lines; nothing this is asked prints a megabyte on purpose.

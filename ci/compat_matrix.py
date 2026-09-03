@@ -663,8 +663,28 @@ def readme_with_block(text, rows):
     return text[:start] + block(rows) + text[finish:]
 
 
+def _unpublishable(rows):
+    """Rows with a slip that was not corrected. The table is a statement
+    about what works, so a row like that is a rule to fix, not a cell to
+    print; `--publishable` keeps it out and says so."""
+    return [row for row in rows
+            if any(cell['status'] in ('miss', 'other', 'error')
+                   for cell in row['cells'].values())]
+
+
 def render(args):
     rows = load_rows(args.rows)
+    held_back = _unpublishable(rows) if args.publishable else []
+    for row in held_back:
+        bad = sorted(identifier for identifier, cell in row['cells'].items()
+                     if cell['status'] in ('miss', 'other', 'error'))
+        print(u'not published: {} ({}) -- not corrected: {}'.format(
+            row['label'], row['system'], ', '.join(bad)))
+        try:
+            os.remove(os.path.join(args.rows, row['label'] + '.json'))
+        except OSError:
+            pass
+    rows = [row for row in rows if row not in held_back]
     if not rows:
         sys.exit('compat_matrix.py: no rows in {}'.format(args.rows))
     text = _read(README)
@@ -682,7 +702,9 @@ def render(args):
     _write(PAGE, wanted_page)
     print('wrote the compat block in README.md and docs/compat/README.md '
           '({} rows)'.format(len(rows)))
-    return 0
+    # Written, and then the news: a status the workflow can turn red on
+    # after it has committed what could be published.
+    return 3 if held_back else 0
 
 
 def main(argv=None):
@@ -711,6 +733,9 @@ def main(argv=None):
     rendering.add_argument('--rows', default=ROWS)
     rendering.add_argument('--check', action='store_true',
                            help='write nothing; fail if the README is stale')
+    rendering.add_argument('--publishable', action='store_true',
+                           help='leave out, and delete, rows with a slip '
+                                'that was not corrected; exit 3 if any')
     rendering.set_defaults(run=render)
 
     args = parser.parse_args(argv)

@@ -194,10 +194,8 @@ The same slips, typed into a real shell on each of these, and what came back.
 | **NetBSD 11.0** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 120 |
 | **macOS 26.6.2** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | 108 |
 | **macOS 15.7.9** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | 223 |
-| **Windows 10.0.26100 (powershell)** | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | ✓ | — | ✓ | — | ✗ | ✓ | — | 175 |
-| **Windows 10.0.26100 (pwsh)** | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | ✓ | — | ✓ | — | ✗ | ✓ | — | 181 |
 
-17 platforms, 203 of 205 applicable slips corrected. ✓ the first suggestion was the right command; — the slip cannot happen there; ✗ it was not corrected. *ms* is the wall time of a command-only correction, Python start included, median of 5 runs. Every cell was recorded by [ci/compat_matrix.py](ci/compat_matrix.py) typing the slip into that platform's shell and reading the answer, never by hand; the corrections themselves are on the [full page](docs/compat/README.md).
+15 platforms, 187 of 187 applicable slips corrected. ✓ the first suggestion was the right command; — the slip cannot happen there; ✗ it was not corrected. *ms* is the wall time of a command-only correction, Python start included, median of 5 runs. Every cell was recorded by [ci/compat_matrix.py](ci/compat_matrix.py) typing the slip into that platform's shell and reading the answer, never by hand; the corrections themselves are on the [full page](docs/compat/README.md).
 <!-- end compat -->
 
 The rows are recorded by

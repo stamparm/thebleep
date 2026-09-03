@@ -195,6 +195,7 @@ jobs:
         run: |
           cd "$(wslpath -u '${{ github.workspace }}')"
           cp -r . /tmp/src && mkdir -p rows
+          sed -i 's/\r$//' /tmp/src/ci/*.sh
           sh /tmp/src/ci/compat_unix.sh ubuntu-wsl /tmp/src "$PWD/rows" '${{ env.SOURCE }}'
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
@@ -222,9 +223,12 @@ jobs:
           merge-multiple: true
           path: docs/compat/rows
       - name: Render
+        id: render
         run: |
           pip install -q -r requirements.txt -e .
-          python ci/compat_matrix.py render
+          # A row with an uncorrected slip is held back and the job goes red
+          # at the end, after the rows that can be published have been.
+          set +e; python ci/compat_matrix.py render --publishable; echo "status=$?" >> "$GITHUB_OUTPUT"; set -e
           python ci/compat_matrix.py render --check
           python -m pytest -q tests/test_readme_claims.py tests/test_readme.py
       - name: Commit when a cell changed
@@ -240,3 +244,5 @@ jobs:
           # master may have moved while the rows were being recorded.
           git pull --rebase origin master
           git push origin HEAD:master
+      - name: Every recorded row was published
+        run: test "${{ steps.render.outputs.status }}" = 0
