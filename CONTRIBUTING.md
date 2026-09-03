@@ -167,9 +167,12 @@ What it does, in order: checks this interpreter is Python 3.9 or newer and has
 `flake8`, `pytest`, `build`, `twine` and The Bleep's own dependencies; checks the
 tree is clean, on master, and that the tag is free; runs flake8 and the suite
 **against the tree as it stands**; then writes the version into `setup.py`, the
-README badge and the CHANGELOG heading; builds both artifacts, checks their
-metadata and contents, installs the wheel into a clean virtualenv and corrects a
-command with it. Then it prints the two git commands to run.
+README badge and the CHANGELOG heading; runs the suite **again on the stamped
+tree**, because that is the tree the release commit will be and the one CI runs
+on, and 4.0.4 shipped with a red Tests run from a test that read the heading it
+had just dated; builds both artifacts, checks their metadata and contents,
+installs the wheel into a clean virtualenv and corrects a command with it. Then
+it prints the two git commands to run.
 
 Nothing is written until every check that can be made against the unreleased tree
 has passed, and if a later step fails those three files are put back — so an

@@ -217,6 +217,20 @@ class TestNothingIsWrittenBeforeTheGatesPass(object):
         assert order.index('flake8') < order.index('set_version')
         assert order.index('pytest') < order.index('set_version')
 
+    def test_the_suite_runs_again_on_the_stamped_tree(
+            self, release, a_tree, no_subprocesses, monkeypatch):
+        """4.0.4 shipped with a red Tests run: a test read the CHANGELOG
+        heading, which only the stamped tree has dated."""
+        order = []
+        monkeypatch.setattr(release, 'run', lambda *command, **kwargs:
+                            order.append(command[2]))
+        real = release.set_version
+        monkeypatch.setattr(release, 'set_version',
+                            lambda *arguments: (order.append('set_version'),
+                                                real(*arguments))[1])
+        release.main(['release.py', '4.0.1'])
+        assert 'pytest' in order[order.index('set_version'):]
+
     def test_a_failure_after_writing_puts_the_files_back(
             self, release, a_tree, no_subprocesses, monkeypatch):
         """The build, the artifact check or the smoke test going wrong."""

@@ -11,8 +11,10 @@ anything. That environment lives outside the checkout, at
 
 What it does: checks that this interpreter can do the job at all, runs the gates
 against the tree as it stands, writes the version into the three places that say
-it, builds both artifacts, checks their metadata and contents, installs the wheel
-into a clean virtualenv and corrects a command with it. Then it stops and prints
+it, runs the test suite again on the stamped tree -- the one the release commit
+will be, and the one CI will run on -- builds both artifacts, checks their
+metadata and contents, installs the wheel into a clean virtualenv and corrects a
+command with it. Then it stops and prints
 the two git commands that make the release happen.
 
 The order matters. Nothing is written until every check that can be made against
@@ -366,6 +368,13 @@ def main(argv):
     set_version(version, date)
 
     try:
+        # And once more on the tree as it will be committed. The suite has
+        # tests that read the three files just written, and 4.0.4 shipped with
+        # a red Tests run because one of them only passed while the CHANGELOG
+        # still said unreleased. Two minutes here against a red release.
+        print('\n== gates, on the stamped tree ==')
+        run(sys.executable, '-m', 'pytest', '-q')
+
         print('\n== build ==')
         shutil.rmtree(os.path.join(HERE, 'dist'), ignore_errors=True)
         run(sys.executable, '-m', 'build')
