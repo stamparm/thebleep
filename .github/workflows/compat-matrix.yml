@@ -190,10 +190,12 @@ jobs:
           set-as-default: 'true'
       - name: Record the row
         shell: wsl-bash {0}
+        # The runner's variables do not cross into WSL, so the two this
+        # needs are written in here.
         run: |
-          cd "$(wslpath -u "$GITHUB_WORKSPACE")"
+          cd "$(wslpath -u '${{ github.workspace }}')"
           cp -r . /tmp/src && mkdir -p rows
-          sh /tmp/src/ci/compat_unix.sh ubuntu-wsl /tmp/src "$PWD/rows" "$SOURCE"
+          sh /tmp/src/ci/compat_unix.sh ubuntu-wsl /tmp/src "$PWD/rows" '${{ env.SOURCE }}'
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: compat-row-ubuntu-wsl
