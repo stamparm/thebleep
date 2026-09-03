@@ -2114,7 +2114,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 Project License can be found [here](LICENSE.md).
 
 
-[version-badge]:   https://img.shields.io/badge/version-4.0.4-007EC7.svg
+[version-badge]:   https://img.shields.io/badge/version-4.0.5-007EC7.svg
 [version-link]:    CHANGELOG.md
 [workflow-badge]:  https://github.com/stamparm/thebleep/actions/workflows/test.yml/badge.svg
 [workflow-link]:   https://github.com/stamparm/thebleep/actions/workflows/test.yml
