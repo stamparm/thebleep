@@ -1,6 +1,7 @@
 """Attempts to spellcheck and correct failed cd commands"""
 
 import os
+import re
 from thebleep.specific.sudo import sudo_support
 from thebleep.rules import cd_mkdir
 from thebleep.shells import shell
@@ -33,13 +34,19 @@ def get_new_command(command):
     Change sensitivity by changing MAX_ALLOWED_DIFF. Default value is 0.6
     """
     start = command_word_index(command.script_parts)
-    dest = command.script_parts[start + 1].split(os.sep)
+    typed = command.script_parts[start + 1]
+    # Either separator on Windows, where people type both; and the one that
+    # was typed is the one the correction is joined with, so `../Documnets`
+    # comes back as `../Documents` there too.
+    separator = ('/' if '/' in typed else os.sep) if os.name == 'nt' else '/'
+    dest = re.split(r'[\\/]' if os.name == 'nt' else '/', typed)
     if dest[-1] == '':
         dest = dest[:-1]
 
-    absolute = dest[0] == ''
+    absolute = os.path.isabs(typed)
     if absolute:
-        cwd = os.sep
+        # `/x` splits to ['', 'x']; `C:\x` to ['C:', 'x'].
+        cwd = (dest[0] + os.sep) if dest[0] else os.sep
         dest = dest[1:]
     else:
         cwd = os.getcwd()
@@ -61,7 +68,7 @@ def get_new_command(command):
             corrected.append(best_matches[0])
         else:
             return cd_mkdir.get_new_command(command)
-    fixed = cwd if absolute else os.path.join(*corrected)
+    fixed = cwd if absolute else separator.join(corrected)
     return replace_argument(command.script,
                             command.script_parts[start + 1],
                             shell.quote(fixed))

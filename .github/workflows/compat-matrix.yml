@@ -106,7 +106,10 @@ jobs:
           usesh: true
           envs: SOURCE
           prepare: |
-            pkg install -y python3 py311-pip git sudo
+            pkg install -y python3 git sudo
+            # pip for whichever Python `python3` turned out to be; the venv's
+            # ensurepip covers the case where the package name has moved on.
+            pkg install -y "py$(python3 -c 'import sys; print("%d%d" % sys.version_info[:2])')-pip" || true
             pw useradd bleeper -m -s /bin/sh
             mkdir -p /usr/local/etc/sudoers.d
             echo 'bleeper ALL=(ALL) NOPASSWD: ALL' > /usr/local/etc/sudoers.d/bleeper
@@ -229,4 +232,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'Refresh the compatibility matrix' \
             -m "Recorded by the $GITHUB_WORKFLOW workflow, run $GITHUB_RUN_ID, from the $SOURCE."
+          # master may have moved while the rows were being recorded.
+          git pull --rebase origin master
           git push origin HEAD:master
