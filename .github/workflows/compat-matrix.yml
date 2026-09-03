@@ -1,0 +1,232 @@
+name: Compatibility matrix
+
+# The table in the README under "Where it works", recorded rather than claimed.
+# Every job runs ci/compat_matrix.py on one platform: it types each slip into
+# that platform's shell, hands what the shell printed to the correction engine
+# and writes down the first suggestion. Nothing suggested is ever run. The last
+# job renders the rows into the README and the page under docs/compat and
+# commits them when a cell changed.
+#
+# By default the rows are recorded against the checkout, so a fix shows up the
+# week it lands. A manual run can ask for the PyPI release instead.
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'What to record: checkout or pypi'
+        default: checkout
+        type: choice
+        options: [checkout, pypi]
+  schedule:
+    - cron: '23 4 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  SOURCE: ${{ inputs.source || 'checkout' }}
+
+jobs:
+  linux:
+    name: ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { image: 'debian:13', label: debian-13 }
+          - { image: 'ubuntu:24.04', label: ubuntu-24.04 }
+          - { image: 'fedora:latest', label: fedora }
+          - { image: 'almalinux:9', label: almalinux-9 }
+          - { image: 'archlinux:latest', label: arch }
+          - { image: 'opensuse/tumbleweed', label: opensuse-tumbleweed }
+          - { image: 'alpine:latest', label: alpine }
+          - { image: 'ghcr.io/void-linux/void-glibc:latest', label: void }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Record the row in a container
+        run: ci/compat_linux.sh '${{ matrix.image }}' '${{ matrix.label }}' "$RUNNER_TEMP/rows" "$SOURCE"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: compat-row-${{ matrix.label }}
+          path: ${{ runner.temp }}/rows/${{ matrix.label }}.json
+          if-no-files-found: error
+
+  hosted:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, label: ubuntu-runner, shell: bash }
+          - { os: macos-latest, label: macos-arm64, shell: zsh }
+          - { os: macos-15-intel, label: macos-intel, shell: zsh }
+          - { os: windows-latest, label: windows-pwsh, shell: pwsh }
+          - { os: windows-latest, label: windows-powershell, shell: powershell }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Install The Bleep
+        shell: bash
+        run: |
+          if [ "$SOURCE" = pypi ]; then pip install -q thebleep; else pip install -q .; fi
+      - name: Record the row
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/rows"
+          python ci/compat_matrix.py record --label '${{ matrix.label }}' \
+            --shell '${{ matrix.shell }}' --recorded-by ci --source "$SOURCE" \
+            --output "$RUNNER_TEMP/rows/${{ matrix.label }}.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: compat-row-${{ matrix.label }}
+          path: ${{ runner.temp }}/rows/${{ matrix.label }}.json
+          if-no-files-found: error
+
+  # The BSDs boot in a virtual machine on a Linux runner. Slow, and a package
+  # name moving is enough to break one, so each is allowed to fail without
+  # taking the table with it: a missing row is a missing row, not a red X.
+  freebsd:
+    name: freebsd
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: vmactions/freebsd-vm@f0552d3b69211736abd97f02ff3d4674c56b73b1  # v1.5.5
+        with:
+          release: '14.3'
+          usesh: true
+          envs: SOURCE
+          prepare: |
+            pkg install -y python3 py311-pip git sudo
+            pw useradd bleeper -m -s /bin/sh
+            mkdir -p /usr/local/etc/sudoers.d
+            echo 'bleeper ALL=(ALL) NOPASSWD: ALL' > /usr/local/etc/sudoers.d/bleeper
+          run: |
+            cp -R "$GITHUB_WORKSPACE" /tmp/src && chown -R bleeper /tmp/src
+            mkdir -p rows && chown bleeper rows
+            su bleeper -c 'sh /tmp/src/ci/compat_unix.sh freebsd /tmp/src '"$PWD"'/rows '"$SOURCE"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: compat-row-freebsd
+          path: rows/freebsd.json
+          if-no-files-found: error
+
+  openbsd:
+    name: openbsd
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: vmactions/openbsd-vm@86cdc08415d9d0865267e686561e276c52d62530  # v1.4.7
+        with:
+          usesh: true
+          envs: SOURCE
+          prepare: |
+            pkg_add -I python3 py3-pip git
+            useradd -m -s /bin/sh bleeper
+            echo 'permit nopass bleeper' > /etc/doas.conf
+          run: |
+            cp -R "$GITHUB_WORKSPACE" /tmp/src && chown -R bleeper /tmp/src
+            mkdir -p rows && chown bleeper rows
+            su bleeper -c 'sh /tmp/src/ci/compat_unix.sh openbsd /tmp/src '"$PWD"'/rows '"$SOURCE"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: compat-row-openbsd
+          path: rows/openbsd.json
+          if-no-files-found: error
+
+  netbsd:
+    name: netbsd
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: vmactions/netbsd-vm@7f23a491dcc69c34195721ab67934917707f84c7  # v1.4.9
+        with:
+          usesh: true
+          envs: SOURCE
+          prepare: |
+            /usr/sbin/pkg_add python312 py312-pip git-base sudo
+            ln -sf /usr/pkg/bin/python3.12 /usr/pkg/bin/python3
+            useradd -m -s /bin/sh bleeper
+            mkdir -p /usr/pkg/etc/sudoers.d
+            echo 'bleeper ALL=(ALL) NOPASSWD: ALL' > /usr/pkg/etc/sudoers.d/bleeper
+          run: |
+            cp -R "$GITHUB_WORKSPACE" /tmp/src && chown -R bleeper /tmp/src
+            mkdir -p rows && chown bleeper rows
+            su bleeper -c 'sh /tmp/src/ci/compat_unix.sh netbsd /tmp/src '"$PWD"'/rows '"$SOURCE"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: compat-row-netbsd
+          path: rows/netbsd.json
+          if-no-files-found: error
+
+  wsl:
+    name: ubuntu-wsl
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: Vampire/setup-wsl@d1da7f2c0322a5ee4f24975344f67fc0f5baf364  # v7.0.0
+        with:
+          distribution: Ubuntu-24.04
+          additional-packages: python3 python3-venv python3-pip git sudo
+          wsl-shell-user: runner
+          set-as-default: 'true'
+      - name: Record the row
+        shell: wsl-bash {0}
+        run: |
+          cd "$(wslpath -u "$GITHUB_WORKSPACE")"
+          cp -r . /tmp/src && mkdir -p rows
+          sh /tmp/src/ci/compat_unix.sh ubuntu-wsl /tmp/src "$PWD/rows" "$SOURCE"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: compat-row-ubuntu-wsl
+          path: rows/ubuntu-wsl.json
+          if-no-files-found: error
+
+  collect:
+    name: Render the table
+    needs: [linux, hosted, freebsd, openbsd, netbsd, wsl]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: master
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          pattern: compat-row-*
+          merge-multiple: true
+          path: docs/compat/rows
+      - name: Render
+        run: |
+          pip install -q -r requirements.txt -e .
+          python ci/compat_matrix.py render
+          python ci/compat_matrix.py render --check
+          python -m pytest -q tests/test_readme_claims.py tests/test_readme.py
+      - name: Commit when a cell changed
+        run: |
+          git add docs/compat README.md
+          if git diff --cached --quiet; then
+            echo "the table already said this"; exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Refresh the compatibility matrix' \
+            -m "Recorded by the $GITHUB_WORKFLOW workflow, run $GITHUB_RUN_ID, from the $SOURCE."
+          git push origin HEAD:master

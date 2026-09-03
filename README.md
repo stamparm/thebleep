@@ -172,6 +172,37 @@ Debian's `command-not-found` database, which would have `sl` answered with
 `apt-get install sl` on a machine that has it and `ls` on one that does not.
 Both tools are given the identical question.
 
+## Where it works
+
+The same slips, typed into a real shell on each of these, and what came back.
+
+<!-- compat: written by ci/compat_matrix.py render -->
+| | `gti status` | `git psuh` | `sl -la` | `git status --shrot` | `apt isntall`, `dnf`, `apk`… | permission denied | `mkdir a/b/c` | `./script.sh` without +x | `cd Documnets` | `rm` a directory | installed, not on PATH | `cd..` | `docker pss` | `npm run bulid` | `cargo biuld` | ms |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|--:|
+| **Debian 13** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 35 |
+| **Ubuntu 24.04.4 LTS** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 38 |
+| **Ubuntu 24.04.4 LTS · by hand** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 45 |
+| **Fedora Linux 44** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 53 |
+| **AlmaLinux 9.8** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 42 |
+| **Arch Linux** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 54 |
+| **openSUSE Tumbleweed** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 51 |
+| **Alpine Linux v3.24 (sh)** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 80 |
+| **Void Linux** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 58 |
+
+9 platforms, 111 of 111 applicable slips corrected. ✓ the first suggestion was the right command; — the slip cannot happen there; ✗ it was not corrected. *ms* is the wall time of a command-only correction, Python start included, median of 5 runs. Every cell was recorded by [ci/compat_matrix.py](ci/compat_matrix.py) typing the slip into that platform's shell and reading the answer, never by hand; the corrections themselves are on the [full page](docs/compat/README.md).
+<!-- end compat -->
+
+The rows are recorded by
+[a weekly workflow](.github/workflows/compat-matrix.yml) that boots each
+platform -- a container for the Linux distributions, a runner for macOS and
+Windows, a virtual machine for the BSDs -- installs The Bleep, and runs
+[ci/compat_matrix.py](ci/compat_matrix.py). That script types each slip into
+the platform's shell, keeps what the shell printed, hands it to the correction
+engine exactly as `bleep` would, and writes down the first suggestion. It never
+runs one. The [full page](docs/compat/README.md) has every correction as text,
+with the shell and Python version of each row; a row can also be recorded on a
+machine CI cannot reach by running the same script there.
+
 ## Contents
 
 1. [Safe by default](#safe-by-default)
@@ -928,9 +959,9 @@ $ thebleep --doctor
   Executable          ~/.local/bin/thebleep
   On PATH             yes
   Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
-  Rules               196 bundled, 3 of your own
+  Rules               197 bundled, 3 of your own
   Rule health         169 enabled, none raising
-  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (196 rules cached)
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (197 rules cached)
 - Replayless capture  available, not switched on
                       See --enable-experimental-instant-mode.
   Editing             supported by this shell (tab at the prompt)
@@ -1111,7 +1142,7 @@ nothing.
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
-| **Rules** | 196 of them, for git, docker, npm, pnpm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+| **Rules** | 197 of them, for git, docker, npm, pnpm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
@@ -1570,6 +1601,7 @@ The following rules are enabled by default on specific platforms only:
 
 * `apt_get` — installs app from apt if it not installed (requires `python-commandnotfound` / `python3-commandnotfound`);
 * `apt_get_search` — changes trying to search using `apt-get` with searching using `apt-cache`;
+* `apk_unknown_command` — fixes mistyped `apk` commands on Alpine, and the verbs other package managers use: `apk isntall vim` and `apk install vim` are both `apk add vim`;
 * `apt_invalid_operation` — fixes invalid `apt` and `apt-get` calls, like `apt-get isntall vim`;
 * `apt_list_upgradable` — helps you run `apt list --upgradable` after `apt update`;
 * `apt_upgrade` — helps you run `apt upgrade` after `apt list --upgradable`;
@@ -1580,7 +1612,7 @@ The following rules are enabled by default on specific platforms only:
 * `brew_uninstall` — adds `--force` to `brew uninstall` if multiple versions were installed;
 * `brew_unknown_command` — fixes wrong brew commands, for example `brew docto/brew doctor`;
 * `brew_update_formula` — turns `brew update <formula>` into `brew upgrade <formula>`;
-* `dnf_no_such_command` — fixes mistyped DNF commands;
+* `dnf_no_such_command` — fixes mistyped DNF commands, in dnf 4's wording and dnf 5's;
 * `nixos_cmd_not_found` — installs apps on NixOS;
 * `pacman` — installs app with `pacman` if it is not installed (uses `paru`, `yay`, `pikaur` or `yaourt` if available, in that order);
 * `option_typo` — fixes a mistyped long option in **any** program: `ls --colour` → `ls --color`, `git status --shrot` → `git status --short`, `curl --verbse` → `curl --verbose`, `tar --extrat` → `tar --extract`. Reads the options out of the program's own usage when it printed them, and asks `<program> --help` only when the program itself invited it (`Try 'ls --help'`);
@@ -2047,7 +2079,7 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command reaches about a fifth of the 196 rules, and
+  running it. A typical command reaches about a fifth of the 197 rules, and
   one for a tool with many rules of its own — `git` — under a quarter, instead of
   all of them. Rules that don't say what they are about are always loaded, so
   this makes corrections faster, never fewer.

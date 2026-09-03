@@ -386,6 +386,32 @@ def test_the_benchmark_block_is_the_recorded_run(source_root, readme):
         '`python bench/chart.py`'
 
 
+def test_the_compat_block_is_the_recorded_rows(source_root, readme):
+    """What `ci/compat_matrix.py render --check` checks. In process, for the
+    same reason as the benchmark chart: the marks are not in every codec."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        'compat_matrix', str(source_root.joinpath('ci', 'compat_matrix.py')))
+    compat = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(compat)
+
+    rows = compat.load_rows(str(source_root.joinpath('docs', 'compat',
+                                                     'rows')))
+    assert rows, 'no rows under docs/compat/rows'
+    assert compat.BEGIN in readme and compat.END in readme, \
+        'no compat block in the README to check'
+    start = readme.index(compat.BEGIN)
+    finish = readme.index(compat.END) + len(compat.END)
+    assert readme[start:finish] == compat.block(rows), \
+        'the README has drifted from docs/compat/rows; run ' \
+        '`python ci/compat_matrix.py render`'
+    with io.open(str(source_root.joinpath('docs', 'compat', 'README.md')),
+                 encoding='utf-8') as handle:
+        assert handle.read() == compat.page(rows), \
+            'docs/compat/README.md has drifted from docs/compat/rows'
+
+
 def test_the_recorded_benchmark_names_a_commit_that_exists(source_root):
     """A result whose source cannot be checked out is not evidence.
 
