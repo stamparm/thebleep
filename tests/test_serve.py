@@ -46,6 +46,7 @@ def server(runtime, mocker):
     thread.daemon = True
     thread.start()
     assert ready.wait(10), 'the server never started listening'
+    outcome['thread'] = thread
     yield outcome
     thread.join(10)
 
@@ -108,6 +109,9 @@ class TestServing(object):
         while os.path.exists(serve.socket_path('zsh')) and time.time() < deadline:
             time.sleep(0.1)
         assert not os.path.exists(serve.socket_path('zsh'))
+        # The socket goes before the thread returns; on macOS the gap was
+        # wide enough to read the status before it was there.
+        server['thread'].join(10)
         assert server.get('status') == 0
 
 
