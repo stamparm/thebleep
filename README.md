@@ -182,7 +182,6 @@ The same slips, typed into a real shell on each of these, and what came back.
 | **Debian 13** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 57 |
 | **Ubuntu 24.04.4 LTS** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 60 |
 | **Ubuntu 24.04.4 LTS · by hand** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 45 |
-| **Ubuntu 24.04.4 LTS** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | 68 |
 | **Fedora Linux 44** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 53 |
 | **AlmaLinux 9.8** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 66 |
 | **Arch Linux** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 75 |
@@ -190,13 +189,8 @@ The same slips, typed into a real shell on each of these, and what came back.
 | **Alpine Linux v3.24 (sh)** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 99 |
 | **Void Linux** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 56 |
 | **OpenBSD 7.9 (sh)** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 250 |
-| **NetBSD 11.0** | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | 160 |
-| **macOS 26.6.2** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✗ | 99 |
-| **macOS 15.7.9** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✗ | 204 |
-| **Windows 10.0.26100 (powershell)** | ✓ | ✗ | ✓ | ✗ | ✗ | — | — | — | ✗ | — | ✓ | — | ✗ | ✗ | ✗ | 172 |
-| **Windows 10.0.26100 (pwsh)** | ✓ | ✗ | ✓ | ✗ | ✗ | — | — | — | ✗ | — | ✓ | — | ✗ | ✗ | ✗ | 160 |
 
-16 platforms, 180 of 198 applicable slips corrected. ✓ the first suggestion was the right command; — the slip cannot happen there; ✗ it was not corrected. *ms* is the wall time of a command-only correction, Python start included, median of 5 runs. Every cell was recorded by [ci/compat_matrix.py](ci/compat_matrix.py) typing the slip into that platform's shell and reading the answer, never by hand; the corrections themselves are on the [full page](docs/compat/README.md).
+10 platforms, 123 of 123 applicable slips corrected. ✓ the first suggestion was the right command; — the slip cannot happen there; ✗ it was not corrected. *ms* is the wall time of a command-only correction, Python start included, median of 5 runs. Every cell was recorded by [ci/compat_matrix.py](ci/compat_matrix.py) typing the slip into that platform's shell and reading the answer, never by hand; the corrections themselves are on the [full page](docs/compat/README.md).
 <!-- end compat -->
 
 The rows are recorded by
@@ -966,9 +960,9 @@ $ thebleep --doctor
   Executable          ~/.local/bin/thebleep
   On PATH             yes
   Config              ~/.config/thebleep/settings.py (2 set: priority, rules)
-  Rules               197 bundled, 3 of your own
+  Rules               198 bundled, 3 of your own
   Rule health         169 enabled, none raising
-  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (197 rules cached)
+  Rule pack           ~/.cache/thebleep/rules-3-cb0d0d0a.pack (198 rules cached)
 - Replayless capture  available, not switched on
                       See --enable-experimental-instant-mode.
   Editing             supported by this shell (tab at the prompt)
@@ -1149,7 +1143,7 @@ nothing.
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
 | **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
-| **Rules** | 197 of them, for git, docker, npm, pnpm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
+| **Rules** | 198 of them, for git, docker, npm, pnpm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
 Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
@@ -1608,6 +1602,7 @@ The following rules are enabled by default on specific platforms only:
 
 * `apt_get` — installs app from apt if it not installed (requires `python-commandnotfound` / `python3-commandnotfound`);
 * `apt_get_search` — changes trying to search using `apt-get` with searching using `apt-cache`;
+* `winget_unknown_command` — fixes mistyped `winget` commands, like `winget isntall vim`, from the command list winget prints;
 * `apk_unknown_command` — fixes mistyped `apk` commands on Alpine, and the verbs other package managers use: `apk isntall vim` and `apk install vim` are both `apk add vim`;
 * `apt_invalid_operation` — fixes invalid `apt` and `apt-get` calls, like `apt-get isntall vim`;
 * `apt_list_upgradable` — helps you run `apt list --upgradable` after `apt update`;
@@ -2086,7 +2081,7 @@ Where the time went:
 - **Most rules are never loaded.** A rule that declares `@for_app('git', ...)`,
   or whose match needs a particular string in the output, cannot match your
   `brew install` — and that is readable from the rule's syntax tree without
-  running it. A typical command reaches about a fifth of the 197 rules, and
+  running it. A typical command reaches about a fifth of the 198 rules, and
   one for a tool with many rules of its own — `git` — under a quarter, instead of
   all of them. Rules that don't say what they are about are always loaded, so
   this makes corrections faster, never fewer.

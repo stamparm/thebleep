@@ -1,6 +1,13 @@
+import re
+
 from ..const import EXIT_EDIT, get_alias
 from ..utils import tool_lines, tool_output
 from .generic import Generic, ShellConfiguration
+
+
+# The characters that mean nothing special to PowerShell in an argument. The
+# POSIX set, plus the backslash and colon of a Windows path.
+BARE_WORD = re.compile(r'^[\w@%+=:,./\\-]+$')
 
 
 class Powershell(Generic):
@@ -190,12 +197,25 @@ Set-PSReadLineKeyHandler -Key Enter -BriefDescription 'TheBleepAmbient' -Descrip
         `a'b`. In PowerShell a single-quoted string is literal all the way
         through and an embedded quote is simply written twice.
 
+        A word with nothing PowerShell would read specially in it is left as
+        it is, the way `shlex.quote` leaves one: every correction goes through
+        here, and `git 'push'` is not what anybody types.
+
         """
+        if s and BARE_WORD.match(s):
+            return s
+        return self.literal(s)
+
+    @staticmethod
+    def literal(s):
+        """A single-quoted PowerShell string, always quoted: for the places
+        where a bare word would be read as a command rather than as text,
+        such as the right-hand side of an assignment."""
         return u"'{}'".format(s.replace(u"'", u"''"))
 
     def put_on_path(self, directory):
         return u'$env:PATH = {} + [IO.Path]::PathSeparator + $env:PATH'.format(
-            self.quote(directory))
+            self.literal(directory))
 
     def and_(self, *commands):
         """Runs each command only if the one before it succeeded.

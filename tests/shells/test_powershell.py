@@ -43,14 +43,16 @@ class TestPowershell(object):
             ['C:/Program Files/tool', 'a b']
 
     @pytest.mark.parametrize('value, quoted', [
-        ('plain', "'plain'"),
+        ('plain', 'plain'),
+        ('--short', '--short'),
+        (r'C:\Users\me\Documents', r'C:\Users\me\Documents'),
         ('two words', "'two words'"),
         ("it's", "'it''s'"),
         ('$(Get-Date)', "'$(Get-Date)'"),
         ('a;b', "'a;b'"),
         ('a`b', "'a`b'"),
         ('a&b', "'a&b'"),
-        (u'\u00fcnic\u00f8de', u"'\u00fcnic\u00f8de'"),
+        (u'\u00fcnic\u00f8de', u'\u00fcnic\u00f8de'),
     ])
     def test_quote(self, shell, value, quoted):
         """PowerShell does not join adjacent string literals.

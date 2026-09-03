@@ -158,7 +158,9 @@ def _package_manager(env):
         ('pacman', 'pacman -s vim', r'^pacman -S vim$'),
         ('apk', 'apk isntall vim', r'^(sudo )?apk add vim$'),
         ('pkg', 'pkg isntall vim', r'^(sudo |doas )?pkg install vim$'),
-        ('pkg_add', 'pkg_add isntall', r'pkg_add'),
+        # pkg_add takes package names too, and a wrong one goes to the
+        # network; the slip is in the program's name.
+        ('pkg_add', 'pkg_ad vim', r'^pkg_add vim$'),
         # xbps-install takes package names, so a mistyped verb is a missing
         # package rather than a slip; the slip Void users make is in the
         # program's own name.
@@ -192,6 +194,10 @@ def _npm(env):
 def _cargo(env):
     if not env.has('cargo'):
         return {'na': 'cargo is not installed'}
+    if not env.works(['cargo', '--version']):
+        # GitHub's runners ship rustup's proxy with no toolchain behind it;
+        # what that prints is about rustup, not about the slip.
+        return {'na': 'cargo has no toolchain here'}
     return {'run': 'cargo biuld', 'expect': r'^cargo build$'}
 
 
@@ -235,6 +241,16 @@ class Environment(object):
         if name not in self._found:
             self._found[name] = shutil.which(name) is not None
         return self._found[name]
+
+    def works(self, command):
+        """Whether `command` runs and exits 0, for tools that are on PATH
+        but not usable."""
+        try:
+            return subprocess.run(command, stdout=subprocess.DEVNULL,
+                                  stderr=subprocess.DEVNULL,
+                                  timeout=TIMEOUT).returncode == 0
+        except (OSError, subprocess.TimeoutExpired):
+            return False
 
 
 def _default_shell():
@@ -327,12 +343,12 @@ def _record_one(scenario, env, workspace, home, environment):
         answer = _suggest(scenario['run'], output, cwd)
     except Exception as error:                                 # noqa: BLE001
         return {'status': 'error', 'ran': scenario['run'],
-                'output': output[-400:], 'reason': repr(error)}
+                'output': output[-1500:], 'reason': repr(error)}
     suggestions = [_tidy(script, home, cwd) for script, _ in answer]
     record = {
         'ran': scenario['run'],
         'exit_status': status,
-        'output': _tidy(output.strip()[-400:], home, cwd),
+        'output': _tidy(output.strip()[-1500:], home, cwd),
         'suggestions': suggestions[:3],
         'rule': answer[0][1] if answer else None,
     }
