@@ -13,6 +13,7 @@ from ..const import SHELLS as shells  # noqa: F401  (re-exported by name)
 _MODULES = {'Bash': 'bash',
             'Fish': 'fish',
             'Generic': 'generic',
+            'Ksh': 'ksh',
             'Nushell': 'nushell',
             'Tcsh': 'tcsh',
             'Zsh': 'zsh',

@@ -248,6 +248,9 @@ case "$shell" in
     tcsh|csh) if [ -f "${HOME:-}/.tcshrc" ]; then rc="~/.tcshrc"
               else rc="~/.cshrc"; fi ;;
     nu) rc="~/.config/nushell/config.nu" ;;
+    # ksh93 and OpenBSD's ksh read $ENV, ~/.kshrc by convention; mksh ~/.mkshrc.
+    mksh) rc="~/.mkshrc" ;;
+    ksh|ksh93|oksh|lksh|pdksh) rc="~/.kshrc" ;;
     *) rc="" ;;
 esac
 
@@ -272,6 +275,7 @@ else
     say "    zsh         $PACKAGE --alias-loader $ALIAS >> ~/.zshrc"
     say "    fish        $PACKAGE --alias-loader $ALIAS >> ~/.config/fish/config.fish"
     say "    tcsh        $PACKAGE --alias-loader $ALIAS >> ~/.cshrc"
+    say "    ksh         $PACKAGE --alias-loader $ALIAS >> ~/.kshrc"
     say "    nushell     $PACKAGE --alias-loader $ALIAS >> ~/.config/nushell/config.nu"
     say "    powershell  $PACKAGE --alias-loader $ALIAS | Add-Content \$PROFILE"
     say ""

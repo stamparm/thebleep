@@ -77,7 +77,7 @@ thebleep --alias-loader fuck >> ~/.bashrc
   nothing is right. [Safe by default](#safe-by-default).
 
 Python 3.9 through 3.14 on Linux, macOS and Windows; Bash, Zsh, Fish, Nushell,
-tcsh and PowerShell. [Supported everything](#supported-everything).
+tcsh, ksh and PowerShell. [Supported everything](#supported-everything).
 
 ## Measured against The Fuck
 
@@ -180,6 +180,8 @@ The same slips, typed into a real shell on each of these, and what came back.
 | | `gti status` | `git psuh` | `sl -la` | `git status --shrot` | `apt isntall`, `dnf`, `apk`… | permission denied | `mkdir a/b/c` | `./script.sh` without +x | `cd Documnets` | `rm` a directory | installed, not on PATH | `cd..` | `docker pss` | `npm run bulid` | `cargo biuld` | ms |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|--:|
 | **Debian 13** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 43 |
+| **Debian 13 (ksh93)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 42 |
+| **Debian 13 (mksh)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 41 |
 | **Ubuntu 24.04.4 LTS** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | 59 |
 | **Ubuntu 24.04.4 LTS · by hand** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 45 |
 | **Ubuntu 24.04.4 LTS · GitHub runner** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | 67 |
@@ -198,7 +200,7 @@ The same slips, typed into a real shell on each of these, and what came back.
 | **Windows Server 2025 (PowerShell 5.1)** | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | ✅ | ➖ | ✅ | ➖ | ✅ | ✅ | ➖ | 167 |
 | **Windows Server 2025 (PowerShell 7.6)** | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | ✅ | ➖ | ✅ | ➖ | ✅ | ✅ | ➖ | 163 |
 
-18 platforms, 218 of 218 applicable slips corrected. ✅ the first suggestion was the right command; ➖ the slip cannot happen there; ❌ it was not corrected. *ms* is the wall time of a command-only correction, Python start included, median of 5 runs; the WSL row was recorded on a shared Windows runner, where WSL starts a process far slower than a laptop does. Every cell was recorded by [ci/compat_matrix.py](ci/compat_matrix.py) typing the slip into that platform's shell and reading the answer, never by hand; the corrections themselves are on the [full page](docs/compat/README.md).
+20 platforms, 242 of 242 applicable slips corrected. ✅ the first suggestion was the right command; ➖ the slip cannot happen there; ❌ it was not corrected. *ms* is the wall time of a command-only correction, Python start included, median of 5 runs; the WSL row was recorded on a shared Windows runner, where WSL starts a process far slower than a laptop does. Every cell was recorded by [ci/compat_matrix.py](ci/compat_matrix.py) typing the slip into that platform's shell and reading the answer, never by hand; the corrections themselves are on the [full page](docs/compat/README.md).
 <!-- end compat -->
 
 The rows are recorded by
@@ -527,6 +529,7 @@ outright, and does by default — for good reasons that apply here too.
 | PowerShell | `PSConsoleReadLine::AddToHistory` | press <kbd>↑</kbd> to bring it up |
 | Bash 3.2 (macOS system bash) | — | not offered |
 | tcsh | — | not offered |
+| ksh | — | not offered |
 
 Bash is the one that is close rather than exact. It has no way to write the
 *next* prompt's buffer, so what you get is readline itself — your keymap, your
@@ -1150,10 +1153,10 @@ nothing.
 | --- | --- |
 | **Python** | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |
 | **Systems** | Linux, macOS, Windows — every Python on every one of them, on every push |
-| **Shells** | Bash, Zsh, Fish, Nushell, tcsh, PowerShell |
+| **Shells** | Bash, Zsh, Fish, Nushell, tcsh, ksh, mksh, PowerShell |
 | **Rules** | 198 of them, for git, docker, npm, pnpm, yarn, pip, apt, dnf, zypper, pacman, brew, cargo, go, gradle, maven, terraform, aws, az, systemctl and the rest |
 
-Bash, Zsh, Fish, Nushell and tcsh are exercised end to end, in containers,
+Bash, Zsh, Fish, Nushell, tcsh, ksh93 and mksh are exercised end to end, in containers,
 driving a real terminal: the tests type a wrong command into the shell, type the
 alias, and check what the shell then runs. PowerShell gets the same treatment on
 Windows in CI, in Windows PowerShell 5.1 as well as 7, because the two do not
@@ -1300,6 +1303,7 @@ only difference between shells is the file it goes in:
 | Zsh | `thebleep --alias-loader >> ~/.zshrc` |
 | Fish | `thebleep --alias-loader >> ~/.config/fish/config.fish` |
 | tcsh | `thebleep --alias-loader >> ~/.cshrc` |
+| ksh | `thebleep --alias-loader >> ~/.kshrc` (mksh: `~/.mkshrc`) |
 | Nushell | `thebleep --alias-loader >> ~/.config/nushell/config.nu` |
 | PowerShell | `thebleep --alias-loader >> $profile` |
 
@@ -1316,6 +1320,10 @@ The few things worth knowing per shell:
   is still found; the answer is cached against `config.fish`, so it is looked up
   again when you change it.
 - **tcsh.** `~/.tcshrc` if you have one, `~/.cshrc` otherwise.
+- **ksh.** ksh93 and OpenBSD's ksh read the file `$ENV` names, `~/.kshrc` by
+  convention; mksh reads `~/.mkshrc`. One driver serves ksh93, mksh and pdksh,
+  and `--doctor` says which it found. The previous command comes from `fc`, as
+  in Bash, and the history file is read through the shell's own binary framing.
 - **Nushell.** `$XDG_CONFIG_HOME/nushell/config.nu` if that is set — on every
   platform, which is the order Nushell itself reads them in — otherwise
   `~/.config/nushell/config.nu`, `%APPDATA%\nushell` on Windows or
@@ -1346,8 +1354,8 @@ thebleep --shell fish --alias-loader >> ~/.config/fish/config.fish
 thebleep --shell bash git brnch          # correct as though bash had asked
 ```
 
-It takes any of `bash`, `csh`, `fish`, `nu`, `powershell`, `pwsh`, `tcsh`,
-`zsh`, and
+It takes any of `bash`, `csh`, `fish`, `ksh`, `ksh93`, `lksh`, `mksh`, `nu`,
+`oksh`, `pdksh`, `powershell`, `pwsh`, `tcsh`, `zsh`, and
 an unknown name is an error rather than a silent fallback. Naming the shell also
 skips the walk up the process tree, so it is the cheaper way round as well as
 the certain one.

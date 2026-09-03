@@ -2,6 +2,28 @@
 
 ## 4.0.5 — unreleased
 
+### Added
+
+- **ksh.** One driver for ksh93, mksh and the pdksh that is OpenBSD's `ksh`:
+  the alias, the previous command through `fc`, the aliases through
+  `ksh -ic alias`, the history read through each shell's binary framing,
+  `$KSH_VERSION` for the version, and `~/.kshrc` or `~/.mkshrc` for the
+  startup file. Exercised end to end in containers, under ksh93u+m and mksh.
+
+- **Where it works.** A table in the README, recorded rather than claimed:
+  fifteen everyday slips typed into a real shell on eighteen platforms --
+  nine Linux distributions, macOS on both architectures, Windows in both
+  PowerShells, FreeBSD, OpenBSD, NetBSD and WSL -- by a weekly workflow that
+  boots each one, runs `ci/compat_matrix.py`, and commits what came back. A
+  row with an uncorrected slip is held back and the job goes red, so the
+  table is only ever ticks. The first runs found and fixed: apk had no rule,
+  dnf 5's wording, `pacman -s` tied to pkgfile, PowerShell quoting every
+  plain word, winget with no rule, docker's help outrunning the probe on a
+  cold Windows machine.
+
+- **`apk_unknown_command`**, **`winget_unknown_command`**, and
+  `dnf_no_such_command` in dnf 5's wording.
+
 ## 4.0.4 — 2026-09-03
 
 ### Added

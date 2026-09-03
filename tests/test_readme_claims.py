@@ -347,7 +347,9 @@ def test_the_startup_files_agree_with_the_shells_and_the_installer(
     installer = _read(source_root, 'install.sh')
     for shell, path in (('zsh', '~/.zshrc'),
                         ('fish', '~/.config/fish/config.fish'),
-                        ('nu', '~/.config/nushell/config.nu')):
+                        ('nu', '~/.config/nushell/config.nu'),
+                        ('ksh', '~/.kshrc'),
+                        ('mksh', '~/.mkshrc')):
         assert path in installer, '{} is not in install.sh'.format(path)
         assert path in readme, '{} is not in the README'.format(path)
 
@@ -460,7 +462,7 @@ def test_the_shell_names_shell_takes_are_the_ones_it_documents(readme):
     listed = re.search(r'It takes any of ([^.]+?), and\n?an unknown name',
                        readme, re.DOTALL)
     assert listed, "the --shell wording changed shape"
-    named = set(re.findall(r'`([a-z]+)`', listed.group(1)))
+    named = set(re.findall(r'`([a-z0-9]+)`', listed.group(1)))
     assert named == set(const.SHELLS), sorted(named ^ set(const.SHELLS))
 
 

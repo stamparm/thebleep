@@ -104,7 +104,7 @@ class TestWhichFileItNames(object):
         assert '>>' not in out.split('would run')[-1]
 
     def test_a_shell_it_does_not_know_is_not_guessed_at(self, install_sh):
-        code, out, err = install_sh('--dry-run', THEBLEEP_SHELL='ksh')
+        code, out, err = install_sh('--dry-run', THEBLEEP_SHELL='rc')
         assert code == 0, err
         assert 'not going to guess' in out
         # Every shell it does know, offered rather than one of them chosen.
