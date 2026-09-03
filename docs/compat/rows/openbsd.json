@@ -107,14 +107,14 @@
       "status": "na"
     },
     "package_manager": {
-      "correction": "sudo pkg_add isntall",
-      "exit_status": 1,
-      "output": "pkg_add: pkg_add must be run as root",
-      "ran": "pkg_add isntall",
-      "rule": "sudo",
+      "correction": "pkg_add vim",
+      "exit_status": 127,
+      "output": "sh: pkg_ad: not found",
+      "ran": "pkg_ad vim",
+      "rule": "no_command",
       "status": "ok",
       "suggestions": [
-        "sudo pkg_add isntall"
+        "pkg_add vim"
       ],
       "tool": "pkg_add"
     },
@@ -143,7 +143,7 @@
     "unknown_flag": {
       "correction": "git status --short",
       "exit_status": 129,
-      "output": "n>]\n                          ignore changes to submodules, optional when: all, dirty, untracked. (Default: all)\n    --[no-]column[=<style>]\n                          list untracked files in columns\n    --no-renames          do not detect renames\n    --renames             opposite of --no-renames\n    -M, --find-renames[=<n>]\n                          detect renames, optionally set similarity index",
+      "output": "error: unknown option `shrot'\nusage: git status [<options>] [--] [<pathspec>...]\n\n    -v, --[no-]verbose    be verbose\n    -s, --[no-]short      show status concisely\n    -b, --[no-]branch     show branch information\n    --[no-]show-stash     show stash information\n    --[no-]ahead-behind   compute full ahead/behind values\n    --[no-]porcelain[=<version>]\n                          machine-readable output\n    --[no-]long           show status in long format (default)\n    -z, --[no-]null       terminate entries with NUL\n    -u, --[no-]untracked-files[=<mode>]\n                          show untracked files, optional modes: all, normal, no. (Default: all)\n    --[no-]ignored[=<mode>]\n                          show ignored files, optional modes: traditional, matching, no. (Default: traditional)\n    --[no-]ignore-submodules[=<when>]\n                          ignore changes to submodules, optional when: all, dirty, untracked. (Default: all)\n    --[no-]column[=<style>]\n                          list untracked files in columns\n    --no-renames          do not detect renames\n    --renames             opposite of --no-renames\n    -M, --find-renames[=<n>]\n                          detect renames, optionally set similarity index",
       "ran": "git status --shrot",
       "rule": "option_typo",
       "status": "ok",
@@ -153,7 +153,7 @@
     }
   },
   "label": "openbsd",
-  "latency_ms": 250,
+  "latency_ms": 260,
   "machine": "amd64",
   "python": "3.13.14",
   "recorded_at": "2026-09-03",

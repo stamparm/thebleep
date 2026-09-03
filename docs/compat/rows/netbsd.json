@@ -62,7 +62,8 @@
       "rule": "no_command",
       "status": "ok",
       "suggestions": [
-        "git status"
+        "git status",
+        "sti status"
       ]
     },
     "ls_typo": {
@@ -81,7 +82,7 @@
     "mkdir_parents": {
       "correction": "mkdir -p a/b/c",
       "exit_status": 1,
-      "output": "mkdir: cannot create directory ‘a/b/c’: No such file or directory",
+      "output": "mkdir: a/b/c: No such file or directory",
       "ran": "mkdir a/b/c",
       "rule": "mkdir_p",
       "status": "ok",
@@ -106,34 +107,32 @@
       "status": "na"
     },
     "package_manager": {
-      "correction": "zypper install vim",
-      "exit_status": 2,
-      "output": "Unknown command 'isntall'\nType 'zypper help' to get a list of global options and commands.\n\nIn case 'isntall' is not a typo it's probably not a built-in command, but provided as a subcommand or plug-in (see 'zypper help subcommand').\nIn this case a specific package providing the subcommand needs to be installed first. Those packages are often named 'zypper-isntall' or 'zypper-isntall-plugin'.",
-      "ran": "zypper isntall vim",
-      "rule": "zypper_no_such_command",
+      "correction": "pkg_add vim",
+      "exit_status": 127,
+      "output": "bash: line 1: pkg_ad: command not found",
+      "ran": "pkg_ad vim",
+      "rule": "no_command",
       "status": "ok",
       "suggestions": [
-        "zypper install vim",
-        "zypper source-install vim",
-        "zypper shell vim"
+        "pkg_add vim"
       ],
-      "tool": "zypper"
+      "tool": "pkg_add"
     },
     "permission": {
-      "correction": "sudo cat /etc/shadow",
+      "correction": "sudo cat /etc/master.passwd",
       "exit_status": 1,
-      "output": "cat: /etc/shadow: Permission denied",
-      "ran": "cat /etc/shadow",
+      "output": "cat: /etc/master.passwd: Permission denied",
+      "ran": "cat /etc/master.passwd",
       "rule": "sudo",
       "status": "ok",
       "suggestions": [
-        "sudo cat /etc/shadow"
+        "sudo cat /etc/master.passwd"
       ]
     },
     "rm_dir": {
       "correction": "rm -r emptydir",
       "exit_status": 1,
-      "output": "rm: cannot remove 'emptydir': Is a directory",
+      "output": "rm: emptydir: is a directory",
       "ran": "rm emptydir",
       "rule": "rm_dir",
       "status": "ok",
@@ -153,15 +152,15 @@
       ]
     }
   },
-  "label": "opensuse-tumbleweed",
-  "latency_ms": 52,
-  "machine": "x86_64",
-  "python": "3.13.14",
+  "label": "netbsd",
+  "latency_ms": 151,
+  "machine": "amd64",
+  "python": "3.12.13",
   "recorded_at": "2026-09-03",
   "recorded_by": "ci",
   "schema": 1,
   "shell": "bash 5.3.15(1)-release",
   "source": "checkout",
-  "system": "openSUSE Tumbleweed",
+  "system": "NetBSD 11.0",
   "thebleep": "4.0.5"
 }
