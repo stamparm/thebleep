@@ -46,8 +46,6 @@ class Verdict(object):
     def __bool__(self):
         return self.allowed
 
-    __nonzero__ = __bool__
-
 
 def threshold(value=None):
     """The configured threshold as a float in (0, 1], or None when off.
@@ -98,6 +96,15 @@ def decide(corrected_command, command=None):
     if assessed_risk['factors']:
         return Verdict(False, u'risk: {}'.format(
             ', '.join(assessed_risk['factors'])), score, limit)
+
+    rule = getattr(corrected_command, 'rule', None)
+    if getattr(rule, 'learning_shipped', False):
+        # A correction that came with a repository is somebody else's word.
+        # It scores as high as one the user taught, and that is exactly why
+        # it is never run without the prompt: a clone must not be able to
+        # make a typo run its own script.
+        return Verdict(False, 'the correction came with the repository, '
+                              'not from you', score, limit)
 
     basis = assessed.get('basis') or ()
     reason = u'{}% confidence, {}; nothing risky in it'.format(

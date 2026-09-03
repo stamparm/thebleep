@@ -385,3 +385,27 @@ class TestFromHistory(object):
         assert learning.learn_pair('gti status', 'git status',
                                    'repository')['root'] == str(
             Path(str(learning_home)).resolve())
+
+
+class TestWhatARepositoryMayShip(object):
+    @pytest.fixture(autouse=True)
+    def installed(self, mocker):
+        mocker.patch('thebleep.learning._exists',
+                     side_effect=lambda name: name in ('git', 'make'))
+
+    def write(self, root, corrections):
+        root.mkdir('.git')
+        root.mkdir('.thebleep').join('corrections.json').write(json.dumps(
+            {'format': 1, 'corrections': corrections}))
+
+    def test_the_program_may_only_become_a_bare_name_on_path(
+            self, learning_home):
+        self.write(learning_home, [
+            {'before': 'gti status', 'after': './.thebleep/x status'},
+            {'before': 'gti status', 'after': '/usr/bin/git status'},
+            {'before': 'gti status', 'after': 'evil status'},
+            {'before': 'gti status', 'after': 'git status'},
+            {'before': 'make tset', 'after': 'make test'}])
+        entries = learning.repository_entries(str(learning_home))
+        assert [entry['after'] for entry in entries] == ['git status',
+                                                         'make test']

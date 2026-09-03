@@ -114,3 +114,17 @@ class TestDecide(object):
                                command)
         assert not verdict
         assert 'no confidence' in verdict.reason
+
+
+def test_a_correction_the_repository_ships_is_never_run_unasked(settings):
+    """It scores as high as one the user taught, and that is exactly why: a
+    clone must not be able to make a typo run its own script."""
+    settings.auto_run_confidence = 0.5
+    shipped = rule()
+    shipped.learned = True
+    shipped.learning_shipped = True
+    verdict = trust.decide(
+        CorrectedCommand('git status', None, 50, rule=shipped),
+        Command('gti status', None))
+    assert not verdict
+    assert 'came with the repository' in verdict.reason

@@ -34,6 +34,12 @@ def _open_for_read(path):
     return os.fdopen(os.open(str(path), flags), 'rb')
 
 
+def user_file(name):
+    """`name` under the configuration directory, or None when there is no
+    real one to write to. Shared with `stats`."""
+    return _path(name)
+
+
 def _path(name):
     user_dir = settings.user_dir
     if user_dir is None:
@@ -412,6 +418,22 @@ def _read_repository_file(root):
     return corrections if isinstance(corrections, list) else None
 
 
+def _shippable(spec):
+    """Whether a repository may ship this pair at all.
+
+    When the word changed is the program, the replacement has to be a bare
+    name that is on PATH: a repository must not be able to turn a typo into
+    `./.thebleep/x`, or into anything the machine does not already have.
+
+    """
+    if spec['index'] != spec['command_index']:
+        return True
+    program = spec['after_parts'][spec['index']]
+    if '/' in program or '\\' in program or program.startswith(('.', '~', '$')):
+        return False
+    return _exists(program)
+
+
 def repository_entries(cwd=None):
     """Entries from the repository's own file, shaped like learned ones.
 
@@ -432,7 +454,7 @@ def repository_entries(cwd=None):
         if not isinstance(item, dict):
             continue
         spec = _spec(item.get('before'), item.get('after'))
-        if spec is None:
+        if spec is None or not _shippable(spec):
             continue
         spec.pop('command_index', None)
         spec.update({'id': number, 'scope': 'repository', 'root': root,
