@@ -110,6 +110,22 @@ def test_the_workflow_builds_what_the_page_asks_for(source_root, page):
     assert 'wheel-dir docs' in written
 
 
+def test_the_output_box_does_not_stand_there_naming_one_command(page):
+    """It used to hold `sh: 1: gti: not found` whatever you had typed.
+
+    A placeholder that names a command reads as content rather than as a
+    prompt, so the box looked stuck on somebody else's mistake -- and it is
+    the field a visitor is least sure what to do with in the first place. The
+    shell message is filled in from the command now, so no fixed one belongs
+    in the markup.
+    """
+    placeholders = re.findall(r'placeholder="([^"]*)"', page)
+
+    assert placeholders, 'the inputs lost their placeholders'
+    for text in placeholders:
+        assert 'not found' not in text, text
+
+
 def test_nothing_on_the_page_offers_to_run_anything(page):
     """The claim the page makes about itself, kept true by a test.
 

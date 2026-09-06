@@ -173,9 +173,9 @@ footer { margin-top: 44px; color: var(--dim); font-size: 12px; }
              autocomplete="off" placeholder="gti status">
     </div>
     <div class="field no-sigil">
-      <label for="output">what it printed <span id="outhint">— optional, but it is most of the evidence</span></label>
+      <label for="output">what it printed <span id="outhint">— optional</span></label>
       <textarea id="output" rows="3" spellcheck="false"
-                placeholder="sh: 1: gti: not found"></textarea>
+                placeholder="paste it here, if you have it"></textarea>
     </div>
     <div class="row">
       <button id="go" disabled>Correct it</button>
@@ -211,6 +211,7 @@ const PYODIDE = 'https://cdn.jsdelivr.net/pyodide/v314.0.6/full/';
 const SOURCE = 'https://github.com/stamparm/thebleep/blob/master/thebleep/';
 
 let DATA = null;
+let KNOWN = new Set();       // the fixed machine's PATH, for the shell message
 let correct = null;          // set once the browser's own engine is up
 let active = 0;
 
@@ -316,9 +317,46 @@ function renderCases() {
       const c = g.cases[+node.dataset.i];
       $('script').value = c.script;
       $('output').value = c.output;
+      // So that typing over the command replaces this case's output rather
+      // than correcting a new command against an old error.
+      filledIn = c.output;
+      $('outhint').textContent = '— what that command really printed';
       show(c.script, c.output, c, 'from the corpus — answered when this page was built');
     };
   }
+}
+
+/* Nobody arrives wanting to paste an error message. When the first word is not
+   a program on the fixed machine, the shell's own answer is known exactly --
+   `sh: 1: aptget: not found` is what dash prints, verbatim -- so the page fills
+   it in and the visitor never has to touch the second box.
+
+   Where the first word *is* a real program the message belongs to that program,
+   and inventing one would be inventing evidence, so the box is left alone and
+   says what it is for. */
+let filledIn = '';
+
+function shellSays(script) {
+  const word = (script.trim().split(/\s+/)[0] || '');
+  if (!word || !/^[\w.+-]+$/.test(word)) return '';
+  if (KNOWN.has(word)) return '';
+  return `sh: 1: ${word}: not found`;
+}
+
+function syncOutput() {
+  const box = $('output');
+  // Anything the visitor typed themselves outranks anything we would put here,
+  // and the leftovers of a corpus case they clicked do not.
+  if (box.value && box.value !== filledIn) {
+    $('outhint').textContent = '— yours, and it is most of the evidence';
+    return;
+  }
+
+  filledIn = shellSays($('script').value);
+  box.value = filledIn;
+  $('outhint').textContent = filledIn
+    ? '— filled in for you: that is what a shell prints for a command it cannot find'
+    : '— optional, and it is most of the evidence';
 }
 
 async function run() {
@@ -379,6 +417,7 @@ def _correct(script, output):
 
 (async function main() {
   DATA = await (await fetch('cases.json')).json();
+  KNOWN = new Set(DATA.executables);
   const total = DATA.groups.reduce((n, g) => n + g.cases.length, 0);
   renderTabs();
   renderCases();
@@ -389,6 +428,7 @@ def _correct(script, output):
     and a fixed history, so this page answers the same for everyone.`;
 
   $('go').onclick = run;
+  $('script').addEventListener('input', syncOutput);
   $('script').addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
 
   try {
