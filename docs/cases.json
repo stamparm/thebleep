@@ -1,0 +1,5754 @@
+{
+ "executables": [
+  "2to3",
+  "2to3-3.12",
+  "[",
+  "accessdb",
+  "acorn",
+  "add-shell",
+  "addgroup",
+  "adduser",
+  "agetty",
+  "apropos",
+  "apt",
+  "apt-cache",
+  "apt-cdrom",
+  "apt-config",
+  "apt-extracttemplates",
+  "apt-ftparchive",
+  "apt-get",
+  "apt-mark",
+  "apt-sortpkgs",
+  "arborist",
+  "arch",
+  "arpd",
+  "awk",
+  "b2sum",
+  "babeljs",
+  "babeljs-7",
+  "babeljs-7-external-helpers",
+  "babeljs-7-node",
+  "babeljs-7-parser",
+  "babeljs-external-helpers",
+  "babeljs-node",
+  "babeljs-parser",
+  "base32",
+  "base64",
+  "basename",
+  "basenc",
+  "bash",
+  "bashbug",
+  "blkdiscard",
+  "blkid",
+  "blkzone",
+  "blockdev",
+  "bridge",
+  "browserslist",
+  "c_rehash",
+  "capsh",
+  "captoinfo",
+  "cargo",
+  "cat",
+  "catman",
+  "chage",
+  "chcon",
+  "chcpu",
+  "chfn",
+  "chgpasswd",
+  "chgrp",
+  "chmem",
+  "chmod",
+  "choom",
+  "chown",
+  "chpasswd",
+  "chroot",
+  "chrt",
+  "chsh",
+  "cksum",
+  "clear",
+  "clear_console",
+  "cmp",
+  "col",
+  "colcrt",
+  "colrm",
+  "column",
+  "comm",
+  "corelist",
+  "corepack",
+  "cp",
+  "cpan",
+  "cpan5.40-x86_64-linux-gnu",
+  "csh",
+  "csplit",
+  "ctstat",
+  "curl",
+  "cut",
+  "cvtsudoers",
+  "dash",
+  "date",
+  "dcb",
+  "dd",
+  "deb-systemd-helper",
+  "deb-systemd-invoke",
+  "debconf",
+  "debconf-apt-progress",
+  "debconf-communicate",
+  "debconf-copydb",
+  "debconf-escape",
+  "debconf-set-selections",
+  "debconf-show",
+  "delgroup",
+  "deluser",
+  "devlink",
+  "df",
+  "diff",
+  "diff3",
+  "dir",
+  "dircolors",
+  "dirname",
+  "dmesg",
+  "dnsdomainname",
+  "docker",
+  "domainname",
+  "dpkg",
+  "dpkg-deb",
+  "dpkg-divert",
+  "dpkg-maintscript-helper",
+  "dpkg-preconfigure",
+  "dpkg-query",
+  "dpkg-realpath",
+  "dpkg-reconfigure",
+  "dpkg-split",
+  "dpkg-statoverride",
+  "dpkg-trigger",
+  "du",
+  "echo",
+  "editor",
+  "egrep",
+  "enc2xs",
+  "encguess",
+  "env",
+  "eqn",
+  "escodegen",
+  "esgenerate",
+  "eslint",
+  "esparse",
+  "esvalidate",
+  "ex",
+  "expand",
+  "expiry",
+  "expr",
+  "factor",
+  "faillock",
+  "fallocate",
+  "false",
+  "fgrep",
+  "find",
+  "findfs",
+  "findmnt",
+  "fish",
+  "fish_indent",
+  "fish_key_reader",
+  "flock",
+  "fmt",
+  "fold",
+  "free",
+  "fsck",
+  "fsfreeze",
+  "fstab-decode",
+  "fstrim",
+  "funzip",
+  "genl",
+  "geqn",
+  "getcap",
+  "getconf",
+  "getent",
+  "getopt",
+  "getpcaps",
+  "getty",
+  "git",
+  "git-receive-pack",
+  "git-shell",
+  "git-upload-archive",
+  "git-upload-pack",
+  "gpasswd",
+  "gpic",
+  "grep",
+  "groff",
+  "grog",
+  "grops",
+  "grotty",
+  "groupadd",
+  "groupdel",
+  "groupmod",
+  "groups",
+  "grpck",
+  "grpconv",
+  "grpunconv",
+  "gtbl",
+  "gunzip",
+  "gyp",
+  "gzexe",
+  "gzip",
+  "h2ph",
+  "h2xs",
+  "handlebars",
+  "hardlink",
+  "hd",
+  "head",
+  "helpztags",
+  "hexdump",
+  "hostid",
+  "hostname",
+  "i386",
+  "iconv",
+  "iconvconfig",
+  "id",
+  "idle",
+  "idle3",
+  "idle3.12",
+  "infocmp",
+  "infotocap",
+  "install",
+  "installkernel",
+  "instmodsh",
+  "invoke-rc.d",
+  "ionice",
+  "ip",
+  "ipcmk",
+  "ipcrm",
+  "ipcs",
+  "ischroot",
+  "isosize",
+  "istanbul",
+  "join",
+  "js",
+  "js-yaml",
+  "jsesc",
+  "json5",
+  "json_pp",
+  "kill",
+  "killall5",
+  "kubectl",
+  "ld.so",
+  "ldattach",
+  "ldconfig",
+  "ldd",
+  "less",
+  "lessecho",
+  "lessfile",
+  "lesskey",
+  "lesspipe",
+  "lexgrog",
+  "libnetcfg",
+  "link",
+  "linux32",
+  "linux64",
+  "ln",
+  "lnstat",
+  "locale",
+  "localedef",
+  "logger",
+  "login",
+  "logname",
+  "look",
+  "losetup",
+  "ls",
+  "lsblk",
+  "lscpu",
+  "lsipc",
+  "lslocks",
+  "lslogins",
+  "lsmem",
+  "lsns",
+  "man",
+  "man-recode",
+  "mandb",
+  "manpath",
+  "mawk",
+  "mcookie",
+  "md5sum",
+  "mkdir",
+  "mkfifo",
+  "mkfs",
+  "mkhomedir_helper",
+  "mknod",
+  "mkswap",
+  "mktemp",
+  "more",
+  "mount",
+  "mountpoint",
+  "mv",
+  "namei",
+  "nano",
+  "nanoid",
+  "nawk",
+  "neqn",
+  "newgrp",
+  "newusers",
+  "nice",
+  "nisdomainname",
+  "nl",
+  "node",
+  "node-gyp",
+  "nodejs",
+  "nohup",
+  "nologin",
+  "npm",
+  "npm-arborist",
+  "nproc",
+  "npx",
+  "nroff",
+  "nsenter",
+  "nstat",
+  "nu",
+  "numfmt",
+  "nyc",
+  "od",
+  "openssl",
+  "pacote",
+  "pager",
+  "pam-auth-update",
+  "pam_getenv",
+  "pam_namespace_helper",
+  "pam_timestamp_check",
+  "partx",
+  "passwd",
+  "paste",
+  "pathchk",
+  "pdb3",
+  "pdb3.13",
+  "perl",
+  "perl5.40-x86_64-linux-gnu",
+  "perl5.40.1",
+  "perlbug",
+  "perldoc",
+  "perlivp",
+  "perlthanks",
+  "pgrep",
+  "pic",
+  "pico",
+  "piconv",
+  "pidof",
+  "pidwait",
+  "pinky",
+  "pip",
+  "pip3",
+  "pip3.12",
+  "pivot_root",
+  "pkill",
+  "pl2pm",
+  "pldd",
+  "pmap",
+  "pod2html",
+  "pod2man",
+  "pod2text",
+  "pod2usage",
+  "podchecker",
+  "policy-rc.d",
+  "pr",
+  "preconv",
+  "printenv",
+  "printf",
+  "prlimit",
+  "prove",
+  "ps",
+  "ptar",
+  "ptardiff",
+  "ptargrep",
+  "ptx",
+  "pwck",
+  "pwconv",
+  "pwd",
+  "pwdx",
+  "pwhistory_helper",
+  "pwunconv",
+  "py3clean",
+  "py3compile",
+  "py3versions",
+  "pydoc",
+  "pydoc3",
+  "pydoc3.12",
+  "pydoc3.13",
+  "pygettext3",
+  "pygettext3.13",
+  "python",
+  "python-config",
+  "python3",
+  "python3-config",
+  "python3.12",
+  "python3.12-config",
+  "python3.13",
+  "qrcode-terminal",
+  "rbash",
+  "rdma",
+  "readlink",
+  "readprofile",
+  "realpath",
+  "regjsparser",
+  "remove-shell",
+  "rename.ul",
+  "renice",
+  "reset",
+  "rev",
+  "rgrep",
+  "rimraf",
+  "rm",
+  "rmdir",
+  "rmt",
+  "rmt-tar",
+  "rnano",
+  "routel",
+  "rtacct",
+  "rtcwake",
+  "rtmon",
+  "rtstat",
+  "run-parts",
+  "runcon",
+  "runuser",
+  "rustc",
+  "rview",
+  "rvim",
+  "rzsh",
+  "savelog",
+  "scalar",
+  "scp",
+  "script",
+  "scriptlive",
+  "scriptreplay",
+  "sdiff",
+  "sed",
+  "semver",
+  "seq",
+  "service",
+  "setarch",
+  "setcap",
+  "setpriv",
+  "setsid",
+  "setterm",
+  "sftp",
+  "sg",
+  "sh",
+  "sha1sum",
+  "sha224sum",
+  "sha256sum",
+  "sha384sum",
+  "sha512sum",
+  "shadowconfig",
+  "shasum",
+  "shred",
+  "shuf",
+  "skill",
+  "slabtop",
+  "sleep",
+  "snice",
+  "soelim",
+  "sort",
+  "splain",
+  "split",
+  "sqv",
+  "ss",
+  "ssh",
+  "ssh-add",
+  "ssh-agent",
+  "ssh-argv0",
+  "ssh-copy-id",
+  "ssh-keygen",
+  "ssh-keyscan",
+  "start-stop-daemon",
+  "stat",
+  "stdbuf",
+  "streamzip",
+  "stty",
+  "su",
+  "sudo",
+  "sudo_logsrvd",
+  "sudo_sendlog",
+  "sudoedit",
+  "sudoreplay",
+  "sulogin",
+  "sum",
+  "swaplabel",
+  "swapoff",
+  "swapon",
+  "switch_root",
+  "sync",
+  "sysctl",
+  "tabs",
+  "tac",
+  "tail",
+  "tape",
+  "tar",
+  "tarcat",
+  "taskset",
+  "tbl",
+  "tc",
+  "tcsh",
+  "tee",
+  "tempfile",
+  "terser",
+  "test",
+  "thefuck",
+  "tic",
+  "timeout",
+  "tipc",
+  "tload",
+  "toe",
+  "top",
+  "touch",
+  "tput",
+  "tr",
+  "troff",
+  "true",
+  "truncate",
+  "tset",
+  "tsort",
+  "tty",
+  "tzselect",
+  "uclampset",
+  "ul",
+  "umount",
+  "uname",
+  "uncompress",
+  "unexpand",
+  "uniq",
+  "unix_chkpwd",
+  "unix_update",
+  "unlink",
+  "unshare",
+  "unzip",
+  "unzipsfx",
+  "update-alternatives",
+  "update-ca-certificates",
+  "update-passwd",
+  "update-rc.d",
+  "update-shells",
+  "uptime",
+  "useradd",
+  "userdel",
+  "usermod",
+  "users",
+  "uv",
+  "uvx",
+  "vdir",
+  "vdpa",
+  "vi",
+  "view",
+  "vigr",
+  "vim",
+  "vim.basic",
+  "vimdiff",
+  "vimtutor",
+  "vipw",
+  "visudo",
+  "vmstat",
+  "w",
+  "wall",
+  "watch",
+  "wc",
+  "wcurl",
+  "wdctl",
+  "webpack",
+  "webpack-cli",
+  "whatis",
+  "whereis",
+  "which",
+  "which.debianutils",
+  "who",
+  "whoami",
+  "wipefs",
+  "x86_64",
+  "xargs",
+  "xsubpp",
+  "yes",
+  "ypdomainname",
+  "zcat",
+  "zcmp",
+  "zdiff",
+  "zdump",
+  "zegrep",
+  "zfgrep",
+  "zforce",
+  "zgrep",
+  "zic",
+  "zipdetails",
+  "zipgrep",
+  "zipinfo",
+  "zless",
+  "zmore",
+  "znew",
+  "zramctl",
+  "zsh",
+  "zsh5"
+ ],
+ "groups": [
+  {
+   "cases": [
+    {
+     "decision": "suggest",
+     "expect": "whoami",
+     "output": "sh: 1: whomi: not found",
+     "script": "whomi",
+     "suggestions": [
+      {
+       "command": "whoami",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 5,
+         "replacement": "whoami",
+         "source": "whomi",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "who",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 5,
+         "replacement": "who",
+         "source": "whomi",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "whoami",
+     "output": "bash: line 1: whomi: command not found",
+     "script": "whomi",
+     "suggestions": [
+      {
+       "command": "whoami",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 5,
+         "replacement": "whoami",
+         "source": "whomi",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "who",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 5,
+         "replacement": "who",
+         "source": "whomi",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "whoami",
+     "output": "sh: 1: whaomi: not found",
+     "script": "whaomi",
+     "suggestions": [
+      {
+       "command": "whoami",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 6,
+         "replacement": "whoami",
+         "source": "whaomi",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "whoami",
+     "output": "sh: 1: whoiam: not found",
+     "script": "whoiam",
+     "suggestions": [
+      {
+       "command": "whoami",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 6,
+         "replacement": "whoami",
+         "source": "whoiam",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "who iam",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 3,
+         "replacement": " ",
+         "source": "",
+         "start": 3
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "missing_space_before_subcommand (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "missing_space_before_subcommand",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "git status",
+     "output": "sh: 1: gti: not found",
+     "script": "gti status",
+     "suggestions": [
+      {
+       "command": "git status",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 3,
+         "replacement": "git",
+         "source": "gti",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "git",
+     "output": "sh: 1: gti: not found",
+     "script": "gti",
+     "suggestions": [
+      {
+       "command": "git",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 3,
+         "replacement": "git",
+         "source": "gti",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "git status",
+     "output": "sh: 1: gi: not found",
+     "script": "gi status",
+     "suggestions": [
+      {
+       "command": "git status",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 2,
+         "replacement": "git",
+         "source": "gi",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "vi status",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 2,
+         "replacement": "vi",
+         "source": "gi",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "git status",
+     "output": "sh: 1: igt: not found",
+     "script": "igt status",
+     "suggestions": [
+      {
+       "command": "git status",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 3,
+         "replacement": "git",
+         "source": "igt",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "ls",
+     "output": "sh: 1: sl: not found",
+     "script": "sl",
+     "suggestions": [
+      {
+       "command": "ls",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 2,
+         "replacement": "ls",
+         "source": "sl",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "sl_ls (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "sl_ls",
+       "side_effect": false
+      },
+      {
+       "command": "su",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 2,
+         "replacement": "su",
+         "source": "sl",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "sh",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 2,
+         "replacement": "sh",
+         "source": "sl",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "ls",
+     "output": "sh: 1: lsl: not found",
+     "script": "lsl",
+     "suggestions": [
+      {
+       "command": "ls",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 3,
+         "replacement": "ls",
+         "source": "lsl",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "ls -la",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 2,
+         "replacement": " -",
+         "source": "",
+         "start": 2
+        },
+        {
+         "end": 3,
+         "replacement": "a",
+         "source": "",
+         "start": 3
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "history (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "history",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "grep foo .",
+     "output": "sh: 1: gerp: not found",
+     "script": "gerp foo .",
+     "suggestions": [
+      {
+       "command": "grep foo .",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "grep",
+         "source": "gerp",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "grep foo .",
+     "output": "sh: 1: grpe: not found",
+     "script": "grpe foo .",
+     "suggestions": [
+      {
+       "command": "grep foo .",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "grep",
+         "source": "grpe",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "mkdir d",
+     "output": "sh: 1: mkdri: not found",
+     "script": "mkdri d",
+     "suggestions": [
+      {
+       "command": "mkdir d",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 5,
+         "replacement": "mkdir",
+         "source": "mkdri",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "touch f",
+     "output": "sh: 1: tuoch: not found",
+     "script": "tuoch f",
+     "suggestions": [
+      {
+       "command": "touch f",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 5,
+         "replacement": "touch",
+         "source": "tuoch",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "echo hi",
+     "output": "sh: 1: ehco: not found",
+     "script": "ehco hi",
+     "suggestions": [
+      {
+       "command": "echo hi",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "echo",
+         "source": "ehco",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "cat f",
+     "output": "sh: 1: cta: not found",
+     "script": "cta f",
+     "suggestions": [
+      {
+       "command": "cat f",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 3,
+         "replacement": "cat",
+         "source": "cta",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "mv a b",
+     "output": "sh: 1: mve: not found",
+     "script": "mve a b",
+     "suggestions": [
+      {
+       "command": "mv a b",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 3,
+         "replacement": "mv",
+         "source": "mve",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "rm f",
+     "output": "sh: 1: rmm: not found",
+     "script": "rmm f",
+     "suggestions": [
+      {
+       "command": "rm f",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 3,
+         "replacement": "rm",
+         "source": "rmm",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "high",
+       "risk_factors": [
+        "destructive command"
+       ],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "rmt f",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 3,
+         "replacement": "rmt",
+         "source": "rmm",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "chmod +x f",
+     "output": "sh: 1: chmdo: not found",
+     "script": "chmdo +x f",
+     "suggestions": [
+      {
+       "command": "chmod +x f",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 5,
+         "replacement": "chmod",
+         "source": "chmdo",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "chmem +x f",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 5,
+         "replacement": "chmem",
+         "source": "chmdo",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "clear",
+     "output": "sh: 1: clera: not found",
+     "script": "clera",
+     "suggestions": [
+      {
+       "command": "clear",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 5,
+         "replacement": "clear",
+         "source": "clera",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "tail -f log",
+     "output": "sh: 1: tial: not found",
+     "script": "tial -f log",
+     "suggestions": [
+      {
+       "command": "tail -f log",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "tail",
+         "source": "tial",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "head -n 5 f",
+     "output": "sh: 1: haed: not found",
+     "script": "haed -n 5 f",
+     "suggestions": [
+      {
+       "command": "head -n 5 f",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "head",
+         "source": "haed",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "du -h",
+     "output": "sh: 1: duf: not found",
+     "script": "duf -h",
+     "suggestions": [
+      {
+       "command": "du -h",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 3,
+         "replacement": "du",
+         "source": "duf",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "df -h",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 3,
+         "replacement": "df",
+         "source": "duf",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "pwd",
+     "output": "sh: 1: pdw: not found",
+     "script": "pdw",
+     "suggestions": [
+      {
+       "command": "pwd",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 3,
+         "replacement": "pwd",
+         "source": "pdw",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "kill x",
+     "output": "sh: 1: kilal: not found",
+     "script": "kilal x",
+     "suggestions": [
+      {
+       "command": "kill x",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 5,
+         "replacement": "kill",
+         "source": "kilal",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "pkill x",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 5,
+         "replacement": "pkill",
+         "source": "kilal",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "skill x",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 5,
+         "replacement": "skill",
+         "source": "kilal",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "python x.py",
+     "output": "sh: 1: pyhton: not found",
+     "script": "pyhton x.py",
+     "suggestions": [
+      {
+       "command": "python x.py",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 6,
+         "replacement": "python",
+         "source": "pyhton",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "python3 x.py",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 6,
+         "replacement": "python3",
+         "source": "pyhton",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "python x.py",
+     "output": "sh: 1: pytohn: not found",
+     "script": "pytohn x.py",
+     "suggestions": [
+      {
+       "command": "python x.py",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 6,
+         "replacement": "python",
+         "source": "pytohn",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "python3 x.py",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 6,
+         "replacement": "python3",
+         "source": "pytohn",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "python3 x.py",
+     "output": "sh: 1: pyton3: not found",
+     "script": "pyton3 x.py",
+     "suggestions": [
+      {
+       "command": "python3 x.py",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 6,
+         "replacement": "python3",
+         "source": "pyton3",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "python x.py",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 6,
+         "replacement": "python",
+         "source": "pyton3",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "pydoc3 x.py",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 6,
+         "replacement": "pydoc3",
+         "source": "pyton3",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "node x.js",
+     "output": "sh: 1: ndoe: not found",
+     "script": "ndoe x.js",
+     "suggestions": [
+      {
+       "command": "node x.js",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "node",
+         "source": "ndoe",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "abstain",
+     "expect": null,
+     "output": "sh: 1: ndeo: not found",
+     "script": "ndeo x.js",
+     "suggestions": []
+    },
+    {
+     "decision": "suggest",
+     "expect": "npm i",
+     "output": "sh: 1: npmm: not found",
+     "script": "npmm i",
+     "suggestions": [
+      {
+       "command": "npm i",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "npm",
+         "source": "npmm",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "npm install",
+     "output": "sh: 1: nmp: not found",
+     "script": "nmp install",
+     "suggestions": [
+      {
+       "command": "npm install",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 3,
+         "replacement": "npm",
+         "source": "nmp",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "cmp install",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 3,
+         "replacement": "cmp",
+         "source": "nmp",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "pip3 install x",
+     "output": "sh: 1: pip3l: not found",
+     "script": "pip3l install x",
+     "suggestions": [
+      {
+       "command": "pip3 install x",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 5,
+         "replacement": "pip3",
+         "source": "pip3l",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "pip install x",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 5,
+         "replacement": "pip",
+         "source": "pip3l",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "cargo build",
+     "output": "sh: 1: crgo: not found",
+     "script": "crgo build",
+     "suggestions": [
+      {
+       "command": "cargo build",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "cargo",
+         "source": "crgo",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "npm run build",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 1,
+         "replacement": "npm ",
+         "source": "c",
+         "start": 0
+        },
+        {
+         "end": 4,
+         "replacement": "un",
+         "source": "go",
+         "start": 2
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "history (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "history",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "cargo build",
+     "output": "sh: 1: carg: not found",
+     "script": "carg build",
+     "suggestions": [
+      {
+       "command": "cargo build",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "cargo",
+         "source": "carg",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "npm run build",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 2,
+         "replacement": "npm ",
+         "source": "ca",
+         "start": 0
+        },
+        {
+         "end": 4,
+         "replacement": "un",
+         "source": "g",
+         "start": 3
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "history (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "history",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "docker ps",
+     "output": "sh: 1: dokcer: not found",
+     "script": "dokcer ps",
+     "suggestions": [
+      {
+       "command": "docker ps",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 6,
+         "replacement": "docker",
+         "source": "dokcer",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "docker ps",
+     "output": "sh: 1: docekr: not found",
+     "script": "docekr ps",
+     "suggestions": [
+      {
+       "command": "docker ps",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 6,
+         "replacement": "docker",
+         "source": "docekr",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "kubectl get pods",
+     "output": "sh: 1: kubctl: not found",
+     "script": "kubctl get pods",
+     "suggestions": [
+      {
+       "command": "kubectl get pods",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 6,
+         "replacement": "kubectl",
+         "source": "kubctl",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "kubectl get pods",
+     "output": "sh: 1: kubetcl: not found",
+     "script": "kubetcl get pods",
+     "suggestions": [
+      {
+       "command": "kubectl get pods",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 7,
+         "replacement": "kubectl",
+         "source": "kubetcl",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "sudo apt update",
+     "output": "sh: 1: sudp: not found",
+     "script": "sudp apt update",
+     "suggestions": [
+      {
+       "command": "sudo apt update",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "sudo",
+         "source": "sudp",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        },
+        {
+         "kind": "execution",
+         "text": "another user -- the correction begins with sudo"
+        }
+       ],
+       "risk": "high",
+       "risk_factors": [
+        "privilege escalation"
+       ],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "sudo apt update",
+     "output": "sh: 1: suod: not found",
+     "script": "suod apt update",
+     "suggestions": [
+      {
+       "command": "sudo apt update",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "sudo",
+         "source": "suod",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        },
+        {
+         "kind": "execution",
+         "text": "another user -- the correction begins with sudo"
+        }
+       ],
+       "risk": "high",
+       "risk_factors": [
+        "privilege escalation"
+       ],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "apt-get install x",
+     "output": "sh: 1: apt-gte: not found",
+     "script": "apt-gte install x",
+     "suggestions": [
+      {
+       "command": "apt-get install x",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 7,
+         "replacement": "apt-get",
+         "source": "apt-gte",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "apt gte install x",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": " ",
+         "source": "-",
+         "start": 3
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "wrong_hyphen_before_subcommand (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "wrong_hyphen_before_subcommand",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "ssh-keygen",
+     "output": "sh: 1: ssh-keygne: not found",
+     "script": "ssh-keygne",
+     "suggestions": [
+      {
+       "command": "ssh-keygen",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 10,
+         "replacement": "ssh-keygen",
+         "source": "ssh-keygne",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "ssh keygne",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": " ",
+         "source": "-",
+         "start": 3
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "wrong_hyphen_before_subcommand (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "wrong_hyphen_before_subcommand",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "ssh user@host",
+     "output": "sh: 1: sssh: not found",
+     "script": "sssh user@host",
+     "suggestions": [
+      {
+       "command": "ssh user@host",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "ssh",
+         "source": "sssh",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "curl -O u",
+     "output": "sh: 1: crul: not found",
+     "script": "crul -O u",
+     "suggestions": [
+      {
+       "command": "curl -O u",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "curl",
+         "source": "crul",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "tar xzf f",
+     "output": "sh: 1: tarr: not found",
+     "script": "tarr xzf f",
+     "suggestions": [
+      {
+       "command": "tar xzf f",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "tar",
+         "source": "tarr",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "make test",
+     "output": "sh: 1: mkae: not found",
+     "script": "mkae test",
+     "suggestions": [
+      {
+       "command": "make test",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "make",
+         "source": "mkae",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "history (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "history",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "vim f",
+     "output": "sh: 1: viim: not found",
+     "script": "viim f",
+     "suggestions": [
+      {
+       "command": "vim f",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "vim",
+         "source": "viim",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "which ls",
+     "output": "sh: 1: whcih: not found",
+     "script": "whcih ls",
+     "suggestions": [
+      {
+       "command": "which ls",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 5,
+         "replacement": "which",
+         "source": "whcih",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "which bleep",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 5,
+         "replacement": "which",
+         "source": "whcih",
+         "start": 0
+        },
+        {
+         "end": 8,
+         "replacement": "bleep",
+         "source": "ls",
+         "start": 6
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "history (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "history",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "exit",
+     "output": "sh: 1: exti: not found",
+     "script": "exti",
+     "suggestions": [
+      {
+       "command": "exit",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "exit",
+         "source": "exti",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "cd /tmp",
+     "output": "sh: 1: cdd: not found",
+     "script": "cdd /tmp",
+     "suggestions": [
+      {
+       "command": "cd /tmp",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 3,
+         "replacement": "cd",
+         "source": "cdd",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "dd /tmp",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 3,
+         "replacement": "dd",
+         "source": "cdd",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "high",
+       "risk_factors": [
+        "destructive command"
+       ],
+       "rule": "no_command",
+       "side_effect": false
+      },
+      {
+       "command": "ldd /tmp",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 3,
+         "replacement": "ldd",
+         "source": "cdd",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "alias",
+     "output": "sh: 1: aliass: not found",
+     "script": "aliass",
+     "suggestions": [
+      {
+       "command": "alias",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 6,
+         "replacement": "alias",
+         "source": "aliass",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "sudo apt update",
+     "output": "sh: 1: sudp: not found",
+     "script": "sudp apt update",
+     "suggestions": [
+      {
+       "command": "sudo apt update",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "sudo",
+         "source": "sudp",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        },
+        {
+         "kind": "execution",
+         "text": "another user -- the correction begins with sudo"
+        }
+       ],
+       "risk": "high",
+       "risk_factors": [
+        "privilege escalation"
+       ],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "grep foo .",
+     "output": "bash: line 1: gerp: command not found",
+     "script": "gerp foo .",
+     "suggestions": [
+      {
+       "command": "grep foo .",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "grep",
+         "source": "gerp",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "grep foo .",
+     "output": "zsh:1: command not found: gerp",
+     "script": "gerp foo .",
+     "suggestions": [
+      {
+       "command": "grep foo .",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "grep",
+         "source": "gerp",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "grep foo .",
+     "output": "fish: Unknown command: gerp",
+     "script": "gerp foo .",
+     "suggestions": [
+      {
+       "command": "grep foo .",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 4,
+         "replacement": "grep",
+         "source": "gerp",
+         "start": 0
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "no_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "no_command",
+       "side_effect": false
+      }
+     ]
+    }
+   ],
+   "name": "No such program",
+   "note": "The commonest way a command fails, and the only one with no tool to ask -- every answer here is a guess. It is made against a fixed PATH and a fixed history, so what you see is what I see."
+  },
+  {
+   "cases": [
+    {
+     "decision": "suggest",
+     "expect": "ls -l --sort=none",
+     "output": "ls: invalid argument 'nmae' for '--sort'\nValid arguments are:\n  - 'none'\n  - 'time'\n  - 'size'\n  - 'extension'\n  - 'version'\n  - 'width'\nTry 'ls --help' for more information.\n",
+     "script": "ls -l --sort=nmae",
+     "suggestions": [
+      {
+       "command": "ls -l --sort=none",
+       "confidence": {
+        "basis": [
+         "the rule matched captured command output"
+        ],
+        "level": "high",
+        "score": 0.95
+       },
+       "edits": [
+        {
+         "end": 17,
+         "replacement": "--sort=none",
+         "source": "--sort=nmae",
+         "start": 6
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "invalid_argument_for_option (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "invalid_argument_for_option",
+       "side_effect": false
+      },
+      {
+       "command": "ls -l --sort=extension",
+       "confidence": {
+        "basis": [
+         "the rule matched captured command output"
+        ],
+        "level": "high",
+        "score": 0.95
+       },
+       "edits": [
+        {
+         "end": 17,
+         "replacement": "--sort=extension",
+         "source": "--sort=nmae",
+         "start": 6
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "invalid_argument_for_option (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "invalid_argument_for_option",
+       "side_effect": false
+      },
+      {
+       "command": "ls -l --sort=version",
+       "confidence": {
+        "basis": [
+         "the rule matched captured command output"
+        ],
+        "level": "high",
+        "score": 0.95
+       },
+       "edits": [
+        {
+         "end": 17,
+         "replacement": "--sort=version",
+         "source": "--sort=nmae",
+         "start": 6
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "invalid_argument_for_option (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "invalid_argument_for_option",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "git stash pop",
+     "output": "fatal: subcommand wasn't specified; 'push' can't be assumed due to unexpected token 'pp'\n",
+     "script": "git stash pp",
+     "suggestions": [
+      {
+       "command": "git stash pop",
+       "confidence": {
+        "basis": [
+         "the rule matched captured command output"
+        ],
+        "level": "high",
+        "score": 0.95
+       },
+       "edits": [
+        {
+         "end": 12,
+         "replacement": "pop",
+         "source": "pp",
+         "start": 10
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "git_fix_stash (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "git, whatever it printed"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "git_fix_stash",
+       "side_effect": false
+      },
+      {
+       "command": "git status",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 7,
+         "replacement": "tu",
+         "source": "",
+         "start": 7
+        },
+        {
+         "end": 12,
+         "replacement": "",
+         "source": "h pp",
+         "start": 8
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "history (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "history",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "python -m pytest --color=auto",
+     "output": "ERROR: usage: python -m pytest [options] [file_or_dir] [file_or_dir] [...]\npython -m pytest: error: argument --color: invalid choice: 'ayt' (choose from 'yes', 'no', 'auto')\n",
+     "script": "python -m pytest --color=ayt",
+     "suggestions": [
+      {
+       "command": "python -m pytest --color=auto",
+       "confidence": {
+        "basis": [
+         "the rule matched captured command output"
+        ],
+        "level": "high",
+        "score": 0.95
+       },
+       "edits": [
+        {
+         "end": 28,
+         "replacement": "--color=auto",
+         "source": "--color=ayt",
+         "start": 17
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "argparse_invalid_choice (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"invalid choice:\" and \"choose from\""
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "argparse_invalid_choice",
+       "side_effect": false
+      },
+      {
+       "command": "python -m pytest --color=no",
+       "confidence": {
+        "basis": [
+         "the rule matched captured command output"
+        ],
+        "level": "high",
+        "score": 0.95
+       },
+       "edits": [
+        {
+         "end": 28,
+         "replacement": "--color=no",
+         "source": "--color=ayt",
+         "start": 17
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "argparse_invalid_choice (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"invalid choice:\" and \"choose from\""
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "argparse_invalid_choice",
+       "side_effect": false
+      },
+      {
+       "command": "python -m pytest --color=yes",
+       "confidence": {
+        "basis": [
+         "the rule matched captured command output"
+        ],
+        "level": "high",
+        "score": 0.95
+       },
+       "edits": [
+        {
+         "end": 28,
+         "replacement": "--color=yes",
+         "source": "--color=ayt",
+         "start": 17
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "argparse_invalid_choice (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"invalid choice:\" and \"choose from\""
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "argparse_invalid_choice",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "prettier --check src/",
+     "output": "error: unknown option '--chekc'\n(Did you mean --check?)\n",
+     "script": "prettier --chekc src/",
+     "suggestions": [
+      {
+       "command": "prettier --check src/",
+       "confidence": {
+        "basis": [
+         "commander named this replacement in the command error"
+        ],
+        "level": "high",
+        "score": 0.98
+       },
+       "edits": [
+        {
+         "end": 16,
+         "replacement": "--check",
+         "source": "--chekc",
+         "start": 9
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "commander_suggestion (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"unknown option\" and \"id you mean\""
+        },
+        {
+         "kind": "evidence",
+         "text": "commander named this replacement in the command error"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "commander_suggestion",
+       "side_effect": false
+      },
+      {
+       "command": "pr ettier --chekc src/",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 2,
+         "replacement": " ",
+         "source": "",
+         "start": 2
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "missing_space_before_subcommand (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "missing_space_before_subcommand",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "git remote add origin git@example.com:x.git",
+     "output": "error: unknown subcommand: `ad'\nusage: git remote [-v | --verbose]\n   or: git remote add [-t <branch>] [-f] <name> <url>\n   or: git remote rename [--[no-]progress] <old> <new>\n   or: git remote remove <name>\n   or: git remote prune [-n | --dry-run] <name>\n   or: git remote get-url [--push] [--all] <name>\n",
+     "script": "git remote ad origin git@example.com:x.git",
+     "suggestions": [
+      {
+       "command": "git remote add origin git@example.com:x.git",
+       "confidence": {
+        "basis": [
+         "the rule matched captured command output"
+        ],
+        "level": "high",
+        "score": 0.95
+       },
+       "edits": [
+        {
+         "end": 13,
+         "replacement": "add",
+         "source": "ad",
+         "start": 11
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "git_unknown_subcommand (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "git, whatever it printed"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "git_unknown_subcommand",
+       "side_effect": false
+      },
+      {
+       "command": "git remote get-url origin git@example.com:x.git",
+       "confidence": {
+        "basis": [
+         "the rule matched captured command output"
+        ],
+        "level": "high",
+        "score": 0.95
+       },
+       "edits": [
+        {
+         "end": 13,
+         "replacement": "get-url",
+         "source": "ad",
+         "start": 11
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "git_unknown_subcommand (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "git, whatever it printed"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "git_unknown_subcommand",
+       "side_effect": false
+      },
+      {
+       "command": "git remote prune origin git@example.com:x.git",
+       "confidence": {
+        "basis": [
+         "the rule matched captured command output"
+        ],
+        "level": "high",
+        "score": 0.95
+       },
+       "edits": [
+        {
+         "end": 13,
+         "replacement": "prune",
+         "source": "ad",
+         "start": 11
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "git_unknown_subcommand (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "git, whatever it printed"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "git_unknown_subcommand",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "git status",
+     "output": "git: 'satus' is not a git command. See 'git --help'.\n\nThe most similar command is\n\tstatus\n",
+     "script": "git satus",
+     "suggestions": [
+      {
+       "command": "git status",
+       "confidence": {
+        "basis": [
+         "the rule matched captured command output"
+        ],
+        "level": "high",
+        "score": 0.95
+       },
+       "edits": [
+        {
+         "end": 9,
+         "replacement": "status",
+         "source": "satus",
+         "start": 4
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "git_not_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "git, and output containing \"is not a git command. See 'git --help'.\" and \"The most similar command\""
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "git_not_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "git commit -m \"wip\"",
+     "output": "git: 'comit' is not a git command. See 'git --help'.\n\nThe most similar command is\n\tcommit\n",
+     "script": "git comit -m \"wip\"",
+     "suggestions": [
+      {
+       "command": "git commit -m \"wip\"",
+       "confidence": {
+        "basis": [
+         "the rule matched captured command output"
+        ],
+        "level": "high",
+        "score": 0.95
+       },
+       "edits": [
+        {
+         "end": 9,
+         "replacement": "commit",
+         "source": "comit",
+         "start": 4
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "git_not_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "git, and output containing \"is not a git command. See 'git --help'.\" and \"The most similar command\""
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "git_not_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "git checkout main",
+     "output": "git: 'chekout' is not a git command. See 'git --help'.\n\nThe most similar command is\n\tcheckout\n",
+     "script": "git chekout main",
+     "suggestions": [
+      {
+       "command": "git checkout main",
+       "confidence": {
+        "basis": [
+         "the rule matched captured command output"
+        ],
+        "level": "high",
+        "score": 0.95
+       },
+       "edits": [
+        {
+         "end": 11,
+         "replacement": "checkout",
+         "source": "chekout",
+         "start": 4
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "git_not_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "git, and output containing \"is not a git command. See 'git --help'.\" and \"The most similar command\""
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "git_not_command",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "npm run build",
+     "output": "npm ERR! Missing script: \"buld\"\nnpm ERR! \nnpm ERR! Did you mean this?\nnpm ERR!     npm run build # run the \"build\" package script\n",
+     "script": "npm run buld",
+     "suggestions": [
+      {
+       "command": "npm run build",
+       "confidence": {
+        "basis": [
+         "the rule matched captured command output"
+        ],
+        "level": "high",
+        "score": 0.95
+       },
+       "edits": [
+        {
+         "end": 12,
+         "replacement": "build",
+         "source": "buld",
+         "start": 8
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "npm_missing_script (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "npm, whatever it printed"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "npm_missing_script",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "pip install requests",
+     "output": "ERROR: unknown command \"instatl\" - maybe you meant \"install\"\n",
+     "script": "pip instatl requests",
+     "suggestions": [
+      {
+       "command": "pip install requests",
+       "confidence": {
+        "basis": [
+         "the rule matched captured command output"
+        ],
+        "level": "high",
+        "score": 0.95
+       },
+       "edits": [
+        {
+         "end": 11,
+         "replacement": "install",
+         "source": "instatl",
+         "start": 4
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "pip_unknown_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "pip, pip2 or pip3, and output containing \"unknown command\" and \"maybe you meant\""
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "pip_unknown_command",
+       "side_effect": false
+      },
+      {
+       "command": "pip install -r requirements.txt",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 10,
+         "replacement": "",
+         "source": "t",
+         "start": 9
+        },
+        {
+         "end": 11,
+         "replacement": "l -r",
+         "source": "",
+         "start": 11
+        },
+        {
+         "end": 16,
+         "replacement": "ir",
+         "source": "",
+         "start": 16
+        },
+        {
+         "end": 18,
+         "replacement": "men",
+         "source": "s",
+         "start": 17
+        },
+        {
+         "end": 20,
+         "replacement": ".txt",
+         "source": "",
+         "start": 20
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "history (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "history",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "pip uninstall requests",
+     "output": "ERROR: unknown command \"unistall\" - maybe you meant \"uninstall\"\n",
+     "script": "pip unistall requests",
+     "suggestions": [
+      {
+       "command": "pip uninstall requests",
+       "confidence": {
+        "basis": [
+         "the rule matched captured command output"
+        ],
+        "level": "high",
+        "score": 0.95
+       },
+       "edits": [
+        {
+         "end": 12,
+         "replacement": "uninstall",
+         "source": "unistall",
+         "start": 4
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "pip_unknown_command (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "pip, pip2 or pip3, and output containing \"unknown command\" and \"maybe you meant\""
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "pip_unknown_command",
+       "side_effect": false
+      },
+      {
+       "command": "pip install -r requirements.txt",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 5,
+         "replacement": "i",
+         "source": "u",
+         "start": 4
+        },
+        {
+         "end": 7,
+         "replacement": "",
+         "source": "i",
+         "start": 6
+        },
+        {
+         "end": 13,
+         "replacement": "-r ",
+         "source": "",
+         "start": 13
+        },
+        {
+         "end": 17,
+         "replacement": "ir",
+         "source": "",
+         "start": 17
+        },
+        {
+         "end": 19,
+         "replacement": "men",
+         "source": "s",
+         "start": 18
+        },
+        {
+         "end": 21,
+         "replacement": ".txt",
+         "source": "",
+         "start": 21
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "history (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "history",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "uv pip install requests",
+     "output": "error: unrecognized subcommand 'piip'\n\n  tip: a similar subcommand exists: 'pip'\n\nUsage: uv [OPTIONS] <COMMAND>\n",
+     "script": "uv piip install requests",
+     "suggestions": [
+      {
+       "command": "uv pip install requests",
+       "confidence": {
+        "basis": [
+         "clap named this replacement in the command error"
+        ],
+        "level": "high",
+        "score": 0.98
+       },
+       "edits": [
+        {
+         "end": 7,
+         "replacement": "pip",
+         "source": "piip",
+         "start": 3
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "clap_suggestion (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"tip: a similar\""
+        },
+        {
+         "kind": "evidence",
+         "text": "clap named this replacement in the command error"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "clap_suggestion",
+       "side_effect": false
+      },
+      {
+       "command": "pip install -r requirements.txt",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 2,
+         "replacement": "pip",
+         "source": "uv",
+         "start": 0
+        },
+        {
+         "end": 7,
+         "replacement": "install",
+         "source": "piip",
+         "start": 3
+        },
+        {
+         "end": 15,
+         "replacement": "-r",
+         "source": "install",
+         "start": 8
+        },
+        {
+         "end": 24,
+         "replacement": "requirements.txt",
+         "source": "requests",
+         "start": 16
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "history (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "history",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "ruff check .",
+     "output": "error: unrecognized subcommand 'chekc'\n\n  tip: a similar subcommand exists: 'check'\n\nUsage: ruff [OPTIONS] <COMMAND>\n",
+     "script": "ruff chekc .",
+     "suggestions": [
+      {
+       "command": "ruff check .",
+       "confidence": {
+        "basis": [
+         "clap named this replacement in the command error"
+        ],
+        "level": "high",
+        "score": 0.98
+       },
+       "edits": [
+        {
+         "end": 10,
+         "replacement": "check",
+         "source": "chekc",
+         "start": 5
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "clap_suggestion (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"tip: a similar\""
+        },
+        {
+         "kind": "evidence",
+         "text": "clap named this replacement in the command error"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "clap_suggestion",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "ruff check --fix .",
+     "output": "error: unexpected argument '--fixx' found\n\n  tip: a similar argument exists: '--fix'\n",
+     "script": "ruff check --fixx .",
+     "suggestions": [
+      {
+       "command": "ruff check --fix .",
+       "confidence": {
+        "basis": [
+         "clap named this replacement in the command error"
+        ],
+        "level": "high",
+        "score": 0.98
+       },
+       "edits": [
+        {
+         "end": 17,
+         "replacement": "--fix",
+         "source": "--fixx",
+         "start": 11
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "clap_suggestion (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"tip: a similar\""
+        },
+        {
+         "kind": "evidence",
+         "text": "clap named this replacement in the command error"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "clap_suggestion",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "cargo install ripgrep",
+     "output": "error: no such command: `instal`\n\nhelp: a command with a similar name exists: `install`\n",
+     "script": "cargo instal ripgrep",
+     "suggestions": [
+      {
+       "command": "cargo install ripgrep",
+       "confidence": {
+        "basis": [
+         "clap named this replacement in the command error"
+        ],
+        "level": "high",
+        "score": 0.98
+       },
+       "edits": [
+        {
+         "end": 12,
+         "replacement": "install",
+         "source": "instal",
+         "start": 6
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "clap_suggestion (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"a command with a similar name exists\""
+        },
+        {
+         "kind": "evidence",
+         "text": "clap named this replacement in the command error"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "clap_suggestion",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "gh repo list",
+     "output": "unknown command \"reop\" for \"gh\"\n\nDid you mean this?\n\trepo\n\nUsage:  gh <command> <subcommand> [flags]\n",
+     "script": "gh reop list",
+     "suggestions": [
+      {
+       "command": "gh repo list",
+       "confidence": {
+        "basis": [
+         "cobra named this replacement in the command error"
+        ],
+        "level": "high",
+        "score": 0.98
+       },
+       "edits": [
+        {
+         "end": 7,
+         "replacement": "repo",
+         "source": "reop",
+         "start": 3
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "cobra_suggestion (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"Did you mean this?\""
+        },
+        {
+         "kind": "evidence",
+         "text": "cobra named this replacement in the command error"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "cobra_suggestion",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "helm install mychart",
+     "output": "Error: unknown command \"instal\" for \"helm\"\n\nDid you mean this?\n\tinstall\n\nRun 'helm --help' for usage.\n",
+     "script": "helm instal mychart",
+     "suggestions": [
+      {
+       "command": "helm install mychart",
+       "confidence": {
+        "basis": [
+         "cobra named this replacement in the command error"
+        ],
+        "level": "high",
+        "score": 0.98
+       },
+       "edits": [
+        {
+         "end": 11,
+         "replacement": "install",
+         "source": "instal",
+         "start": 5
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "cobra_suggestion (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"Did you mean this?\""
+        },
+        {
+         "kind": "evidence",
+         "text": "cobra named this replacement in the command error"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "cobra_suggestion",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "black --check .",
+     "output": "Usage: black [OPTIONS] SRC ...\nTry 'black --help' for help.\n\nError: No such option '--chekc'. (Did you mean one of: '--check', '--code', '--help'?)\n",
+     "script": "black --chekc .",
+     "suggestions": [
+      {
+       "command": "black --check .",
+       "confidence": {
+        "basis": [
+         "click named this replacement in the command error"
+        ],
+        "level": "high",
+        "score": 0.98
+       },
+       "edits": [
+        {
+         "end": 13,
+         "replacement": "--check",
+         "source": "--chekc",
+         "start": 6
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "click_suggestion (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"o such option\""
+        },
+        {
+         "kind": "evidence",
+         "text": "click named this replacement in the command error"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "click_suggestion",
+       "side_effect": false
+      },
+      {
+       "command": "black --code .",
+       "confidence": {
+        "basis": [
+         "click named this replacement in the command error"
+        ],
+        "level": "high",
+        "score": 0.98
+       },
+       "edits": [
+        {
+         "end": 13,
+         "replacement": "--code",
+         "source": "--chekc",
+         "start": 6
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "click_suggestion (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"o such option\""
+        },
+        {
+         "kind": "evidence",
+         "text": "click named this replacement in the command error"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "click_suggestion",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "git status --short",
+     "output": "error: unknown option `shrot'\nusage: git status [<options>] [--] [<pathspec>...]\n\n    -s, --[no-]short      show status concisely\n",
+     "script": "git status --shrot",
+     "suggestions": [
+      {
+       "command": "git status --short",
+       "confidence": {
+        "basis": [
+         "the rule matched captured command output"
+        ],
+        "level": "high",
+        "score": 0.95
+       },
+       "edits": [
+        {
+         "end": 18,
+         "replacement": "--short",
+         "source": "--shrot",
+         "start": 11
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "option_typo (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"unknown option\""
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "option_typo",
+       "side_effect": false
+      },
+      {
+       "command": "git status",
+       "confidence": {
+        "basis": [
+         "the rule matched the command or local context"
+        ],
+        "level": "medium",
+        "score": 0.75
+       },
+       "edits": [
+        {
+         "end": 18,
+         "replacement": "",
+         "source": " --shrot",
+         "start": 10
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "history (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "a condition this rule works out for itself"
+        },
+        {
+         "kind": "context",
+         "text": "only the command you typed, not its output"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "history",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "kubectl get pods",
+     "output": "error: unknown command \"gat\" for \"kubectl\"\n\nDid you mean this?\n\tget\n\tset\n",
+     "script": "kubectl gat pods",
+     "suggestions": [
+      {
+       "command": "kubectl get pods",
+       "confidence": {
+        "basis": [
+         "cobra named this replacement in the command error"
+        ],
+        "level": "high",
+        "score": 0.98
+       },
+       "edits": [
+        {
+         "end": 11,
+         "replacement": "get",
+         "source": "gat",
+         "start": 8
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "cobra_suggestion (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"Did you mean this?\""
+        },
+        {
+         "kind": "evidence",
+         "text": "cobra named this replacement in the command error"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "cobra_suggestion",
+       "side_effect": false
+      },
+      {
+       "command": "kubectl set pods",
+       "confidence": {
+        "basis": [
+         "cobra named this replacement in the command error"
+        ],
+        "level": "high",
+        "score": 0.98
+       },
+       "edits": [
+        {
+         "end": 11,
+         "replacement": "set",
+         "source": "gat",
+         "start": 8
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "cobra_suggestion (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"Did you mean this?\""
+        },
+        {
+         "kind": "evidence",
+         "text": "cobra named this replacement in the command error"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "cobra_suggestion",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "deno run",
+     "output": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unrecognized subcommand\n\n  tip: a similar subcommand exists: 'run'\n",
+     "script": "deno runn",
+     "suggestions": [
+      {
+       "command": "deno run",
+       "confidence": {
+        "basis": [
+         "clap named this replacement in the command error"
+        ],
+        "level": "high",
+        "score": 0.98
+       },
+       "edits": [
+        {
+         "end": 9,
+         "replacement": "run",
+         "source": "runn",
+         "start": 5
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "clap_suggestion (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"tip: a similar\""
+        },
+        {
+         "kind": "evidence",
+         "text": "clap named this replacement in the command error"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "clap_suggestion",
+       "side_effect": false
+      }
+     ]
+    },
+    {
+     "decision": "suggest",
+     "expect": "deno install",
+     "output": "error: unrecognized subcommand\n\n  tip: some similar subcommands exist: 'init', 'lint', 'uninstall', 'install'\n",
+     "script": "deno instal",
+     "suggestions": [
+      {
+       "command": "deno install",
+       "confidence": {
+        "basis": [
+         "clap named this replacement in the command error"
+        ],
+        "level": "high",
+        "score": 0.98
+       },
+       "edits": [
+        {
+         "end": 11,
+         "replacement": "install",
+         "source": "instal",
+         "start": 5
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "clap_suggestion (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"tip: some similar\""
+        },
+        {
+         "kind": "evidence",
+         "text": "clap named this replacement in the command error"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "clap_suggestion",
+       "side_effect": false
+      },
+      {
+       "command": "deno uninstall",
+       "confidence": {
+        "basis": [
+         "clap named this replacement in the command error"
+        ],
+        "level": "high",
+        "score": 0.98
+       },
+       "edits": [
+        {
+         "end": 11,
+         "replacement": "uninstall",
+         "source": "instal",
+         "start": 5
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "clap_suggestion (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"tip: some similar\""
+        },
+        {
+         "kind": "evidence",
+         "text": "clap named this replacement in the command error"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "clap_suggestion",
+       "side_effect": false
+      },
+      {
+       "command": "deno lint",
+       "confidence": {
+        "basis": [
+         "clap named this replacement in the command error"
+        ],
+        "level": "high",
+        "score": 0.98
+       },
+       "edits": [
+        {
+         "end": 11,
+         "replacement": "lint",
+         "source": "instal",
+         "start": 5
+        }
+       ],
+       "evidence": [
+        {
+         "kind": "source",
+         "text": "clap_suggestion (bundled)"
+        },
+        {
+         "kind": "match",
+         "text": "output containing \"tip: some similar\""
+        },
+        {
+         "kind": "evidence",
+         "text": "clap named this replacement in the command error"
+        },
+        {
+         "kind": "context",
+         "text": "what your command printed"
+        }
+       ],
+       "risk": "low",
+       "risk_factors": [],
+       "rule": "clap_suggestion",
+       "side_effect": false
+      }
+     ]
+    }
+   ],
+   "name": "The tool said so",
+   "note": "Read rather than guessed. The failing tool printed something the engine can point at, which is why these are the ones that work."
+  },
+  {
+   "cases": [
+    {
+     "decision": "abstain",
+     "expect": null,
+     "output": "sh: 1: wgte: not found",
+     "script": "wgte u",
+     "suggestions": []
+    },
+    {
+     "decision": "abstain",
+     "expect": null,
+     "output": "sh: 1: zzzzzqqqq: not found",
+     "script": "zzzzzqqqq",
+     "suggestions": []
+    },
+    {
+     "decision": "abstain",
+     "expect": null,
+     "output": "sh: 1: asdfghjkl: not found",
+     "script": "asdfghjkl",
+     "suggestions": []
+    },
+    {
+     "decision": "abstain",
+     "expect": null,
+     "output": "",
+     "script": "ls -la",
+     "suggestions": []
+    },
+    {
+     "decision": "abstain",
+     "expect": null,
+     "output": "On branch main\nnothing to commit, working tree clean\n",
+     "script": "git status",
+     "suggestions": []
+    },
+    {
+     "decision": "abstain",
+     "expect": null,
+     "output": "mv: cannot stat 'typoo.txt': No such file or directory\n",
+     "script": "mv typoo.txt new.txt",
+     "suggestions": []
+    },
+    {
+     "decision": "abstain",
+     "expect": null,
+     "output": "Unknown command: \"urgrade\"\n\nTo see a list of supported npm commands, run:\n  npm help\n",
+     "script": "npm urgrade",
+     "suggestions": []
+    },
+    {
+     "decision": "abstain",
+     "expect": null,
+     "output": "No manual entry for nosuchpage\n",
+     "script": "man nosuchpage",
+     "suggestions": []
+    },
+    {
+     "decision": "abstain",
+     "expect": null,
+     "output": "git: 'zzzzzz' is not a git command. See 'git --help'.\n",
+     "script": "git zzzzzz",
+     "suggestions": []
+    },
+    {
+     "decision": "abstain",
+     "expect": null,
+     "output": "ls: cannot access '/nonexistent-dir-xyz': No such file or directory\n",
+     "script": "ls /nonexistent-dir-xyz",
+     "suggestions": []
+    },
+    {
+     "decision": "abstain",
+     "expect": null,
+     "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nModuleNotFoundError: No module named 'nonexistent_zz'\n",
+     "script": "python -c 'import nonexistent_zz'",
+     "suggestions": []
+    }
+   ],
+   "name": "Nothing is right",
+   "note": "Cases where saying nothing is the answer. A confident wrong answer is worse than no answer, and several of these were wrong answers once."
+  }
+ ],
+ "history": [
+  "git status",
+  "git commit -m \"wip\"",
+  "git push",
+  "cd /home/user/src/project",
+  "ls -la",
+  "which bleep",
+  "python3 manage.py runserver",
+  "npm run build",
+  "docker compose up -d",
+  "ssh user@host",
+  "grep -r pattern .",
+  "cat README.md",
+  "make test",
+  "pip install -r requirements.txt",
+  "vim setup.py"
+ ],
+ "source": "tests/corpus/cases.py"
+}

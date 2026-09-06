@@ -4,6 +4,11 @@ Type the command wrong. Type `bleep`. Run the right one.
 
 ![The Bleep correcting a mistyped command](assets/demo.svg)
 
+**[Try it in your browser](https://stamparm.github.io/thebleep/)** — the engine
+itself, compiled to WebAssembly, correcting whatever you type at it. Every
+answer comes with the confidence, the evidence and the rule that produced it,
+and nothing on that page can run anything.
+
 *The Bleep* corrects console commands: the one that just failed and, if you
 let it, the one you are about to run. It reads what the tool printed, what
 your project declares and what your manual pages say, offers the fix with a

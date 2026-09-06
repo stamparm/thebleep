@@ -1,0 +1,78 @@
+# Publishes docs/ as the project's page, with a wheel built from this very
+# commit sitting beside it.
+#
+# The page runs the real package in the browser under WebAssembly, so the wheel
+# it installs has to be the code that was just pushed rather than whatever PyPI
+# last published -- otherwise the demo would quietly go on demonstrating the
+# previous release. Building it here also means nothing binary is committed and
+# no version string is pinned anywhere: `wheel.json` is written next to the
+# wheel and the page reads the filename out of it.
+name: Pages
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'docs/**'
+      - 'thebleep/**'
+      - 'tests/corpus/**'
+      - 'assets/make_playground.py'
+      - 'setup.py'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time, and never cancel one half-done: a cancelled deploy
+# leaves the published page as it was, which is fine, but a cancelled *upload*
+# has been known to publish an empty site.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Install
+        run: python -m pip install --upgrade pip && python -m pip install -e .
+
+      - name: The recorded answers are what the engine says today
+        run: python assets/make_playground.py --check
+
+      - name: Build the wheel the page installs
+        run: |
+          python -m pip wheel --no-deps --wheel-dir docs .
+          python - <<'PY'
+          import glob, json, os, re
+
+          found = glob.glob('docs/thebleep-*.whl')
+          if len(found) != 1:
+              raise SystemExit('expected exactly one wheel, got %r' % found)
+          name = os.path.basename(found[0])
+          print(json.dumps({'wheel': name,
+                            'version': re.match(r'thebleep-([^-]+)-', name).group(1)}),
+                file=open('docs/wheel.json', 'w'))
+          print('wheel.json ->', name)
+          PY
+
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d  # v6.0.0
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0
+        with:
+          path: docs
+
+      - id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346  # v5.0.1

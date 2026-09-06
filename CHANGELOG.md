@@ -4,6 +4,18 @@
 
 ### Added
 
+- **A playground in the browser.** `docs/index.html` loads the wheel built
+  from the same commit into a WebAssembly interpreter and corrects whatever is
+  typed at it -- the shipped engine, not a recording of one, showing the
+  confidence, the evidence and the rule behind every answer. The eighty-nine
+  worked examples are `tests/corpus/cases.py`, whose tool messages were each
+  captured by running the failing command, answered ahead of time by
+  `assets/make_playground.py` so the page has something on it before the
+  interpreter arrives; a test regenerates them and fails if they are no longer
+  what the engine says. Guesses are made against the corpus's fixed PATH and
+  history, so the page answers the same for everyone. Nothing on it can
+  execute anything, which is the tool's own argument made literal.
+
 - **ksh.** One driver for ksh93, mksh and the pdksh that is OpenBSD's `ksh`:
   the alias, the previous command through `fc`, the aliases through
   `ksh -ic alias`, the history read through each shell's binary framing,
