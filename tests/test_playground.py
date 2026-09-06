@@ -110,6 +110,67 @@ def test_the_workflow_builds_what_the_page_asks_for(source_root, page):
     assert 'wheel-dir docs' in written
 
 
+@pytest.fixture
+def playground(source_root):
+    """The page's own module.
+
+    Importing it is safe -- it is constants until something calls a function.
+    `install` and `install_filesystem` are emphatically not safe to call here:
+    the first patches `thebleep.utils` for the rest of the process, the second
+    writes `/etc/passwd`.
+    """
+    import importlib.util
+
+    path = source_root.joinpath('docs', 'bootstrap.py')
+    spec = importlib.util.spec_from_file_location('playground_bootstrap',
+                                                  str(path))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_the_demo_tree_can_actually_be_laid_out(playground):
+    """Every file's directory is one the layout creates first.
+
+    `install_filesystem` makes the directories and then opens the files, so a
+    file under a directory nobody listed raises halfway through and the page
+    comes up with no engine at all.
+    """
+    made = set(playground.DIRECTORIES)
+
+    for path in playground.FILES:
+        parent = path.rsplit('/', 1)[0]
+        assert parent in made, path
+
+
+def test_every_worked_example_talks_about_its_own_path(playground):
+    """The path in the command is the path the program complained about.
+
+    These pair a command with a message captured from a real program, and the
+    two are edited by hand. A pair that drifted would demonstrate nothing and
+    look exactly like a rule that had stopped working.
+    """
+    for script, output in playground.SCENARIOS:
+        argument = script.split()[-1]
+        assert argument in output, (script, output)
+
+
+def test_the_page_lays_the_tree_out_and_the_generator_does_not(page,
+                                                               source_root):
+    """Only the browser may have a filesystem laid out under it.
+
+    The generator runs on a real machine, where `/etc/passwd` is not ours to
+    write. The separation is the whole reason these are two functions, and
+    nothing but a test keeps them apart.
+    """
+    with io.open(str(source_root.joinpath('assets', 'make_playground.py')),
+                 encoding='utf-8') as handle:
+        generator = handle.read()
+
+    assert 'install_filesystem()' in page
+    assert 'install_filesystem' not in generator
+
+
 def test_the_output_box_does_not_stand_there_naming_one_command(page):
     """It used to hold `sh: 1: gti: not found` whatever you had typed.
 

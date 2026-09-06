@@ -12,9 +12,13 @@
   captured by running the failing command, answered ahead of time by
   `assets/make_playground.py` so the page has something on it before the
   interpreter arrives; a test regenerates them and fails if they are no longer
-  what the engine says. Guesses are made against the corpus's fixed PATH and
-  history, so the page answers the same for everyone. Nothing on it can
-  execute anything, which is the tool's own argument made literal.
+  what the engine says. The sandbox is given a small filesystem as well as the
+  fixed PATH and history -- seventeen rules answer by looking at what is on
+  disk, and without one `cat /tm/notes.txt` had nothing to find, which made
+  the page look like a spell-checker for program names. Those examples are
+  answered live rather than recorded, because the tree exists only inside the
+  tab. Nothing on the page can execute anything, which is the tool's own
+  argument made literal.
 
 - **ksh.** One driver for ksh93, mksh and the pdksh that is OpenBSD's `ksh`:
   the alias, the previous command through `fc`, the aliases through

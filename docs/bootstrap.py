@@ -34,6 +34,43 @@ import os
 # What the corpus answers for `npm run-script`. Captured from npm 10.8.2.
 NPM_SCRIPTS = ['build', 'test', 'start', 'watch']
 
+# The third leg of the fixed machine, after the PATH and the history.
+#
+# Seventeen rules answer by looking at what is actually on disk: `cat /tm/ad`
+# becomes `cat /tmp/ad` because `path_correction` walks the path and finds
+# `tmp` sitting beside what was typed. A browser tab starts with none of that,
+# so every one of those rules silently declined and the page looked like a
+# spell-checker for program names -- which undersells the tool badly.
+#
+# `install_filesystem` is called by the page and *not* by the generator. The
+# generator runs on somebody's real machine, where `/etc` is not ours to write
+# to; the browser's is a private sandbox that starts empty and dies with the
+# tab.
+PROJECT = '/home/user/src/project'
+
+DIRECTORIES = [
+    '/etc', '/tmp', '/var/log', '/usr/bin', '/usr/local/bin',
+    '/home/user', '/home/user/Documents', '/home/user/Downloads',
+    PROJECT, PROJECT + '/src', PROJECT + '/tests', PROJECT + '/.git',
+]
+
+FILES = {
+    '/etc/passwd': 'root:x:0:0:root:/root:/bin/bash\n',
+    '/etc/hosts': '127.0.0.1\tlocalhost\n',
+    '/etc/hostname': 'demo\n',
+    '/etc/fstab': '',
+    '/tmp/notes.txt': 'a scratch file\n',
+    '/var/log/syslog': '',
+    '/home/user/.bashrc': '',
+    PROJECT + '/README.md': '# project\n',
+    PROJECT + '/Makefile': 'build:\n\techo building\n\ntest:\n\techo testing\n',
+    PROJECT + '/package.json':
+        '{"name": "project", "scripts": {"build": "tsc", "test": "jest",'
+        ' "start": "node .", "watch": "tsc -w"}}\n',
+    PROJECT + '/src/index.js': '',
+    PROJECT + '/tests/test_index.js': '',
+}
+
 # How many candidates the page has room to show. The first is the one that
 # would be run, and the only one the corpus asserts.
 LIMIT = 3
@@ -91,6 +128,73 @@ def install(executables, history):
     utils.memoize.disabled = True
 
     _installed = True
+
+
+# Slips against the tree above, and what the real program says about each.
+#
+# The wordings were captured by running the failing command against a tree of
+# this shape -- coreutils 9.4 for `cat`, `ls` and `rm`, dash 0.5.12 for `cd` --
+# and only the path in them is substituted, which is the same thing
+# `tests/corpus/cases.py` does with its `sh: 1: {}: not found`.
+#
+# Every one of these needs the output: with an empty box the rules that read
+# the filesystem all decline, because a path that is missing now may simply
+# have been created since. So these are the page's own worked examples rather
+# than something a visitor would reach by typing a command alone.
+SCENARIOS = [
+    ('cat /tm/notes.txt',
+     'cat: /tm/notes.txt: No such file or directory'),
+    ('cat /ec/passwd',
+     'cat: /ec/passwd: No such file or directory'),
+    ('cat /home/user/.bashrx',
+     'cat: /home/user/.bashrx: No such file or directory'),
+    ('cd /hom/user',
+     "sh: 1: cd: can't cd to /hom/user"),
+    ('cd /home/user/Documnets',
+     "sh: 1: cd: can't cd to /home/user/Documnets"),
+    ('cd tets',
+     "sh: 1: cd: can't cd to tets"),
+    ('cat ' + PROJECT,
+     'cat: ' + PROJECT + ': Is a directory'),
+    ('rm ' + PROJECT + '/src',
+     "rm: cannot remove '" + PROJECT + "/src': Is a directory"),
+]
+
+
+def scenarios():
+    """The worked examples above, answered here and now.
+
+    Not precomputed like the corpus ones: they need the tree that only exists
+    inside the sandbox, and answering them where they are shown is also the
+    plainest evidence the page is running an engine rather than reciting a
+    table.
+    """
+    return [dict(script=script, output=output, expect=None,
+                 **answer(script, output))
+            for script, output in SCENARIOS]
+
+
+def install_filesystem():
+    """Lay out the demo tree and stand in it. Browser only -- see FILES.
+
+    Deliberately not called from `install()`. Somebody will one day import this
+    module on a real machine to reproduce an answer, and the difference between
+    the two functions is the difference between reading their `/etc` and
+    writing to it.
+    """
+    for path in DIRECTORIES:
+        try:
+            os.makedirs(path)
+        except OSError:
+            pass                      # already there: nothing to do
+
+    for path, contents in FILES.items():
+        with open(path, 'w') as handle:
+            handle.write(contents)
+
+    # `wrong_directory` and the project rules answer relative to where you are
+    # standing, and a visitor is standing in the project.
+    os.chdir(PROJECT)
 
 
 def answer(script, output=None):

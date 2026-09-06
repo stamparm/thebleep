@@ -180,9 +180,10 @@ footer { margin-top: 44px; color: var(--dim); font-size: 12px; }
     <div class="row">
       <button id="go" disabled>Correct it</button>
       <span class="hint" id="livehint">
-        Rules that would ask your machine — running <code>git</code>, reading your
-        man pages — cannot run here, so a browser answers with fewer rules than an
-        install does, never with different ones.
+        The sandbox has a small filesystem, so paths and directories are corrected
+        here for real. What cannot run in a browser is a rule that asks a program
+        — <code>git</code>, <code>apt</code>, your man pages — so a browser answers
+        with fewer rules than an install does, never with different ones.
       </span>
     </div>
   </div>
@@ -405,12 +406,33 @@ exec(BOOTSTRAP, globals())
 _machine = json.loads(MACHINE)
 install(_machine['executables'], _machine['history'])
 
+# Seventeen rules answer by looking at what is on disk, and a tab starts with
+# nothing on it. The sandbox is private and dies with the page.
+install_filesystem()
+
 def _correct(script, output):
     return json.dumps(answer(script, output))
+
+def _scenarios():
+    return json.dumps(scenarios())
 `);
 
   const fn = py.globals.get('_correct');
   correct = (script, output) => fn(script, output);
+
+  /* The one group that is not precomputed: it needs the tree that exists only
+     in here, and watching it fill in is the plainest evidence the page is
+     running an engine rather than reciting a table. */
+  DATA.groups.push({
+    name: 'Files and directories',
+    note: 'Answered live, just now, by the engine in your browser — these need'
+        + ' a filesystem, so they cannot be recorded in advance. The sandbox'
+        + ' holds a small tree (/etc, /tmp, a project in ~/src/project) and'
+        + ' you are standing in the project. Nothing here is your machine, and'
+        + ' nothing here is written to it.',
+    cases: JSON.parse(py.globals.get('_scenarios')()),
+  });
+  renderTabs();
   state('ready', `The Bleep ${built.version}, running here in your browser`);
   $('go').disabled = false;
 }
