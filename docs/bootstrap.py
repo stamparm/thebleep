@@ -75,6 +75,10 @@ FILES = {
 # would be run, and the only one the corpus asserts.
 LIMIT = 3
 
+# The fixed PATH, kept for `describe` to tell a program this machine has from
+# one it does not.
+KNOWN_EXECUTABLES = frozenset()
+
 _installed = False
 
 
@@ -86,7 +90,7 @@ def install(executables, history):
     inside `cases.json`, so the browser never has to reach back into the repo
     for them.
     """
-    global _installed
+    global _installed, KNOWN_EXECUTABLES
 
     # Before importing anything from the package: `thebleep.shells` decides at
     # import time, and psutil is what it falls back on. Set rather than
@@ -101,6 +105,7 @@ def install(executables, history):
     names = list(executables)
     present = set(names)
     remembered = list(history)
+    KNOWN_EXECUTABLES = frozenset(names)
 
     utils.get_all_executables = lambda: list(names)
     utils.get_valid_history_without_current = lambda command: list(remembered)
@@ -159,6 +164,123 @@ SCENARIOS = [
     ('rm ' + PROJECT + '/src',
      "rm: cannot remove '" + PROJECT + "/src': Is a directory"),
 ]
+
+
+# What each program says about a path it cannot use, captured by running it:
+# coreutils 9.4 for all but `cd`, which is dash 0.5.12. `(missing, directory)`,
+# and `None` where that program has nothing to say about that case.
+#
+# These are here rather than written into the page because they are captured
+# facts about real programs, and the surprises are the reason to capture them:
+# `head` and `tail` say "cannot open ... for reading" where `cat` says neither,
+# and `mv` and `cp` say "cannot stat". Four of these would have been wrong if
+# they had been written from memory.
+MESSAGES = {
+    'cat': ('cat: {path}: No such file or directory',
+            'cat: {path}: Is a directory'),
+    'ls': ("ls: cannot access '{path}': No such file or directory", None),
+    'rm': ("rm: cannot remove '{path}': No such file or directory",
+           "rm: cannot remove '{path}': Is a directory"),
+    'mv': ("mv: cannot stat '{path}': No such file or directory", None),
+    'cp': ("cp: cannot stat '{path}': No such file or directory", None),
+    'head': ("head: cannot open '{path}' for reading: No such file or"
+             " directory",
+             "head: error reading '{path}': Is a directory"),
+    'tail': ("tail: cannot open '{path}' for reading: No such file or"
+             " directory",
+             "tail: error reading '{path}': Is a directory"),
+    'wc': (None, 'wc: {path}: Is a directory'),
+    'grep': (None, 'grep: {path}: Is a directory'),
+    'cd': ("sh: 1: cd: can't cd to {path}", None),
+}
+
+# The shell's own answer, for a program that is not on the machine at all.
+NOT_FOUND = 'sh: 1: {word}: not found'
+
+
+def _argument(script):
+    """The path a command was pointed at: its last word, if that is one."""
+    words = script.split()
+    if len(words) < 2:
+        return None
+    last = words[-1]
+    return None if last.startswith('-') else last
+
+
+def describe(script):
+    """What this machine's programs would print for `script`, or ''.
+
+    This is the page filling in its own evidence. Nobody arrives wanting to
+    paste an error message, and the rules that read a path all decline without
+    one -- a path that is missing now may have been created since, so refusing
+    to guess is the right behaviour and it left the box the thing a visitor had
+    to work out.
+
+    Every string it can return was printed by the real program. What varies is
+    only which of them applies, and that is read off the sandbox rather than
+    assumed.
+    """
+    words = script.split()
+    if not words:
+        return ''
+
+    program = os.path.basename(words[0])
+    missing, directory = MESSAGES.get(program, (None, None))
+
+    # `cd` is a shell builtin: it is not on the PATH and it is not missing
+    # either, and saying "cd: not found" led the engine to offer `cp` for it.
+    known = program in MESSAGES or program in KNOWN_EXECUTABLES
+    if not known:
+        return NOT_FOUND.format(word=words[0])
+
+    path = _argument(script)
+    if path is None:
+        return ''
+
+    if os.path.isdir(path):
+        return directory.format(path=path) if directory else ''
+    if os.path.exists(path):
+        return ''                     # it is there: the command would work
+    return missing.format(path=path) if missing else ''
+
+
+def nearby(script):
+    """What the demo machine actually has where the command was pointing.
+
+    The tree is small, so a visitor typing a plausible path finds nothing and
+    reads the silence as the tool being broken rather than as the tool
+    declining to invent a destination. This says which it was.
+    """
+    path = _argument(script)
+    # Only for something that is unambiguously a path. Without this, `git
+    # brnch` was answered with the contents of the project directory.
+    if path is None or '/' not in path or os.path.exists(path):
+        return None
+
+    walked = path if path.startswith('/') else os.path.join(os.getcwd(), path)
+    while walked not in ('/', '') and not os.path.isdir(walked):
+        walked = os.path.dirname(walked)
+    if not os.path.isdir(walked):
+        return None
+
+    # What *this machine* has, which is what was laid out -- not the `/dev`,
+    # `/lib` and `/proc` the WebAssembly runtime mounts for its own use, which
+    # are nothing to do with the demo and only make the list look like noise.
+    ours = set()
+    for laid_out in list(DIRECTORIES) + list(FILES):
+        # `/home` is on the machine because `/home/user` was made under it,
+        # even though only the child was named. Without the walk up, listing
+        # `/` left out `home`, `usr` and `var`.
+        while laid_out not in ('/', ''):
+            ours.add(laid_out)
+            laid_out = os.path.dirname(laid_out)
+
+    entries = sorted(name for name in os.listdir(walked)
+                     if os.path.join(walked, name).rstrip('/') in ours)
+    if not entries:
+        return None
+
+    return {'directory': walked, 'entries': entries[:12]}
 
 
 def scenarios():

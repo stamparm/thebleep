@@ -214,6 +214,8 @@ const SOURCE = 'https://github.com/stamparm/thebleep/blob/master/thebleep/';
 let DATA = null;
 let KNOWN = new Set();       // the fixed machine's PATH, for the shell message
 let correct = null;          // set once the browser's own engine is up
+let describe = null;         // and with it, what each program would have said
+let nearby = null;           // and what is really where you pointed
 let active = 0;
 
 const $ = (id) => document.getElementById(id);
@@ -275,11 +277,27 @@ function suggestionHtml(script, s, first) {
 }
 
 function show(script, output, result, origin) {
+  /* An empty answer on a demo machine with twelve files on it reads as a
+     broken page. Usually it is the opposite: the engine will not name a
+     destination that does not exist, so saying what *does* exist there turns a
+     dead end into the point being made. */
+  let why = '';
+  if (!result.suggestions.length && nearby) {
+    const place = nearby(script);
+    if (place) {
+      why = `<p class="silent">There is no such path on the demo machine.
+        <code>${esc(place.directory)}</code> holds
+        ${place.entries.map((e) => `<code>${esc(e)}</code>`).join(', ') || 'nothing'}
+        — try one of those. The Bleep will correct a path you mistyped; it will
+        not invent one that was never there.</p>`;
+    }
+  }
+
   const body = result.suggestions.length
     ? result.suggestions.map((s, i) => suggestionHtml(script, s, i === 0)).join('')
     : `<p class="silent"><b>Nothing offered.</b> Nothing here is close enough to
        be worth putting in front of you, and a confident wrong answer is worse
-       than no answer.</p>`;
+       than no answer.</p>` + why;
 
   $('answer').innerHTML = `<div class="card">
     <div class="card-head"><span>${esc(origin)}</span>
@@ -338,6 +356,13 @@ function renderCases() {
 let filledIn = '';
 
 function shellSays(script) {
+  /* Once the engine is up it answers this properly: it can see the sandbox, so
+     it knows whether a path is missing, a directory, or simply there, and it
+     has the wording each program really prints. Until then -- the first couple
+     of seconds -- only the shell's own message can be filled in, which needs
+     nothing but the PATH the page already has. */
+  if (describe) return describe(script);
+
   const word = (script.trim().split(/\s+/)[0] || '');
   if (!word || !/^[\w.+-]+$/.test(word)) return '';
   if (KNOWN.has(word)) return '';
@@ -415,10 +440,21 @@ def _correct(script, output):
 
 def _scenarios():
     return json.dumps(scenarios())
+
+def _describe(script):
+    return describe(script)
+
+def _nearby(script):
+    return json.dumps(nearby(script))
 `);
 
   const fn = py.globals.get('_correct');
   correct = (script, output) => fn(script, output);
+  const desc = py.globals.get('_describe');
+  describe = (script) => desc(script);
+  const near = py.globals.get('_nearby');
+  nearby = (script) => JSON.parse(near(script));
+  syncOutput();              // now that the good answer is available
 
   /* The one group that is not precomputed: it needs the tree that exists only
      in here, and watching it fill in is the plainest evidence the page is

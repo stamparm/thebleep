@@ -23,6 +23,15 @@ import sys
 
 import pytest
 
+# Captured before the autouse fixtures replace `os.environ` with a bare one.
+# A subprocess started from that has no `SystemRoot` on Windows, and CPython
+# cannot seed its hash randomisation without it -- "failed to get random
+# numbers to initialize Python", before it runs a line of the script it was
+# given. `test_performance.py` keeps a copy for the same reason.
+# `test_determinism.py` passes the bare environment and survives only because
+# it sets `PYTHONHASHSEED`, which skips that seeding entirely.
+REAL_ENVIRONMENT = dict(os.environ)
+
 
 @pytest.fixture
 def docs(source_root):
@@ -51,13 +60,16 @@ def test_the_recorded_answers_are_what_the_engine_says_today(source_root,
     that is not this one; and it calls `settings.init`, which *creates* a
     config directory -- so without an `XDG_*` of its own this test would write
     into whoever ran it.
+
+    It is handed the real environment rather than the bare one the fixtures
+    leave behind: see `REAL_ENVIRONMENT`, and the Windows run that found it.
     """
     home = tmpdir.mkdir('home')
     finished = subprocess.run(
         [sys.executable,
          os.path.join(str(source_root), 'assets', 'make_playground.py'),
          '--check'],
-        env=dict(os.environ,
+        env=dict(REAL_ENVIRONMENT,
                  PYTHONPATH=str(source_root),
                  XDG_CONFIG_HOME=str(home),
                  XDG_CACHE_HOME=str(home)),
@@ -141,6 +153,38 @@ def test_the_demo_tree_can_actually_be_laid_out(playground):
     for path in playground.FILES:
         parent = path.rsplit('/', 1)[0]
         assert parent in made, path
+
+
+def test_every_message_the_page_fills_in_is_one_a_program_prints(playground):
+    """The templates are captures, and each must still take its path.
+
+    A template that lost its `{path}` would put a message about somebody
+    else's file in front of the visitor, and it would look entirely plausible
+    -- which is the failure mode this repository keeps meeting.
+    """
+    assert '{word}' in playground.NOT_FOUND
+
+    for program, (missing, directory) in playground.MESSAGES.items():
+        assert missing or directory, program
+        for template in (missing, directory):
+            if template is not None:
+                assert '{path}' in template, (program, template)
+
+
+def test_the_worked_examples_use_those_same_captured_messages(playground):
+    """A scenario's output is a template rendered, not a fresh invention.
+
+    Otherwise the page's own examples and the messages it writes into the box
+    for a visitor could drift into two different accounts of what `cat` says.
+    """
+    for script, output in playground.SCENARIOS:
+        program = script.split()[0]
+        path = script.split()[-1]
+        allowed = [template.format(path=path)
+                   for template in playground.MESSAGES[program]
+                   if template is not None]
+
+        assert output in allowed, (script, output)
 
 
 def test_every_worked_example_talks_about_its_own_path(playground):
