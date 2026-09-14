@@ -157,7 +157,7 @@
   "latency_ms": 250,
   "machine": "amd64",
   "python": "3.13.14",
-  "recorded_at": "2026-09-07",
+  "recorded_at": "2026-09-14",
   "recorded_by": "ci",
   "schema": 1,
   "shell": "ksh 5.2.14",
