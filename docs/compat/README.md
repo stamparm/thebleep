@@ -300,9 +300,9 @@ Command-only correction in 80 ms, median of 5 runs, Python start included.
 
 ## openSUSE Tumbleweed
 
-`opensuse-tumbleweed` · bash 5.3.15(1)-release · Python 3.13.14 · The Bleep 4.0.5 · recorded 2026-09-14 by ci from checkout
+`opensuse-tumbleweed` · bash 5.3.15(1)-release · Python 3.13.15 · The Bleep 4.0.5 · recorded 2026-09-21 by ci from checkout
 
-Command-only correction in 70 ms, median of 5 runs, Python start included.
+Command-only correction in 50 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
