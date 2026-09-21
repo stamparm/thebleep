@@ -155,14 +155,14 @@
   },
   "kernel": "6.17.0-1022-azure",
   "label": "ubuntu-24.04",
-  "latency_ms": 43,
+  "latency_ms": 38,
   "machine": "x86_64",
   "python": "3.12.3",
-  "recorded_at": "2026-09-14",
+  "recorded_at": "2026-09-21",
   "recorded_by": "ci",
   "schema": 1,
   "shell": "bash 5.2.21(1)-release",
   "source": "checkout",
-  "system": "Ubuntu 24.04.4 LTS",
+  "system": "Ubuntu 24.04.5 LTS",
   "thebleep": "4.0.5"
 }

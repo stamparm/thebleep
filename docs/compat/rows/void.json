@@ -156,7 +156,7 @@
   "latency_ms": 87,
   "machine": "x86_64",
   "python": "3.14.7",
-  "recorded_at": "2026-09-14",
+  "recorded_at": "2026-09-21",
   "recorded_by": "ci",
   "schema": 1,
   "shell": "bash 5.3.0(1)-release",
