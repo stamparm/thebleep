@@ -8,7 +8,7 @@ name: Compatibility matrix
 # commits them when a cell changed.
 #
 # By default the rows are recorded against the checkout, so a fix shows up the
-# week it lands. A manual run can ask for the PyPI release instead.
+# month it lands. A manual run can ask for the PyPI release instead.
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ on:
         type: choice
         options: [checkout, pypi]
   schedule:
-    - cron: '23 4 * * 1'
+    - cron: '23 4 1 * *'
 
 permissions:
   contents: read
