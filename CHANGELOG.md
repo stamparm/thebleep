@@ -52,6 +52,10 @@
 - **`apk_unknown_command`**, **`winget_unknown_command`**, and
   `dnf_no_such_command` in dnf 5's wording.
 
+- **`xcode_license`**, for git, make and clang refusing to run after an Xcode
+  update until the license is accepted: `sudo xcodebuild -license accept`,
+  then the command again. A bare `xcodebuild -license` just gets `sudo`.
+
 ## 4.0.4 — 2026-09-03
 
 ### Added
