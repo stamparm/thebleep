@@ -1653,7 +1653,7 @@ The following rules are enabled by default on specific platforms only:
 * `option_typo` — fixes a mistyped long option in **any** program: `ls --colour` → `ls --color`, `git status --shrot` → `git status --short`, `curl --verbse` → `curl --verbose`, `tar --extrat` → `tar --extract`. Reads the options out of the program's own usage when it printed them, and asks `<program> --help` only when the program itself invited it (`Try 'ls --help'`);
 * `pacman_invalid_option` — replaces lowercase `pacman` options with uppercase.
 * `pacman_not_found` — fixes package name with `pacman`, `paru`, `yay`, `pikaur` or `yaourt`.
-* `xcode_license` — accepts the Xcode license with `sudo xcodebuild -license` and reruns the command it blocked, like `git clone` after an Xcode update;
+* `xcode_license` — accepts the Xcode license with `sudo xcodebuild -license accept` and reruns the command it blocked, like `make` after an Xcode update;
 * `yum_invalid_operation` — fixes invalid `yum` calls, like `yum isntall vim`;
 * `zypper_no_such_command` — fixes mistyped `zypper` commands and their abbreviations on openSUSE and SLE, like `zypper isntall vim` or `zypper dpu`.
 
