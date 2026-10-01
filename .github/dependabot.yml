@@ -3,11 +3,16 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
+    ignore:
+      # Only the monthly compatibility matrix runs these, and a new BSD
+      # release is nothing we need. Bump by hand if a VM image breaks.
+      - dependency-name: vmactions/*
+        update-types: [version-update:semver-minor, version-update:semver-patch]
   - package-ecosystem: pip
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     ignore:
       # setuptools 84 dropped Python 3.9, which remains a supported runtime.
       # Review a major bump manually when the support floor moves.
