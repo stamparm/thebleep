@@ -167,10 +167,63 @@ jobs:
           thebleep --alias-loader | grep -q thebleep
           thebleep --yes ehco hello | grep -q 'echo hello'
           echo "corrected a command from the built wheel"
+      - name: --version says one line, whatever the shell
+        # Not as bash: TB_SHELL above skips shell detection, and 4.0.3 went out
+        # printing `[WARN] Could not determine Generic Shell version` before
+        # every --version on a machine whose shell it did not recognise. Run
+        # from Python, so the parent is not a shell it knows.
+        shell: bash
+        run: |
+          python - "${{ needs.build.outputs.version }}" <<'PY'
+          import os, re, subprocess, sys
+          env = dict(os.environ)
+          env.pop('TB_SHELL', None)
+          said = subprocess.run(['thebleep', '--version'], env=env,
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                universal_newlines=True).stdout.strip()
+          print(said)
+          lines = said.splitlines()
+          if len(lines) != 1 or not re.match(
+                  r'The Bleep %s using ' % re.escape(sys.argv[1]), lines[0]):
+              sys.exit('--version printed more, or other, than its one line')
+          PY
+
+  tests:
+    # Tests does not run on tags. It runs on the master push that went out with
+    # the tag, on the same commit, and until now PyPI published without waiting
+    # for it: twice a release commit went out red on Windows. This waits for
+    # that run and stops the publish unless every job in it passed.
+    name: The Tests run on this commit passed
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - name: Wait for Tests on ${{ github.sha }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in $(seq 1 90); do
+            run=$(gh run list -R "$GITHUB_REPOSITORY" -w Tests \
+                    --commit "$GITHUB_SHA" -L 1 \
+                    --json databaseId,status,conclusion \
+                    --jq '.[0] | "\(.databaseId) \(.status) \(.conclusion)"')
+            echo "attempt $attempt: ${run:-no Tests run yet}"
+            case "$run" in
+              *" completed success") exit 0 ;;
+              *" completed "*) echo "Tests did not pass: $run" >&2; exit 1 ;;
+            esac
+            if [ -z "$run" ] && [ "$attempt" -ge 10 ]; then
+              echo "no Tests run for $GITHUB_SHA: push master with the tag" >&2
+              exit 1
+            fi
+            sleep 30
+          done
+          echo "Tests did not finish in 45 minutes" >&2
+          exit 1
 
   publish:
     name: Publish
-    needs: [build, install]
+    needs: [build, install, tests]
     runs-on: ubuntu-latest
     # A named environment so that publishing can be gated on a review, and so
     # that the trusted-publishing configuration on each index can name it. The

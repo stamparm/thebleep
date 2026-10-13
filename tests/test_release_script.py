@@ -295,3 +295,103 @@ class TestTheChangelogMustHaveANextSection(object):
         release.main(['release.py', '4.0.1'])
         assert '## 4.0.1 — {}'.format(
             datetime.date.today().isoformat()) in a_tree.read('CHANGELOG.md')
+
+
+class TestTheGuardsThemselves(object):
+    """The guards the flow tests stub out, run for real against fakes."""
+
+    @pytest.fixture
+    def git(self, release, monkeypatch):
+        answers = {('status', '--porcelain'): '',
+                   ('rev-parse', '--abbrev-ref', 'HEAD'): 'master',
+                   ('rev-parse', 'HEAD'): 'a' * 40,
+                   ('rev-parse', 'origin/master'): 'a' * 40,
+                   ('tag', '--list', '4.0.1'): ''}
+        ran = []
+        monkeypatch.setattr(release, 'output',
+                            lambda *command: answers[command[1:]])
+        monkeypatch.setattr(release, 'run',
+                            lambda *command, **kwargs: ran.append(command))
+        return answers, ran
+
+    def test_a_clean_master_level_with_origin_passes(self, release, git):
+        answers, ran = git
+        release.check_working_tree()
+        assert ('git', 'fetch', '--quiet', 'origin', 'master') in ran
+
+    @pytest.mark.parametrize('key, value, said', [
+        (('status', '--porcelain'), ' M README.md', 'working tree has changes'),
+        (('rev-parse', '--abbrev-ref', 'HEAD'), 'feature', 'not master'),
+        (('rev-parse', 'origin/master'), 'b' * 40, 'not origin/master'),
+    ])
+    def test_each_way_the_tree_is_not_the_one_to_release(
+            self, release, git, key, value, said):
+        answers, _ = git
+        answers[key] = value
+        with pytest.raises(SystemExit) as raised:
+            release.check_working_tree()
+        assert said in str(raised.value)
+
+    def test_a_tag_that_exists_stops_it(self, release, git):
+        answers, _ = git
+        release.check_tag_is_free('4.0.1')
+        answers[('tag', '--list', '4.0.1')] = '4.0.1'
+        with pytest.raises(SystemExit):
+            release.check_tag_is_free('4.0.1')
+
+    @pytest.mark.parametrize('reported, good', [
+        ('The Bleep 4.0.1 using Python 3.12.3 and Bash 5.2\n', True),
+        # 4.0.3 shipped this: the version was in there, so it passed.
+        ('[WARN] Could not determine Generic Shell version\n'
+         'The Bleep 4.0.1 using Python 3.12.3 and Generic Shell\n', False),
+        ('The Bleep 4.0.10 using Python 3.12.3\n', False),
+        ('', False),
+    ])
+    def test_version_output_is_one_line_and_only_that(self, release,
+                                                      reported, good):
+        if good:
+            release.check_one_line_version(reported, '4.0.1')
+        else:
+            with pytest.raises(SystemExit):
+                release.check_one_line_version(reported, '4.0.1')
+
+    def test_the_artifacts_are_read_not_trusted(self, release, tmpdir,
+                                                monkeypatch):
+        import zipfile
+
+        monkeypatch.setattr(release, 'HERE', str(tmpdir))
+        dist = tmpdir.mkdir('dist')
+        with pytest.raises(SystemExit) as raised:
+            release.check_artifacts('4.0.1')
+        assert 'was not built' in str(raised.value)
+
+        dist.join('thebleep-4.0.1.tar.gz').write('')
+
+        def wheel(metadata, entry_points, names=()):
+            path = str(dist.join('thebleep-4.0.1-py3-none-any.whl'))
+            with zipfile.ZipFile(path, 'w') as archive:
+                archive.writestr('thebleep-4.0.1.dist-info/METADATA', metadata)
+                archive.writestr('thebleep-4.0.1.dist-info/entry_points.txt',
+                                 entry_points)
+                for name in names:
+                    archive.writestr(name, '')
+
+        good_metadata = ('Version: 4.0.1\n'
+                         'Project-URL: https://github.com/stamparm/thebleep\n')
+        good_points = ('thebleep = thebleep.entrypoints.main:main\n'
+                       'bleep = thebleep.entrypoints.not_configured:main\n')
+        wheel(good_metadata, good_points, ['thebleep/rules/git_add.py'])
+        release.check_artifacts('4.0.1')
+
+        for metadata, points, names, said in [
+                ('Version: 4.0.0\n', good_points,
+                 ['thebleep/rules/git_add.py'], 'does not say version'),
+                (good_metadata, '', ['thebleep/rules/git_add.py'],
+                 'missing the entry point'),
+                (good_metadata, good_points,
+                 ['thebleep/rules/git_add.py', 'tests/x.py'], 'contains tests/'),
+                (good_metadata, good_points, [], 'no rules in it')]:
+            wheel(metadata, points, names)
+            with pytest.raises(SystemExit) as raised:
+                release.check_artifacts('4.0.1')
+            assert said in str(raised.value)

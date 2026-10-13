@@ -1,6 +1,7 @@
 flake8
 pytest
 pytest-mock
+pytest-xdist
 wheel
 build
 setuptools>=61

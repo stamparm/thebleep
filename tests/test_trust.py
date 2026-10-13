@@ -128,3 +128,14 @@ def test_a_correction_the_repository_ships_is_never_run_unasked(settings):
         Command('gti status', None))
     assert not verdict
     assert 'came with the repository' in verdict.reason
+
+
+@pytest.mark.parametrize('score, allowed', [(0.9, True), (0.8999, False)])
+def test_the_threshold_is_the_threshold(settings, score, allowed):
+    """At the number it runs; a hair under, it asks."""
+    settings.auto_run_confidence = 0.9
+    verdict = trust.decide(
+        CorrectedCommand('git status', None, 100, rule=rule(),
+                         confidence=score),
+        Command('git satus', None))
+    assert bool(verdict) is allowed

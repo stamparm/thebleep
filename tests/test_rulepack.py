@@ -127,6 +127,22 @@ class TestPack(object):
         module = rulepack.load_module('made_up_rule', str(path), second['code'])
         assert module.match(Command('anything', '')) is False
 
+    def test_a_same_size_edit_is_noticed_by_its_time(self, cache_home, tmpdir):
+        """`True` to `Fals`, one byte for one byte: only the time moved."""
+        rule = tmpdir.join('made_up_rule.py')
+        rule.write('def match(command):\n    return 1\n')
+        os.utime(str(rule), (1000000, 1000000))
+        path = Path(str(rule))
+
+        first = rulepack.entries_for([path])[str(path)]
+        rule.write('def match(command):\n    return 0\n')
+        os.utime(str(rule), (2000000, 2000000))
+        second = rulepack.entries_for([path])[str(path)]
+
+        module = rulepack.load_module('made_up_rule', str(path), second['code'])
+        assert first['code'] != second['code']
+        assert module.match(Command('anything', '')) == 0
+
     def test_corrupt_pack_is_ignored(self, cache_home, rule_paths):
         rulepack.entries_for(rule_paths)
         with rulepack._cache_path().open('wb') as handle:

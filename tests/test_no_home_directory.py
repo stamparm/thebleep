@@ -32,6 +32,9 @@ from thebleep.types import Command
 def nowhere_to_call_home(monkeypatch, tmpdir):
     """No home directory, and a working directory we can inspect afterwards."""
     monkeypatch.setattr('os.path.expanduser', lambda path: path)
+    # The fallback with no home is `<tmp>/thebleep-cache-<user>`, a name every
+    # run on the machine shares; this one gets a temporary directory of its own.
+    monkeypatch.setattr(tempfile, 'tempdir', str(tmpdir.mkdir('tmp')))
     monkeypatch.chdir(tmpdir)
     for variable in ('HOME', 'USERPROFILE', 'HOMEDRIVE', 'HOMEPATH',
                      'XDG_CONFIG_HOME', 'XDG_CACHE_HOME'):

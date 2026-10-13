@@ -249,6 +249,16 @@ def check_working_tree():
     branch = output('git', 'rev-parse', '--abbrev-ref', 'HEAD')
     if branch != 'master':
         sys.exit('release.py: on {}, not master'.format(branch))
+    # The compatibility workflow commits to master by itself. Released from
+    # behind it, the push is refused, and the pull that follows rebases the
+    # release commit onto README changes none of these gates ever saw.
+    run('git', 'fetch', '--quiet', 'origin', 'master')
+    here = output('git', 'rev-parse', 'HEAD')
+    there = output('git', 'rev-parse', 'origin/master')
+    if here != there:
+        sys.exit('release.py: master is not origin/master ({} here, {} there);'
+                 ' pull or push first, so the gates run on what gets pushed'
+                 .format(here[:8], there[:8]))
 
 
 def check_tag_is_free(version):
@@ -299,6 +309,15 @@ def check_artifacts(version):
           .format(len(names)))
 
 
+def check_one_line_version(reported, version):
+    """`--version` says the version, and says nothing else."""
+    lines = reported.strip().splitlines()
+    if len(lines) != 1 or not re.match(
+            r'The Bleep {} using '.format(re.escape(version)), lines[0]):
+        sys.exit('release.py: the installed copy reports {!r}'
+                 .format(reported.strip()))
+
+
 def smoke_test(version):
     """Installs the built wheel somewhere clean and corrects a command."""
     wheel = os.path.join(HERE, 'dist',
@@ -317,12 +336,16 @@ def smoke_test(version):
                            TB_SHELL='bash',
                            XDG_CONFIG_HOME=os.path.join(directory, 'config'),
                            XDG_CACHE_HOME=os.path.join(directory, 'cache'))
-        reported = subprocess.check_output(
-            [binary, '--version'], env=environment,
-            stderr=subprocess.STDOUT).decode('utf-8')
-        if version not in reported:
-            sys.exit('release.py: the installed copy reports {!r}'
-                     .format(reported.strip()))
+        # Twice: as bash, and as whatever a parent that is not a shell makes
+        # of it, which is the path 4.0.3 printed `[WARN] Could not determine
+        # Generic Shell version` on. Both times the whole output is one line --
+        # "the version is in there somewhere" let that warning through.
+        unrecognised = dict(environment)
+        unrecognised.pop('TB_SHELL', None)
+        for env in (environment, unrecognised):
+            check_one_line_version(subprocess.check_output(
+                [binary, '--version'], env=env,
+                stderr=subprocess.STDOUT).decode('utf-8'), version)
 
         alias = subprocess.check_output([binary, '--alias'],
                                         env=environment).decode('utf-8')

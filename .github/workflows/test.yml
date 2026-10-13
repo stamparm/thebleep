@@ -66,7 +66,9 @@ jobs:
       # objects, which is a per-interpreter format, and the structural checks
       # walk the syntax tree, whose node types change between versions.
       - name: Run tests
-        run: pytest -q tests
+        # Across every worker the runner has: Windows was the long pole at a
+        # median of eight minutes in series.
+        run: pytest -q -n auto tests
       - name: The README's numbers match the recorded benchmark run
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == env.PYTHON_LATEST
         run: python bench/chart.py --check
@@ -131,7 +133,7 @@ jobs:
           pip install --no-deps -e .
           pip install "psutil==5.9.0" "pyte==0.8.0"
           pip list
-      - run: pytest -q tests
+      - run: pytest -q -n auto tests
 
   package:
     name: Build, check and install the artifacts
