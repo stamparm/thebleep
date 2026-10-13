@@ -1236,8 +1236,9 @@ it, so install that first: `pkg install python python-psutil`, then
 
 On **Windows**, PowerShell 5.1 and 7 are supported and tested on every push.
 `cmd.exe` is not supported.
-Git Bash, MSYS2 and Cygwin are untested; a POSIX shell on Windows has its own
-`PATH` and paths, and the replay deliberately stands aside there.
+Git Bash has a row in [Where it works](#where-it-works), recorded on a Windows
+runner each month; MSYS2 and Cygwin are untested. A POSIX shell on Windows has
+its own `PATH` and paths, and the replay deliberately stands aside there.
 
 ### Running a clone, with nothing installed
 

@@ -230,8 +230,8 @@
   `packaging/README.md`.
 
 - **Termux and the Windows shells** are in the installation notes: what
-  Termux needs first, that `cmd.exe` is not supported, and that Git Bash,
-  MSYS2 and Cygwin are untested.
+  Termux needs first, that `cmd.exe` is not supported, that Git Bash has a
+  row in the compatibility matrix, and that MSYS2 and Cygwin are untested.
 
 ### Changed
 
