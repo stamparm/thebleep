@@ -228,6 +228,9 @@ jobs:
     # A named environment so that publishing can be gated on a review, and so
     # that the trusted-publishing configuration on each index can name it. The
     # name comes from the event, which is the same thing the steps below key on.
+    # In the repository's settings `pypi` accepts deployments from tags named
+    # `[0-9]*.[0-9]*` and nothing else, so no branch can publish even if a
+    # workflow here were changed to try.
     environment:
       name: ${{ github.event_name == 'workflow_dispatch' && 'testpypi' || 'pypi' }}
       url: ${{ github.event_name == 'workflow_dispatch' && 'https://test.pypi.org/p/thebleep' || 'https://pypi.org/p/thebleep' }}
