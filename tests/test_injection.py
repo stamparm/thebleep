@@ -485,6 +485,23 @@ class TestNamesFromSomewhereElse(object):
         for suggestion in suggestions:
             assert canary(suggestion) == []
 
+    def test_package_name_typo(self, name, payload, canary, mocker):
+        """A package index is a list of names somebody else published."""
+        from thebleep.rules import package_name_typo
+
+        mocker.patch.object(package_name_typo, 'tool_lines',
+                            return_value=[payload])
+        typed = payload[:6] + payload[7:]
+        command = Command(u'apt-get install {}'.format(Bash().quote(typed)),
+                          u'E: Unable to locate package {}\n'.format(typed))
+        if not package_name_typo.match(command):
+            # apt names the package up to its first space.
+            return
+        suggestions = package_name_typo.get_new_command(command)
+        assert suggestions, 'the hostile name never reached a suggestion'
+        for suggestion in suggestions:
+            assert canary(suggestion) == []
+
     def test_yarn_alias(self, name, payload, canary):
         from thebleep.rules import yarn_alias
 

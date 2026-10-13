@@ -35,7 +35,17 @@ def get_new_command(command):
     if not found:
         return []
     pgr = found.group(1)
-    return replace_command(command, pgr, get_pkgfile(pgr))
+    providers = get_pkgfile(pgr)
+    if providers:
+        return replace_command(command, pgr, providers)
+    # No package provides a program by that name, so it is a package name
+    # misspelt -- `pacman -S pyhton` (pacman 7.1.0, archlinux) -- and the sync
+    # databases already list every name there is.
+    from thebleep import matching
+    from thebleep.utils import tool_lines
+
+    names = [name for name in tool_lines(['pacman', '-Slq']) if name != pgr]
+    return replace_command(command, pgr, matching.rank(pgr, names, limit=3))
 
 
 enabled_by_default, _ = archlinux_env()

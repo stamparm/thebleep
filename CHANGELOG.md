@@ -64,6 +64,15 @@
 - **`git_remote_typo`** -- `git push orign main` and `git pull origin mian`,
   against `git remote` and the remote's fetched branches.
 
+- **`package_name_typo`** -- `apt install pyhton3`, `dnf install pyhton3`:
+  ranked against the package manager's own index, read locally. pacman's
+  `target not found` falls back to the sync databases when no package
+  provides a program of that name.
+
+- **A mistyped alias is not what gets corrected.** fish hands over the
+  previous command itself, so `belep` then `bleep` corrected `belep` (to
+  `beep`); the command before the slip is what was meant.
+
 - **Cobra's unknown flags**: `kubectl get pods --namespce x` and `docker run
   --rmm` are read by `option_typo`, which asks the subcommand's own `--help`
   when the output invites it (and `kubectl options`, where kubectl keeps

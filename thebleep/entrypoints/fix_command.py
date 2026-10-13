@@ -10,11 +10,35 @@ from ..ui import select_command
 from ..utils import get_alias, get_all_executables
 
 
+def _like_the_alias(command, alias, executables):
+    """Whether `command` is the alias, or a slip of it, rather than a command
+    to correct: `belep`, `bleeep`."""
+    from difflib import SequenceMatcher
+
+    word = command.split(' ', 1)[0] if command else ''
+    return bool(word) and word not in executables and \
+        SequenceMatcher(a=alias, b=word).ratio() >= const.DIFF_WITH_ALIAS
+
+
 def _get_raw_command(known_args):
     if known_args.force_command:
         return [known_args.force_command]
     elif not os.environ.get('TB_HISTORY'):
-        return known_args.command
+        # fish hands over `$history[1]`, which is `belep` when that was the
+        # alias mistyped a moment ago -- and `belep` came back as `beep`.
+        # What was meant is the command before it, as the bash path below
+        # already worked out.
+        command = known_args.command
+        alias = get_alias()
+        if len(command or ()) == 1 and command[0] != alias \
+                and _like_the_alias(command[0], alias, get_all_executables()):
+            from ..shells import shell
+
+            for line in reversed(shell.get_history()):
+                if line and not _like_the_alias(
+                        line, alias, get_all_executables()):
+                    return [line]
+        return command
     else:
         history = os.environ['TB_HISTORY'].split('\n')[::-1]
         alias = get_alias()

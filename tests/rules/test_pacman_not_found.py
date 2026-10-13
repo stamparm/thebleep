@@ -65,3 +65,14 @@ def test_get_new_command(command, fixed):
 def test_get_new_command_mocked(tool_lines, command, fixed):
     tool_lines.return_value = PKGFILE_OUTPUT_LLC.splitlines()
     assert get_new_command(command) == fixed
+
+
+def test_a_misspelt_package_is_ranked_against_the_sync_databases(mocker):
+    """pacman 7.1.0: `pacman -S pyhton` -> `error: target not found: pyhton`;
+    pkgfile knows no program called that, and the answer is a package."""
+    mocker.patch('thebleep.rules.pacman_not_found.get_pkgfile', return_value=[])
+    mocker.patch('thebleep.utils.tool_lines',
+                 return_value=['python', 'python-pip', 'pyside6', 'pyhton'])
+    command = Command('pacman -S pyhton', 'error: target not found: pyhton')
+    assert match(command)
+    assert get_new_command(command)[0] == 'pacman -S python'

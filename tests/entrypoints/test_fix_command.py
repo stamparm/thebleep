@@ -233,3 +233,19 @@ def test_picked_failure_ignores_a_failed_restore(mocker):
 
     with _picked_failure(1) as command:
         assert command.script == 'gti status'
+
+
+def test_a_mistyped_alias_is_not_what_gets_corrected(mocker):
+    """fish hands over `$history[1]`; when that was `belep`, the alias
+    mistyped, `belep` came back as `beep`. The command before it is meant."""
+    mocker.patch('thebleep.entrypoints.fix_command.get_alias',
+                 return_value='bleep')
+    mocker.patch('thebleep.entrypoints.fix_command.get_all_executables',
+                 return_value=['git', 'beep'])
+    mocker.patch('thebleep.shells.shell.get_history',
+                 return_value=['ls', 'git psuh', 'belep'])
+    known_args = Mock(force_command=None, command=['belep'])
+    assert _get_raw_command(known_args) == ['git psuh']
+    # A command that is a program of its own is left alone.
+    assert _get_raw_command(Mock(force_command=None, command=['beep'])) == [
+        'beep']
