@@ -183,7 +183,7 @@ That one is the number to watch:
 | the tool named the fix itself | `git satus` | **22/22** | 6/22 |
 | nothing should be suggested | `zzzzzqqqq` | **11/11** | 3/11 |
 | **all 89 of them** |  | **89/89 (100%)** | 55/89 (62%) |
-| held out: captured afterwards, never tuned against | `git push orign main` | **88/121 (73%)** | 56/121 (46%) |
+| held out: captured afterwards, never tuned against | `git push orign main` | **89/121 (74%)** | 56/121 (46%) |
 <!-- end hit-rate -->
 
 Only the *first* suggestion counts, because that is the one <kbd>enter</kbd>
