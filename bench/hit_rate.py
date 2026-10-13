@@ -154,8 +154,27 @@ def _measure(package='thebleep', held_out=False):
     nowhere = tempfile.mkdtemp(prefix='hit-rate-')
     here = os.getcwd()
 
+    # `not_on_path` looks on the disk for the program, in the directories
+    # installers use -- `/usr/lib/go/bin`, `/opt/*/bin`, `~/.cargo/bin` -- and
+    # the answer then depended on what the machine running this had
+    # installed: `go tset` became `/usr/lib/go/bin/go tset` here. The corpus
+    # machine has the fixed PATH and nothing off it. Rules are executed fresh
+    # rather than imported, so the module is reached as it becomes a rule.
+    # The Fuck has no such rule, and no `from_module` to reach it through.
+    hook = contextlib.nullcontext()
+    if 'from_module' in types.Rule.__dict__:
+        from_module = types.Rule.__dict__['from_module'].__func__
+
+        def nothing_off_path(cls, name, module):
+            if name == 'not_on_path':
+                module._found = lambda word: []
+            return from_module(cls, name, module)
+
+        hook = mock.patch.object(types.Rule, 'from_module',
+                                 classmethod(nothing_off_path))
+
     results = []
-    with mock.patch.object(utils.memoize, 'disabled', True), \
+    with hook, mock.patch.object(utils.memoize, 'disabled', True), \
             mock.patch(package + '.utils.get_all_executables',
                        return_value=names), \
             mock.patch(package + '.utils.get_valid_history_without_current',
