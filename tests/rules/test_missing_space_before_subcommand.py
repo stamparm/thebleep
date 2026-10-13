@@ -112,9 +112,15 @@ class TestWhatItUsedToSplitThatItShouldNot(object):
         assert get_new_command(command) == result
 
     @pytest.mark.parametrize('script', ['gitstatus', 'ls-la'])
-    def test_the_certain_ones_belong_to_the_other_rule(self, script):
+    def test_the_certain_ones_belong_to_the_other_rule(self, script, mocker):
         """`ls -la` and `git status` are not guesses, so they are answered by
         `missing_space_before_known_subcommand`, which sits in front of the
         spelling correction rather than behind it. Both rules offering the same
-        suggestion would put it in the list twice."""
+        suggestion would put it in the list twice.
+
+        git's answer is given rather than asked: `git --list-cmds` on a busy
+        Windows runner outran the probe's timeout once, and then nothing was
+        certain."""
+        mocker.patch('thebleep.replay._subcommands',
+                     return_value={'status', 'commit', 'push'})
         assert not match(Command(script, 'not found'))
