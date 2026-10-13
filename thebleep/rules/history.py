@@ -11,7 +11,6 @@ already have. A command that exited 0 is not corrected from history at all.
 
 """
 
-from thebleep import risk
 from thebleep.types import CorrectedCommand
 from thebleep.utils import get_close_matches, \
     get_valid_history_without_current
@@ -27,6 +26,10 @@ def _words(script):
 
 
 def _markers(script):
+    # Imported here: this rule runs on every correction, and only one with a
+    # history line one slip away needs the scan.
+    from thebleep import risk
+
     return set(risk.assess(CorrectedCommand(script, None, 0))['factors'])
 
 

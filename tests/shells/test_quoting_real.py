@@ -54,6 +54,10 @@ def test_the_shell_reads_back_exactly_what_was_quoted(
         tmpdir, driver, program, argv, template):
     if not shutil.which(program):
         pytest.skip('{} is not installed'.format(program))
+    if os.name == 'nt' and driver != 'Powershell':
+        # `bash` on a Windows runner is WSL's stub, and the POSIX drivers stand
+        # aside on Windows anyway (`Generic._posix_replay_argv`).
+        pytest.skip('a POSIX shell on Windows is another machine')
     shell = getattr(shells, driver)()
     payloads = PAYLOADS
     if driver == 'Tcsh':
