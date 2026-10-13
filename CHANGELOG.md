@@ -239,6 +239,12 @@
   The README's ambient line is written into the startup file rather than
   `eval`'d, which started Python at every shell start.
 
+- **bash and fish can ask the warm server too.** zsh was the only shell
+  with a socket client, so the `--ambient` check started Python on every
+  unknown command elsewhere. bash and fish now ask through `socat` or `nc -U`
+  when one is installed -- 8 ms against 41 -- and start Python as before when
+  neither is.
+
 - **`--help` is grouped** -- correcting, setting it up, learning and
   history, and what editors, agents and scripts use -- instead of forty flags
   in one list. `--yeah` and `--hard` still work and are no longer listed, and

@@ -239,7 +239,7 @@ bind \\e\\e __thebleep_inline
         else is `commandline -f execute`, which is what return did before.
 
         """
-        return '''
+        return self._warm_client() + '''
 function __thebleep_ambient_execute
     set -l buffer (commandline | string collect)
     set -l first (string split -m1 ' ' -- (string trim -l -- "$buffer"))[1]
@@ -248,7 +248,7 @@ function __thebleep_ambient_execute
         if test (string length -- "$shell_aliases") -gt {limit}
             set shell_aliases
         end
-        set -l fixed (env TB_SHELL=fish TB_SHELL_ALIASES="$shell_aliases" {command} --inline --command "$buffer" 2>/dev/null | string collect)
+        set -l fixed (__thebleep_fixed "$buffer" "$shell_aliases" | string collect)
         if test -n "$fixed"; and test "$fixed" != "$buffer"
             printf '\\nbleep: %s is not a command; return runs `%s`\\n' "$first" "$fixed" >&2
             commandline -r -- $fixed
@@ -264,7 +264,64 @@ if bind -M insert >/dev/null 2>&1
     bind -M insert \\r __thebleep_ambient_execute
     bind -M insert \\n __thebleep_ambient_execute
 end
-'''.format(command=self._invocation(), limit=TRANSPORT_LIMIT)
+'''.format(limit=TRANSPORT_LIMIT)
+
+    def _warm_client(self):
+        """`__thebleep_fixed LINE ALIASES` prints the correction, or fails.
+
+        bash's client, in fish: with `warm_server` on, the socket is asked
+        through `socat` or `nc -U` before Python is started, and a socket that
+        is not there yet starts the server for next time.
+
+        """
+        direct = '''
+    set -l fixed (env TB_SHELL=fish TB_SHELL_ALIASES="$argv[2]" COMMAND --inline --command "$argv[1]" 2>/dev/null | string collect)
+    if test -n "$fixed"
+        printf '%s' $fixed
+        return 0
+    end
+    return 1
+end
+'''.replace('COMMAND', self._invocation())
+        if not settings.warm_server:
+            return '\nfunction __thebleep_fixed' + direct
+
+        from ..serve import socket_path
+
+        return (r'''
+function __thebleep_json
+    set -l lines (string split \n -- $argv[1])
+    set lines (string replace -a '\\' '\\\\' -- $lines)
+    set lines (string replace -a '"' '\\"' -- $lines)
+    set lines (string replace -a \t '\\t' -- $lines)
+    set lines (string replace -a \r '\\r' -- $lines)
+    string join '\\n' -- $lines
+end
+function __thebleep_fixed
+    set -l sock SOCK
+    if test -S $sock
+        set -l script (__thebleep_json $argv[1])
+        set -l aliases (__thebleep_json $argv[2])
+        set -l cwd (__thebleep_json $PWD)
+        set -l tb_path (__thebleep_json (string join : -- $PATH))
+        set -l question "{\"script\": \"$script\", \"aliases\": \"$aliases\", \"cwd\": \"$cwd\", \"path\": \"$tb_path\"}"
+        set -l answer
+        if command -q socat
+            set answer (printf '%s\n' "$question" | socat - "UNIX-CONNECT:$sock" 2>/dev/null)
+        else if command -q nc
+            set answer (printf '%s\n' "$question" | nc -U "$sock" 2>/dev/null)
+        end
+        if test "$answer[1]" = ok; and set -q answer[2]
+            string join \n -- $answer[2..-1]
+            return 0
+        else if test "$answer[1]" = none
+            return 1
+        end
+    else
+        env TB_SHELL=fish COMMAND --serve </dev/null >/dev/null 2>&1 &
+        disown 2>/dev/null
+    end''' + direct).replace('SOCK', self.quote(socket_path('fish'))).replace(
+            'COMMAND', self._invocation())
 
     def _edit_line(self):
         """`commandline -r` writes fish's own line editor.

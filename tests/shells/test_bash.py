@@ -175,7 +175,8 @@ class TestAmbient(object):
     def test_the_handler_hands_the_fix_to_the_next_prompt(self, shell):
         binding = shell.ambient_binding()
         assert 'command_not_found_handle()' in binding
-        assert '--inline --command "$*"' in binding
+        assert '__thebleep_fixed "$*"' in binding
+        assert '--inline --command "$1"' in binding
         # Through a private file in the cache directory, keyed by the parent
         # shell's pid, and read back by a PROMPT_COMMAND hook into readline.
         assert "printf '%s/ambient-%s'" in binding
@@ -210,3 +211,18 @@ class TestInstantModeMarks(object):
             in alias
         # And the mark in PS1 stays, for a recording without marks.
         assert 'export PS1="' + const.USER_COMMAND_MARK in alias
+
+
+def test_the_ambient_check_asks_the_warm_server_through_socat_or_nc(settings):
+    """bash has no socket client of its own; `socat` or `nc -U` is one, each
+    looked for with `command -v` so a missing one does not re-enter the
+    handler that is asking."""
+    from thebleep.shells.bash import Bash
+
+    settings.warm_server = False
+    assert 'socat' not in Bash().ambient_binding()
+    settings.warm_server = True
+    binding = Bash().ambient_binding()
+    assert 'command -v socat' in binding and 'command -v nc' in binding
+    assert 'UNIX-CONNECT:$sock' in binding and 'nc -U "$sock"' in binding
+    assert '"path\\": \\"$tb_path\\"' in binding

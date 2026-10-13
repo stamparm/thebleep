@@ -16,10 +16,11 @@ runs nothing, reads no output, keeps no state between questions beyond the
 loaded rules, and answers only the shell it was started for, because a shell's
 aliases and quoting are its own.
 
-Only zsh has a socket client of its own (`zsh/net/socket`), so only zsh's
-bindings use this; the others start Python as before. It is off by default:
-`warm_server = True` makes the zsh bindings try the socket, and start the
-server in the background when it is not there yet.
+zsh asks through a socket client of its own (`zsh/net/socket`); bash's and
+fish's `--ambient` bindings through `socat`, or a netcat that speaks `-U`,
+when one is installed, and start Python as before when neither is. It is off
+by default: `warm_server = True` makes the bindings try the socket, and start
+the server in the background when it is not there yet.
 
 """
 

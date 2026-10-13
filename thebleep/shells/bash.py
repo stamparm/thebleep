@@ -90,6 +90,63 @@ if [ "${{BASH_VERSINFO[0]:-0}}" -ge 4 ]; then
 fi
 '''.format(command=self._invocation(), fit_transport=fit_transport())
 
+    def _warm_client(self):
+        """`__thebleep_fixed LINE`: the correction in `REPLY`, or status 1.
+
+        With `warm_server` on, the server's socket is asked first, through
+        `socat` or a netcat that speaks `-U`, whichever is installed -- bash
+        has no socket client of its own, which is why only zsh used the
+        server, and starting Python is most of what an ambient check costs.
+        Each is looked for with `command -v` first: inside
+        `command_not_found_handle`, running a missing `socat` would be one
+        more trip through the handler. A socket that is not there yet starts
+        the server for next time, and this time Python answers as before.
+
+        """
+        direct = '''
+        local fixed
+        fixed=$(TB_SHELL=bash TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" COMMAND --inline --command "$1" 2>/dev/null)
+        if [ "$?" -eq 0 ] && [ -n "$fixed" ]; then
+            REPLY=$fixed
+            return 0
+        fi
+        return 1'''.replace('COMMAND', self._invocation())
+        if not settings.warm_server:
+            return '    __thebleep_fixed() {' + direct + '\n    }'
+
+        from ..serve import socket_path
+
+        return (r'''    __thebleep_json() {
+        local s=$1
+        s=${s//\\/\\\\}
+        s=${s//\"/\\\"}
+        s=${s//$'\n'/\\n}
+        s=${s//$'\r'/\\r}
+        s=${s//$'\t'/\\t}
+        REPLY=$s
+    }
+    __thebleep_fixed() {
+        local sock=SOCK question answer script aliases cwd tb_path
+        if [ -S "$sock" ]; then
+            __thebleep_json "$1"; script=$REPLY
+            __thebleep_json "$TB_SHELL_ALIASES"; aliases=$REPLY
+            __thebleep_json "$PWD"; cwd=$REPLY
+            __thebleep_json "$PATH"; tb_path=$REPLY
+            question="{\"script\": \"$script\", \"aliases\": \"$aliases\", \"cwd\": \"$cwd\", \"path\": \"$tb_path\"}"
+            if command -v socat >/dev/null 2>&1; then
+                answer=$(printf '%s\n' "$question" | socat - "UNIX-CONNECT:$sock" 2>/dev/null)
+            elif command -v nc >/dev/null 2>&1; then
+                answer=$(printf '%s\n' "$question" | nc -U "$sock" 2>/dev/null)
+            fi
+            case "${answer%%$'\n'*}" in
+                ok) REPLY=${answer#*$'\n'}; [ -n "$REPLY" ] && return 0 ;;
+                none) return 1 ;;
+            esac
+        else
+            (TB_SHELL=bash COMMAND --serve </dev/null >/dev/null 2>&1 &)
+        fi''' + direct + '\n    }').replace('SOCK', self.quote(socket_path('bash'))).replace(
+            'COMMAND', self._invocation())
+
     def ambient_binding(self):
         """Correct a misspelled program without `bleep` being typed.
 
@@ -108,6 +165,7 @@ fi
         """
         return '''
 if [ "${{BASH_VERSINFO[0]:-0}}" -ge 4 ]; then
+{client}
     __thebleep_ambient_file() {{ printf '%s/ambient-%s' {cache} "$$"; }}
     command_not_found_handle() {{
         local fixed file TB_SHELL_ALIASES TB_HISTORY
@@ -115,8 +173,8 @@ if [ "${{BASH_VERSINFO[0]:-0}}" -ge 4 ]; then
         TB_SHELL_ALIASES=$(alias)
         TB_HISTORY=
         {fit_transport}
-        fixed=$(TB_SHELL=bash TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" {command} --inline --command "$*" 2>/dev/null)
-        if [ "$?" -eq 0 ] && [ -n "$fixed" ]; then
+        __thebleep_fixed "$*" && fixed=$REPLY
+        if [ -n "$fixed" ]; then
             file=$(__thebleep_ambient_file)
             mkdir -p -m 700 -- "${{file%/*}}" 2>/dev/null
             (umask 077; printf '%s' "$fixed" > "$file")
@@ -140,7 +198,7 @@ if [ "${{BASH_VERSINFO[0]:-0}}" -ge 4 ]; then
         PROMPT_COMMAND="__thebleep_ambient${{PROMPT_COMMAND:+;$PROMPT_COMMAND}}"
     fi
 fi
-'''.format(command=self._invocation(), fit_transport=fit_transport(),
+'''.format(fit_transport=fit_transport(), client=self._warm_client(),
            cache=self.quote(self._ambient_directory()),
            history='history -s "$TB_EDIT"; ' if settings.alter_history else '')
 

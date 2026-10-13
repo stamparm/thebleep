@@ -433,12 +433,14 @@ newer.
 
 The check runs on a keystroke, so it is worth making fast. Starting Python
 costs about sixty milliseconds; with `warm_server = True` in your settings,
-zsh's bindings ask a warm `thebleep --serve` process over a private Unix
+the bindings ask a warm `thebleep --serve` process over a private Unix
 socket instead — a few milliseconds — and start that process in the
 background the first time it is not there. It answers only command-only
 corrections for the shell it was started for, runs nothing, keeps nothing,
 and leaves after half an hour without a question. zsh has a socket client of
-its own (`zsh/net/socket`); bash and fish start Python as before.
+its own (`zsh/net/socket`); bash and fish use `socat`, or `nc -U`, when one
+is installed — 8 ms against 41 for starting Python, measured in a container
+— and start Python as before when neither is.
 
 The check is deliberately narrow: only the first word, only when the shell
 itself has never heard of it, and never for a word with a slash, a quote, a
@@ -1910,7 +1912,7 @@ Several *The Bleep* parameters can be changed in the file `$XDG_CONFIG_HOME/theb
 * `why_command` — a command of your own to ask when `--why` has no deterministic diagnosis, like `'ollama run llama3'`, by default `None` (off); see [Asking something of your own](#asking-something-of-your-own);
 * `why_timeout` — how many seconds `why_command` (and `suggest_command`) may take, by default `30`;
 * `suggest_command` — a command of your own to ask for a correction when no rule has one, by default `None` (off); see [Asking something of your own](#asking-something-of-your-own);
-* `warm_server` — let zsh's <kbd>Esc</kbd> <kbd>Esc</kbd> and `--ambient` bindings ask a warm `thebleep --serve` process over a private socket, starting it when needed, by default `False`; see [Without typing bleep](#without-typing-bleep);
+* `warm_server` — let zsh's <kbd>Esc</kbd> <kbd>Esc</kbd> and the bash, zsh and fish `--ambient` bindings ask a warm `thebleep --serve` process over a private socket, starting it when needed, by default `False`; see [Without typing bleep](#without-typing-bleep);
 * `env` — environment variables to set for your previous command when it is run again to read its output, by default `{'LC_ALL': 'C', 'LANG': 'C'}`, which is there so that rules can look for English error messages. Git (and `hub`) also get `GIT_TRACE=1`, so that `git st` can be resolved to whatever alias it stands for; nothing else does.
 
 An example of `settings.py`:

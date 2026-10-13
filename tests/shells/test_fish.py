@@ -241,7 +241,8 @@ class TestAmbient(object):
     def test_only_an_unknown_first_word_asks(self, shell):
         binding = shell.ambient_binding()
         assert 'not type -q -- "$first"' in binding
-        assert '--inline --command "$buffer"' in binding
+        assert '__thebleep_fixed "$buffer"' in binding
+        assert '--inline --command "$argv[1]"' in binding
         assert 'commandline -r -- $fixed' in binding
 
     def test_the_word_test_is_one_fish_string(self, shell):
@@ -266,3 +267,14 @@ class TestInstantModeMarks(object):
         assert "printf '\\e]133;C\\a'" in alias
         assert "printf '\\e]133;D;%s\\a' $status" in alias
         assert '--on-event fish_prompt' in alias
+
+
+def test_the_ambient_check_asks_the_warm_server_through_socat_or_nc(settings):
+    from thebleep.shells.fish import Fish
+
+    settings.warm_server = False
+    assert 'socat' not in Fish().ambient_binding()
+    settings.warm_server = True
+    binding = Fish().ambient_binding()
+    assert 'command -q socat' in binding and 'command -q nc' in binding
+    assert '__thebleep_fixed "$buffer" "$shell_aliases"' in binding
