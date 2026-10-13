@@ -934,6 +934,19 @@ is bundled or recommended, nothing is sent anywhere you did not name, and
 The structured API, `--json` and the MCP server never call it. Their promise
 is that the answer is deterministic, and this one is not.
 
+The same goes for a correction, when no rule has one:
+
+```python
+suggest_command = 'llm -s "Reply with only the corrected shell command."'
+```
+
+It is asked under the same contract -- the command, its status, its output on
+standard input -- and the first line it prints that is not a code fence is
+offered as a single row, saying where it came from. It is never run without
+the prompt: it is not consulted at all under `--yes` or with
+`require_confirmation = False`, has no confidence for `auto_run_confidence`
+to accept, and the API, MCP and agent hooks never call it.
+
 ##### [Back to Contents](#contents)
 
 ## Under a coding agent
@@ -1886,7 +1899,8 @@ Several *The Bleep* parameters can be changed in the file `$XDG_CONFIG_HOME/theb
 * `explain` — say which rule made each suggestion and what it matched, by default `False`; `--explain` does it for one run, and <kbd>?</kbd> does it at the prompt; see [Why am I being told this](#why-am-i-being-told-this);
 * `auto_run_confidence` — run a correction without asking when its confidence is at least this share of one and nothing risky was found in it, by default `None` (off); see [Running the correction without asking](#running-the-correction-without-asking);
 * `why_command` — a command of your own to ask when `--why` has no deterministic diagnosis, like `'ollama run llama3'`, by default `None` (off); see [Asking something of your own](#asking-something-of-your-own);
-* `why_timeout` — how many seconds `why_command` may take, by default `30`;
+* `why_timeout` — how many seconds `why_command` (and `suggest_command`) may take, by default `30`;
+* `suggest_command` — a command of your own to ask for a correction when no rule has one, by default `None` (off); see [Asking something of your own](#asking-something-of-your-own);
 * `warm_server` — let zsh's <kbd>Esc</kbd> <kbd>Esc</kbd> and `--ambient` bindings ask a warm `thebleep --serve` process over a private socket, starting it when needed, by default `False`; see [Without typing bleep](#without-typing-bleep);
 * `env` — environment variables to set for your previous command when it is run again to read its output, by default `{'LC_ALL': 'C', 'LANG': 'C'}`, which is there so that rules can look for English error messages. Git (and `hub`) also get `GIT_TRACE=1`, so that `git st` can be resolved to whatever alias it stands for; nothing else does.
 
@@ -1912,6 +1926,7 @@ explain = False
 auto_run_confidence = None
 why_command = None
 why_timeout = 30
+suggest_command = None
 warm_server = False
 env = {'LC_ALL': 'C', 'LANG': 'C'}
 ```
@@ -1940,6 +1955,7 @@ rule with lower `priority` will be matched first;
 * `THEBLEEP_AUTO_RUN_CONFIDENCE` — run a correction without asking from this confidence up, like `0.9` or `90%`; `off` by default.
 * `THEBLEEP_WHY_COMMAND` — a command to ask when `--why` has no deterministic diagnosis; off by default.
 * `THEBLEEP_WHY_TIMEOUT` — how many seconds that command may take, like `60`.
+* `THEBLEEP_SUGGEST_COMMAND` — a command to ask for a correction when no rule has one, like `'llm -s "Reply with only the corrected shell command."'`.
 * `THEBLEEP_WARM_SERVER` — let zsh's bindings ask a warm `thebleep --serve` process, `true/false`.
 
 For example:

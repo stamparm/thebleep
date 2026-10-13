@@ -51,7 +51,43 @@ def ask(script, output, exit_status=None, timeout=None):
     :rtype: str | None
 
     """
-    command = configured()
+    return _run(configured(), script, output, exit_status, timeout)
+
+
+def suggester():
+    """The user's `suggest_command`, or None."""
+    value = settings.suggest_command
+    if not isinstance(value, str) or not value.strip():
+        return None
+    return value.strip()
+
+
+def suggest(script, output, exit_status=None, timeout=None):
+    """A command from `suggest_command` when no rule had one, or None.
+
+    The same contract as `why_command`, asked for a command instead of an
+    explanation: the first line it prints that is not a code fence, with any
+    backticks round it taken off. It is offered as one row saying where it
+    came from, is never run without the prompt (it has no confidence to
+    pass `auto_run_confidence` with), and the API, the MCP server and the
+    agent hooks never call it.
+
+    """
+    answer = _run(suggester(), script, output, exit_status, timeout)
+    if answer is None:
+        return None
+    for line in answer.splitlines():
+        line = line.strip()
+        if not line or line.startswith('```'):
+            continue
+        line = line.strip('`').strip()
+        if line.startswith('$ '):
+            line = line[2:].strip()
+        return line if line and line != script.strip() else None
+    return None
+
+
+def _run(command, script, output, exit_status=None, timeout=None):
     if command is None:
         return None
     if timeout is None:

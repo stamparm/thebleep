@@ -158,6 +158,33 @@ def _ask_the_explainer(command):
     print(answer)
 
 
+def _or_the_suggester(corrected_commands, command):
+    """The rules' corrections, or -- when there are none and the user has
+    named one -- what `suggest_command` offers, as one row saying so."""
+    from itertools import chain
+
+    corrected_commands = iter(corrected_commands)
+    first = next(corrected_commands, None)
+    if first is not None:
+        return chain([first], corrected_commands)
+
+    from .. import explainer
+
+    # Not with `--yes` or `require_confirmation = False`: there the first row
+    # runs unasked, and this one is somebody's model talking.
+    if explainer.suggester() is None or not settings.require_confirmation:
+        return iter(())
+    from ..replay import previous_status
+
+    offered = explainer.suggest(command.script, command.output,
+                                previous_status())
+    if offered is None:
+        return iter(())
+    return iter([types.CorrectedCommand(
+        offered, None, 1, evidence=(u'from {}, which is not a deterministic '
+                                    u'source'.format(explainer.suggester()),))])
+
+
 def _fix_command(known_args, command):
     """Correct one already acquired command."""
 
@@ -170,7 +197,8 @@ def _fix_command(known_args, command):
             _ask_the_explainer(command)
         return
 
-    corrected_commands = get_corrected_commands(command)
+    corrected_commands = _or_the_suggester(get_corrected_commands(command),
+                                           command)
     selected_command, action = select_command(corrected_commands, command)
 
     if selected_command is None:

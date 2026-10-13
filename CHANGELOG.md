@@ -69,6 +69,12 @@
   `target not found` falls back to the sync databases when no package
   provides a program of that name.
 
+- **`suggest_command`**, the `why_command` contract for a correction: when
+  no rule has one, a program you name -- a local model, `llm`, a team script
+  -- is asked, and its answer is offered as one row saying where it came
+  from. Never run unasked, never under `--yes`, never through the API, MCP or
+  the agent hooks.
+
 - **A mistyped alias is not what gets corrected.** fish hands over the
   previous command itself, so `belep` then `bleep` corrected `belep` (to
   `beep`); the command before the slip is what was meant.

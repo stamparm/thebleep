@@ -249,3 +249,58 @@ def test_a_mistyped_alias_is_not_what_gets_corrected(mocker):
     # A command that is a program of its own is left alone.
     assert _get_raw_command(Mock(force_command=None, command=['beep'])) == [
         'beep']
+
+
+class TestSuggestCommand(object):
+    """`suggest_command`: asked only when no rule had anything, offered as one
+    row that says where it came from, never run unasked."""
+
+    @pytest.fixture
+    def nothing_matched(self, mocker, settings):
+        settings.debug = False
+        settings.suggest_command = 'my-model'
+        mocker.patch('thebleep.entrypoints.fix_command._get_raw_command',
+                     return_value=['frobnicate --x'])
+        mocker.patch('thebleep.entrypoints.fix_command.types.Command'
+                     '.from_raw_script', return_value=Command(
+                         'frobnicate --x', 'frobnicate: bad flag --x'))
+        mocker.patch('thebleep.entrypoints.fix_command.get_corrected_commands',
+                     return_value=iter([]))
+        return mocker.patch(
+            'thebleep.entrypoints.fix_command.select_command',
+            return_value=(None, None))
+
+    def test_offered_as_one_row_saying_where_from(self, nothing_matched,
+                                                  mocker):
+        # `fix_command` reads the settings afresh, so the setting is the
+        # function that reads it.
+        mocker.patch('thebleep.explainer.suggester', return_value='my-model')
+        mocker.patch('thebleep.explainer._run',
+                     return_value='```\n`frobnicate --y`\n```')
+        with pytest.raises(SystemExit):
+            fix_command(Mock(command=[], force_command=None, repeat=False,
+                             debug=False, why=False, pick=None, yes=False))
+        offered = list(nothing_matched.call_args[0][0])
+        assert [c.script for c in offered] == ['frobnicate --y']
+        assert 'my-model' in offered[0].evidence[0]
+        assert offered[0].confidence is None
+
+    def test_not_asked_when_a_rule_had_an_answer(self, mocker, settings):
+        from thebleep.entrypoints import fix_command as module
+        from thebleep.types import CorrectedCommand
+
+        asked = mocker.patch('thebleep.explainer._run')
+        settings.suggest_command = 'my-model'
+        rows = module._or_the_suggester(
+            iter([CorrectedCommand('ls', None, 1)]), Command('sl', ''))
+        assert [c.script for c in rows] == ['ls']
+        assert not asked.called
+
+    def test_never_with_yes(self, mocker, settings):
+        from thebleep.entrypoints import fix_command as module
+
+        asked = mocker.patch('thebleep.explainer._run', return_value='x')
+        settings.suggest_command = 'my-model'
+        settings.require_confirmation = False
+        assert list(module._or_the_suggester(iter([]), Command('sl', ''))) == []
+        assert not asked.called
