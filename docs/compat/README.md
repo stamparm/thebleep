@@ -14,7 +14,7 @@ by a person running the same script on a machine CI cannot reach.
 
 `debian-13` · bash 5.2.37(1)-release · Python 3.13.5 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 37 ms, median of 5 runs, Python start included.
+Command-only correction in 54 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -38,7 +38,7 @@ Command-only correction in 37 ms, median of 5 runs, Python start included.
 
 `debian-13-elvish` · elvish 0.21.0+Debian-2+b7 · Python 3.13.5 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 42 ms, median of 5 runs, Python start included.
+Command-only correction in 58 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -62,7 +62,7 @@ Command-only correction in 42 ms, median of 5 runs, Python start included.
 
 `debian-13-ksh93` · ksh93 93u+m/1.0.10 · Python 3.13.5 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 49 ms, median of 5 runs, Python start included.
+Command-only correction in 61 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -86,7 +86,7 @@ Command-only correction in 49 ms, median of 5 runs, Python start included.
 
 `debian-13-mksh` · mksh 59 · Python 3.13.5 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 60 ms, median of 5 runs, Python start included.
+Command-only correction in 62 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -110,7 +110,7 @@ Command-only correction in 60 ms, median of 5 runs, Python start included.
 
 `debian-13-xonsh` · xonsh 0.19.4 · Python 3.13.5 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 57 ms, median of 5 runs, Python start included.
+Command-only correction in 51 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -134,7 +134,7 @@ Command-only correction in 57 ms, median of 5 runs, Python start included.
 
 `ubuntu-24.04` · bash 5.2.21(1)-release · Python 3.12.3 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 60 ms, median of 5 runs, Python start included.
+Command-only correction in 46 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -182,7 +182,7 @@ Command-only correction in 45 ms, median of 5 runs, Python start included.
 
 `ubuntu-runner` · bash 5.2.21(1)-release · Python 3.12.15 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 64 ms, median of 5 runs, Python start included.
+Command-only correction in 66 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -206,7 +206,7 @@ Command-only correction in 64 ms, median of 5 runs, Python start included.
 
 `ubuntu-wsl` · bash 5.2.21(1)-release · Python 3.12.3 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 2563 ms, median of 5 runs, Python start included.
+Command-only correction in 2572 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -230,7 +230,7 @@ Command-only correction in 2563 ms, median of 5 runs, Python start included.
 
 `fedora` · bash 5.3.9(1)-release · Python 3.14.8 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 77 ms, median of 5 runs, Python start included.
+Command-only correction in 79 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -278,7 +278,7 @@ Command-only correction in 49 ms, median of 5 runs, Python start included.
 
 `arch` · bash 5.3.20(1)-release · Python 3.14.8 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 81 ms, median of 5 runs, Python start included.
+Command-only correction in 64 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -302,7 +302,7 @@ Command-only correction in 81 ms, median of 5 runs, Python start included.
 
 `opensuse-tumbleweed` · bash 5.3.20(1)-release · Python 3.13.15 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 43 ms, median of 5 runs, Python start included.
+Command-only correction in 58 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -326,7 +326,7 @@ Command-only correction in 43 ms, median of 5 runs, Python start included.
 
 `alpine` · sh sh · Python 3.14.8 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 115 ms, median of 5 runs, Python start included.
+Command-only correction in 71 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -350,7 +350,7 @@ Command-only correction in 115 ms, median of 5 runs, Python start included.
 
 `void` · bash 5.3.0(1)-release · Python 3.14.8 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 94 ms, median of 5 runs, Python start included.
+Command-only correction in 58 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -374,7 +374,7 @@ Command-only correction in 94 ms, median of 5 runs, Python start included.
 
 `freebsd` · sh sh · Python 3.12.14 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 85 ms, median of 5 runs, Python start included.
+Command-only correction in 59 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -398,7 +398,7 @@ Command-only correction in 85 ms, median of 5 runs, Python start included.
 
 `openbsd` · ksh 5.2.14 · Python 3.13.14 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 240 ms, median of 5 runs, Python start included.
+Command-only correction in 200 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -446,7 +446,7 @@ Command-only correction in 140 ms, median of 5 runs, Python start included.
 
 `macos-arm64` · zsh 5.9 · Python 3.12.10 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 61 ms, median of 5 runs, Python start included.
+Command-only correction in 81 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -470,7 +470,7 @@ Command-only correction in 61 ms, median of 5 runs, Python start included.
 
 `macos-intel` · zsh 5.9 · Python 3.12.10 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 377 ms, median of 5 runs, Python start included.
+Command-only correction in 174 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -490,11 +490,35 @@ Command-only correction in 377 ms, median of 5 runs, Python start included.
 | `npm run bulid` | `npm run bulid` | ✅ `npm run build` |
 | `cargo biuld` |  | ➖ cargo has no toolchain here |
 
+## Windows Server 2025 (Git Bash)
+
+`windows-git-bash` · bash 5.3.15(2)-release · Python 3.12.10 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
+
+Command-only correction in 132 ms, median of 5 runs, Python start included.
+
+| slip | typed | answer |
+|---|---|---|
+| `gti status` | `gti status` | ✅ `git status` |
+| `git psuh` | `git psuh` | ✅ `git push` |
+| `sl -la` | `sl -la` | ✅ `ls -la` |
+| `git status --shrot` | `git status --shrot` | ✅ `git status --short` |
+| `apt isntall`, `dnf`, `apk`… | `winget isntall vim` | ✅ `winget install vim` |
+| needs `sudo` |  | ➖ neither sudo nor doas is installed |
+| `mkdir a/b/c` | `mkdir a/b/c` | ✅ `mkdir -p a/b/c` |
+| `./script.sh` without +x |  | ➖ no execute bit on Windows |
+| `cd Documnets` | `cd Documnets` | ✅ `cd Documents` |
+| `rm` a directory | `rm emptydir` | ✅ `rm -r emptydir` |
+| installed, not on PATH | `hellotool` | ✅ `'/c/Users/RUNNER~1/AppData/Local/Temp/thebleep-compat-n7e7us4b/home/.local/bin/hellotool'` |
+| `cd..` | `cd..` | ✅ `cd ..` |
+| `docker pss` | `docker pss` | ✅ `docker ps` |
+| `npm run bulid` | `npm run bulid` | ✅ `npm run build` |
+| `cargo biuld` |  | ➖ cargo has no toolchain here |
+
 ## Windows Server 2025 (PowerShell 5.1)
 
 `windows-powershell` · powershell 5.1.26100.33438 · Python 3.12.10 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 173 ms, median of 5 runs, Python start included.
+Command-only correction in 139 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|
@@ -518,7 +542,7 @@ Command-only correction in 173 ms, median of 5 runs, Python start included.
 
 `windows-pwsh` · pwsh 7.6.6 · Python 3.12.10 · The Bleep 4.0.5 · recorded 2026-10-13 by ci from checkout
 
-Command-only correction in 140 ms, median of 5 runs, Python start included.
+Command-only correction in 101 ms, median of 5 runs, Python start included.
 
 | slip | typed | answer |
 |---|---|---|

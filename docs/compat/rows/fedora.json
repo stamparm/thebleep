@@ -154,7 +154,7 @@
   },
   "kernel": "6.17.0-1022-azure",
   "label": "fedora",
-  "latency_ms": 77,
+  "latency_ms": 79,
   "machine": "x86_64",
   "python": "3.14.8",
   "recorded_at": "2026-10-13",

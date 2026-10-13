@@ -1,0 +1,167 @@
+{
+  "cells": {
+    "cargo": {
+      "reason": "cargo has no toolchain here",
+      "status": "na"
+    },
+    "cd_parent": {
+      "correction": "cd ..",
+      "exit_status": 127,
+      "output": "/usr/bin/bash: line 1: cd..: command not found",
+      "ran": "cd..",
+      "rule": "cd_parent",
+      "status": "ok",
+      "suggestions": [
+        "cd .."
+      ]
+    },
+    "cd_typo": {
+      "correction": "cd Documents",
+      "exit_status": 1,
+      "output": "/usr/bin/bash: line 1: cd: Documnets: No such file or directory",
+      "ran": "cd Documnets",
+      "rule": "cd_correction",
+      "status": "ok",
+      "suggestions": [
+        "cd Documents",
+        "mkdir -p Documnets && cd Documnets"
+      ]
+    },
+    "chmod": {
+      "reason": "no execute bit on Windows",
+      "status": "na"
+    },
+    "docker": {
+      "correction": "docker ps",
+      "exit_status": 1,
+      "output": "docker: unknown command: docker pss\n\nRun 'docker --help' for more information",
+      "ran": "docker pss",
+      "rule": "docker_not_command",
+      "status": "ok",
+      "suggestions": [
+        "docker ps"
+      ]
+    },
+    "git_subcommand": {
+      "correction": "git push",
+      "exit_status": 1,
+      "output": "git: 'psuh' is not a git command. See 'git --help'.\n\nThe most similar command is\n\tpush",
+      "ran": "git psuh",
+      "rule": "git_not_command",
+      "status": "ok",
+      "suggestions": [
+        "git push"
+      ]
+    },
+    "git_typo": {
+      "correction": "git status",
+      "exit_status": 127,
+      "output": "/usr/bin/bash: line 1: gti: command not found",
+      "ran": "gti status",
+      "rule": "no_command",
+      "status": "ok",
+      "suggestions": [
+        "git status"
+      ]
+    },
+    "ls_typo": {
+      "correction": "ls -la",
+      "exit_status": 127,
+      "output": "/usr/bin/bash: line 1: sl: command not found",
+      "ran": "sl -la",
+      "rule": "no_command",
+      "status": "ok",
+      "suggestions": [
+        "ls -la",
+        "sh -la",
+        "sc -la"
+      ]
+    },
+    "mkdir_parents": {
+      "correction": "mkdir -p a/b/c",
+      "exit_status": 1,
+      "output": "mkdir: cannot create directory 'a/b/c': No such file or directory",
+      "ran": "mkdir a/b/c",
+      "rule": "mkdir_p",
+      "status": "ok",
+      "suggestions": [
+        "mkdir -p a/b/c",
+        "mkdir -p a/b && mkdir a/b/c"
+      ]
+    },
+    "not_on_path": {
+      "correction": "'/c/Users/RUNNER~1/AppData/Local/Temp/thebleep-compat-n7e7us4b/home/.local/bin/hellotool'",
+      "exit_status": 127,
+      "output": "/usr/bin/bash: line 1: hellotool: command not found",
+      "ran": "hellotool",
+      "rule": "not_on_path",
+      "status": "ok",
+      "suggestions": [
+        "'/c/Users/RUNNER~1/AppData/Local/Temp/thebleep-compat-n7e7us4b/home/.local/bin/hellotool'",
+        "export PATH='/c/Users/RUNNER~1/AppData/Local/Temp/thebleep-compat-n7e7us4b/home/.local/bin':\"$PATH\" && hellotool"
+      ]
+    },
+    "npm": {
+      "correction": "npm run build",
+      "exit_status": 1,
+      "output": "npm error Missing script: \"bulid\"\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error A complete log of this run can be found in: C:\\npm\\cache\\_logs\\2026-10-13T02_25_30_812Z-debug-0.log",
+      "ran": "npm run bulid",
+      "rule": "npm_missing_script",
+      "status": "ok",
+      "suggestions": [
+        "npm run build"
+      ]
+    },
+    "package_manager": {
+      "correction": "winget install vim",
+      "exit_status": 2,
+      "output": "splay installed packages\r\n  upgrade    Shows and performs available upgrades\r\n  uninstall  Uninstalls the given package\r\n  hash       Helper to hash installer files\r\n  validate   Validates a manifest file\r\n  settings   Open settings or set administrator settings\r\n  features   Shows the status of experimental features\r\n  export     Exports a list of the installed packages\r\n  import     Installs all the packages in a file\r\n  pin        Manage package pins\r\n  configure  Configures the system into a desired state\r\n  download   Downloads the installer from a given package\r\n  repair     Repairs the selected package\r\n  dscv3      DSC v3 resource commands\r\n\r\nFor more details on a specific command, pass it the help argument. [-?]\r\n\r\nThe following options are available:\r\n  -v,--version                Display the version of the tool\r\n  --info                      Display general info of the tool\r\n  -?,--help                   Shows help about the selected command\r\n  --wait                      Prompts the user to press any key before exiting\r\n  --logs,--open-logs          Open the default logs location\r\n  --verbose,--verbose-logs    Enables verbose logging for winget\r\n  --nowarn,--ignore-warnings  Suppresses warning outputs\r\n  --disable-interactivity     Disable interactive prompts\r\n  --proxy                     Set a proxy to use for this execution\r\n  --no-proxy                  Disable the use of proxy for this execution\r\n\r\nMore help can be found at: https://aka.ms/winget-command-help",
+      "ran": "winget isntall vim",
+      "rule": "winget_unknown_command",
+      "status": "ok",
+      "suggestions": [
+        "winget install vim",
+        "winget uninstall vim"
+      ],
+      "tool": "winget"
+    },
+    "permission": {
+      "reason": "neither sudo nor doas is installed",
+      "status": "na"
+    },
+    "rm_dir": {
+      "correction": "rm -r emptydir",
+      "exit_status": 1,
+      "output": "rm: cannot remove 'emptydir': Is a directory",
+      "ran": "rm emptydir",
+      "rule": "rm_dir",
+      "status": "ok",
+      "suggestions": [
+        "rm -r emptydir"
+      ]
+    },
+    "unknown_flag": {
+      "correction": "git status --short",
+      "exit_status": 129,
+      "output": "error: unknown option `shrot'\nusage: git status [<options>] [--] [<pathspec>...]\n\n    -v, --[no-]verbose    be verbose\n    -s, --[no-]short      show status concisely\n    -b, --[no-]branch     show branch information\n    --[no-]show-stash     show stash information\n    --[no-]ahead-behind   compute full ahead/behind values\n    --[no-]porcelain[=<version>]\n                          machine-readable output\n    --[no-]long           show status in long format (default)\n    -z, --[no-]null       terminate entries with NUL\n    -u, --[no-]untracked-files[=<mode>]\n                          show untracked files, optional modes: all, normal, no. (Default: all)\n    --[no-]ignored[=<mode>]\n                          show ignored files, optional modes: traditional, matching, no. (Default: traditional)\n    --[no-]ignore-submodules[=<when>]\n                          ignore changes to submodules, optional when: all, dirty, untracked. (Default: all)\n    --[no-]column[=<style>]\n                          list untracked files in columns\n    --no-renames          do not detect renames\n    --renames             opposite of --no-renames\n    -M, --find-renames[=<n>]\n                          detect renames, optionally set similarity index",
+      "ran": "git status --shrot",
+      "rule": "option_typo",
+      "status": "ok",
+      "suggestions": [
+        "git status --short"
+      ]
+    }
+  },
+  "kernel": "2025Server",
+  "label": "windows-git-bash",
+  "latency_ms": 132,
+  "machine": "AMD64",
+  "python": "3.12.10",
+  "recorded_at": "2026-10-13",
+  "recorded_by": "ci",
+  "schema": 1,
+  "shell": "bash 5.3.15(2)-release",
+  "source": "checkout",
+  "system": "Windows Server 2025",
+  "thebleep": "4.0.5"
+}

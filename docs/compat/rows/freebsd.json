@@ -153,7 +153,7 @@
   },
   "kernel": "14.3-RELEASE",
   "label": "freebsd",
-  "latency_ms": 85,
+  "latency_ms": 59,
   "machine": "amd64",
   "python": "3.12.14",
   "recorded_at": "2026-10-13",
