@@ -75,4 +75,4 @@ def test_the_synonym_comes_first_and_the_spelling_matches_follow():
     got = get_new_command(Command('apk instal vim',
                                   UNKNOWN.replace('isntall', 'instal')))
     assert got[0] == 'apk add vim'
-    assert 'apk info vim' in got
+    assert got[1:] and 'apk info vim' not in got

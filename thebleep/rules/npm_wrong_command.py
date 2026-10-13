@@ -1,6 +1,7 @@
 import re
 from thebleep.specific.npm import npm_available
 from thebleep.utils import (command_word_index, replace_argument, for_app,
+                            quote_words,
                             eager, get_closest, tool_lines)
 from thebleep.specific.sudo import sudo_support
 from thebleep.shells import shell
@@ -93,8 +94,10 @@ def get_new_command(command):
         # `replace_argument` does not quote what it substitutes. A command name
         # needs no quotes and gets none -- `shell.quote` adds them only where
         # they change the meaning -- so this costs nothing and closes the path.
+        # Word by word: npm 11 suggests `run build` for `npm buld`, and that
+        # quoted whole is one word, `npm 'run build'`, which npm cannot run.
         return [replace_argument(command.script, wrong_command,
-                                 shell.quote(suggestion))
+                                 quote_words(suggestion))
                 for suggestion in suggested]
 
     npm_commands = _get_available_commands(command.output)

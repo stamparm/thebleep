@@ -212,3 +212,24 @@ def test_the_operation_is_read_where_it_is_not_the_last_word(mocker):
     assert apt_invalid_operation.match(Command('apt isntall vim', output))
     assert apt_invalid_operation.get_new_command(
         Command('apt isntall vim', output))[0] == 'apt install vim'
+
+
+def test_apt_3_stops_at_the_end_of_the_list():
+    """apt 3.3.3 (debian:testing): the options and the closing prose after
+    the list were read as operations -- `apt frobnicate` got `apt
+    Configuration`."""
+    from thebleep.rules.apt_invalid_operation import _parse_apt_operations
+
+    help_text = '''Most used commands:
+  list - list packages based on package names
+  install - install packages
+  why-not - produce a reason trace for the current state of the package
+
+Common options:
+    -h, --help                 Show this help message
+
+See apt(8) for more information about the available commands.
+Configuration options and syntax is detailed in apt.conf(5).
+'''
+    assert _parse_apt_operations(help_text.split('\n')) == [
+        'list', 'install', 'why-not']

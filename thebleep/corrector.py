@@ -344,9 +344,17 @@ def get_corrected_commands(command):
     # which can deliberately combine independent missing commands. The
     # segment pass adds the app-specific rules that previously could not see
     # anything after the first pipeline member.
-    corrected_commands = chain(
-        learned_commands,
-        _corrections_for_one_command(rules, command),
-        _corrections_in_segments(rules, command))
+    ruled = chain(_corrections_for_one_command(rules, command),
+                  _corrections_in_segments(rules, command))
+    model = command.command_model
+    if model.complete and len(model.segments) > 1:
+        # The segment pass runs after the whole-line pass, and the first
+        # suggestion seen is offered first whatever its priority -- so in a
+        # compound line a segment's answer could never lead: `cd src &&
+        # mandiff` gave `mcdiff` from `no_command` (3000) ahead of `man diff`
+        # (2000). Both passes are read here and put in priority order, which
+        # is the order a single command already gets them in. Stable, so a
+        # tie keeps the order the passes produced.
+        ruled = sorted(ruled, key=lambda corrected: corrected.priority)
 
-    return organize_commands(corrected_commands, command.script)
+    return organize_commands(chain(learned_commands, ruled), command.script)

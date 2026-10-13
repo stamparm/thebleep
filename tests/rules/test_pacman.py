@@ -7,6 +7,22 @@ from thebleep.types import Command
 
 pacman_cmd = getattr(pacman, 'pacman', 'pacman')
 
+
+@pytest.fixture(autouse=True)
+def nothing_installed(mocker):
+    return mocker.patch('thebleep.rules.pacman.which', return_value=None)
+
+
+def test_a_program_that_is_there_is_not_missing(nothing_installed):
+    """archlinux, pacman 7.1: `pacman -S vmi` prints `target not found`, and
+    the answer was to reinstall pacman."""
+    nothing_installed.return_value = '/usr/bin/pacman'
+    with patch('thebleep.rules.pacman.get_pkgfile',
+               return_value=['core/pacman']):
+        assert not match(Command('pacman -S vmi',
+                                 'error: target not found: vmi'))
+
+
 PKGFILE_OUTPUT_SUDO = 'core/sudo 1.8.13-13/usr/bin/sudo'
 PKGFILE_OUTPUT_CONVERT = 'extra/imagemagick 6.9.1.0-1\t/usr/bin/convert'
 

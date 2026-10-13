@@ -14,5 +14,12 @@ def get_new_command(command):
                        command.output)
     if not found or len(parts) <= command_word_index(parts) + 1:
         return []
-    broken = parts[command_word_index(parts) + 1]
+    # The word yarn names, when it names one: `yarn run buld` says `Command
+    # "buld" not found. Did you mean "build"?`, and replacing the word after
+    # `yarn` -- `run` -- gave `yarn build buld` as the first answer.
+    named = re.search(r'Command "([^"]+)" not found', command.output)
+    if named and named.group(1) in parts:
+        broken = named.group(1)
+    else:
+        broken = parts[command_word_index(parts) + 1]
     return replace_argument(command.script, broken, quote_words(found[0]))

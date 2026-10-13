@@ -76,3 +76,31 @@ def test_checkout_with_global_options_can_create_the_branch(mocker):
     command = Command('git -C worktree checkout unknown',
                       did_not_match('unknown'))
     assert get_new_command(command) == ['git -C worktree checkout -b unknown']
+
+
+def test_master_in_a_main_repository_is_main_not_a_new_branch(mocker):
+    mocker.patch('thebleep.rules.git_checkout.get_branches',
+                 return_value=['main', 'feature'])
+    output = "error: pathspec 'master' did not match any file(s) known to git"
+    assert get_new_command(Command('git checkout master', output)) == [
+        'git checkout main']
+
+
+def test_switch_says_invalid_reference(mocker):
+    """git 2.47: `git switch featuer` -> `fatal: invalid reference: featuer`."""
+    mocker.patch('thebleep.rules.git_checkout.get_branches',
+                 return_value=['main', 'feature'])
+    command = Command('git switch featuer', 'fatal: invalid reference: featuer\n')
+    assert match(command)
+    assert get_new_command(command) == ['git switch feature',
+                                        'git switch -c featuer']
+    assert not match(Command('git rebase x', 'fatal: invalid reference: x\n'))
+
+
+def test_without_probes_nothing_is_created(mocker):
+    """`--json` and MCP turn probes off; `-b` at 95% was then the only answer."""
+    from thebleep.utils import tool_probes
+
+    output = "error: pathspec 'mastr' did not match any file(s) known to git"
+    with tool_probes(False):
+        assert get_new_command(Command('git checkout mastr', output)) == []

@@ -107,6 +107,26 @@
   command with one word near-spelt differently, add no `sudo`, deletion or
   `--force`, and follow a command that failed.
 
+- **Guesses from a whole list have to be near.** Rules that enumerate every
+  docker command, every apt or dnf operation, every script in
+  `package.json` passed them through difflib at 0.1, so `docker shell` was
+  `docker save` and `npm run lint` with no such script `npm run test`.
+  Those lists are now held to difflib's 0.6 or `matching`'s edit distance;
+  what the tool itself named is still kept whole. apt 3's `--help` is read to
+  the end of its command list, not past it into `apt Configuration`.
+
+- **Ranking.** `git checkout master` in a `main` repository offered `git
+  checkout -b master` first; it is `git checkout main` now, and with probes
+  off (`--json`, MCP, the agent hooks) nothing offers to create the branch.
+  `git switch` typos (`fatal: invalid reference`) are read at all, by both
+  the checkout and the main/master rules. In a compound line a segment's
+  answer can lead -- `cd src && mandiff` gets `man diff` before `mcdiff`.
+  `cd src && cdk deploy` no longer turns `cd` into `dc`. The `pacman` rule
+  wants the program actually missing, not "not found" anywhere: `pacman -S
+  vmi` offered to reinstall pacman. `npm buld` is `npm run build`, not `npm
+  'run build'`, and `yarn run buld` is `yarn run build`, not `yarn build
+  buld`.
+
 ## 4.0.4 — 2026-09-03
 
 ### Added

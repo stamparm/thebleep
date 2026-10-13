@@ -93,3 +93,11 @@ def test_get_new_command(script, output, result):
     command = Command(script, output)
 
     assert get_new_command(command)[0] == result
+
+
+def test_a_script_nowhere_near_what_was_typed_is_not_offered():
+    """`npm run lint` with no `lint` script was offered `npm run test`, the
+    nearest of whatever `package.json` had, however far."""
+    assert get_new_command(Command('npm run lint', output_npm10('lint'))) == []
+    assert get_new_command(Command('npm run dvelop', output_npm10('dvelop'))) \
+        == ['npm run develop']

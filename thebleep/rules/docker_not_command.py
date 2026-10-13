@@ -95,15 +95,17 @@ def get_new_command(command):
         parts = unknown.group(1).split()
         if parts:
             return replace_command(command, parts[-1],
-                                   get_docker_commands(tuple(parts[:-1])))
+                                   get_docker_commands(tuple(parts[:-1])),
+                                   guessed=True)
 
     not_a_command = NOT_A_COMMAND.search(command.output)
     if not_a_command:
         return replace_command(command, not_a_command.group(1),
-                               get_docker_commands())
+                               get_docker_commands(), guessed=True)
 
     listed = _listed_in_the_output(command)
     if listed:
-        return replace_command(command, command.script_parts[-1], listed)
+        return replace_command(command, command.script_parts[-1], listed,
+                               guessed=True)
 
     return []

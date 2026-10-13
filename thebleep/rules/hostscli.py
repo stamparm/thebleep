@@ -68,4 +68,4 @@ def get_new_command(command):
     if not found:
         return []
 
-    return replace_command(command, found.group(1), COMMANDS)
+    return replace_command(command, found.group(1), COMMANDS, guessed=True)

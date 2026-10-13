@@ -77,7 +77,8 @@ def get_new_command(command):
         # ever moves far enough that the name cannot be read out of it, that is
         # not worth raising over.
         return []
-    return replace_command(command, found[0], _get_operations())
+    return replace_command(command, found[0], _get_operations(),
+                           guessed=True)
 
 
 enabled_by_default = zypper_available

@@ -36,4 +36,5 @@ def get_new_command(command):
     if unknown_command is None:
         return []
     all_commands = _get_all_commands()
-    return replace_command(command, unknown_command, all_commands)
+    return replace_command(command, unknown_command, all_commands,
+                           guessed=True)

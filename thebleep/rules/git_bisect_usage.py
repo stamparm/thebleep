@@ -37,4 +37,4 @@ def match(command):
 def get_new_command(command):
     broken = SUBCOMMAND.search(command.script).group(1)
     usage = USAGE.search(command.output).group(1)
-    return replace_command(command, broken, usage.split('|'))
+    return replace_command(command, broken, usage.split('|'), guessed=True)

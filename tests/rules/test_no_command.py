@@ -488,3 +488,17 @@ class TestSilenceWhenNothingIsAPlausibleSlip:
         command = Command('cargo buld', 'bash: cargo: command not found')
         assert match(command)
         assert get_new_command(command) == []
+
+
+@pytest.mark.usefixtures('no_memoize')
+def test_a_builtin_inside_the_failed_word_is_not_the_failed_word(mocker):
+    """`cd` is a substring of `cdk: command not found` and on nobody's PATH,
+    so `cd src && cdk deploy` came back as `dc src && cdk deploy`."""
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+    mocker.patch('thebleep.rules.no_command.get_all_executables',
+                 return_value=['dc', 'cdb'])
+    command = Command('cd src && cdk deploy', 'bash: cdk: command not found')
+    suggestions = get_new_command(command)
+    assert suggestions
+    assert all(suggestion.startswith('cd src && ')
+               for suggestion in suggestions)

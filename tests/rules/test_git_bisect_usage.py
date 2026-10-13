@@ -22,9 +22,9 @@ def test_not_match(script):
 
 
 @pytest.mark.parametrize('script, new_cmd, ', [
-    ('git bisect goood', ['good', 'old', 'log']),
-    ('git bisect strt', ['start', 'terms', 'reset']),
-    ('git bisect rset', ['reset', 'next', 'start'])])
+    ('git bisect goood', ['good']),
+    ('git bisect strt', ['start']),
+    ('git bisect rset', ['reset'])])
 def test_get_new_command(output, script, new_cmd):
     new_cmd = ['git bisect %s' % cmd for cmd in new_cmd]
     assert get_new_command(Command(script, output)) == new_cmd

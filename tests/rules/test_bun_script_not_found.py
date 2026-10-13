@@ -169,8 +169,9 @@ def test_a_script_name_that_needs_quoting(tmpdir, monkeypatch):
     tmpdir.join('package.json').write(json.dumps(
         {'scripts': {'build; rm -rf ~': 'x'}}))
     monkeypatch.chdir(tmpdir)
-    new = rule.get_new_command(Command('bun run buil', RUN_SCRIPT.replace(
-        'buidl', 'buil')))
+    new = rule.get_new_command(Command("bun run 'build; rm -rf'",
+                                       RUN_SCRIPT.replace(
+                                           'buidl', 'build; rm -rf')))
 
     assert new == ["bun run 'build; rm -rf ~'"]
 

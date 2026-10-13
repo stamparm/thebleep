@@ -949,8 +949,18 @@ def _model_argument_matches(command, broken):
     return matches
 
 
-def replace_command(command, broken, matched):
+def replace_command(command, broken, matched, guessed=False):
     """Helper for *_no_command rules.
+
+    `guessed` for a list the rule enumerated rather than one the tool named:
+    every docker command, every script in `package.json`, every apt
+    operation. Those have to be near what was typed, because the 0.1 used
+    for named lists lets anything through: `docker shell` became `docker
+    save`, `npm run dev` with no such script `npm run test`. Near is either
+    of two things -- difflib's ordinary 0.6, which keeps a prefix (`mvn cle`
+    for `clean`), or `matching`'s edit distance, which keeps a short slip
+    difflib scores low (`docker image la` for `ls`). What the tool itself
+    named is kept whole.
 
     The replacement is quoted. Every caller's `matched` comes from somewhere
     outside: a tool's own output, `package.json`'s scripts, a Gruntfile's tasks,
@@ -975,6 +985,13 @@ def replace_command(command, broken, matched):
     # nothing to say about the order of a tool's *own* suggestions, and changing
     # twenty pinned orderings on a hunch is how unmeasured churn gets in. The
     # first suggestion is the one that matters and it does not differ here.
+    if guessed:
+        from .matching import rank
+
+        matched = list(matched)
+        near = set(rank(broken, matched)).union(
+            get_close_matches(broken, matched, n=len(matched) or 1))
+        matched = [candidate for candidate in matched if candidate in near]
     new_cmds = get_close_matches(broken, matched, cutoff=0.1)
     model_matches = _model_argument_matches(command, broken)
     result = []

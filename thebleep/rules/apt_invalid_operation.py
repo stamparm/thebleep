@@ -27,11 +27,20 @@ def match(command):
 
 @eager
 def _parse_apt_operations(help_text_lines):
+    # The list is `name - description` lines, with blank lines between groups
+    # in apt 1.x, and it ends at the first line that is not one. Reading on to
+    # the end took `Common`, `-h`, `See` and `Configuration` for operations,
+    # and apt 3.3's `apt frobnicate` was offered `apt Configuration`.
     is_commands_list = False
     for line in help_text_lines:
         line = line.strip()
-        if is_commands_list and line:
-            yield line.split()[0]
+        if is_commands_list:
+            if not line:
+                continue
+            entry = re.match(r'(\S+)\s+-\s', line)
+            if not entry:
+                return
+            yield entry.group(1)
         elif line.startswith('Basic commands:') \
                 or line.startswith('Most used commands:'):
             is_commands_list = True
@@ -74,4 +83,5 @@ def get_new_command(command):
     else:
         start = command_word_index(command.script_parts)
         operations = _get_operations(command.script_parts[start])
-        return replace_command(command, invalid_operation, operations)
+        return replace_command(command, invalid_operation, operations,
+                               guessed=True)

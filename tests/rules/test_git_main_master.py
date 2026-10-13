@@ -96,3 +96,15 @@ class TestNotMatching(object):
         command = Command('git checkout release/master-fix',
                           PATHSPEC.format('release/master-fix'))
         assert not match(command)
+
+
+def test_switch_names_the_branch_at_the_end_of_the_line():
+    """git 2.47: `git switch master` -> `fatal: invalid reference: master`."""
+    from thebleep.rules.git_main_master import get_new_command, match
+    from thebleep.types import Command
+
+    command = Command('git switch master', 'fatal: invalid reference: master\n')
+    assert match(command)
+    assert get_new_command(command) == 'git switch main'
+    assert not match(Command('git switch release/master',
+                             'fatal: invalid reference: release/master\n'))

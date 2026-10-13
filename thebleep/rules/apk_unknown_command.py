@@ -65,7 +65,8 @@ def get_new_command(command):
     operations = _get_operations()
     if not operations:
         return []
-    by_spelling = replace_command(command, broken, operations)
+    by_spelling = replace_command(command, broken, operations,
+                                  guessed=True)
     synonym = _through_synonyms(broken, operations)
     if synonym:
         # `add` is nothing like `isntall` by spelling, so it would not be in

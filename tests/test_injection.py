@@ -161,8 +161,11 @@ class TestNamesFromSomewhereElse(object):
             json.dumps({'scripts': {payload: 'true'}}))
         monkeypatch.chdir(str(project))
 
-        output = u'error: Script not found "brnch"\n'
-        command = Command(u'bun run brnch', output)
+        # One slip from the hostile name, so that it is the near match: a
+        # name nowhere near what was typed is not offered at all any more.
+        typed = payload[:6] + payload[7:]
+        output = u'error: Script not found "{}"\n'.format(typed)
+        command = Command(u'bun run {}'.format(Bash().quote(typed)), output)
         if not bun_script_not_found.match(command):
             return
 

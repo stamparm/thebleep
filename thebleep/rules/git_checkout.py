@@ -7,6 +7,9 @@ from thebleep.shells import shell
 
 MISSING = re.compile(r"error: pathspec '([^']*)' "
                      r"did not match any file\(s\) known to git")
+# `git switch featuer`, git 2.23 onwards -- `switch` says it differently, and
+# nothing read it.
+INVALID_REFERENCE = re.compile(r"^fatal: invalid reference: (.+)$", re.MULTILINE)
 
 
 @git_support
@@ -14,6 +17,11 @@ def match(command):
     # The name has to be readable, not just the message. A pathspec containing
     # a quote does not come back out of that regex, and this used to match
     # anyway and leave `get_new_command` raising IndexError.
+    if 'invalid reference: ' in command.output:
+        parts = command.script_parts
+        index = git_subcommand_index(parts)
+        return (parts[index:index + 1] == ['switch']
+                and INVALID_REFERENCE.search(command.output) is not None)
     return ('did not match any file(s) known to git' in command.output
             and "Did you forget to 'git add'?" not in command.output
             and MISSING.search(command.output) is not None)
@@ -31,11 +39,22 @@ def get_branches():
         yield line.strip()
 
 
+# The other name for the default branch: `git checkout master` in a repository
+# that only has `main` wants `main`, not a new branch called `master`.
+COUNTERPART = {'master': 'main', 'main': 'master'}
+
+
 @git_support
 def get_new_command(command):
-    missing_file = MISSING.search(command.output).group(1)
-    closest_branch = utils.get_closest(missing_file, get_branches(),
-                                       fallback_to_first=False)
+    found = MISSING.search(command.output) \
+        or INVALID_REFERENCE.search(command.output)
+    missing_file = found.group(1)
+    branches = list(get_branches())
+    if COUNTERPART.get(missing_file) in branches:
+        closest_branch = COUNTERPART[missing_file]
+    else:
+        closest_branch = utils.get_closest(missing_file, branches,
+                                           fallback_to_first=False)
 
     new_commands = []
 
@@ -46,10 +65,21 @@ def get_new_command(command):
         # `feature;rm -rf ~`, and this went back to the shell to be evaluated.
         new_commands.append(replace_argument(command.script, missing_file,
                                              shell.quote(closest_branch)))
+    if not utils._tool_probe_state().get():
+        # The branches were never asked for: `--json`, MCP and the agent hooks
+        # turn probes off. Then "create it" is not an answer anybody has
+        # grounds for -- `git checkout mastr` came out as `git checkout -b
+        # mastr` at 95%. (An empty list with probes on is a repository with no
+        # commits yet, where creating the branch is exactly right.)
+        return new_commands
+    if COUNTERPART.get(missing_file) in branches:
+        return new_commands
     index = git_subcommand_index(command.script_parts)
-    if (index < len(command.script_parts)
-            and command.script_parts[index] == 'checkout'):
+    subcommand = command.script_parts[index:index + 1]
+    if subcommand == ['checkout']:
         new_commands.append(replace_argument(command.script, 'checkout', 'checkout -b'))
+    elif subcommand == ['switch']:
+        new_commands.append(replace_argument(command.script, 'switch', 'switch -c'))
 
     if not new_commands:
         new_commands.append(shell.and_(

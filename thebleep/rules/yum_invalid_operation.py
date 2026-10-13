@@ -34,4 +34,5 @@ def get_new_command(command):
     if invalid_operation == 'uninstall':
         return [replace_argument(command.script, 'uninstall', 'remove')]
 
-    return replace_command(command, invalid_operation, _get_operations())
+    return replace_command(command, invalid_operation, _get_operations(),
+                           guessed=True)

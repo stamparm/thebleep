@@ -22,6 +22,8 @@ it says it, that the name it was given is not one it knows.
 
 """
 
+import re
+
 from thebleep.specific.git import git_support
 from thebleep.utils import replace_argument
 
@@ -44,15 +46,21 @@ UNKNOWN_NAME = (
     'invalid upstream',
     'does not match any',
     'unknown revision or path not in the working tree',
+    # `git switch master`, which `switch` words its own way.
+    'invalid reference: ',
 )
 
 
 def _swap(output):
-    """Which name to put in place of which, or `None` if neither was named."""
-    if "'master'" in output or ' master ' in output or 'master -' in output:
-        return 'master', 'main'
-    if "'main'" in output or ' main ' in output or 'main -' in output:
-        return 'main', 'master'
+    """Which name to put in place of which, or `None` if neither was named.
+
+    As a whole name, not a substring: `release/master` and `master-fix` are
+    other branches, and `invalid reference: master` ends the line.
+
+    """
+    for broken, fixed in (('master', 'main'), ('main', 'master')):
+        if re.search(r"(?<![\w/.-]){}(?![\w/.-])".format(broken), output):
+            return broken, fixed
     return None
 
 

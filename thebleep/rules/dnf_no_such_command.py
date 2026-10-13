@@ -35,7 +35,8 @@ def get_new_command(command):
     if not found:
         return []
     broken = found.group(1) or found.group(2)
-    return replace_command(command, broken, _get_operations())
+    return replace_command(command, broken, _get_operations(),
+                           guessed=True)
 
 
 enabled_by_default = dnf_available

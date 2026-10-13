@@ -116,4 +116,4 @@ def get_new_command(command):
         candidates = candidates + [name for name in _commands()
                                    if name not in candidates]
 
-    return replace_command(command, broken, candidates)
+    return replace_command(command, broken, candidates, guessed=True)

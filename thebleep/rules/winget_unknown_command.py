@@ -44,4 +44,5 @@ def match(command):
 
 
 def get_new_command(command):
-    return replace_command(command, _typed(command), _listed(command.output))
+    return replace_command(command, _typed(command), _listed(command.output),
+                           guessed=True)

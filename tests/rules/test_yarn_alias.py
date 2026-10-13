@@ -29,3 +29,10 @@ def test_environment_assignment_is_preserved():
                       output_remove)
     assert get_new_command(command) == (
         'YARN_ENABLE_IMMUTABLE_INSTALLS=1 yarn remove')
+
+
+def test_the_word_yarn_names_is_the_one_replaced():
+    """yarn 1.22.22: `yarn run buld` came back as `yarn build buld`."""
+    output = ('yarn run v1.22.22\nerror Command "buld" not found. '
+              'Did you mean "build"?\n')
+    assert get_new_command(Command('yarn run buld', output)) == 'yarn run build'

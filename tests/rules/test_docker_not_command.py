@@ -268,7 +268,7 @@ def test_not_match(script, output):
 
 @pytest.mark.usefixtures('no_memoize', 'docker_help')
 @pytest.mark.parametrize('wrong, fixed', [
-    ('pes', ['ps', 'push', 'pause']),
+    ('pes', ['ps']),
     ('tags', ['tag', 'stats', 'images'])])
 def test_get_new_command(wrong, fixed):
     command = Command('docker {}'.format(wrong), output(wrong))
@@ -277,8 +277,8 @@ def test_get_new_command(wrong, fixed):
 
 @pytest.mark.usefixtures('no_memoize', 'docker_help_new')
 @pytest.mark.parametrize('wrong, fixed', [
-    ('swarn', ['swarm', 'start', 'search']),
-    ('inage', ['image', 'images', 'rename'])])
+    ('swarn', ['swarm', 'start']),
+    ('inage', ['image', 'images'])])
 def test_get_new_management_command(wrong, fixed):
     command = Command('docker {}'.format(wrong), output(wrong))
     assert get_new_command(command) == ['docker {}'.format(x) for x in fixed]
@@ -286,8 +286,8 @@ def test_get_new_management_command(wrong, fixed):
 
 @pytest.mark.usefixtures('no_memoize', 'docker_help_new')
 @pytest.mark.parametrize('wrong, fixed, output', [
-    ('swarm int', ['swarm init', 'swarm join', 'swarm join-token'], _DOCKER_SWARM_OUTPUT),
-    ('image la', ['image load', 'image ls', 'image tag'], _DOCKER_IMAGE_OUTPUT)])
+    ('swarm int', ['swarm init'], _DOCKER_SWARM_OUTPUT),
+    ('image la', ['image load', 'image ls'], _DOCKER_IMAGE_OUTPUT)])
 def test_get_new_management_command_subcommand(wrong, fixed, output):
     command = Command('docker {}'.format(wrong), output)
     assert get_new_command(command) == ['docker {}'.format(x) for x in fixed]
@@ -315,8 +315,8 @@ def test_match_modern_docker(script, output):
 
 @pytest.mark.usefixtures('no_memoize', 'docker_help_new')
 @pytest.mark.parametrize('wrong, fixed', [
-    ('pes', ['ps', 'push', 'pause']),
-    ('swarn', ['swarm', 'start', 'search'])])
+    ('pes', ['ps']),
+    ('swarn', ['swarm', 'start'])])
 def test_get_new_command_modern_docker(wrong, fixed):
     command = Command('docker {}'.format(wrong), unknown(wrong))
     assert get_new_command(command) == ['docker {}'.format(x) for x in fixed]
@@ -373,3 +373,10 @@ def test_the_top_level_commands_are_known_when_the_help_is_not(mocker):
                       u"Run 'docker --help' for more information")
     assert get_new_command(command)[0] == 'docker ps'
     assert docker_not_command.get_docker_commands(('image',)) == []
+
+
+@pytest.mark.usefixtures('no_memoize', 'docker_help')
+def test_a_command_nowhere_near_what_was_typed_is_not_offered():
+    """`docker shell` was `docker save`: every docker command is a list this
+    rule enumerated, not one docker named, and distance has to count."""
+    assert get_new_command(Command('docker shell', output('shell'))) == []

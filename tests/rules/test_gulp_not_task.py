@@ -25,4 +25,4 @@ def test_get_new_command(mocker):
     mocker.patch('thebleep.rules.gulp_not_task.tool_lines',
                  return_value=['serve ', 'build ', 'default '])
     command = Command('gulp srve', output('srve'))
-    assert get_new_command(command) == ['gulp serve', 'gulp default']
+    assert get_new_command(command) == ['gulp serve']

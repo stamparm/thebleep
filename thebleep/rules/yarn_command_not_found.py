@@ -43,4 +43,5 @@ def get_new_command(command):
         if project_scripts is not None:
             tasks = project_scripts + [task for task in tasks
                                        if task not in project_scripts]
-        return replace_command(command, misspelled_task, tasks)
+        return replace_command(command, misspelled_task, tasks,
+                               guessed=True)

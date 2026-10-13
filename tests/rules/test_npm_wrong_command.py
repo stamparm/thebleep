@@ -145,3 +145,12 @@ def test_how_to_list_them_all_is_not_a_suggestion(script='npm nstall'):
     """The line after the suggestions tells you to run `npm help`."""
     assert 'npm help' not in get_new_command(
         Command(script, output_modern('nstall')))
+
+
+def test_a_multi_word_suggestion_stays_several_words():
+    """npm 10.9 (node:22): `npm buld` -> `Did you mean this? npm run build`,
+    which came back as `npm 'run build'` -- one word, which npm cannot run."""
+    output = ('Unknown command: "buld"\n\n\nDid you mean this?\n'
+              '  npm run build # run the "build" package script\n'
+              'To see a list of supported npm commands, run:\n  npm help\n')
+    assert get_new_command(Command('npm buld', output))[0] == 'npm run build'

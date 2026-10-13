@@ -38,4 +38,4 @@ def get_new_command(command):
     wrong_task = regex.findall(command.output)[0][0]
     parts = command.script_parts
     all_tasks = _get_all_tasks(parts[command_word_index(parts)])
-    return replace_command(command, wrong_task, all_tasks)
+    return replace_command(command, wrong_task, all_tasks, guessed=True)

@@ -69,6 +69,21 @@ def test_get_corrected_commands(mocker):
             == ['test!', 'test@', 'test;'])
 
 
+def test_a_segments_answer_can_lead_in_a_compound_line(mocker):
+    """`cd src && mandiff`: the segment pass came after the whole-line pass,
+    and the first suggestion seen was offered first whatever its priority."""
+    rules = [Rule('guess', match=lambda c: 'mandiff' in c.script,
+                  get_new_command=lambda c: c.script.replace('mandiff', 'mcdiff'),
+                  priority=3000, requires_output=False),
+             Rule('man_no_space', match=lambda c: c.script == 'mandiff',
+                  get_new_command=lambda c: 'man diff', priority=2000,
+                  requires_output=False)]
+    mocker.patch('thebleep.corrector.get_rules', return_value=rules)
+    assert [cmd.script for cmd in get_corrected_commands(
+        Command('cd src && mandiff', None))] == [
+        'cd src && man diff', 'cd src && mcdiff']
+
+
 def test_learned_correction_is_offered_before_rules(mocker, settings, tmpdir,
                                                     monkeypatch):
     from thebleep import learning

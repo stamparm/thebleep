@@ -26,7 +26,7 @@ lifecycle scripts. Closeness decides between them, which gets `build` from npm,
 """
 
 import re
-from thebleep.utils import for_app, replace_command
+from thebleep.utils import for_app, get_close_matches, replace_command
 from thebleep.specific.npm import get_all_scripts, npm_available
 
 enabled_by_default = npm_available
@@ -60,8 +60,11 @@ def match(command):
 def get_new_command(command):
     misspelled_script = MISSING_SCRIPT.search(command.output).group(1)
 
+    # What npm named is npm's answer; the rest of `package.json` is a guess,
+    # and a guess has to be near what was typed: `npm run dev` with no `dev`
+    # script used to be offered `npm run test`.
     candidates = _suggested(command.output)
-    candidates += [name for name in get_all_scripts()
-                   if name not in candidates]
+    nearby = get_close_matches(misspelled_script, list(get_all_scripts()))
+    candidates += [name for name in nearby if name not in candidates]
 
     return replace_command(command, misspelled_script, candidates)

@@ -40,5 +40,6 @@ def get_new_command(command):
     listing = cache(which(app))(get_app_commands) if which(app) \
         else get_app_commands
     app_commands = listing(app)
-    matched.extend(replace_command(command, broken, app_commands))
+    matched.extend(replace_command(command, broken, app_commands,
+                                   guessed=True))
     return matched

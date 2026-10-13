@@ -330,7 +330,11 @@ def _unknown_command(command, output_required=True):
 
     for index in _command_indexes(parts):
         word = parts[index]
-        if word in output and not which(word):
+        # Named as a whole word, and not one the shell has: `cd` is a substring
+        # of `cdk: command not found` and is on nobody's PATH, so `cd src &&
+        # cdk deploy` came back as `dc src && cdk deploy`.
+        if (not _is_available_command(word) and re.search(
+                r'(?<![\w.-]){}(?![\w-])'.format(re.escape(word)), output)):
             return index, word
 
     return None

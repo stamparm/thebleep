@@ -19,4 +19,5 @@ def get_new_command(command):
                        command.output)
     if not found:
         return []
-    return replace_command(command, found[0], get_gulp_tasks())
+    return replace_command(command, found[0], get_gulp_tasks(),
+                           guessed=True)
