@@ -275,10 +275,21 @@ def _shell_command(shell, script):
     return [shell, '-c', script + ' 2>&1']
 
 
+def _resolved(argv):
+    """`argv` with its program looked up on PATH first.
+
+    On Windows `CreateProcess` searches System32 before PATH, and
+    System32 has a `bash.exe` of its own -- WSL's, which prints a notice in
+    UTF-16 when no distribution is installed. Git Bash's is the one on PATH.
+    """
+    found = shutil.which(argv[0]) if os.name == 'nt' else None
+    return [found] + list(argv[1:]) if found else list(argv)
+
+
 def _run_broken(shell, script, cwd, environment):
     try:
         completed = subprocess.run(
-            _shell_command(shell, script), cwd=cwd, env=environment,
+            _resolved(_shell_command(shell, script)), cwd=cwd, env=environment,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             timeout=TIMEOUT)
     except (OSError, subprocess.TimeoutExpired) as error:
@@ -452,7 +463,7 @@ def _shell_version(shell):
                        '$PSVersionTable.PSVersion.ToString()'],
     }
     try:
-        text = subprocess.run(probes[shell], stdout=subprocess.PIPE,
+        text = subprocess.run(_resolved(probes[shell]), stdout=subprocess.PIPE,
                               stderr=subprocess.DEVNULL, timeout=TIMEOUT
                               ).stdout.decode('utf-8', 'replace').strip()
     except (KeyError, OSError, subprocess.TimeoutExpired):
@@ -591,6 +602,8 @@ def _row_name(row):
              'ksh' if 'openbsd' in row['system'].lower() else 'bash')
     if shell in POWERSHELLS:
         name += u' (PowerShell {})'.format('.'.join(version.split('.')[:2]))
+    elif shell == 'bash' and 'windows' in row['system'].lower():
+        name += u' (Git Bash)'
     elif shell and shell != usual:
         name += u' ({})'.format(shell)
     if row.get('recorded_by') == 'hand':
