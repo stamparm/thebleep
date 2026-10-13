@@ -1003,7 +1003,7 @@ them at once:
 
 ```
 $ thebleep --doctor
-  The Bleep           4.0.0
+  The Bleep           4.x.y
   Python              3.12.3 (/usr/bin/python3)
   Platform            Linux 6.8.0 (x86_64)
   Shell               ZSH 5.9 (from TB_SHELL)
