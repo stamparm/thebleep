@@ -22,7 +22,7 @@ def on_path(mocker):
     """A machine where these programs exist and nothing else does."""
     installed = {'ls', 'cat', 'grep', 'git', 'apt-get', 'reboot', 'deploy',
                  'sort', 'find', 'sed', 'awk', 'tree', 'docker', 'npm', 'env',
-                 'cargo', 'kubectl', 'uv', 'xxd'}
+                 'cargo', 'kubectl', 'uv', 'xxd', 'pip', 'pip3'}
 
     def which(name):
         return '/usr/bin/' + name if name.split('/')[-1] in installed else None
@@ -46,7 +46,11 @@ def subcommands(mocker):
         # the descriptions printed beside them.
         'cargo': frozenset(['build', 'test', 'publish', 'b', 'zoom',
                             'Compile', 'a', 'local', 'package']),
+        # As `pip --help` answers: every command, and the prose around them.
+        'pip': frozenset(['install', 'download', 'uninstall', 'freeze',
+                          'list', 'show', 'Commands:', 'Install', 'packages.']),
     }
+    known['pip3'] = known['pip']
 
     def answer(program, question):
         return known.get(os.path.basename(program))
@@ -78,6 +82,9 @@ class TestIsInert(object):
         'git puhs origin main',
         'cargo buld --release',
         'cargo tset',
+        # pip matches whole names only: `pip instal` is `unknown command`.
+        'pip freez',
+        'pip3 instal requests',
         # Assignments and nothing else: a subshell throws them away.
         'FOO=bar',
     ])
@@ -94,6 +101,8 @@ class TestIsInert(object):
         # which is why the subcommand existing is as far as this goes.
         'git status',
         'git stash',
+        'pip install requests',
+        'pip3 uninstall requests',
         # An alias is a subcommand git has, and it can stand for anything at
         # all, including `!deploy.sh`.
         'git st',
@@ -319,6 +328,26 @@ class TestAskingTheProgramItself(object):
         assert 'build' in answer
         assert 'b' in answer, 'an alias would be taken for a typo'
         assert 'buld' not in answer
+
+    def test_pip_lists_every_command_it_has(self):
+        """The listing has to be complete: a real command missing from it
+        would look like a typo and run again unasked."""
+        for program in ('pip3', 'pip'):
+            if shutil.which(program):
+                break
+        else:
+            pytest.skip('pip is not installed')
+
+        answer = replay._subcommands(program, replay.DISPATCHERS[program])
+        if answer is None:
+            pytest.skip('this pip would not answer --help')
+
+        try:
+            from pip._internal.commands import commands_dict
+        except ImportError:
+            commands_dict = ('install', 'download', 'uninstall', 'freeze')
+        assert set(commands_dict) <= answer
+        assert 'instal' not in answer
 
     def test_a_program_that_is_not_there_says_nothing(self):
         assert replay._subcommands('nosuchprogram-9c4f', ('--list',)) is None

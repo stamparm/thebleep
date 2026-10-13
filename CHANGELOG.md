@@ -241,6 +241,15 @@
   expectations written first and never edited to agree -- are scored beside
   it, offline and with no tool asked, and the README publishes both.
 
+- **`pip freez` is not asked about any more.** Re-running a command to read
+  its output is skipped only when the program can be shown to refuse the
+  subcommand again, and until now only git and cargo could be. pip lists
+  every command it has and matches whole names only, so a typo of one runs
+  nothing. npm, apt, docker and the rest were checked and still ask: each
+  accepts something its own help does not list -- `npm isntall` installs,
+  `apt download` is missing from `apt --help` -- so a listing from them
+  cannot prove a typo is harmless.
+
 - **Faster where machines are big.** `history_limit` defaults to 10000
   rather than no limit, and history lines are compared once each: a
   million-line history cost 0.8 to 2 seconds a correction. The replay keeps

@@ -172,9 +172,18 @@ READ_ONLY = frozenset({
 #
 # `kubectl` is the closest near miss -- its `--help` even lists plugins -- but
 # `kubectl alpha` dispatches and is absent, so it fails the same bar.
+#
+# pip clears it. Its `--help` is built from the same table it dispatches on --
+# every name in `pip._internal.commands.commands_dict` is in it, checked
+# against pip 25.0.1 -- and it matches nothing but whole names: `pip instal`,
+# `pip isntall` and `pip inst` are all `unknown command`, refused before pip
+# reads a requirement or a configuration file. It has no plugins to dispatch
+# to either.
 DISPATCHERS = {
     'git': ('--list-cmds=main,others,alias',),
     'cargo': ('--list',),
+    'pip': ('--help',),
+    'pip3': ('--help',),
 }
 
 # Long enough for a program to print a list it already knows, short enough that
