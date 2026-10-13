@@ -193,7 +193,16 @@
   `--doctor` suggests the setting a misspelt one was meant to be, and `--why`
   with no previous command says so and exits 1.
 
+- **`not_on_path` took `/` and the home directory for projects.** From
+  `/tmp`, `/bin` was "this project's `bin/`" and `htop` became `../bin/htop`.
+
 ### Changed
+
+- **A second hit rate, measured on cases nobody tuned against.** The corpus
+  scored 100% because it is what the rules were written against. 121 typos
+  captured afterwards from real tools in containers -- `tests/corpus/held_out.py`,
+  expectations written first and never edited to agree -- are scored beside
+  it, offline and with no tool asked, and the README publishes both.
 
 - **Faster where machines are big.** `history_limit` defaults to 10000
   rather than no limit, and history lines are compared once each: a

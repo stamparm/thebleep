@@ -87,7 +87,20 @@ def _no_package_database(package):
         yield
 
 
-def _measure(package='thebleep'):
+# The held-out cases: captured after the rules were written, never tuned
+# against. See `tests/corpus/held_out.py`.
+HELD_OUT = ('held out: captured afterwards, never tuned against',
+            'git push orign main')
+
+
+def _right(first, expect):
+    """`expect` is the answer, or a tuple of answers that are all right."""
+    if isinstance(expect, tuple):
+        return first in expect
+    return first == expect
+
+
+def _measure(package='thebleep', held_out=False):
     """The corpus, run through `package`'s corrector, grouped.
 
     Both tools are asked the identical question -- the same script, the same
@@ -127,6 +140,19 @@ def _measure(package='thebleep'):
                       (cases.NO_SUCH_PROGRAM,
                        cases.THE_TOOL_SAID_SO,
                        cases.NOTHING_IS_RIGHT)))
+    if held_out:
+        from tests.corpus.held_out import HELD_OUT as captured
+
+        groups = [(HELD_OUT[0], [case[:3] for case in captured])]
+
+    # Answered from what was printed and nothing else: no tool is asked again
+    # and no file is read, which is what the held-out cases are chosen for --
+    # and in an empty directory, so `git` and `npm` see no project of ours.
+    import tempfile
+
+    utils_probes = getattr(utils, 'tool_probes', None)
+    nowhere = tempfile.mkdtemp(prefix='hit-rate-')
+    here = os.getcwd()
 
     results = []
     with mock.patch.object(utils.memoize, 'disabled', True), \
@@ -139,24 +165,31 @@ def _measure(package='thebleep'):
             (mock.patch.object(vocabulary, 'facts', return_value={
                 'subcommands': [], 'nested': {}, 'options': {}})
              if vocabulary is not None else contextlib.nullcontext()):
-        for label, group in groups:
-            hits = 0
-            misses = []
-            for script, output, expect in group:
-                try:
-                    corrected = list(corrector.get_corrected_commands(
-                        Command(script, output)))
-                except Exception:
-                    # The Fuck lets a rule's exception out of the corrector,
-                    # which is one of the differences being measured.
-                    corrected = []
-                first = corrected[0].script if corrected else None
-                if first == expect:
-                    hits += 1
-                else:
-                    misses.append((script, expect, first))
+        os.chdir(nowhere)
+        try:
+            for label, group in groups:
+                hits = 0
+                misses = []
+                for script, output, expect in group:
+                    try:
+                        with (utils_probes(False) if held_out and utils_probes
+                              else contextlib.nullcontext()):
+                            corrected = list(corrector.get_corrected_commands(
+                                Command(script, output)))
+                    except Exception:
+                        # The Fuck lets a rule's exception out of the
+                        # corrector, which is one of the differences being
+                        # measured.
+                        corrected = []
+                    first = corrected[0].script if corrected else None
+                    if _right(first, expect):
+                        hits += 1
+                    else:
+                        misses.append((script, expect, first))
 
-            results.append((label, hits, len(group), misses))
+                results.append((label, hits, len(group), misses))
+        finally:
+            os.chdir(here)
 
     return results
 
@@ -213,7 +246,12 @@ def main():
             print('thefuck is not importable here; skipping the comparison.',
                   file=sys.stderr)
 
-    examples = dict(GROUPS)
+    held = _measure(held_out=True)[0]
+    other_held = None
+    if other:
+        other_held = _measure('thefuck', held_out=True)[0]
+
+    examples = dict(GROUPS + (HELD_OUT,))
 
     print()
     if other:
@@ -227,6 +265,10 @@ def main():
               ' {}/{} ({:.0f}%) |'.format(
                   total, total_hits, total, 100.0 * total_hits / total,
                   other_hits, total, 100.0 * other_hits / total))
+        print('| {} | `{}` | **{}/{} ({:.0f}%)** | {}/{} ({:.0f}%) |'.format(
+            held[0], examples[held[0]], held[1], held[2],
+            100.0 * held[1] / held[2], other_held[1], other_held[2],
+            100.0 * other_held[1] / other_held[2]))
     else:
         print('| what went wrong | for example | first answer right |')
         print('| --- | --- | --- |')
@@ -235,9 +277,12 @@ def main():
                 label, examples[label], hits, count))
         print('| **all {} of them** |  | **{}/{} ({:.0f}%)** |'.format(
             total, total_hits, total, 100.0 * total_hits / total))
+        print('| {} | `{}` | **{}/{} ({:.0f}%)** |'.format(
+            held[0], examples[held[0]], held[1], held[2],
+            100.0 * held[1] / held[2]))
     print()
 
-    for label, _, _, misses in results:
+    for label, _, _, misses in results + [held]:
         for script, expect, first in misses:
             print('  miss  {:<28} wanted {!r}, got {!r}'.format(
                 script, expect, first))
@@ -262,12 +307,14 @@ def main():
         'groups': [{'what': label, 'hits': hits, 'of': count}
                    for label, hits, count, _ in results],
         'total': {'hits': total_hits, 'of': total},
+        'held_out': {'what': held[0], 'hits': held[1], 'of': held[2]},
     }
     if other:
         recorded['thefuck_3_32'] = {
             'groups': [{'what': label, 'hits': hits, 'of': count}
                        for label, hits, count, _ in other],
             'total': {'hits': _totals(other)[0], 'of': total},
+            'held_out': {'hits': other_held[1], 'of': other_held[2]},
         }
     where = os.path.join(HERE, 'results', 'hit-rate.json')
     with open(where, 'w') as handle:

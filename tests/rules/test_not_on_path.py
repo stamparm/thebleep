@@ -257,3 +257,13 @@ def test_quoting_in_front_of_the_program_is_kept(machine):
         BASH.replace('cargo', 'prettier')))
     assert got[0] == 'FOO="a b" ./node_modules/.bin/{} \'x;echo pwned\''.format(
         exe('prettier'))
+
+
+def test_the_root_and_the_home_are_not_projects(machine, monkeypatch):
+    """From `/tmp`, `/bin` was found as a project's `bin/`: `../bin/htop`."""
+    executable(machine.join('home').mkdir('bin'), 'htop')
+    monkeypatch.chdir(str(machine.join('home')))
+    assert not_on_path._project_directories(str(machine.join('home'))) == []
+    root = os.path.abspath(os.sep)
+    assert all(project != root for _, project in
+               not_on_path._project_directories(root))

@@ -32,3 +32,12 @@ a regression from a different laptop. It also has to give one answer on Windows.
 outputs in `cases.py` were captured by running the real failing command; each
 case says which tool and version it came from. Never write one by hand -- that
 is how seven rules came to be green and dead at the same time.
+
+## Held out
+
+`held_out.py` is the other number. `cases.py` is what the rules were tuned
+against, so a score on it says they do what they were written to do; the
+held-out cases were captured afterwards, in containers, with the expectation
+written down before The Bleep was run, and no rule test reads them.
+`bench/hit_rate.py` reports both, and the README publishes both. An
+expectation there is never changed to agree with the engine.

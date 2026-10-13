@@ -131,10 +131,20 @@ def _home_directories():
 
 
 def _project_directories(cwd):
-    """Project bin directories from `cwd` upwards, nearest first."""
+    """Project bin directories from `cwd` upwards, nearest first.
+
+    Never the filesystem root or the home directory: neither is a project,
+    and walking up from `/tmp` found `/bin` and offered `../bin/htop` as the
+    project's own copy.
+
+    """
     found = []
     directory = cwd
+    home = os.path.normcase(os.path.abspath(os.path.expanduser('~')))
     for _ in range(PROJECT_DEPTH):
+        if os.path.dirname(directory) == directory or \
+                os.path.normcase(os.path.abspath(directory)) == home:
+            break
         for relative in PROJECT:
             candidate = os.path.join(directory, *relative.split('/'))
             if os.path.isdir(candidate):

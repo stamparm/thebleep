@@ -501,6 +501,19 @@ def test_the_hit_rate_in_the_readme_is_the_recorded_one(readme, source_root):
         assert '{}/{}'.format(theirs['total']['hits'],
                               theirs['total']['of']) in table
 
+    held = recorded.get('held_out')
+    if held:
+        assert held['what'] in table
+        assert '{}/{}'.format(held['hits'], held['of']) in table
+
+
+def test_no_rule_test_reads_the_held_out_cases(source_root):
+    """They measure the rules; a rule tuned against them would make the
+    number say only that the rules pass their own tests again."""
+    for path in source_root.joinpath('tests', 'rules').glob('*.py'):
+        with io.open(str(path), encoding='utf-8') as handle:
+            assert 'held_out' not in handle.read(), path
+
 
 def test_the_hit_rate_names_a_commit_that_exists(source_root):
     """The same requirement the benchmark has, for the same reason."""
