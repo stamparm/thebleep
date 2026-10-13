@@ -206,7 +206,7 @@ jobs:
             run=$(gh run list -R "$GITHUB_REPOSITORY" -w Tests \
                     --commit "$GITHUB_SHA" -L 1 \
                     --json databaseId,status,conclusion \
-                    --jq '.[0] | "\(.databaseId) \(.status) \(.conclusion)"')
+                    --jq '.[0] // empty | "\(.databaseId) \(.status) \(.conclusion)"')
             echo "attempt $attempt: ${run:-no Tests run yet}"
             case "$run" in
               *" completed success") exit 0 ;;
