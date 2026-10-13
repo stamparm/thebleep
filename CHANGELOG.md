@@ -241,6 +241,15 @@
   expectations written first and never edited to agree -- are scored beside
   it, offline and with no tool asked, and the README publishes both.
 
+- **A script in the current directory, in fish.** `script.sh` came back as
+  `script .sh` -- the space-splitting rule took it for a missing space with
+  the file right there -- because fish says `Unknown command` where the
+  rule that knows about scripts read only bash's `command not found`. And a
+  script without the execute bit got `./script.sh`, which only trades one
+  error for `permission denied`: it is `chmod +x script.sh && ./script.sh`
+  now, in every shell, and fish's `exists but is not an executable file` is
+  read for `./script.sh` too.
+
 - **A help screen is not a correction.** `chmod +x` with no file said
   `missing operand`, and `chmod --help` was offered first, as though it were
   the fix. When what is missing is an argument only the user knows, nothing

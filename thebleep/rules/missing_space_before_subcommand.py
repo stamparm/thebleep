@@ -35,6 +35,8 @@ or a flag (`ls-la`) that lost its space.
 
 """
 
+import os
+
 from thebleep.shells import shell
 from thebleep.utils import (command_word_index, get_all_executables, memoize,
                             raw_script_parts, replace_command_word)
@@ -103,6 +105,9 @@ def match(command):
     word = parts[start]
     return (not _is_a_command_already(word)
             and not _known_name(word)
+            # A file of that name, right here: `script.sh` is the script that
+            # was meant, not `script .sh`.
+            and not os.path.exists(word)
             # One edit from something you could type -- installed or a wrapper
             # this tool models -- is a typo of that, and no split competes
             # with it. Asked here rather than only inside `certain`, because

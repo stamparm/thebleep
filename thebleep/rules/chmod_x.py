@@ -35,7 +35,11 @@ def _path(command):
 
 def match(command):
     path = _path(command)
-    if path is None or 'permission denied' not in command.output.lower():
+    # fish words it its own way: `fish: Unknown command. './script.sh' exists
+    # but is not an executable file.` (fish 4.0).
+    said = command.output.lower()
+    if path is None or ('permission denied' not in said
+                        and 'is not an executable file' not in said):
         return False
 
     # `~` is the shell's to expand, and it had not expanded it when the words

@@ -103,3 +103,15 @@ class TestPathsThatAreNotRelative(object):
         """The tilde stays outside the quotes so that the shell expands it."""
         assert get_new_command(Command("'~/my scripts/deploy.sh'", '')) == \
             "chmod +x ~/'my scripts/deploy.sh' && '~/my scripts/deploy.sh'"
+
+
+def test_fish_says_it_is_not_an_executable_file(tmpdir, monkeypatch):
+    """fish 4.0: `./script.sh` on a file without the bit."""
+    from unittest.mock import patch
+
+    monkeypatch.chdir(tmpdir)
+    tmpdir.join('script.sh').write('#!/bin/sh\necho hi\n')
+    output = ("fish: Unknown command. './script.sh' exists but is not an "
+              "executable file.\n")
+    with patch('os.access', return_value=False):
+        assert match(Command('./script.sh', output))

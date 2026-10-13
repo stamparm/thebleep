@@ -124,3 +124,11 @@ class TestWhatItUsedToSplitThatItShouldNot(object):
         mocker.patch('thebleep.replay._subcommands',
                      return_value={'status', 'commit', 'push'})
         assert not match(Command(script, 'not found'))
+
+
+def test_a_file_of_that_name_here_is_not_split(tmpdir, monkeypatch):
+    """`script.sh` in fish came back as `script .sh`, with the file right
+    there in the directory."""
+    monkeypatch.chdir(tmpdir)
+    tmpdir.join('script.sh').write('#!/bin/sh\n')
+    assert not match(Command('script.sh', 'fish: Unknown command: script.sh'))
