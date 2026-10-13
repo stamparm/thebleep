@@ -79,6 +79,9 @@ def _interpreter(command):
     start = command_word_index(command.script_parts)
     if start == len(command.script_parts):
         return None
+    if _through_python(command.script_parts):
+        # `python3 -m pip`: the interpreter is the one that was typed.
+        return which(command.script_parts[start])
 
     path = which(command.script_parts[start])
     if path is None:
@@ -114,10 +117,22 @@ def _ordered(broken, guess, others):
                           limit=settings.num_close_matches)
 
 
+def _through_python(parts):
+    """`python -m pip ...` and `python3 -m pip ...`, pip by another name."""
+    start = command_word_index(parts)
+    return (re.match(r'^python[\d.]*$', parts[start]) is not None
+            and parts[start + 1:start + 3] == ['-m', 'pip'])
+
+
 @sudo_support
-@for_app('pip', 'pip2', 'pip3')
+@for_app('pip', 'pip2', 'pip3', 'python', 'python3')
 def match(command):
-    # `for_app` has already established that this is pip.
+    # pip itself, or `python3 -m pip`, which says the same thing and was
+    # never read: `python3 -m pip intsall x` -> `maybe you meant "install"`.
+    parts = command.script_parts
+    if parts[command_word_index(parts)].startswith('python') \
+            and not _through_python(parts):
+        return False
     return ('unknown command' in command.output
             and 'maybe you meant' in command.output
             and bool(BROKEN.search(command.output)))

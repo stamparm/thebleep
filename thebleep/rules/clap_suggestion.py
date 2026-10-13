@@ -127,7 +127,10 @@ def match(command):
     return (('tip: a similar' in command.output
              or 'tip: some similar' in command.output
              or 'a command with a similar name exists' in command.output
-             or 'no such subcommand' in command.output)
+             or 'no such subcommand' in command.output
+             # cargo 1.85 (Debian 13): `error: no such command: `buidl``,
+             # then `Did you mean `build`?`.
+             or 'no such command' in command.output)
             and bool(_broken(command))
             and bool(_suggestions(command.output)))
 

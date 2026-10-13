@@ -47,3 +47,33 @@ def test_a_bare_git_bisect_does_not_crash(output):
     """
     command = Command('git bisect', output)
     assert not match(command)
+
+
+GIT_2_53 = '''fatal: unknown command: 'strt'
+
+usage: git bisect start [--term-(bad|new)=<term-new> --term-(good|old)=<term-old>]
+                        [--no-checkout] [--first-parent] [<bad> [<good>...]] [--] [<pathspec>...]
+   or: git bisect (bad|new|<term-new>) [<rev>]
+   or: git bisect (good|old|<term-old>) [<rev>...]
+   or: git bisect terms [--term-(good|old) | --term-(bad|new)]
+   or: git bisect skip [(<rev>|<range>)...]
+   or: git bisect next
+   or: git bisect reset [<commit>]
+   or: git bisect (visualize|view)
+   or: git bisect replay <logfile>
+   or: git bisect log
+   or: git bisect run <cmd> [<arg>...]
+   or: git bisect help
+'''
+
+
+@pytest.mark.parametrize('script, fixed', [
+    ('git bisect strt', 'git bisect start'),
+    ('git bisect goood', 'git bisect good'),
+    ('git bisect rset', 'git bisect reset'),
+    ('git bisect viw', 'git bisect view')])
+def test_git_2_53_lists_one_subcommand_per_line(script, fixed):
+    """git 2.53 (debian:testing) dropped the one-line `[a|b|c]` usage."""
+    command = Command(script, GIT_2_53)
+    assert match(command)
+    assert get_new_command(command)[0] == fixed

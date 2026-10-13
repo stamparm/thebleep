@@ -90,7 +90,17 @@ BROKEN = (
     # Perl's Getopt::Long, which names the option without its dashes and
     # lists nothing at all.
     re.compile(r'Unknown option: -{0,2}([A-Za-z0-9][\w-]*)'),
+    # Go's cobra, which kubectl, docker, gh and helm are built on:
+    # `error: unknown flag: --namespce` (kubectl 1.37), `unknown flag: --rmm`
+    # (docker 29.9), then an invitation to the subcommand's own `--help`.
+    re.compile(r'unknown flag: --([A-Za-z0-9][\w-]*)'),
 )
+
+# `See 'kubectl get --help' for usage.`, `Run 'docker run --help' for more
+# information`: the help a program invites is the subcommand's, which is
+# where cobra keeps a subcommand's flags.
+INVITED = re.compile(r"(?:See|Run|Try) '([^']+) --help'")
+GLOBAL_OPTIONS = re.compile(r'Use "(\S+) options" for a list of global')
 
 # Go's usage block writes its flags with one dash, one per line.
 GO_FLAG = re.compile(r'^\s+-([A-Za-z][\w-]*)', re.MULTILINE)
@@ -202,8 +212,42 @@ def _candidates(command, broken):
     if '--help' not in command.output and ' -h ' not in command.output:
         return []
 
-    return [name for name in _options_from_help(parts[start], subcommand)
+    invited = _invited(command)
+    if invited:
+        from thebleep.utils import tool_output
+
+        helped = tool_output(invited + ['--help'], merge_stderr=True)
+        # kubectl keeps `--namespace` and the other flags every command takes
+        # behind `kubectl options`, which its help names.
+        global_options = GLOBAL_OPTIONS.search(helped)
+        if global_options and global_options.group(1) == invited[0]:
+            helped += tool_output([invited[0], 'options'], merge_stderr=True)
+        listed = OPTION.findall(helped)
+    else:
+        listed = _options_from_help(parts[start], subcommand)
+    return [name for name in listed
             if name != broken and name not in BOILERPLATE]
+
+
+def _invited(command):
+    """The `program subcommand` whose `--help` the output invited, when those
+    are words of the command that was typed, in that order -- so nothing is run
+    that the user did not already run, only asked for its help."""
+    found = INVITED.search(command.output)
+    if not found:
+        return None
+    words = found.group(1).split()
+    typed = command.script_parts[command_word_index(command.script_parts):]
+    if len(words) < 2 or words[0] != typed[0]:
+        return None
+    position = 1
+    for word in words[1:]:
+        while position < len(typed) and typed[position] != word:
+            position += 1
+        if position == len(typed):
+            return None
+        position += 1
+    return words
 
 
 def match(command):
@@ -213,7 +257,8 @@ def match(command):
              or 'unrecognized argument' in command.output
              or ': is unknown' in command.output
              or 'flag provided but not defined' in command.output
-             or 'Unknown option:' in command.output)
+             or 'Unknown option:' in command.output
+             or 'unknown flag:' in command.output)
             and bool(command.script_parts)
             and bool(command_word_index(command.script_parts)
                      < len(command.script_parts))

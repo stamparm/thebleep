@@ -4,7 +4,10 @@ from thebleep.types import Command
 
 
 @pytest.mark.parametrize('command', [
-    Command('git remote set-url origin url', "fatal: No such remote")])
+    Command('git remote set-url origin url', "fatal: No such remote"),
+    # git 2.53 (debian:testing)
+    Command('git remote set-url upstream url',
+            "error: No such remote 'upstream'")])
 def test_match(command):
     assert match(command)
 

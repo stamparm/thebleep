@@ -241,3 +241,12 @@ def test_dnf5_typo_is_corrected(mocker):
         'dnf install vim'
     assert get_new_command(Command('sudo dnf isntall vim', DNF5_UNKNOWN))[0] \
         == 'sudo dnf install vim'
+
+
+def test_yum_on_fedora_is_dnf5(mocker):
+    """`yum isntall vim` on fedora:latest prints dnf5's wording, word for word."""
+    mocker.patch('thebleep.rules.dnf_no_such_command.tool_output',
+                 return_value=DNF5_HELP)
+    command = Command('yum isntall vim', DNF5_UNKNOWN)
+    assert match(command)
+    assert get_new_command(command)[0] == 'yum install vim'

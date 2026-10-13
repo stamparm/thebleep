@@ -184,3 +184,12 @@ def test_a_subcommand_of_a_subcommand():
               'Usage: uv pip [OPTIONS] <COMMAND>\n')
     assert get_new_command(Command('uv pip instll requests', output))[0] == \
         'uv pip install requests'
+
+
+def test_cargo_1_85_says_no_such_command():
+    """cargo 1.85.1 (debian:trixie)."""
+    output = ('error: no such command: `buidl`\n\n\tDid you mean `build`?\n\n'
+              '\tView all installed commands with `cargo --list`\n')
+    command = Command('cargo buidl', output)
+    assert match(command)
+    assert get_new_command(command) == ['cargo build']

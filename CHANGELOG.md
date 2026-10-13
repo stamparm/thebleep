@@ -57,6 +57,18 @@
   command again. A bare `xcodebuild -license` just gets `sudo`. Thanks to Leon
   Fedotov for the rule (#12).
 
+- **`git_pull_divergent`** -- `git pull --rebase`, `--no-rebase` or
+  `--ff-only` when git refuses to pull diverged branches, which every git
+  since 2.33 does to anyone who never set `pull.rebase`.
+
+- **`git_remote_typo`** -- `git push orign main` and `git pull origin mian`,
+  against `git remote` and the remote's fetched branches.
+
+- **Cobra's unknown flags**: `kubectl get pods --namespce x` and `docker run
+  --rmm` are read by `option_typo`, which asks the subcommand's own `--help`
+  when the output invites it (and `kubectl options`, where kubectl keeps
+  `--namespace`), and only for words that were typed.
+
 ### Security
 
 - **A program the repository brought is the repository's word.** A clone
@@ -126,6 +138,20 @@
   vmi` offered to reinstall pacman. `npm buld` is `npm run build`, not `npm
   'run build'`, and `yarn run buld` is `yarn run build`, not `yarn build
   buld`.
+
+- **Rules that had stopped firing**, each re-captured against the current
+  tool: `systemctl` wanted `Unknown operation`, and every systemd since 249
+  says `Unknown command verb 'strat', did you mean 'start'?` -- now its
+  suggestion is taken when it is near, and a unit typed where the verb goes
+  is still swapped. `pnpm_missing_script` read pnpm 11's brackets only; pnpm
+  9, 10 and 12 word it three other ways, and `pnpm instal` gets `install`.
+  git 2.53's `git bisect` usage is one subcommand per line, and `git remote
+  set-url` says `error: No such remote`. cargo 1.85's `no such command` and
+  its `Did you mean` for `--bin` are read. `apt_get` reads the `apt install`
+  line command-not-found already printed, because the module it relied on
+  cannot be imported from a pipx or uv install -- so on the README's own
+  install `htop` got only `top`. `python3 -m pip intsall` is pip, and `yum` on
+  Fedora is dnf5.
 
 ## 4.0.4 — 2026-09-03
 

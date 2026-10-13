@@ -4477,7 +4477,7 @@
         },
         {
          "kind": "match",
-         "text": "pip, pip2 or pip3, and output containing \"unknown command\" and \"maybe you meant\""
+         "text": "pip, pip2, pip3, python or python3, whatever it printed"
         },
         {
          "kind": "context",
@@ -4521,7 +4521,7 @@
         },
         {
          "kind": "match",
-         "text": "pip, pip2 or pip3, and output containing \"unknown command\" and \"maybe you meant\""
+         "text": "pip, pip2, pip3, python or python3, whatever it printed"
         },
         {
          "kind": "context",

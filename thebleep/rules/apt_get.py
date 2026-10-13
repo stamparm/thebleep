@@ -21,15 +21,29 @@ at the default 1000.
 
 """
 
+import re
 from types import ModuleType
 from thebleep.specific.apt import apt_available
 from thebleep.utils import memoize, which
 from thebleep.shells import shell
 
+# What Debian's and Ubuntu's command-not-found handler already printed:
+#
+#     Command 'htop' not found, but can be installed with:
+#     sudo apt install htop
+#
+# (`apt install` without `sudo` as root.) Read first, because the module below
+# lives outside `sys.path` on Debian and cannot be imported from a pipx or uv
+# environment at all -- which is the install the README recommends, so on
+# exactly those machines the rule switched itself off and `htop` got `top`.
+# Captured from ubuntu:24.04 with command-not-found installed.
+PRINTED = re.compile(r"^Command '([^']+)' not found, but can be installed "
+                     r"with:\s*\n(?:sudo )?apt install (\S+)", re.MULTILINE)
+
+enabled_by_default = apt_available
+
 try:
     from CommandNotFound import CommandNotFound
-
-    enabled_by_default = apt_available
 
     if isinstance(CommandNotFound, ModuleType):
         # For ubuntu 18.04+
@@ -38,7 +52,6 @@ try:
         # For older versions
         _get_packages = CommandNotFound().getPackages
 except ImportError:
-    enabled_by_default = False
     # Named so that `get_package` below raises nothing worse than "no package
     # found" when somebody enables this rule on a machine that has no
     # python3-commandnotfound. It used to be a NameError on every correction.
@@ -67,18 +80,27 @@ def get_package(executable):
         return None
 
 
+def _package(command):
+    executable = _get_executable(command)
+    if not executable:
+        return None
+    printed = PRINTED.search(command.output)
+    if printed and printed.group(1) == executable:
+        return printed.group(2)
+    return get_package(executable)
+
+
 def match(command):
     if 'not found' in command.output or 'not installed' in command.output:
         executable = _get_executable(command)
         return bool(executable) and not which(executable) \
-            and bool(get_package(executable))
+            and bool(_package(command))
     else:
         return False
 
 
 def get_new_command(command):
-    executable = _get_executable(command)
-    name = get_package(executable)
+    name = _package(command)
     return shell.and_(u'sudo apt-get install {}'.format(shell.quote(name)),
                       command.script)
 

@@ -296,3 +296,51 @@ class TestParsersThatPrintNothing(object):
     def test_nothing_anywhere_is_nothing(self, mocker, never_asked):
         mocker.patch('thebleep.vocabulary.options', return_value=[])
         assert get_new_command(Command('tool --verbse', PERL)) == []
+
+
+class TestCobra(object):
+    """kubectl 1.37 and docker 29.9: `unknown flag: --x`, then an invitation
+    to the *subcommand's* `--help`, which is where cobra keeps its flags."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self, mocker):
+        mocker.patch('thebleep.rules.option_typo.which', return_value='/bin/x')
+        mocker.patch('thebleep.vocabulary.options', return_value=[])
+        helps = {
+            ('kubectl', 'get', '--help'):
+                '  -A, --all-namespaces=false:\n  -o, --output:\n'
+                'Use "kubectl options" for a list of global command-line '
+                'options (applies to all commands).\n',
+            ('kubectl', 'options'): '  -n, --namespace:\n  --context:\n',
+            ('docker', 'run', '--help'): '      --rm   Automatically remove\n',
+        }
+        self.asked = []
+
+        def tool_output(arguments, *args, **kwargs):
+            self.asked.append(tuple(arguments))
+            return helps.get(tuple(arguments), '')
+
+        mocker.patch('thebleep.utils.tool_output', side_effect=tool_output)
+
+    @pytest.mark.parametrize('script, output, fixed', [
+        ('kubectl get pods --namespce x',
+         "error: unknown flag: --namespce\nSee 'kubectl get --help' for usage.\n",
+         'kubectl get pods --namespace x'),
+        ('docker run --rmm alpine',
+         "unknown flag: --rmm\n\nUsage:  docker run [OPTIONS] IMAGE\n\n"
+         "Run 'docker run --help' for more information\n",
+         'docker run --rm alpine'),
+    ])
+    def test_the_subcommands_help_is_asked(self, script, output, fixed):
+        command = Command(script, output)
+        assert match(command)
+        assert get_new_command(command)[0] == fixed
+
+    def test_only_words_that_were_typed_are_run(self):
+        """The invitation is read out of output; it may only name the
+        command that already ran."""
+        command = Command('kubectl get pods --namespce x',
+                          "error: unknown flag: --namespce\n"
+                          "See 'kubectl delete --help' for usage.\n")
+        get_new_command(command)
+        assert ('kubectl', 'delete', '--help') not in self.asked

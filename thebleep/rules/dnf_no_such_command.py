@@ -12,7 +12,8 @@ regex = re.compile(r'No such command: (.*?)\.|Unknown argument "([^"]+)"')
 
 
 @sudo_support
-@for_app('dnf', 'dnf5')
+# `yum` on Fedora is dnf5 under the old name, and says what dnf5 says.
+@for_app('dnf', 'dnf5', 'yum')
 def match(command):
     output = command.output.lower()
     return 'no such command' in output or 'unknown argument' in output

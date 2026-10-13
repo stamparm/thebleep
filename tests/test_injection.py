@@ -386,9 +386,12 @@ class TestNamesFromSomewhereElse(object):
 
         command = Command(
             u"systemctl 'a;>SYSTEMCTL' start",
-            u"Unknown operation 'a'.")
+            u"Unknown command verb 'a;>SYSTEMCTL', did you mean 'bind'?")
 
-        assert canary(systemctl.get_new_command(command)) == []
+        suggestions = systemctl.get_new_command(command)
+        assert suggestions
+        for suggestion in suggestions:
+            assert canary(suggestion) == []
 
     def test_ls_lah_preserves_a_quoted_argument(self, name, payload, canary):
         from thebleep.rules import ls_lah
@@ -463,6 +466,24 @@ class TestNamesFromSomewhereElse(object):
         if not git_merge.match(command):
             return
         assert canary(git_merge.get_new_command(command)) == []
+
+    def test_git_remote_typo(self, name, payload, canary, mocker):
+        """A branch the remote has, which the remote named."""
+        from thebleep.rules import git_remote_typo
+
+        mocker.patch.object(git_remote_typo, 'tool_lines',
+                            return_value=['origin/' + payload])
+        typed = payload[:6] + payload[7:]
+        command = Command(u'git pull origin {}'.format(Bash().quote(typed)),
+                          u"fatal: couldn't find remote ref {}\n".format(typed))
+        if not git_remote_typo.match(command):
+            # git prints the name up to its first space, and a name with one
+            # cannot be read back out to be corrected at all.
+            return
+        suggestions = git_remote_typo.get_new_command(command)
+        assert suggestions, 'the hostile name never reached a suggestion'
+        for suggestion in suggestions:
+            assert canary(suggestion) == []
 
     def test_yarn_alias(self, name, payload, canary):
         from thebleep.rules import yarn_alias

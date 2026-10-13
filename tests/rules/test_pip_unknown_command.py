@@ -99,3 +99,17 @@ class TestWithoutPipsList(object):
         assert get_new_command(command)[0] == \
             'PIP_DISABLE_PIP_VERSION_CHECK=1 pip install requests'
         interpreter.assert_called_once_with(command)
+
+
+@pytest.mark.parametrize('script', ['python -m pip intsall x',
+                                    'python3 -m pip intsall x'])
+def test_python_dash_m_pip_is_pip(script):
+    """python:3.13-slim: `python3 -m pip intsall x` says what pip says."""
+    command = Command(script, UNKNOWN.format('intsall', 'install'))
+    assert match(command)
+    assert get_new_command(command)[0] == script.replace('intsall', 'install')
+
+
+def test_other_python_runs_are_not_pip():
+    assert not match(Command('python -m venv intsall',
+                             UNKNOWN.format('intsall', 'install')))

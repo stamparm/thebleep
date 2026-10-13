@@ -24,17 +24,35 @@ from thebleep.specific.git import git_support
 
 SUBCOMMAND = re.compile(r'git bisect\s+(\S+)')
 USAGE = re.compile(r'usage: git bisect \[([^\]]+)\]')
+# git 2.53 and later: `fatal: unknown command: 'strt'`, then one line per
+# subcommand -- `usage: git bisect start ...`, `   or: git bisect next`,
+# `   or: git bisect (good|old|<term-old>) ...`.
+USAGE_LINE = re.compile(r'^\s*(?:usage|or): git bisect (\([^)]*\)|[\w-]+)',
+                        re.MULTILINE)
+
+
+def _subcommands(output):
+    listed = USAGE.search(output)
+    if listed:
+        return listed.group(1).split('|')
+    names = []
+    for found in USAGE_LINE.findall(output):
+        for name in found.strip('()').split('|'):
+            if name and not name.startswith('<') and name not in names:
+                names.append(name)
+    return names
 
 
 @git_support
 def match(command):
     return ('bisect' in command.script_parts
             and bool(SUBCOMMAND.search(command.script))
-            and bool(USAGE.search(command.output)))
+            and 'git bisect' in command.output
+            and bool(_subcommands(command.output)))
 
 
 @git_support
 def get_new_command(command):
     broken = SUBCOMMAND.search(command.script).group(1)
-    usage = USAGE.search(command.output).group(1)
-    return replace_command(command, broken, usage.split('|'), guessed=True)
+    return replace_command(command, broken, _subcommands(command.output),
+                           guessed=True)

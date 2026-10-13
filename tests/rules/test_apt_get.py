@@ -51,3 +51,18 @@ def test_get_new_command(mocker, command, new_command, packages):
                  create=True, return_value=packages)
 
     assert get_new_command(command) == new_command
+
+
+def test_what_command_not_found_printed_is_enough(mocker):
+    """ubuntu:24.04: the CommandNotFound module cannot be imported from a pipx
+    or uv environment, and the shell had already said what to install."""
+    mocker.patch('thebleep.rules.apt_get.which', return_value=None)
+    mocker.patch('thebleep.rules.apt_get._get_packages', None)
+    output = ("Command 'fortune' not found, but can be installed with:\n"
+              "sudo apt install fortune-mod\n")
+    command = Command('fortune', output)
+    assert match(command)
+    assert get_new_command(command) == \
+        'sudo apt-get install fortune-mod && fortune'
+    assert not match(Command('fortune', "Command 'other' not found, but can "
+                             "be installed with:\napt install x\n"))

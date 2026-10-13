@@ -2,6 +2,8 @@
 
 import json
 
+import pytest
+
 from thebleep.rules.pnpm_missing_script import get_new_command, match
 from thebleep.types import Command
 
@@ -41,3 +43,30 @@ def test_unreadable_project_metadata_keeps_native_hint_only(tmpdir,
 
     assert get_new_command(Command('pnpm run buld', NO_SCRIPT)) == [
         'pnpm run build']
+
+
+@pytest.mark.parametrize('output', [
+    ' ERR_PNPM_NO_SCRIPT  Missing script: buld\n\n'
+    'Command "buld" not found. Did you mean "pnpm run build"?\n',
+    '[ERR_PNPM_NO_SCRIPT] Missing script: buld\n\n'
+    'Command "buld" not found. Did you mean "pnpm run build"?\n',
+    'Error: ERR_PNPM_NO_SCRIPT\n\n  × Missing script: buld\n'
+    '  help: Command "buld" not found.\n'])
+def test_every_current_pnpm(output, mocker):
+    """pnpm 9.15.9 and 10.34.7, 11.28.5, 12.11.2 -- three wordings."""
+    mocker.patch('thebleep.project_context.package_scripts',
+                 return_value=['build', 'test'])
+    command = Command('pnpm run buld', output)
+    assert match(command)
+    assert get_new_command(command)[0] == 'pnpm run build'
+
+
+def test_one_of_pnpms_own_commands(mocker):
+    """pnpm 12: `pnpm instal` names no candidate at all."""
+    mocker.patch('thebleep.project_context.package_scripts',
+                 return_value=['build'])
+    output = ('Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL\n\n'
+              '  × Command "instal" not found\n')
+    command = Command('pnpm instal', output)
+    assert match(command)
+    assert get_new_command(command)[0] == 'pnpm install'
