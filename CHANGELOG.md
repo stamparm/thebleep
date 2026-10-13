@@ -41,7 +41,7 @@
 - **Where it works.** A table in the README, recorded rather than claimed:
   fifteen everyday slips typed into a real shell on eighteen platforms --
   nine Linux distributions, macOS on both architectures, Windows in both
-  PowerShells, FreeBSD, OpenBSD, NetBSD and WSL -- by a weekly workflow that
+  PowerShells, FreeBSD, OpenBSD, NetBSD and WSL -- by a monthly workflow that
   boots each one, runs `ci/compat_matrix.py`, and commits what came back. A
   row with an uncorrected slip is held back and the job goes red, so the
   table is only ever ticks. The first runs found and fixed: apk had no rule,
@@ -214,6 +214,11 @@
   modules it has executed, per `PATH`, as its description always said it did.
   The README's ambient line is written into the startup file rather than
   `eval`'d, which started Python at every shell start.
+
+- **`--help` is grouped** -- correcting, setting it up, learning and
+  history, and what editors, agents and scripts use -- instead of forty flags
+  in one list. `--yeah` and `--hard` still work and are no longer listed, and
+  neither is the internal `--shell-logger`.
 
 ## 4.0.4 — 2026-09-03
 

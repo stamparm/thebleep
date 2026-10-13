@@ -168,3 +168,17 @@ def test_argparse_is_not_imported_for_a_correction(mocker):
     build = mocker.patch.object(parser, '_build')
     parser.parse(['thebleep', 'git', 'brnch', ARGUMENT_PLACEHOLDER, '-y'])
     assert not build.called
+
+
+def test_the_help_is_grouped_and_the_old_spellings_still_work(capsys):
+    from thebleep.argument_parser import Parser
+
+    parser = Parser()
+    parser.print_help()
+    shown = capsys.readouterr().err
+    for title in ('correcting:', 'setting it up:', 'learning and history:',
+                  'for editors, agents and scripts:'):
+        assert title in shown
+    assert '--yeah' not in shown and '--shell-logger' not in shown
+    assert parser.parse(['thebleep', '--yeah']).yes
+    assert parser.parse(['thebleep', '--hard']).yes

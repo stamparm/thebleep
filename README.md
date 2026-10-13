@@ -118,7 +118,7 @@ The same slips, typed into a real shell on each of these, and what came back.
 <!-- end compat -->
 
 The rows are recorded by
-[a weekly workflow](.github/workflows/compat-matrix.yml) that boots each
+[a monthly workflow](.github/workflows/compat-matrix.yml) that boots each
 platform -- a container for the Linux distributions, a runner for macOS and
 Windows, a virtual machine for the BSDs -- installs The Bleep, and runs
 [ci/compat_matrix.py](ci/compat_matrix.py). That script types each slip into

@@ -5,7 +5,7 @@ column was typed into that shell by `ci/compat_matrix.py`, what the
 shell printed was handed to the correction engine, and the first
 suggestion is what the cell says. Nothing suggested was run.
 
-Rows marked *ci* were recorded by the weekly
+Rows marked *ci* were recorded by the monthly
 [compatibility workflow](../../.github/workflows/compat-matrix.yml)
 on a fresh runner, container or virtual machine; rows marked *hand*
 by a person running the same script on a machine CI cannot reach.

@@ -662,7 +662,7 @@ def page(rows):
         u'shell printed was handed to the correction engine, and the first',
         u'suggestion is what the cell says. Nothing suggested was run.',
         u'',
-        u'Rows marked *ci* were recorded by the weekly',
+        u'Rows marked *ci* were recorded by the monthly',
         u'[compatibility workflow](../../.github/workflows/compat-matrix.yml)',
         u'on a fresh runner, container or virtual machine; rows marked *hand*',
         u'by a person running the same script on a machine CI cannot reach.',

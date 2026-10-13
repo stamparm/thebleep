@@ -114,10 +114,44 @@ class Parser(object):
 
         self._parser = ArgumentParser(prog='thebleep', add_help=False)
         self._add_arguments()
+        self._group_arguments()
         return self._parser
+
+    # Forty flags in one alphabet soup was the help screen. Grouped by what
+    # somebody came to `--help` to do, in that order; anything not named here
+    # stays in the general list.
+    GROUPS = (
+        ('correcting', ('--yes', '--repeat', '--edit', '--explain', '--why',
+                        '--pick', '--forget', '--debug')),
+        ('setting it up', ('--alias', '--alias-loader', '--ambient',
+                           '--bind-inline', '--shell',
+                           '--enable-experimental-instant-mode', '--doctor',
+                           '--clear-cache')),
+        ('learning and history', ('--learn-last', '--learn-from-history',
+                                  '--learned', '--forget-learning', '--stats')),
+        ('for editors, agents and scripts', ('--json', '--mcp', '--hook',
+                                             '--as-hook', '--inline',
+                                             '--serve', '--command',
+                                             '--stderr', '--cwd',
+                                             '--platform')),
+    )
+
+    def _group_arguments(self):
+        actions = {option: action for action in self._parser._actions
+                   for option in action.option_strings}
+        general = self._parser._optionals._group_actions
+        for title, options in self.GROUPS:
+            group = self._parser.add_argument_group(title)
+            for option in options:
+                action = actions.get(option)
+                if action is not None and action in general:
+                    general.remove(action)
+                    group._group_actions.append(action)
 
     def _add_arguments(self):
         """Adds arguments to parser."""
+        from argparse import SUPPRESS
+
         self._parser.add_argument(
             '-v', '--version',
             action='store_true',
@@ -257,11 +291,11 @@ class Parser(object):
         self._parser.add_argument(
             '-l', '--shell-logger',
             action='store',
-            help='log shell output to the file')
+            help=SUPPRESS)
         self._parser.add_argument(
             '--enable-experimental-instant-mode',
             action='store_true',
-            help='enable experimental instant mode, use on your own risk')
+            help='enable experimental instant mode, at your own risk')
         self._parser.add_argument(
             '-h', '--help',
             action='store_true',
@@ -295,9 +329,14 @@ class Parser(object):
         """It's too dangerous to use `-y` and `-r` together."""
         group = self._parser.add_mutually_exclusive_group()
         group.add_argument(
-            '-y', '--yes', '--yeah', '--hard',
+            '-y', '--yes',
             action='store_true',
             help='execute fixed command without confirmation')
+        # The old spellings still work; they are not worth a line of help.
+        from argparse import SUPPRESS
+
+        group.add_argument('--yeah', '--hard', dest='yes', action='store_true',
+                           help=SUPPRESS)
         group.add_argument(
             '-r', '--repeat',
             action='store_true',
