@@ -14,6 +14,12 @@ def match(command):
                  command.output, re.I) is not None:
         return False
 
+    # Nor when what is missing is an argument: `chmod +x` says `missing operand
+    # after '+x'`, and the fix is a file name only the user knows. Offering
+    # `chmod --help` there put a help screen first, as though it were one.
+    if re.search(r'missing (?:\w+ )*operand', command.output) is not None:
+        return False
+
     if re.search(help_regex, command.output, re.I) is not None:
         return True
 

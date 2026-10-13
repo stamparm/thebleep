@@ -50,3 +50,17 @@ def test_the_tools_line_is_quoted_before_it_is_offered():
     anything between those quotes."""
     output = "Try 'x; touch /tmp/pwned #' for more information."
     assert get_new_command(Command('x', output)) == "'x;' touch /tmp/pwned '#'"
+
+
+@pytest.mark.parametrize('script, output', [
+    # coreutils 9.x, debian:testing.
+    ('chmod +x', "chmod: missing operand after '+x'\n"
+                 "Try 'chmod --help' for more information.\n"),
+    ('cp a', "cp: missing destination file operand after 'a'\n"
+             "Try 'cp --help' for more information.\n"),
+    ('mkdir', "mkdir: missing operand\n"
+              "Try 'mkdir --help' for more information.\n"),
+])
+def test_a_missing_argument_is_not_corrected_with_a_help_screen(script, output):
+    """The fix is a file name only the user knows."""
+    assert not match(Command(script, output))

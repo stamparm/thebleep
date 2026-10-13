@@ -241,6 +241,11 @@
   expectations written first and never edited to agree -- are scored beside
   it, offline and with no tool asked, and the README publishes both.
 
+- **A help screen is not a correction.** `chmod +x` with no file said
+  `missing operand`, and `chmod --help` was offered first, as though it were
+  the fix. When what is missing is an argument only the user knows, nothing
+  is offered.
+
 - **Options read from manual pages and fish completions.** grep's page writes
   `\-\^\-exclude\-dir`, and the `\^` stayed in the name, so not one of
   grep's long options was read and `grep --exculde-dir` got nothing. fish
