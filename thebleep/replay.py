@@ -392,8 +392,12 @@ def _is_an_exported_function(name):
 
 
 # Files a non-interactive shell runs before it runs anything it was asked to.
-# `BASH_ENV` is bash's, `ENV` is POSIX `sh`'s and zsh reads it too.
-STARTUP_FILE_ENV = ('BASH_ENV', 'ENV')
+# `BASH_ENV` is bash's. `ENV` is not on the list: bash, zsh, ksh93, mksh, dash
+# and `sh` all read it only when interactive, and a replay is `-c` -- checked
+# in a container, where it only ever cost ksh users a question. The startup
+# files the other shells read under `-c` (`~/.zshenv`, `~/.tcshrc`, fish's
+# `config.fish`) are switched off where the replay starts them instead.
+STARTUP_FILE_ENV = ('BASH_ENV',)
 
 
 def _starting_the_shell_has_an_effect():
@@ -452,6 +456,13 @@ def is_inert(script):
         # `bash -c` imports functions the shell exported into the environment,
         # so a name that is not on `PATH` can still run something. See the
         # function.
+        return False
+
+    from .shells import shell
+
+    if program == name and shell.defines_function(name):
+        # fish's version of the same thing: `fish -c deploy` autoloads
+        # `~/.config/fish/functions/deploy.fish`, and it ran a second time.
         return False
 
     # `READ_ONLY` is a judgement about the program conventionally called `ls`,

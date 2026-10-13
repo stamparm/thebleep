@@ -141,7 +141,7 @@ def row(corrected, command, chosen, width):
             pieces.append((u' ', None))
         style = colorama.Style.BRIGHT + colorama.Fore.GREEN if changed \
             else (colorama.Style.BRIGHT if chosen else None)
-        pieces.append((word, style))
+        pieces.append((logs.visible(word), style))
     if corrected.side_effect:
         pieces.append((u' (+side effect)', None))
 

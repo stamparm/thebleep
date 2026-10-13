@@ -227,6 +227,11 @@ class Generic(object):
         """
         return None
 
+    def defines_function(self, name):
+        """Whether the replay shell would find a function of the user's
+        called `name` without it being on `PATH`. See `replay.is_inert`."""
+        return False
+
     @staticmethod
     def _posix_replay_argv(argv):
         """`argv`, unless this is Windows, where it would be a different machine.

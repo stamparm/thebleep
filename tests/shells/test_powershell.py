@@ -53,6 +53,9 @@ class TestPowershell(object):
         ('a`b', "'a`b'"),
         ('a&b', "'a&b'"),
         (u'\u00fcnic\u00f8de', u'\u00fcnic\u00f8de'),
+        # PowerShell ends a single-quoted string at a curly quote too.
+        (u'a\u2019; New-Item x; \u2019', u"'a\u2019\u2019; New-Item x; \u2019\u2019'"),
+        (u'\u2018\u201a\u201b', u"'\u2018\u2018\u201a\u201a\u201b\u201b'"),
     ])
     def test_quote(self, shell, value, quoted):
         """PowerShell does not join adjacent string literals.

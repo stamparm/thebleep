@@ -35,6 +35,23 @@ class Xonsh(Generic):
         """See `Generic.replay_argv`."""
         return self._posix_replay_argv(['xonsh', '--no-rc', '-c', script])
 
+    def quote(self, s):
+        """An argument xonsh passes through exactly as `s`.
+
+        Not `shlex.quote`: xonsh reads a backslash inside single quotes as an
+        escape, so `'a\\' '` closes nowhere near where POSIX says, and it
+        expands `$HOME` and `~` inside quotes too. `@(...)` is a Python
+        expression whose value is the argument, and a Python literal of `s`
+        is `s` with nothing expanded. A word with nothing special in it is
+        left bare, as everywhere else.
+
+        """
+        from shlex import quote
+
+        if s and quote(s) == s:
+            return s
+        return u'@({!r})'.format(s)
+
     def app_alias(self, alias_name):
         # Written out as Python, so nothing here is shell-quoted; the
         # invocation's words are repr'd into a list for `subprocess.run`.

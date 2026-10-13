@@ -110,7 +110,8 @@ jobs:
               cd /src
               python -m pytest -q -rs \
                   tests/shells/test_edit_buffer.py \
-                  tests/shells/test_nushell_real.py'
+                  tests/shells/test_nushell_real.py \
+                  tests/shells/test_quoting_real.py'
 
   minimum-dependencies:
     # The floors in setup.py are a claim about what works. This is the claim

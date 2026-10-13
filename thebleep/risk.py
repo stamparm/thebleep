@@ -11,12 +11,19 @@ import re
 
 
 _MARKERS = (
-    ('privilege escalation', re.compile(r'\b(?:sudo|doas)\b', re.IGNORECASE)),
+    ('privilege escalation', re.compile(
+        r'\b(?:sudo|doas)\b|-Verb\s+RunAs\b', re.IGNORECASE)),
+    # PowerShell's own names and aliases as well as the POSIX ones: the
+    # PowerShell driver runs corrections through `Invoke-Expression`.
     ('destructive command', re.compile(
-        r'\b(?:rm|rmdir|unlink|shred|mkfs|dd)\b', re.IGNORECASE)),
+        r'\b(?:rm|rmdir|unlink|shred|mkfs|dd)\b'
+        r'|(?<![\w-])(?:Remove-Item(?:Property)?|ri|del|erase|rd'
+        r'|Clear-Content|Clear-Disk|Format-Volume)\b', re.IGNORECASE)),
+    ('code execution', re.compile(
+        r'(?<![\w-])(?:Invoke-Expression|iex)\b', re.IGNORECASE)),
     ('safety bypass', re.compile(
-        r'(?<![\w-])--(?:force|hard|no-verify|insecure|delete|purge)\b',
-        re.IGNORECASE)),
+        r'(?<![\w-])--(?:force|hard|no-verify|insecure|delete|purge)\b'
+        r'|(?<![\w-])-Force\b', re.IGNORECASE)),
 )
 
 

@@ -836,15 +836,39 @@ class TestTheProofAndTheReplayAreAboutTheSameThing(object):
         os_environ['deploy'] = '() { printf x >> log; }'
         assert not replay.is_inert('deploy')
 
-    @pytest.mark.parametrize('variable', ['BASH_ENV', 'ENV'])
     def test_a_startup_file_makes_opening_the_shell_do_something(
-            self, os_environ, on_path, variable):
+            self, os_environ, on_path):
         """A non-interactive bash sources `$BASH_ENV` before the command it was
         given, so replaying a command that does not exist *at all* still had an
-        effect. `ENV` is the POSIX `sh` equivalent."""
-        os_environ[variable] = '/tmp/somebodys-startup-file'
+        effect."""
+        os_environ['BASH_ENV'] = '/tmp/somebodys-startup-file'
         assert not replay.is_inert('no-such-program-at-all')
         assert not replay.is_inert('ls')
+
+    def test_env_is_not_read_by_a_shell_running_a_command(
+            self, os_environ, on_path):
+        """POSIX `ENV` is for interactive shells; no `-c` shell reads it, and
+        treating it as one only cost ksh users a question."""
+        os_environ['ENV'] = '/tmp/somebodys-kshrc'
+        assert replay.is_inert('no-such-program-at-all')
+
+    def test_a_fish_function_of_the_users_is_not_inert(
+            self, os_environ, on_path, tmpdir, mocker):
+        """`fish -c deploy` autoloads `~/.config/fish/functions/deploy.fish`,
+        so a name that is nowhere on `PATH` still ran a second time."""
+        from thebleep.shells.fish import Fish
+
+        functions = tmpdir.mkdir('config').mkdir('fish').mkdir('functions')
+        functions.join('ship.fish').write('function ship; end\n')
+        os_environ['XDG_CONFIG_HOME'] = str(tmpdir.join('config'))
+        fish = Fish()
+        mocker.patch('thebleep.shells.shell', fish)
+        assert not replay.is_inert('ship')
+        assert replay.is_inert('shpi')
+        if os.name != 'nt':
+            assert fish.replay_argv('ship')[:2] == ['fish', '-c']
+            assert fish.replay_argv('shpi')[:3] == [
+                'fish', '--no-config', '-c']
 
     @pytest.mark.parametrize('script', [
         # The dispatcher probe asked `/usr/bin/git` about `satus` while the

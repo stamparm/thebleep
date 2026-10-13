@@ -8,6 +8,7 @@ from .generic import Generic, ShellConfiguration
 # The characters that mean nothing special to PowerShell in an argument. The
 # POSIX set, plus the backslash and colon of a Windows path.
 BARE_WORD = re.compile(r'^[\w@%+=:,./\\-]+$')
+SINGLE_QUOTES = (u"'", u'\u2018', u'\u2019', u'\u201a', u'\u201b')
 
 
 class Powershell(Generic):
@@ -211,7 +212,12 @@ Set-PSReadLineKeyHandler -Key Enter -BriefDescription 'TheBleepAmbient' -Descrip
         """A single-quoted PowerShell string, always quoted: for the places
         where a bare word would be read as a command rather than as text,
         such as the right-hand side of an assignment."""
-        return u"'{}'".format(s.replace(u"'", u"''"))
+        # PowerShell takes the curly quotes for single quotes too, so `’`
+        # ends the string as surely as `'` does; each is escaped the same
+        # way, by being written twice.
+        for mark in SINGLE_QUOTES:
+            s = s.replace(mark, mark * 2)
+        return u"'{}'".format(s)
 
     def put_on_path(self, directory):
         return u'$env:PATH = {} + [IO.Path]::PathSeparator + $env:PATH'.format(

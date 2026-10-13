@@ -128,10 +128,27 @@ def failed(msg):
         reset=color(colorama.Style.RESET_ALL)))
 
 
+def visible(text):
+    """`text` with its control characters written out, for the screen.
+
+    A suggestion can carry a name read out of a `package.json` or a branch
+    list, and an escape sequence in one reached the terminal raw: `ESC[8m`
+    hides whatever follows it, which is exactly where a payload would be.
+    What is shown has to be what will run, so an escape is shown as `\\x1b`.
+    Newlines and tabs are text.
+
+    """
+    return u''.join(
+        u'\\x{:02x}'.format(ord(character))
+        if (ord(character) < 32 and character not in u'\n\t')
+        or 127 <= ord(character) < 160 else character
+        for character in text)
+
+
 def show_corrected_command(corrected_command):
     sys.stderr.write(u'{prefix}{bold}{script}{reset}{side_effect}\n'.format(
         prefix=const.USER_COMMAND_MARK,
-        script=corrected_command.script,
+        script=visible(corrected_command.script),
         side_effect=u' (+side effect)' if corrected_command.side_effect else u'',
         bold=color(colorama.Style.BRIGHT),
         reset=color(colorama.Style.RESET_ALL)))
@@ -143,7 +160,7 @@ def confirm_text(corrected_command, offer_edit=False, offer_explain=False):
          u'[{green}enter{reset}/{blue}↑{reset}/{blue}↓{reset}{edit}{explain}'
          u'/{red}ctrl+c{reset}/{red}esc{reset}]').format(
             prefix=const.USER_COMMAND_MARK,
-            script=corrected_command.script,
+            script=visible(corrected_command.script),
             side_effect=' (+side effect)' if corrected_command.side_effect else '',
             # Through `escape`, not `color`: erasing the line is layout, not
             # colour, so `no_colors` does not switch it off -- but a console

@@ -51,8 +51,27 @@ class Fish(Generic):
     def replay_argv(self, script):
         """See `Generic.replay_argv`. fish's syntax is its own throughout --
         `set`, `and`, no `$?` -- so `sh` running a fish command line is not
-        running the same command at all."""
-        return self._posix_replay_argv(['fish', '-c', script])
+        running the same command at all.
+
+        `--no-config` (fish 3.3), because `fish -c` reads `config.fish`,
+        `conf.d` and the user's autoloaded functions before the command: a
+        replay of a typo is not a reason to run any of them. A function of the
+        user's own is the exception -- replaying it means running it, which
+        `replay.is_inert` asks about first, and then it runs as typed."""
+        words = script.split()
+        if words and self.defines_function(words[0]):
+            return self._posix_replay_argv(['fish', '-c', script])
+        return self._posix_replay_argv(['fish', '--no-config', '-c', script])
+
+    def defines_function(self, name):
+        """Whether `name` is one of the user's autoloaded fish functions,
+        which `fish -c` would find although nothing on `PATH` is called that."""
+        if not name or '/' in name or name.startswith('.'):
+            return False
+        config = os.environ.get('XDG_CONFIG_HOME') or os.path.join(
+            os.path.expanduser('~'), '.config')
+        return os.path.isfile(os.path.join(
+            config, 'fish', 'functions', name + '.fish'))
 
     def supports_instant_mode(self):
         return True
@@ -285,6 +304,23 @@ end
             return line.split('- cmd: ', 1)[1]
         else:
             return ''
+
+    def quote(self, s):
+        """A fish string for `s`.
+
+        Not `shlex.quote`. Inside fish's single quotes a backslash escapes the
+        quote, so the POSIX `'a\\'` reads on past its own end and whatever
+        follows is code: a script name `x\\'";touch pwned #` from a
+        `package.json` ran `touch`. Here a backslash and a quote are each
+        escaped, which is fish's own rule, and `%self` -- which fish still
+        expands to its PID -- is quoted although `shlex` calls it safe.
+
+        """
+        from shlex import quote
+
+        if s and quote(s) == s and not s.startswith(u'%'):
+            return s
+        return u"'{}'".format(s.replace(u'\\', u'\\\\').replace(u"'", u"\\'"))
 
     def and_(self, *commands):
         return u'; and '.join(commands)

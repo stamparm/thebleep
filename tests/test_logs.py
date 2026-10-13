@@ -95,3 +95,16 @@ class TestTheOneEscapeThatIsNotAColour(object):
                                                         mocker):
         mocker.patch.object(logs._ansi_supported, 'cached', False)
         assert '\x1b' not in self._written(capsys, command)
+
+
+def test_an_escape_in_a_suggestion_is_shown_not_obeyed(capsys, settings):
+    """`ESC[8m` from a hostile script name hid the rest of the line."""
+    from thebleep.types import CorrectedCommand
+
+    settings.no_colors = True
+    logs.show_corrected_command(CorrectedCommand(
+        u'npm run x\x1b[8m; touch pwned', None, 100))
+    shown = capsys.readouterr().err
+    assert u'\x1b' not in shown
+    assert u'npm run x\\x1b[8m; touch pwned' in shown
+    assert logs.visible(u'a\tb\nc\x07\x9b') == u'a\tb\nc\\x07\\x9b'

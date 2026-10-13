@@ -224,9 +224,9 @@ class TestReplayingInTheRightShell(object):
 
     @pytest.mark.parametrize('name, argv', [
         ('Bash', ['bash', '-c', 'echo hi']),
-        ('Zsh', ['zsh', '-c', 'echo hi']),
-        ('Fish', ['fish', '-c', 'echo hi']),
-        ('Tcsh', ['tcsh', '-c', 'echo hi']),
+        ('Zsh', ['zsh', '-f', '-c', 'echo hi']),
+        ('Fish', ['fish', '--no-config', '-c', 'echo hi']),
+        ('Tcsh', ['tcsh', '-f', '-c', 'echo hi']),
         ('Nushell', ['nu', '--commands', 'echo hi']),
     ])
     @pytest.mark.skipif(os.name == 'nt', reason='POSIX drivers stand aside there')

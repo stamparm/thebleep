@@ -69,6 +69,28 @@
   which reached both of them before. `--json` says which is which in
   `from_repository`.
 
+- **Quoting in fish, xonsh and PowerShell.** fish and xonsh were quoted
+  with `shlex.quote`, and both read a backslash inside single quotes as an
+  escape: a `package.json` script named `x\'";touch pwned #` ran `touch`
+  through `npm run` in fish. xonsh also expands `$HOME` inside quotes. fish
+  now gets its own escaping, xonsh gets `@('...')`, a Python literal, and
+  PowerShell's literal doubles the curly quotes it also ends a string at.
+  `tests/shells/test_quoting_real.py` hands every shell's quoting back to
+  that shell, in the functional image and wherever PowerShell is installed.
+  The risk scan knows `Remove-Item`, `iex`, `-Force` and `-Verb RunAs`, and
+  a control character in a suggestion is shown as `\x1b` instead of being
+  sent to the terminal, where `ESC[8m` hid the rest of the line.
+
+- **Replaying no longer runs startup files.** `fish -c` reads
+  `config.fish`, `conf.d` and the user's autoloaded functions, `zsh -c`
+  reads `~/.zshenv` and `tcsh -c` reads `~/.tcshrc` -- so "the program is not
+  on `PATH`, nothing will happen" was not true there, and a fish function
+  ran a second time unasked. The replay starts them with `--no-config` and
+  `-f`; a fish function of the user's own is asked about first and then run
+  as typed. `ENV` no longer counts as a startup file: no shell reads it
+  under `-c`, and it only cost ksh users a question. fish 3.3 or later is
+  needed for the replay.
+
 ## 4.0.4 — 2026-09-03
 
 ### Added

@@ -11,7 +11,7 @@ class Tcsh(Generic):
 
     def replay_argv(self, script):
         """See `Generic.replay_argv`."""
-        return self._posix_replay_argv(['tcsh', '-c', script])
+        return self._posix_replay_argv(['tcsh', '-f', '-c', script])
 
     def put_on_path(self, directory):
         return u'setenv PATH {}:$PATH'.format(self.quote(directory))
