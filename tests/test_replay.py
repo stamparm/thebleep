@@ -331,21 +331,22 @@ class TestAskingTheProgramItself(object):
 
     def test_pip_lists_every_command_it_has(self):
         """The listing has to be complete: a real command missing from it
-        would look like a typo and run again unasked."""
-        for program in ('pip3', 'pip'):
-            if shutil.which(program):
-                break
-        else:
-            pytest.skip('pip is not installed')
+        would look like a typo and run again unasked.
 
-        answer = replay._subcommands(program, replay.DISPATCHERS[program])
-        if answer is None:
-            pytest.skip('this pip would not answer --help')
+        Asked of the pip this interpreter imports, through `-m pip`: the
+        `pip` first on PATH can be another installation entirely, and a
+        system pip 24 was compared with a venv's pip 26, which has `lock`.
 
+        """
         try:
             from pip._internal.commands import commands_dict
         except ImportError:
-            commands_dict = ('install', 'download', 'uninstall', 'freeze')
+            pytest.skip('pip is not importable here')
+
+        answer = replay._subcommands(sys.executable, ('-m', 'pip', '--help'))
+        if answer is None:
+            pytest.skip('this pip would not answer --help')
+
         assert set(commands_dict) <= answer
         assert 'instal' not in answer
 
