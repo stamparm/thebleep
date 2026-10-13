@@ -97,12 +97,12 @@ def decide(corrected_command, command=None):
         return Verdict(False, u'risk: {}'.format(
             ', '.join(assessed_risk['factors'])), score, limit)
 
-    rule = getattr(corrected_command, 'rule', None)
-    if getattr(rule, 'learning_shipped', False):
-        # A correction that came with a repository is somebody else's word.
-        # It scores as high as one the user taught, and that is exactly why
-        # it is never run without the prompt: a clone must not be able to
-        # make a typo run its own script.
+    if getattr(corrected_command, 'from_repository', False):
+        # A correction that came with a repository is somebody else's word,
+        # and so is a program it brought (`./bin/gti`). Either can score as
+        # high as anything, and that is exactly why it is never run without
+        # the prompt: a clone must not be able to make a typo run its own
+        # script.
         return Verdict(False, 'the correction came with the repository, '
                               'not from you', score, limit)
 

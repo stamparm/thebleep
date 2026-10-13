@@ -152,6 +152,7 @@ def _suggestion(corrected, command):
         'priority': corrected.priority,
         'confidence': confidence,
         'side_effect': bool(corrected.side_effect),
+        'from_repository': bool(getattr(corrected, 'from_repository', False)),
         'risk': assessment['level'],
         'risk_factors': assessment['factors'],
         'requires_output': bool(rule and rule.requires_output),

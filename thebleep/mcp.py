@@ -137,7 +137,14 @@ def _call_tool(name, arguments):
     output = arguments.get('output')
     if name == 'bleep_why':
         return api.why(command, output, arguments.get('platform'))
-    return api.suggest(command, output)
+    result = api.suggest(command, output)
+    # An agent runs what it is given. What the repository supplied -- its
+    # shipped corrections, its own `bin/` -- is not ours to hand over.
+    result['suggestions'] = [suggestion for suggestion in result['suggestions']
+                             if not suggestion['from_repository']]
+    if not result['suggestions'] and result['decision'] == 'suggest':
+        result['decision'] = 'abstain'
+    return result
 
 
 def _tool_result(value):

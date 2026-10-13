@@ -249,7 +249,7 @@ def get_new_command(command):
                 word, path)
         suggestions.append(Suggestion(
             lead + shell.quote(shown) + rest, confidence=0.9,
-            evidence=(evidence,)))
+            evidence=(evidence,), from_repository=how == 'project'))
         if how == 'home':
             suggestions.append(Suggestion(
                 shell.and_(shell.put_on_path(directory), command.script),

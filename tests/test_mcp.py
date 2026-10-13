@@ -61,6 +61,25 @@ def test_suggest_returns_structured_api_result(mocker):
     assert responses[1]['result']['isError'] is False
 
 
+def test_what_the_repository_supplied_is_not_handed_to_the_agent(mocker):
+    """A clone's shipped correction or its own `bin/` is not ours to give
+    an agent, which would run it."""
+    result = {'schema': 2, 'decision': 'suggest', 'suggestions': [
+        {'command': './bin/gti status', 'from_repository': True}]}
+    mocker.patch.object(mcp.api, 'suggest', return_value=result)
+    responses = _serve([
+        _message('initialize'),
+        {'jsonrpc': '2.0', 'method': 'notifications/initialized'},
+        _message('tools/call', params={
+            'name': 'bleep_suggest',
+            'arguments': {'command': 'gti status', 'output': 'not found'},
+        }),
+    ])
+    content = responses[1]['result']['structuredContent']
+    assert content['suggestions'] == []
+    assert content['decision'] == 'abstain'
+
+
 def test_why_passes_platform_to_diagnostics(mocker):
     result = {'schema': 2, 'decision': 'abstain', 'diagnoses': []}
     why = mocker.patch.object(mcp.api, 'why', return_value=result)

@@ -17,7 +17,8 @@ class Suggestion(str):
     while newer rules can carry evidence through the correction engine.
     """
 
-    def __new__(cls, command, confidence=None, evidence=()):
+    def __new__(cls, command, confidence=None, evidence=(),
+                from_repository=False):
         if not isinstance(command, str):
             raise TypeError('suggestion command must be a string')
         if confidence is not None and (
@@ -43,6 +44,10 @@ class Suggestion(str):
         result = str.__new__(cls, command)
         result.confidence = confidence
         result.evidence = evidence
+        # The command runs something the working directory supplied -- a
+        # `./bin/gti` the clone brought with it -- rather than something the
+        # user installed. Shown, never run unasked, never handed to an agent.
+        result.from_repository = bool(from_repository)
         return result
 
 
@@ -299,21 +304,24 @@ class Rule(object):
             if isinstance(new_command, Suggestion):
                 confidence = new_command.confidence
                 evidence = new_command.evidence
+                from_repository = new_command.from_repository
             else:
                 confidence = None
                 evidence = ()
+                from_repository = False
             yield CorrectedCommand(script=str(new_command),
                                    side_effect=self.side_effect,
                                    priority=(n + 1) * self.priority,
                                    rule=self, confidence=confidence,
-                                   evidence=evidence)
+                                   evidence=evidence,
+                                   from_repository=from_repository)
 
 
 class CorrectedCommand(object):
     """Corrected by rule command."""
 
     def __init__(self, script, side_effect, priority, rule=None,
-                 confidence=None, evidence=()):
+                 confidence=None, evidence=(), from_repository=False):
         """Initializes instance with given fields.
 
         :type script: basestring
@@ -331,6 +339,10 @@ class CorrectedCommand(object):
         self.rule = rule
         self.confidence = confidence
         self.evidence = tuple(evidence)
+        # Somebody else's word: a correction the repository ships, or a
+        # program the repository brought. Either way the clone chose it.
+        self.from_repository = bool(
+            from_repository or getattr(rule, 'learning_shipped', False))
 
     def __eq__(self, other):
         """Ignores `priority` field."""
@@ -359,7 +371,8 @@ class CorrectedCommand(object):
                                 priority=self.priority,
                                 rule=self.rule,
                                 confidence=self.confidence,
-                                evidence=self.evidence)
+                                evidence=self.evidence,
+                                from_repository=self.from_repository)
 
     def with_script(self, script):
         """Return this correction with a source-preserving script change."""
@@ -368,7 +381,8 @@ class CorrectedCommand(object):
                                 priority=self.priority,
                                 rule=self.rule,
                                 confidence=self.confidence,
-                                evidence=self.evidence)
+                                evidence=self.evidence,
+                                from_repository=self.from_repository)
 
     def _get_script(self):
         """Returns fixed commands script.

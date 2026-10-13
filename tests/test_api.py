@@ -45,6 +45,7 @@ def test_suggest_returns_structured_correction(mocker):
                 'level': 'high',
                 'basis': ['the rule matched captured command output']},
             'side_effect': False,
+            'from_repository': False,
             'risk': 'low',
             'risk_factors': [],
             'requires_output': True,

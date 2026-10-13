@@ -155,6 +155,10 @@ def _suggestion_for(script, output=None, resolving=None):
     for suggestion in result.get('suggestions') or ():
         if suggestion['command'] == script:
             continue
+        # A correction the repository ships, or a program it brought, is the
+        # clone's word: an agent told "use this instead" would run it.
+        if suggestion.get('from_repository'):
+            continue
         if resolving:
             words = _program_words(suggestion['command'])
             if words is None or _missing_programs(words):

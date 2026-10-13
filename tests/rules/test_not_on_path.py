@@ -169,6 +169,38 @@ class TestProjects(object):
         assert got[0] == './.venv/bin/{}'.format(exe('pytest'))
         assert len(got) == 3
 
+    def test_only_what_the_project_brought_is_marked_as_its_own(self, machine):
+        """A clone's `bin/gti` is the clone's word, not the user's: it is
+        never run unasked and never handed to an agent."""
+        work = machine.join('work')
+        executable(work.mkdir('.venv').mkdir('bin'), 'pytest')
+        executable(machine.join('home').mkdir('.local').mkdir('bin'), 'pytest')
+        got = get_new_command(Command('pytest', BASH.replace('cargo', 'pytest')))
+        assert [suggestion.from_repository for suggestion in got] == [
+            True, False, False]
+
+
+def test_a_program_the_repository_brought_is_never_run_unasked(
+        machine, settings):
+    from thebleep import trust
+    from thebleep.rules import not_on_path as module
+    from thebleep.types import Rule
+
+    settings.auto_run_confidence = 0.5
+    executable(machine.join('work').mkdir('bin'), 'gti')
+    command = Command('gti status', BASH.replace('cargo', 'gti'))
+    rule = Rule('not_on_path', module.match, module.get_new_command, True,
+                None, module.priority, False)
+    corrected = list(rule.get_corrected_commands(command))
+    assert corrected[0].script.startswith('./bin/')
+    assert corrected[0].from_repository
+    verdict = trust.decide(corrected[0], command)
+    assert not verdict
+    assert 'came with the repository' in verdict.reason
+    # Carried through the wrapper and the source-preserving rewrite.
+    assert corrected[0].with_prefix('sudo ').from_repository
+    assert corrected[0].with_script('x').from_repository
+
 
 def test_a_path_with_shell_syntax_in_it_is_quoted(tmpdir, os_environ,
                                                   monkeypatch):

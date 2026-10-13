@@ -57,6 +57,18 @@
   command again. A bare `xcodebuild -license` just gets `sudo`. Thanks to Leon
   Fedotov for the rule (#12).
 
+### Security
+
+- **A program the repository brought is the repository's word.** A clone
+  with an executable `bin/gti` turned `gti status` into `./bin/gti status`,
+  offered first at 90% with nothing risky in it -- so `auto_run_confidence =
+  0.9` ran it unasked, and the agent hooks handed it to the agent. A
+  suggestion out of the project's own directories is now marked like a
+  shipped correction: shown, never run without the prompt, and kept out of
+  the agent hooks and the MCP server along with the shipped corrections,
+  which reached both of them before. `--json` says which is which in
+  `from_repository`.
+
 ## 4.0.4 — 2026-09-03
 
 ### Added

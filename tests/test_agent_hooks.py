@@ -114,6 +114,13 @@ class TestNoteAfter(object):
         assert 'Diagnosis:' in note
         assert 'next: `' in note
 
+    def test_what_the_repository_supplied_is_never_the_note(self, mocker):
+        mocker.patch('thebleep.api.suggest', return_value={
+            'decision': 'suggest', 'suggestions': [
+                {'command': 'sh status', 'from_repository': True,
+                 'confidence': {'score': 0.98}}]})
+        assert agent_hooks._suggestion_for('gti status', 'not found') is None
+
     def test_no_output_no_note(self):
         assert agent_hooks.note_after('git satus', None) is None
 

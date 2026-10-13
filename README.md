@@ -771,7 +771,9 @@ The result includes `schema: 2` for contract versioning, the original command,
 whether output was supplied, and a `decision`: `suggest` when a candidate passed
 the rules, or `abstain` when no candidate was verified. Each suggestion contains
 its command, exact source edits, rule, priority,
-side-effect flag, ordinal confidence, conservative risk markers and evidence.
+side-effect flag, whether the repository supplied it (`from_repository`: a
+shipped correction or a program from the project's own `bin/`, which the MCP
+server and agent hooks never pass on), ordinal confidence, conservative risk markers and evidence.
 The top-level `structure` is a source-preserving view of the command: its
 segments, separators, redirections, nested substitutions and source spans are
 available to editors and agents without re-parsing shell punctuation. Incomplete
