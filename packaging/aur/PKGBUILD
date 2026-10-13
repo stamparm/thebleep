@@ -1,0 +1,24 @@
+# Maintainer: Miroslav Stampar <miroslav.stampar@gmail.com>
+pkgname=thebleep
+pkgver=4.0.4
+pkgrel=1
+pkgdesc='Corrects your previous console command'
+arch=('any')
+url='https://github.com/stamparm/thebleep'
+license=('MIT')
+depends=('python' 'python-psutil' 'python-pyte')
+makedepends=('python-build' 'python-installer' 'python-setuptools'
+             'python-wheel')
+source=("https://files.pythonhosted.org/packages/source/t/$pkgname/$pkgname-$pkgver.tar.gz")
+sha256sums=('dd5e80980dd5ae1c104701f914a9750f88990b9ec56331b6ca2ba78e687df93f')
+
+build() {
+    cd "$pkgname-$pkgver"
+    python -m build --wheel --no-isolation
+}
+
+package() {
+    cd "$pkgname-$pkgver"
+    python -m installer --destdir="$pkgdir" dist/*.whl
+    install -Dm644 LICENSE.md "$pkgdir/usr/share/licenses/$pkgname/LICENSE.md"
+}

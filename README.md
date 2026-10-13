@@ -1227,6 +1227,15 @@ want for a tool rather than a library: nothing you `pip install` later can break
 it. On Debian, Ubuntu and Fedora, `pip install --user` is refused outright
 ([PEP 668](https://peps.python.org/pep-0668/)) — use `uv` or `pipx` there.
 
+On **Termux**, `pip install thebleep` stops building `psutil`; Termux packages
+it, so install that first: `pkg install python python-psutil`, then
+`pip install thebleep`.
+
+On **Windows**, PowerShell 5.1 and 7 are supported and tested on every push.
+`cmd.exe` is not supported.
+Git Bash, MSYS2 and Cygwin are untested; a POSIX shell on Windows has its own
+`PATH` and paths, and the replay deliberately stands aside there.
+
 ### Running a clone, with nothing installed
 
 There is nothing to build and no install step — but there are two dependencies,
