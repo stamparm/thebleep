@@ -1,6 +1,6 @@
 {
   "environment": {
-    "commit": "48d4fbc41683013eb1f989731e03017d0b2d6fbc",
+    "commit": "6344bc3545014e0c0f5f5c45a253595e09e377d6",
     "working_tree_clean": true
   },
   "groups": [
@@ -10,16 +10,21 @@
       "what": "you misspelled the command itself"
     },
     {
-      "hits": 20,
-      "of": 20,
+      "hits": 22,
+      "of": 22,
       "what": "the tool named the fix itself"
     },
     {
-      "hits": 9,
-      "of": 9,
+      "hits": 11,
+      "of": 11,
       "what": "nothing should be suggested"
     }
   ],
+  "held_out": {
+    "hits": 88,
+    "of": 121,
+    "what": "held out: captured afterwards, never tuned against"
+  },
   "thefuck_3_32": {
     "groups": [
       {
@@ -29,22 +34,26 @@
       },
       {
         "hits": 6,
-        "of": 20,
+        "of": 22,
         "what": "the tool named the fix itself"
       },
       {
         "hits": 3,
-        "of": 9,
+        "of": 11,
         "what": "nothing should be suggested"
       }
     ],
+    "held_out": {
+      "hits": 56,
+      "of": 121
+    },
     "total": {
       "hits": 55,
-      "of": 85
+      "of": 89
     }
   },
   "total": {
-    "hits": 85,
-    "of": 85
+    "hits": 89,
+    "of": 89
   }
 }
