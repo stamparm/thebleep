@@ -279,6 +279,11 @@
   distance is worked out only within its limit of the diagonal, and "is
   anything one edit away?" stops at the first. The warm server keeps the rule
   modules it has executed, per `PATH`, as its description always said it did.
+  The list of programs on `PATH` is no longer rescanned every ten minutes
+  regardless: it is kept until a directory changes, a listing made in the
+  same clock tick as a change is not trusted, and the few files it passed
+  over for want of the execute bit are asked again -- which notices `chmod
+  +x` at once, where the ten minutes was the only thing that ever did.
   The README's ambient line is written into the startup file rather than
   `eval`'d, which started Python at every shell start.
 

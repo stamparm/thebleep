@@ -524,7 +524,16 @@ def _path_fingerprint(paths):
     return tuple(fingerprint)
 
 
-# How long a listing may be trusted even if no directory looks changed.
+# A directory changed this close to the scan may have changed again within
+# the same tick of its clock, which a timestamp cannot show; such a listing is
+# not trusted the next time. Anything older is trusted until a directory moves.
+# This was a flat ten minutes, which rescanned PATH for most corrections.
+EXECUTABLES_RACY_SECONDS = 2
+
+# More files than this without the execute bit, and they are not kept to be
+# re-checked; the listing is then only trusted for this long. A normal PATH
+# has a handful (a README, a stray `.so`).
+EXECUTABLES_PENDING_LIMIT = 256
 EXECUTABLES_CACHE_MAX_AGE = 600
 
 
@@ -584,19 +593,23 @@ def _scan_executables(paths, skip):
 
     """
     fingerprint = _path_fingerprint(paths) + (tuple(sorted(skip)),)
-    cached = cachefile.load('executables', fingerprint,
-                            EXECUTABLES_CACHE_MAX_AGE)
-    if isinstance(cached, str):
+    cached = cachefile.load('executables', fingerprint)
+    if _listing_holds(cached):
         # One string split in C, rather than thirteen thousand strings
         # unmarshalled one at a time. A file name cannot contain a NUL, so it
         # is the one separator that is always safe.
-        return cached.split('\0') if cached else []
+        names = cached['names']
+        return names.split('\0') if names else []
 
     # A name that appears in several directories on $PATH is one command as
     # far as anyone typing it is concerned, and comparing it to a typo more
     # than once is work for nothing: nearly half the entries are repeats. On
     # Windows, the shell also treats case variants as that same command.
+    import time
+
+    scanned_at = time.time()
     found = []
+    pending = []
     seen = set()
     extensions = _executable_extensions()
     skip = {name.lower() if CASE_INSENSITIVE_NAMES else name
@@ -615,15 +628,46 @@ def _scan_executables(paths, skip):
             if key in skip or key in seen:
                 continue
             try:
-                if entry.is_dir() or not _is_invocable(entry, extensions):
+                if entry.is_dir():
+                    continue
+                if not _is_invocable(entry, extensions):
+                    # `chmod +x` changes the file, not its directory, so no
+                    # timestamp says it happened; these few are re-checked.
+                    pending.append(entry.path)
                     continue
             except OSError:
                 continue
             seen.add(key)
             found.append(name)
 
-    cachefile.save('executables', fingerprint, '\0'.join(found))
+    racy = any(stamp >= (scanned_at - EXECUTABLES_RACY_SECONDS) * 1e9
+               for _, stamp in fingerprint[:-1] if isinstance(stamp, int))
+    cachefile.save('executables', fingerprint, {
+        'names': '\0'.join(found),
+        'pending': (pending if len(pending) <= EXECUTABLES_PENDING_LIMIT
+                    else None),
+        'racy': racy,
+        'saved_at': scanned_at,
+    })
     return found
+
+
+def _listing_holds(cached):
+    """Whether a stored PATH listing is still the truth."""
+    import time
+
+    if not isinstance(cached, dict) or not isinstance(cached.get('names'), str):
+        return False
+    if cached.get('racy'):
+        return False
+    pending = cached.get('pending')
+    if pending is None:
+        return time.time() - cached.get('saved_at', 0) <= \
+            EXECUTABLES_CACHE_MAX_AGE
+    extensions = _executable_extensions()
+    if extensions:
+        return True
+    return not any(os.access(path, os.X_OK) for path in pending)
 
 
 @memoize

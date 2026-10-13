@@ -224,8 +224,15 @@ class TestExecutablesCache(object):
         from thebleep import utils
         assert 'already-here' in utils._scan_executables([str(bin_dir)], ())
 
+    def _settled(self, bin_dir):
+        """The directory as it is on a machine where nothing was installed a
+        moment ago: changed a minute back, not in the scan's clock tick."""
+        past = time.time() - 60
+        os.utime(str(bin_dir), (past, past))
+
     def test_second_call_is_served_from_the_cache(self, bin_dir, mocker):
         from thebleep import utils
+        self._settled(bin_dir)
         utils._scan_executables([str(bin_dir)], ())
         scandir = mocker.patch('os.scandir', return_value=[])
         assert 'already-here' in utils._scan_executables([str(bin_dir)], ())
@@ -257,12 +264,37 @@ class TestExecutablesCache(object):
         found = utils._scan_executables([str(bin_dir)], ())
         assert installed in found
 
-    def test_a_stale_listing_expires(self, bin_dir, mocker):
+    def test_a_listing_made_as_the_directory_changed_is_made_again(
+            self, bin_dir, mocker):
+        """A change in the same tick of the directory's clock as the scan
+        leaves the timestamp where it was, so that listing is not trusted."""
         from thebleep import utils
         utils._scan_executables([str(bin_dir)], ())
         scandir = mocker.patch('os.scandir', return_value=[])
-        mocker.patch('time.time',
-                     return_value=time.time()
+        utils._scan_executables([str(bin_dir)], ())
+        assert scandir.called
+
+    def test_a_settled_listing_does_not_expire(self, bin_dir, mocker):
+        """It used to be rescanned every ten minutes, which was most
+        corrections."""
+        from thebleep import utils
+        self._settled(bin_dir)
+        utils._scan_executables([str(bin_dir)], ())
+        scandir = mocker.patch('os.scandir', return_value=[])
+        mocker.patch('time.time', return_value=time.time() + 86400)
+        assert 'already-here' in utils._scan_executables([str(bin_dir)], ())
+        assert not scandir.called
+
+    @posix_permissions
+    def test_too_many_files_without_the_bit_fall_back_to_an_age(
+            self, bin_dir, mocker):
+        from thebleep import utils
+        mocker.patch.object(utils, 'EXECUTABLES_PENDING_LIMIT', 0)
+        install(bin_dir, 'not-yet', executable=False)
+        self._settled(bin_dir)
+        utils._scan_executables([str(bin_dir)], ())
+        scandir = mocker.patch('os.scandir', return_value=[])
+        mocker.patch('time.time', return_value=time.time()
                      + utils.EXECUTABLES_CACHE_MAX_AGE + 1)
         utils._scan_executables([str(bin_dir)], ())
         assert scandir.called
@@ -311,25 +343,21 @@ class TestExecutablesCache(object):
         assert 'dangling' not in utils._scan_executables([str(bin_dir)], ())
 
     @posix_permissions
-    def test_chmod_is_noticed_within_the_staleness_bound(
+    def test_chmod_is_noticed_at_once(
             self, bin_dir, mocker):
         """A mode change touches the file, not the directory it is in.
 
-        So the fingerprint cannot see it, and what stands behind that is the
-        bound on how long a listing may be trusted.
+        So no timestamp says it happened; the files the scan passed over for
+        want of the bit are kept, and asked again.
 
         """
         from thebleep import utils
 
         install(bin_dir, 'not-yet', executable=False)
+        self._settled(bin_dir)
         assert 'not-yet' not in utils._scan_executables([str(bin_dir)], ())
 
         os.chmod(str(bin_dir.join('not-yet')), 0o755)
-        assert 'not-yet' not in utils._scan_executables([str(bin_dir)], ())
-
-        mocker.patch('time.time',
-                     return_value=time.time()
-                     + utils.EXECUTABLES_CACHE_MAX_AGE + 1)
         assert 'not-yet' in utils._scan_executables([str(bin_dir)], ())
 
     def test_on_windows_it_is_the_extension_that_decides(
