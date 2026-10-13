@@ -5,6 +5,7 @@ import io
 import pickle
 import pytest
 import os
+import re
 import sys
 import warnings
 from unittest.mock import Mock, call, patch
@@ -799,3 +800,44 @@ class TestOutputAProgramPainted(object):
     def test_no_output_at_all(self):
         """`requires_output = False` rules run with `None`."""
         assert without_control_sequences(None) is None
+
+
+class TestHelpersAreFoundOnPath(object):
+    """Windows' `CreateProcess` looks in System32 first, where `bash.exe` is
+    WSL's stub; Git Bash users saw its UTF-16 notice as their bash version."""
+
+    def test_a_bare_name_is_looked_up_on_windows(self, mocker):
+        from thebleep import utils
+
+        mocker.patch.object(utils, 'which',
+                            return_value=r'C:\Program Files\Git\bin\bash.exe')
+        assert utils._on_path(['bash', '-c', 'x'], 'nt') == [
+            r'C:\Program Files\Git\bin\bash.exe', '-c', 'x']
+
+    def test_elsewhere_and_for_paths_it_is_left_alone(self, mocker):
+        from thebleep import utils
+
+        which = mocker.patch.object(utils, 'which', return_value='/x/bash')
+        assert utils._on_path(['bash', '-c', 'x'], 'posix') == [
+            'bash', '-c', 'x']
+        assert utils._on_path([r'C:\tools\bash.exe'], 'nt') == [
+            r'C:\tools\bash.exe']
+        assert not which.called
+
+    def test_nothing_on_path_is_left_to_windows(self, mocker):
+        from thebleep import utils
+
+        mocker.patch.object(utils, 'which', return_value=None)
+        assert utils._on_path(['nosuch'], 'nt') == ['nosuch']
+
+    @pytest.mark.skipif(os.name != 'nt', reason='the WSL stub is Windows')
+    def test_bash_on_windows_reports_a_version(self, mocker):
+        import shutil
+
+        from thebleep.shells.bash import Bash
+
+        if not shutil.which('bash'):
+            pytest.skip('no bash on PATH')
+        mocker.patch('thebleep.utils.memoize.disabled', True)
+        assert re.match(r'^\d+\.\d+', Bash()._get_version()), \
+            'not the bash on PATH'

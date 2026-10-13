@@ -154,6 +154,26 @@ def kill_process_tree(process):
         pass
 
 
+def _on_path(arguments, platform=None):
+    """`arguments` with a bare program name resolved the way the shell would.
+
+    On Windows `CreateProcess` looks in System32 before PATH, and System32
+    has a `bash.exe` of its own: WSL's, which answers `bash -c 'echo
+    $BASH_VERSION'` with "no installed distributions" in UTF-16. So for a Git
+    Bash user `thebleep --version` printed that as the shell's version. PATH
+    is where the shell found the program the user ran, so it is where the
+    program is asked.
+
+    """
+    if (platform or os.name) != 'nt' or not arguments:
+        return arguments
+    program = arguments[0]
+    if '/' in program or '\\' in program:
+        return arguments
+    found = which(program)
+    return [found] + list(arguments[1:]) if found else arguments
+
+
 def tool_lines(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False,
                return_truncated=False):
     """The lines `arguments` printed on stdout, or `[]`.
@@ -190,7 +210,7 @@ def tool_lines(arguments, timeout=TOOL_TIMEOUT, merge_stderr=False,
     from subprocess import PIPE, Popen, STDOUT, TimeoutExpired, DEVNULL
 
     try:
-        process = Popen(arguments, stdin=DEVNULL, stdout=PIPE,
+        process = Popen(_on_path(arguments), stdin=DEVNULL, stdout=PIPE,
                         stderr=STDOUT if merge_stderr else DEVNULL)
     except Exception:                                        # noqa: BLE001
         return ([], False) if return_truncated else []

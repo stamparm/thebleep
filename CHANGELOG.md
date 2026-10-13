@@ -188,6 +188,13 @@
   really ran, and when it is not the history line's, `bleep` says why there
   is nothing to correct and exits 1.
 
+- **Git Bash on Windows reported WSL's notice as its version.** Windows
+  starts a program from System32 before looking on `PATH`, and System32's
+  `bash.exe` is WSL's stub -- so `thebleep --version` under Git Bash printed
+  "no installed distributions", in UTF-16, as the shell. Every helper program
+  is now looked up on `PATH` there, the way the shell found it. Caught by the
+  release's own install check, before anything was published.
+
 - **Git Bash on Windows** got `'C:\Users\me\.local\bin\tool'` for a
   program installed off `PATH` -- backslashes bash reads as escapes, a drive
   colon it reads as a separator. The POSIX drivers spell a Windows path
