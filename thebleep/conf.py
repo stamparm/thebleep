@@ -66,8 +66,21 @@ class Settings(dict):
             from .logs import debug
 
             debug("No settings file to read; using defaults")
-        except Exception:
-            exception("Can't load settings from file", sys.exc_info())
+        except Exception as error:
+            # One line, not a traceback: this comes before every correction,
+            # and the traceback was thirty lines of The Bleep's own frames
+            # around the one thing that mattered -- which line of the file.
+            from .logs import debug, warn
+
+            where = getattr(error, 'lineno', None)
+            warn(u"Can't load settings from {}{}: {}; using the defaults "
+                 u'for it'.format(self.user_dir.joinpath('settings.py'),
+                                  u', line {}'.format(where) if where else u'',
+                                  getattr(error, 'msg', None) or error))
+            if self.get('debug'):
+                exception("Can't load settings from file", sys.exc_info())
+            else:
+                debug(repr(error))
 
         try:
             self.update(self._settings_from_env())
@@ -148,10 +161,68 @@ class Settings(dict):
         from_file = {key: namespace[key]
                      for key in const.DEFAULT_SETTINGS.keys()
                      if key in namespace}
-        for key in ('rules', 'exclude_rules'):
-            if key in from_file:
-                from_file[key] = self._expand_default_rules(from_file[key])
-        return from_file
+        from .logs import warn
+
+        checked = {}
+        for key, value in from_file.items():
+            try:
+                checked[key] = self._from_file(key, value)
+            except ValueError as error:
+                warn(u'Ignoring {} in {}: {}.'.format(key, path, error))
+        return checked
+
+    def _from_file(self, attr, value):
+        """A value out of `settings.py`, held to what the environment is.
+
+        The environment went through a converter per setting; the file went
+        straight in. So `num_close_matches = '5'` reached a comparison with an
+        int and every rule failed quietly -- "No bleeps given", with the
+        `TypeError` only in the debug log -- and `rules = 'DEFAULT_RULES'`
+        crashed. A string is now read the way the environment reads one, and
+        anything else of the wrong kind is dropped with a warning, the way a
+        bad environment value already was.
+
+        """
+        if isinstance(value, str) and not isinstance(
+                const.DEFAULT_SETTINGS.get(attr), str):
+            return self._convert(attr, value)
+        if attr in ('rules', 'exclude_rules'):
+            # A list; its items may be `const.DEFAULT_RULES`'s own sentinel.
+            if not isinstance(value, (list, tuple)):
+                raise ValueError('{!r} is not a list of rule names'.format(value))
+            return self._expand_default_rules(list(value))
+        if attr == 'priority':
+            if not isinstance(value, dict):
+                raise ValueError('{!r} is not a dict'.format(value))
+            return dict(self._checked_priorities(value.items()))
+        if attr in self.COUNTS:
+            if isinstance(value, bool) or not isinstance(value, int):
+                if value is None and attr == 'history_limit':
+                    return None
+                raise ValueError('{!r} is not a whole number'.format(value))
+            return self._number_from_env(attr, str(value))
+        if attr in self.FRACTIONS:
+            if value is None:
+                return None
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise ValueError('{!r} is not a number'.format(value))
+            return self._fraction_from_env(str(value))
+        if attr in BOOLEANS_BY_DEFAULT and not isinstance(value, bool):
+            raise ValueError('{!r} is neither True nor False'.format(value))
+        return value
+
+    def _checked_priorities(self, pairs):
+        """Rule priorities of one and up. Zero or less turned a rule's own
+        suggestions round: `(n + 1) * priority` sorts a negative backwards."""
+        from .logs import warn
+
+        for rule, priority in pairs:
+            if isinstance(priority, bool) or not isinstance(priority, int) \
+                    or priority < 1:
+                warn(u'Ignoring priority {!r} for {}: not a whole number of 1 '
+                     u'or more.'.format(priority, rule))
+                continue
+            yield rule, priority
 
     def _expand_default_rules(self, rules):
         """A rules list with the `DEFAULT_RULES` sentinel expanded.
@@ -240,11 +311,14 @@ class Settings(dict):
 
     def _val_from_env(self, env, attr):
         """Transforms env-strings to python."""
-        val = os.environ[env]
+        return self._convert(attr, os.environ[env])
+
+    def _convert(self, attr, val):
+        """A setting written as a string, as the setting's own type."""
         if attr in ('rules', 'exclude_rules'):
             return self._rules_from_env(val)
         elif attr == 'priority':
-            return dict(self._priority_from_env(val))
+            return dict(self._checked_priorities(self._priority_from_env(val)))
         elif attr in self.COUNTS:
             return self._number_from_env(attr, val)
         elif attr in BOOLEANS_BY_DEFAULT:

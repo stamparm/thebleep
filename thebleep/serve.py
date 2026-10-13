@@ -109,6 +109,33 @@ def correct(script):
     return inline_correct(script)
 
 
+_settings_seen = [None]
+
+
+def _settings_stamp():
+    from .conf import settings
+
+    try:
+        return os.stat(str(settings.user_dir.joinpath('settings.py'))).st_mtime
+    except (OSError, AttributeError, TypeError):
+        return None
+
+
+def _reload_settings_if_changed():
+    """Read `settings.py` again when it changed since the server read it.
+
+    The server lives for half an hour, and it read the settings once, at
+    start; an edit made in that time was ignored until it went away.
+
+    """
+    stamp = _settings_stamp()
+    if stamp != _settings_seen[0]:
+        from .conf import settings
+
+        settings.init()
+        _settings_seen[0] = _settings_stamp()
+
+
 def _answer(request):
     """One request as bytes -> one response as bytes."""
     try:
@@ -116,6 +143,7 @@ def _answer(request):
         script = payload.get('script')
         aliases = payload.get('aliases')
         cwd = payload.get('cwd')
+        path = payload.get('path')
     except (ValueError, AttributeError, UnicodeDecodeError):
         # Not "no correction": a question that could not be read, which the
         # client answers by asking Python directly.
@@ -126,6 +154,12 @@ def _answer(request):
         os.environ['TB_SHELL_ALIASES'] = aliases
     else:
         os.environ.pop('TB_SHELL_ALIASES', None)
+    # The client's PATH, not the one the server was started with half an
+    # hour ago in some other shell: with a venv active, `pytestify` came back
+    # as `pytest -q` from the server and `pytestify -q` from Python directly.
+    if isinstance(path, str) and path:
+        os.environ['PATH'] = path
+    _reload_settings_if_changed()
     # The rules read the project around the *client's* directory, not the
     # one the server happened to start in.
     if isinstance(cwd, str) and cwd:
@@ -191,6 +225,7 @@ def serve(shell_name, idle=IDLE_SECONDS, ready=None):
     from .conf import settings
 
     settings.init()
+    _settings_seen[0] = _settings_stamp()
     # Warm what a correction will need, so the first question is as fast as
     # the tenth.
     correct('gti status')
@@ -231,7 +266,7 @@ def serve(shell_name, idle=IDLE_SECONDS, ready=None):
             pass
 
 
-def ask(shell_name, script, aliases=None, timeout=1.0, cwd=None):
+def ask(shell_name, script, aliases=None, timeout=1.0, cwd=None, path=None):
     """A client, for tests and for a shell with no socket client of its own.
     Returns the correction, None for "no correction", or raises OSError when
     there is no server."""
@@ -240,7 +275,8 @@ def ask(shell_name, script, aliases=None, timeout=1.0, cwd=None):
     try:
         connection.connect(socket_path(shell_name))
         connection.sendall(json.dumps({'script': script, 'aliases': aliases,
-                                       'cwd': cwd or os.getcwd()})
+                                       'cwd': cwd or os.getcwd(),
+                                       'path': path or os.environ.get('PATH')})
                            .encode('utf-8') + b'\n')
         try:
             connection.shutdown(socket.SHUT_WR)

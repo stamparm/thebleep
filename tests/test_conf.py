@@ -285,3 +285,51 @@ class TestSettingsFromEnvironment(object):
         neither is what somebody typing a threshold meant."""
         assert from_env(THEBLEEP_AUTO_RUN_CONFIDENCE=value) == {}
         assert 'THEBLEEP_AUTO_RUN_CONFIDENCE' in capsys.readouterr()[1]
+
+
+class TestValuesFromTheFileAreChecked(object):
+    """The environment's values went through a converter; the file's went
+    straight in, and `num_close_matches = '5'` stopped every rule quietly."""
+
+    @pytest.mark.parametrize('source, attr, expected', [
+        ("num_close_matches = '5'\n", 'num_close_matches', 5),
+        ("history_limit = '10'\n", 'history_limit', 10),
+        ("rules = 'DEFAULT_RULES:test'\n", 'rules', const.DEFAULT_RULES + ['test']),
+        ("require_confirmation = 'no'\n", 'require_confirmation', False),
+        ("auto_run_confidence = '90%'\n", 'auto_run_confidence', 0.9),
+    ])
+    def test_a_string_is_read_as_the_environment_reads_it(
+            self, written_settings, source, attr, expected):
+        settings = written_settings(source)
+        settings.init()
+        assert settings[attr] == expected
+
+    @pytest.mark.parametrize('source, attr', [
+        ('num_close_matches = [5]\n', 'num_close_matches'),
+        ("num_close_matches = 'many'\n", 'num_close_matches'),
+        ('rules = 5\n', 'rules'),
+        ('require_confirmation = 3\n', 'require_confirmation'),
+        ('auto_run_confidence = 7\n', 'auto_run_confidence'),
+    ])
+    def test_a_value_of_the_wrong_kind_is_dropped_with_a_warning(
+            self, written_settings, source, attr, capsys):
+        settings = written_settings(source)
+        settings.init()
+        assert settings[attr] == const.DEFAULT_SETTINGS[attr]
+        assert 'Ignoring {}'.format(attr) in capsys.readouterr().err
+
+    def test_a_priority_below_one_is_dropped(self, written_settings, capsys):
+        settings = written_settings(
+            "priority = {'no_command': -10, 'git_push': 50, 'x': None}\n")
+        settings.init()
+        assert settings.priority == {'git_push': 50}
+
+
+def test_a_broken_settings_file_is_one_line_not_a_traceback(written_settings,
+                                                            capsys):
+    settings = written_settings('wait_command = \n')
+    settings.init()
+    err = capsys.readouterr().err
+    assert 'settings.py, line 1' in err
+    assert 'Traceback' not in err
+    assert settings.wait_command == const.DEFAULT_SETTINGS['wait_command']

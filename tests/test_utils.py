@@ -577,6 +577,28 @@ class TestCache(object):
         assert counted() == 'answer-1'
         assert counted() == 'answer-2'
 
+    def test_an_empty_answer_is_not_kept(self, dependency, no_memoize):
+        """One slow `fish -ic functions` answered `{}`, and that was kept
+        until `config.fish` changed: every fish function gone for good."""
+        answers = [{}, {'deployall': 'deployall'}]
+
+        @cache(str(dependency))
+        def functions():
+            return answers.pop(0)
+
+        assert functions() == {}
+        assert functions() == {'deployall': 'deployall'}
+
+    def test_without_probes_nothing_is_read_or_kept(self, counted, no_memoize):
+        """`--json` and MCP turn probes off, and what a function answers then
+        was saved as the answer for every correction after."""
+        from thebleep.utils import tool_probes
+
+        with tool_probes(False):
+            assert counted() == 'answer-1'
+        assert counted() == 'answer-2'
+        assert counted() == 'answer-2'
+
     def test_it_leaves_no_database_behind(self, counted, cache_home):
         from thebleep import cachefile
 

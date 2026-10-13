@@ -126,7 +126,12 @@ def _mtime(path):
 
 
 def _fingerprint(tool):
-    directories = man_directories() + completion_directories()
+    # The sections, not just the man directory: a package installs its page
+    # into `man1`, which changes `man1`'s time and leaves `/usr/share/man`'s
+    # alone -- so a cache made before `apt install` was trusted for good.
+    directories = completion_directories() + [
+        os.path.join(directory, section)
+        for directory in man_directories() for section in ('man1', 'man8')]
     return (FORMAT, tool, tuple((directory, _mtime(directory))
                                 for directory in directories))
 

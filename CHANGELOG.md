@@ -174,6 +174,25 @@
 - **`install.sh` on a PEP 668 distribution** said to install `python3-pip`,
   which only leads to pip's own refusal; it now says pipx or uv.
 
+- **Caches that went wrong for good.** One `--json` or MCP call, or one fish
+  slow to start, saved an empty function list, and it was kept until
+  `config.fish` changed -- every fish function gone from corrections. An
+  empty answer is no longer kept, and nothing is read or kept while probes
+  are off. The man-page vocabulary was keyed on `/usr/share/man`, which a
+  package's install does not touch; it is keyed on `man1` and `man8`. The
+  warm server answered with its own `PATH` from up to half an hour before,
+  and read `settings.py` once; it takes the client's `PATH` and notices an
+  edited settings file.
+
+- **`settings.py` is checked like the environment.** `num_close_matches =
+  '5'` turned every rule off without a word, `rules = 'DEFAULT_RULES'`
+  crashed, and a priority of zero or less reversed a rule's own
+  suggestions. A string is now read as the environment reads it, a value of
+  the wrong kind is dropped with a warning, and a file that does not parse
+  is one line naming the line, not a traceback before every correction.
+  `--doctor` suggests the setting a misspelt one was meant to be, and `--why`
+  with no previous command says so and exits 1.
+
 ## 4.0.4 — 2026-09-03
 
 ### Added

@@ -62,7 +62,7 @@ def test_debug_does_not_print_the_env_setting_values(capsys, settings, mocker):
 
     try:
         fix_command(Mock(command=[], force_command=None, repeat=False,
-                         debug=True))
+                         debug=True, why=False))
     except Exception:                                        # noqa: BLE001
         # What the correction does after this is somebody else's test; the
         # debug line has already been written.
@@ -94,6 +94,18 @@ def test_why_prints_a_deterministic_diagnosis_without_correcting(
     assert 'Port 5432 is already in use.' in output
     assert 'read-only' in output
     assert not correct.called
+
+
+def test_why_with_nothing_to_explain_says_so(capsys, settings, mocker):
+    """It printed nothing at all and exited 0."""
+    settings.debug = False
+    mocker.patch('thebleep.entrypoints.fix_command._get_raw_command',
+                 return_value=[''])
+    with pytest.raises(SystemExit) as raised:
+        fix_command(Mock(command=[], force_command=None, repeat=False,
+                         debug=False, why=True, pick=None))
+    assert raised.value.code == 1
+    assert 'No previous command to explain' in capsys.readouterr().err
 
 
 def test_why_asks_the_explainer_only_when_nothing_was_diagnosed(

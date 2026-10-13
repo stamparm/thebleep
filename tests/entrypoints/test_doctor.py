@@ -225,7 +225,8 @@ class TestConfig(object):
         """Which is exactly what a misspelled one looks like."""
         self._settings(home, u'requre_confirmation = False\n')
         _, output = _run(capsys)
-        assert 'requre_confirmation' in output
+        assert 'requre_confirmation (did you mean require_confirmation?)' \
+            in output
 
     def test_no_settings_file_is_not_a_problem(self, capsys, home):
         _, output = _run(capsys)

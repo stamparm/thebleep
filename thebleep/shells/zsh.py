@@ -123,7 +123,8 @@ __thebleep_fixed() {{
         __thebleep_json "$1"; local script=$REPLY
         __thebleep_json "$TB_SHELL_ALIASES"; local aliases=$REPLY
         __thebleep_json "$PWD"; local cwd=$REPLY
-        print -r -- "{{\\"script\\": \\"$script\\", \\"aliases\\": \\"$aliases\\", \\"cwd\\": \\"$cwd\\"}}" >&$fd
+        __thebleep_json "$PATH"; local tb_path=$REPLY
+        print -r -- "{{\\"script\\": \\"$script\\", \\"aliases\\": \\"$aliases\\", \\"cwd\\": \\"$cwd\\", \\"path\\": \\"$tb_path\\"}}" >&$fd
         IFS= read -r answer <&$fd
         REPLY=$(cat <&$fd)
         exec {{fd}}>&-

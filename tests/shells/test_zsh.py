@@ -189,5 +189,5 @@ class TestWarmServer(object):
         binding = shell.ambient_binding()
         assert '__thebleep_json' in binding
         assert 'print -r -- "{\\"script\\": \\"$script\\", ' \
-               '\\"aliases\\": \\"$aliases\\", \\"cwd\\": \\"$cwd\\"}" >&$fd' \
-            in binding
+               '\\"aliases\\": \\"$aliases\\", \\"cwd\\": \\"$cwd\\", ' \
+               '\\"path\\": \\"$tb_path\\"}" >&$fd' in binding

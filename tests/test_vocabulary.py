@@ -201,6 +201,20 @@ class TestBounds(object):
         assert vocabulary.subcommands('tool') == ['fresh']
         assert gather.called
 
+    def test_a_page_installed_into_man1_is_noticed(self, home, mocker):
+        """`apt install` touches `man1`, not the directory above it."""
+        vocabulary.facts('tool')
+        man = str(home.join('man'))
+        os.utime(man, (1000000, 1000000))
+        os.utime(os.path.join(man, 'man1'), (2000000, 2000000))
+        vocabulary.facts('tool')
+        os.utime(os.path.join(man, 'man1'), (3000000, 3000000))
+        os.utime(man, (1000000, 1000000))
+        gather = mocker.patch.object(vocabulary, '_gather', return_value={
+            'subcommands': ['fresh'], 'nested': {}, 'options': {}})
+        assert vocabulary.subcommands('tool') == ['fresh']
+        assert gather.called
+
     def test_the_cache_format_is_part_of_the_key(self, home, mocker):
         vocabulary.facts('tool')
         mocker.patch.object(vocabulary, 'FORMAT', vocabulary.FORMAT + 1)

@@ -101,6 +101,12 @@ def fix_command(known_args):
             command = types.Command.from_raw_script(raw_command)
         except EmptyCommand:
             logs.debug('Empty command, nothing to do')
+            if getattr(known_args, 'why', False):
+                # Asked a question and given silence and a zero: say there was
+                # nothing to explain, and fail like it.
+                logs.warn('No previous command to explain; run it first, or '
+                          'name one with --command.')
+                sys.exit(1)
             return
 
         try:

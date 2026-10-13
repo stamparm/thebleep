@@ -249,7 +249,15 @@ def _config(report):
                      if not name.startswith('__')
                      and name not in const.DEFAULT_SETTINGS)
     if unknown:
-        report.add('Config extras', ', '.join(unknown), NOTE,
+        from difflib import get_close_matches
+
+        meant = [u'{} (did you mean {}?)'.format(name, close[0])
+                 if close else name
+                 for name in unknown
+                 for close in [get_close_matches(name,
+                                                 list(const.DEFAULT_SETTINGS),
+                                                 1)]]
+        report.add('Config extras', ', '.join(meant), NOTE,
                    'Not settings The Bleep knows, so they do nothing.'
                    ' A misspelling looks exactly like this.')
 

@@ -1101,10 +1101,7 @@ def cache(*depends_on):
     def cache_decorator(fn):
         @memoize
         @wraps(fn)
-        def wrapper(*args, **kwargs):
-            if cache.disabled:
-                return fn(*args, **kwargs)
-
+        def remembered(*args, **kwargs):
             paths = [expanduser(name).absolute().as_posix()
                      for name in depends_on]
             fingerprint = tuple((path, _mtime(path)) for path in paths)
@@ -1113,7 +1110,26 @@ def cache(*depends_on):
             cached = cachefile.load(name, fingerprint)
             if cached is not None:
                 return cached
-            return cachefile.save(name, fingerprint, fn(*args, **kwargs))
+            result = fn(*args, **kwargs)
+            if not result:
+                # An empty answer is as often "the tool could not be asked"
+                # -- a five-second timeout, a fish slow to start -- as "there
+                # is nothing", and kept until a config file changes it lasted
+                # for good: one slow `fish -ic functions` and every fish
+                # function was gone from corrections.
+                return result
+            return cachefile.save(name, fingerprint, result)
+
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            if cache.disabled:
+                return fn(*args, **kwargs)
+            if not _tool_probe_state().get():
+                # `--json`, MCP and the agent hooks turn probes off, so `fn`
+                # answers `[]` without asking anything -- and that `[]` was
+                # saved as the answer for everyone after.
+                return fn(*args, **kwargs)
+            return remembered(*args, **kwargs)
 
         return wrapper
 

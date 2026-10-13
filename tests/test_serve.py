@@ -92,6 +92,29 @@ class TestServing(object):
         serve.ask('zsh', 'gti status', cwd=str(tmpdir))
         assert os.path.samefile(seen['cwd'], str(tmpdir))
 
+    def test_the_question_carries_its_path(self, server, mocker, os_environ):
+        """The server lives half an hour; the client's PATH is the one that
+        names the programs, not the one the server started with."""
+        seen = {}
+        mocker.patch('thebleep.serve.correct',
+                     side_effect=lambda script: seen.setdefault(
+                         'path', os.environ['PATH']) and None)
+        serve.ask('zsh', 'gti status', path='/client/venv/bin:/usr/bin')
+        assert seen['path'] == '/client/venv/bin:/usr/bin'
+
+    def test_an_edited_settings_file_is_read_again(self, mocker):
+        stamps = iter([1.0, 2.0, 2.0])
+        mocker.patch('thebleep.serve._settings_stamp',
+                     side_effect=lambda: next(stamps))
+        from thebleep import conf
+
+        init = mocker.patch.object(conf.Settings, 'init')
+        serve._settings_seen[0] = 1.0
+        serve._reload_settings_if_changed()
+        assert not init.called
+        serve._reload_settings_if_changed()
+        assert init.called
+
     def test_many_questions(self, server):
         for _ in range(20):
             assert serve.ask('zsh', 'sl') == 'ls'
