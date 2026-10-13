@@ -224,11 +224,6 @@
 - **`not_on_path` took `/` and the home directory for projects.** From
   `/tmp`, `/bin` was "this project's `bin/`" and `htop` became `../bin/htop`.
 
-- **An AUR PKGBUILD and a Homebrew formula** under `packaging/`, each built
-  and run in its own distribution's container; publishing them is a push to
-  the AUR and to a `homebrew-thebleep` tap, written down in
-  `packaging/README.md`.
-
 - **Termux and the Windows shells** are in the installation notes: what
   Termux needs first, that `cmd.exe` is not supported, that Git Bash has a
   row in the compatibility matrix, and that MSYS2 and Cygwin are untested.
