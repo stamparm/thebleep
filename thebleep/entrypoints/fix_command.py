@@ -56,8 +56,52 @@ def _get_raw_command(known_args):
 
             diff = SequenceMatcher(a=alias, b=command).ratio()
             if diff < const.DIFF_WITH_ALIAS or command in executables:
+                if _history_missed_it(command):
+                    return []
                 return [command]
     return []
+
+
+def _history_missed_it(command):
+    """Whether the command just run never reached the history.
+
+    With `HISTCONTROL=ignorespace` (Ubuntu's default, as `ignoreboth`) a
+    command typed after a space is not recorded, so the newest history line
+    is the one *before* it -- and `bleep` offered to run that again. bash's
+    `$_`, which the alias passes on, is the last argument of the command that
+    really ran, history or not. When it is not the last word of the history
+    line, the line is not that command. Only a plain line is judged: a
+    redirection, a pipe, a variable or a glob can make the two differ for
+    nothing.
+
+    """
+    if 'ignore' not in os.environ.get('TB_HISTCONTROL', ''):
+        return False
+    last_argument = os.environ.get('TB_LAST_ARG')
+    if not last_argument or any(character in command
+                                for character in '$`*?[{~\\\'"'):
+        return False
+    import re
+
+    # The last simple command, and its words without the redirections: `$_`
+    # for `echo prev > /tmp/prev.txt` is `prev`.
+    segment = re.split(r'&&|\|\||[|;&]', command)[-1]
+    words = []
+    skip = False
+    for word in segment.split():
+        if skip:
+            skip = False
+            continue
+        if re.match(r'^\d*(?:&>|>>|>|<)', word):
+            skip = re.match(r'^\d*(?:&>|>>|>|<)&?$', word) is not None
+            continue
+        words.append(word)
+    if not words or words[-1] == last_argument:
+        return False
+    logs.warn(u'The command you ran is not in your history -- it began with '
+              u'a space, which HISTCONTROL={} leaves out -- so there is '
+              u'nothing to correct.'.format(os.environ['TB_HISTCONTROL']))
+    return True
 
 
 @contextmanager
@@ -130,8 +174,8 @@ def fix_command(known_args):
                 # nothing to explain, and fail like it.
                 logs.warn('No previous command to explain; run it first, or '
                           'name one with --command.')
-                sys.exit(1)
-            return
+            # Nothing was corrected, which a `&&` after `bleep` should see.
+            sys.exit(1)
 
         try:
             cwd = os.getcwd()

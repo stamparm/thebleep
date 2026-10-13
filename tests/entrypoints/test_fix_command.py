@@ -63,7 +63,7 @@ def test_debug_does_not_print_the_env_setting_values(capsys, settings, mocker):
     try:
         fix_command(Mock(command=[], force_command=None, repeat=False,
                          debug=True, why=False))
-    except Exception:                                        # noqa: BLE001
+    except (Exception, SystemExit):                          # noqa: BLE001
         # What the correction does after this is somebody else's test; the
         # debug line has already been written.
         pass
@@ -304,3 +304,39 @@ class TestSuggestCommand(object):
         settings.require_confirmation = False
         assert list(module._or_the_suggester(iter([]), Command('sl', ''))) == []
         assert not asked.called
+
+
+class TestASpacedCommandIsNotInTheHistory(object):
+    """`HISTCONTROL=ignorespace`: ` gti status` is not recorded, so the
+    newest history line is the command before it, and `bleep` offered to run
+    `echo prev > /tmp/prev.txt` again. bash's `$_` says what really ran."""
+
+    @pytest.fixture(autouse=True)
+    def history(self, os_environ, mocker):
+        mocker.patch('thebleep.entrypoints.fix_command.get_alias',
+                     return_value='bleep')
+        mocker.patch('thebleep.entrypoints.fix_command.get_all_executables',
+                     return_value=['echo', 'git', 'ls'])
+        os_environ['TB_HISTCONTROL'] = 'ignoreboth'
+        os_environ['TB_HISTORY'] = 'echo prev > /tmp/prev.txt\nbleep'
+
+    def _raw(self):
+        return _get_raw_command(Mock(force_command=None, command=[]))
+
+    def test_the_last_argument_is_not_that_lines(self, os_environ):
+        os_environ['TB_LAST_ARG'] = 'status'
+        assert self._raw() == []
+
+    def test_the_last_argument_is_that_lines(self, os_environ):
+        os_environ['TB_LAST_ARG'] = 'prev'
+        assert self._raw() == ['echo prev > /tmp/prev.txt']
+
+    def test_without_ignorespace_nothing_is_judged(self, os_environ):
+        os_environ['TB_HISTCONTROL'] = 'erasedups'
+        os_environ['TB_LAST_ARG'] = 'status'
+        assert self._raw() == ['echo prev > /tmp/prev.txt']
+
+    def test_an_expanding_line_is_not_judged(self, os_environ):
+        os_environ['TB_HISTORY'] = 'ls *.txt\nbleep'
+        os_environ['TB_LAST_ARG'] = 'b.txt'
+        assert self._raw() == ['ls *.txt']

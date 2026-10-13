@@ -181,6 +181,13 @@
   says. `bleep` with no alias set up exits 1. The invisible mark in front of
   a suggestion is only written to a terminal.
 
+- **A command typed after a space is not in bash's history** under
+  `HISTCONTROL=ignorespace` (Ubuntu's default, as `ignoreboth`), and `bleep`
+  offered to run the line before it again -- `echo prev > /tmp/prev.txt` for
+  ` gti status`. The alias now passes bash's `$_`, the last argument of what
+  really ran, and when it is not the history line's, `bleep` says why there
+  is nothing to correct and exits 1.
+
 - **Rule slips found by typing at real shells.** `ls | grpe notes` was
   offered `ls -lah | grpe notes`; `cd ~/Dowloads` offered to create it
   rather than finding `~/Downloads`; `echo hi | tee /etc/x` became `sudo echo

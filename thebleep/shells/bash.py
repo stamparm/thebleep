@@ -23,13 +23,13 @@ class Bash(Generic):
         # the shell it ran in.
         return '''
             function {name} () {{
-                TB_EXIT=${{TB_EXIT:-$?}};
+                TB_EXIT=${{TB_EXIT:-$?}} TB_LAST_ARG=$_;
                 TB_SHELL_ALIASES=$(alias);
                 TB_HISTORY=$(fc -ln -10);
                 {fit_transport}
                 TB_CAN_EDIT=; [ "${{BASH_VERSINFO[0]:-0}}" -ge 4 ] && TB_CAN_EDIT=1;
                 TB_CMD=$(
-                    TB_SHELL=bash TB_ALIAS={name} TB_EXIT="$TB_EXIT" TB_CAN_EDIT="$TB_CAN_EDIT" TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" {command} {argument_placeholder} "$@"
+                    TB_SHELL=bash TB_ALIAS={name} TB_EXIT="$TB_EXIT" TB_LAST_ARG="$TB_LAST_ARG" TB_HISTCONTROL="$HISTCONTROL" TB_CAN_EDIT="$TB_CAN_EDIT" TB_SHELL_ALIASES="$TB_SHELL_ALIASES" TB_HISTORY="$TB_HISTORY" {command} {argument_placeholder} "$@"
                 );
                 TB_STATUS=$?;
                 if [ "$TB_STATUS" -eq {exit_edit} ]; then
@@ -41,7 +41,7 @@ class Bash(Generic):
                     {alter_history}
                 fi;
                 set -- "$TB_STATUS";
-                unset TB_SHELL_ALIASES TB_HISTORY TB_CMD TB_STATUS TB_CAN_EDIT TB_EXIT;
+                unset TB_SHELL_ALIASES TB_HISTORY TB_CMD TB_STATUS TB_CAN_EDIT TB_EXIT TB_LAST_ARG;
                 return "$1";
             }}
         '''.format(
