@@ -72,12 +72,36 @@ def _privilege_command():
     return 'sudo'
 
 
+def _denied_pipeline_member(command):
+    """The member of a plain pipeline whose program the error names, after
+    the first: `tee: /etc/x: Permission denied`."""
+    model = command.command_model
+    segments = model.segments
+    if (not model.complete or len(segments) < 2
+            or any(segment.separator not in ('|', None)
+                   for segment in segments)):
+        return None
+    for segment in segments[1:]:
+        program = segment.command
+        if program is not None and re.search(
+                r'(?m)^{}: '.format(re.escape(program.text)), command.output):
+            return segment
+    return None
+
+
 def get_new_command(command):
     # Anything that goes inside `sh -c` is run again, by root this time, so it
     # is quoted as one argument: without that, a quote in the script ends the
     # `sh -c` argument early and the rest of the line runs as separate
     # commands, and text the user had quoted as data becomes code.
     become = _privilege_command()
+    member = _denied_pipeline_member(command)
+    if member is not None:
+        # `echo hi | tee /etc/x` -> `echo hi | sudo tee /etc/x`. The member
+        # the error names is the one that needs the privilege; `sudo echo hi |
+        # tee /etc/x` gave it to `echo`, and `tee` failed again.
+        return (command.script[:member.start] + become + u' '
+                + command.script[member.start:])
     if '&&' in command.script:
         return u'{} sh -c {}'.format(become, shell.quote(
             _without_sudo(command.script)))

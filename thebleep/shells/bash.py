@@ -34,11 +34,15 @@ class Bash(Generic):
                 TB_STATUS=$?;
                 if [ "$TB_STATUS" -eq {exit_edit} ]; then
                     {edit_line}
+                    TB_STATUS=0;
                 elif [ "$TB_STATUS" -eq 0 ]; then
                     eval "$TB_CMD";
+                    TB_STATUS=$?;
                     {alter_history}
                 fi;
+                set -- "$TB_STATUS";
                 unset TB_SHELL_ALIASES TB_HISTORY TB_CMD TB_STATUS TB_CAN_EDIT TB_EXIT;
+                return "$1";
             }}
         '''.format(
             name=alias_name,

@@ -155,7 +155,14 @@ def _integration(report):
     # so the flag is what identifies the line, not the program in front of it.
     # Matching `thebleep --alias-loader` reported a working zero-install setup
     # as "named, but not as an alias".
-    if '--alias-loader' in content:
+    # `thebleep --alias-loader >> ~/.bashrc`, the README's install, leaves the
+    # loader's *output* in the file -- a stub with `TB_SHELL=bash thebleep
+    # --alias bleep` inside it, and no `--alias-loader` anywhere -- and this
+    # then recommended the loader that was already there. Text with the
+    # alias's own variables in it was written out ahead of time; what costs
+    # a Python start is `eval "$(thebleep --alias)"`, which has neither.
+    if '--alias-loader' in content or 'TB_SHELL=' in content \
+            or 'TB_ALIAS=' in content:
         report.add('Integration', 'alias loader in {}'.format(tidy(path)))
     elif '--alias' in content or 'thebleep -a' in content:
         report.add('Integration', 'alias in {}'.format(tidy(path)), NOTE,

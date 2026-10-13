@@ -128,6 +128,16 @@ def failed(msg):
         reset=color(colorama.Style.RESET_ALL)))
 
 
+def _command_mark():
+    """The invisible mark the pane and instant-mode readers find our own
+    lines by -- on a terminal, where they read. Piped, it was ten zero-width
+    spaces in front of every suggestion in somebody's log."""
+    try:
+        return const.USER_COMMAND_MARK if sys.stderr.isatty() else u''
+    except (AttributeError, ValueError):
+        return u''
+
+
 def visible(text):
     """`text` with its control characters written out, for the screen.
 
@@ -147,7 +157,7 @@ def visible(text):
 
 def show_corrected_command(corrected_command):
     sys.stderr.write(u'{prefix}{bold}{script}{reset}{side_effect}\n'.format(
-        prefix=const.USER_COMMAND_MARK,
+        prefix=_command_mark(),
         script=visible(corrected_command.script),
         side_effect=u' (+side effect)' if corrected_command.side_effect else u'',
         bold=color(colorama.Style.BRIGHT),

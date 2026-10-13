@@ -8,6 +8,16 @@ def main_module(mocker):
     return main
 
 
+def test_ctrl_c_is_an_answer_not_a_traceback(main_module, mocker, capsys):
+    mocker.patch.object(main_module, '_main', side_effect=KeyboardInterrupt)
+    with pytest.raises(SystemExit) as exc_info:
+        main_module.main()
+    assert exc_info.value.code == 130
+    captured = capsys.readouterr()
+    assert captured.out == ''
+    assert 'Traceback' not in captured.err
+
+
 def test_broken_pipe_is_not_an_error(main_module, mocker):
     mocker.patch.object(main_module, '_main', side_effect=BrokenPipeError)
     mocker.patch('os.open', return_value=42)

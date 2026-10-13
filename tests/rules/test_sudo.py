@@ -85,3 +85,12 @@ def test_sudo_wins_where_both_are_installed(mocker):
                  side_effect=lambda name: '/usr/bin/' + name)
     command = Command('cat /etc/shadow', 'cat: /etc/shadow: Permission denied')
     assert sudo.get_new_command(command) == 'sudo cat /etc/shadow'
+
+
+def test_the_pipeline_member_that_was_denied_gets_it():
+    """`echo hi | tee /etc/x` became `sudo echo hi | tee /etc/x`, and `tee`
+    was refused again."""
+    command = Command('echo hi | tee /etc/x',
+                      'tee: /etc/x: Permission denied\n')
+    assert match(command)
+    assert get_new_command(command) == 'echo hi | sudo tee /etc/x'

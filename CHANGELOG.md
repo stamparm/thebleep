@@ -153,6 +153,27 @@
   install `htop` got only `top`. `python3 -m pip intsall` is pip, and `yum` on
   Fedora is dnf5.
 
+- **Shells.** After `bleep` the status was always 0 -- in bash, zsh and
+  fish the alias returned what its own last line returned -- so a correction
+  that failed looked like one that worked, and a second `bleep` had nothing
+  to go on; it is now what the correction exited with, and 1 when nothing
+  ran. The first `bleep` of every ksh session hung for half a minute and
+  ended in `recursion too deep`: the loader stub called itself. zsh's
+  history lost backslashes (`print -s`), fish's was written unescaped and read
+  back cut short, and a fish alias came through with fish's quotes on it
+  (`'git stauts`). Ctrl-C printed a traceback; it exits 130. `--doctor`
+  recommended the loader to people who had installed it exactly as the README
+  says. `bleep` with no alias set up exits 1. The invisible mark in front of
+  a suggestion is only written to a terminal.
+
+- **Rule slips found by typing at real shells.** `ls | grpe notes` was
+  offered `ls -lah | grpe notes`; `cd ~/Dowloads` offered to create it
+  rather than finding `~/Downloads`; `echo hi | tee /etc/x` became `sudo echo
+  hi | tee /etc/x` and is now `echo hi | sudo tee /etc/x`.
+
+- **`install.sh` on a PEP 668 distribution** said to install `python3-pip`,
+  which only leads to pip's own refusal; it now says pipx or uv.
+
 ## 4.0.4 — 2026-09-03
 
 ### Added

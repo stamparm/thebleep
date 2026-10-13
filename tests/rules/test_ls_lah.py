@@ -27,3 +27,8 @@ def test_get_new_command():
     assert get_new_command(Command('ls', '')) == 'ls -lah'
     assert get_new_command(Command('LS_COLOR=1 ls file.py', '')) == \
         'LS_COLOR=1 ls -lah file.py'
+
+
+def test_a_pipeline_is_not_the_listing_failing():
+    """`ls | grpe notes` was offered `ls -lah | grpe notes`."""
+    assert not match(Command('ls | grpe notes', 'bash: grpe: command not found'))

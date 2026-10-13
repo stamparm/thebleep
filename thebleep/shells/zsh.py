@@ -33,11 +33,15 @@ class Zsh(Generic):
                 TB_STATUS=$?;
                 if [ "$TB_STATUS" -eq {exit_edit} ]; then
                     {edit_line}
+                    TB_STATUS=0;
                 elif [ "$TB_STATUS" -eq 0 ]; then
                     eval "$TB_CMD";
+                    TB_STATUS=$?;
                     {alter_history}
                 fi;
+                set -- "$TB_STATUS";
                 unset TB_SHELL_ALIASES TB_HISTORY TB_CMD TB_STATUS TB_EXIT;
+                return "$1";
             }}
         '''.format(
             name=alias_name,
@@ -46,7 +50,7 @@ class Zsh(Generic):
             fit_transport=fit_transport(),
             exit_edit=EXIT_EDIT,
             edit_line=self._edit_line(),
-            alter_history=('test -n "$TB_CMD" && print -s "$TB_CMD";'
+            alter_history=('test -n "$TB_CMD" && print -rs -- "$TB_CMD";'
                            if settings.alter_history else ''))
 
     def can_edit_buffer(self):

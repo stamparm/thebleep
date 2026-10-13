@@ -94,14 +94,14 @@ class TestSelectCommand(object):
         settings.require_confirmation = False
         assert ui.select_command(iter(commands)) == (commands[0],
                                                      const.ACTION_SELECT)
-        assert capsys.readouterr() == ('', const.USER_COMMAND_MARK + 'ls\n')
+        assert capsys.readouterr() == ('', 'ls\n')
 
     def test_without_confirmation_with_side_effects(
             self, capsys, commands_with_side_effect, settings):
         settings.require_confirmation = False
         assert (ui.select_command(iter(commands_with_side_effect))
                 == (commands_with_side_effect[0], const.ACTION_SELECT))
-        assert capsys.readouterr() == ('', const.USER_COMMAND_MARK + 'ls (+side effect)\n')
+        assert capsys.readouterr() == ('', 'ls (+side effect)\n')
 
     @pytest.fixture
     def trusted_commands(self):
@@ -127,7 +127,7 @@ class TestSelectCommand(object):
             trusted_commands[0], const.ACTION_SELECT)
         out, err = capsys.readouterr()
         assert out == ''
-        assert err.startswith(const.USER_COMMAND_MARK + 'ls\n')
+        assert err.startswith('ls\n')
         assert 'ran without asking: 95% confidence' in err
 
     def test_not_trusted_enough_asks(self, capsys, patch_get_key, commands,
@@ -197,7 +197,7 @@ class TestSelectCommand(object):
         is_interactive.return_value = False
         assert ui.select_command(iter(commands)) == (None, const.ACTION_ABORT)
         assert capsys.readouterr() == (
-            '', const.USER_COMMAND_MARK + 'ls\n'
+            '', 'ls\n'
             'Aborted: no terminal to confirm on, rerun with --yes\n')
 
     def test_without_tty_and_confirmation(self, capsys, commands, settings,
@@ -206,7 +206,7 @@ class TestSelectCommand(object):
         settings.require_confirmation = False
         assert ui.select_command(iter(commands)) == (commands[0],
                                                      const.ACTION_SELECT)
-        assert capsys.readouterr() == ('', const.USER_COMMAND_MARK + 'ls\n')
+        assert capsys.readouterr() == ('', 'ls\n')
 
     def test_with_confirmation_select_second(self, capsys, patch_get_key, commands):
         patch_get_key([const.KEY_DOWN, '\n'])

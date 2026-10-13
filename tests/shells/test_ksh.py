@@ -63,9 +63,13 @@ class TestKsh(object):
         assert 'fc -ln -1 -1' in alias
         assert 'thebleep' in alias
 
-    def test_app_alias_loader_is_a_posix_function(self, shell):
+    def test_app_alias_loader_is_the_alias_itself(self, shell):
+        """A function stub calling `bleep "$@"` after defining an alias of the
+        same name called itself: the first `bleep` in ksh hung, then failed
+        with `recursion too deep`."""
         loader = shell.app_alias_loader('bleep')
-        assert loader.startswith('bleep() {')
+        assert loader == shell.app_alias('bleep')
+        assert loader.startswith('alias bleep=')
         assert 'TB_SHELL=mksh' in loader
 
     def test_replay_argv(self, shell):

@@ -105,7 +105,14 @@ class TestFish(object):
             self, shell, os_environ):
         """The child fish cannot see an alias defined after config loading."""
         os_environ['TB_SHELL_ALIASES'] = "alias ll 'ls -l'"
-        assert shell.get_aliases()['ll'] == "'ls -l'"
+        # The words, not fish's quoting of them: `gs` for `'git stauts'` used
+        # to correct to `'git status`, with a stray quote.
+        assert shell.get_aliases()['ll'] == 'ls -l'
+
+    def test_history_is_written_and_read_as_fish_escapes_it(self, shell):
+        script = u'git commit -m "it\'s a \\"test\\""\necho two'
+        entry = shell._get_history_line(script).split(u'\n')[0]
+        assert shell._script_from_history(entry) == script
 
     def test_app_alias(self, shell):
         assert 'function bleep' in shell.app_alias('bleep')

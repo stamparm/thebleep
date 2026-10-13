@@ -1,3 +1,4 @@
+import sys
 # Initialize output before importing any module, that can use colorama.
 from ..system import init_output
 
@@ -170,3 +171,6 @@ def main():
             _record_first_run()
 
     logs.how_to_configure_alias(configuration_details)
+    # Nothing was corrected, and a script or a `&&` after `bleep` should be
+    # able to tell: this used to exit 0.
+    sys.exit(1)

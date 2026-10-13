@@ -41,8 +41,34 @@ def _parse_aliases(lines, overridden):
         else:
             continue
         if name not in overridden:
-            aliases[name] = value
+            aliases[name] = _unquoted(value)
     return aliases
+
+
+def _unquoted(value):
+    """`'git stauts'` as fish prints it in `alias`, as the words it stands
+    for: the quotes are fish's, and kept they reached the correction as
+    `'git stauts`."""
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in u'\'"':
+        inner = value[1:-1]
+        if value[0] == u"'":
+            return inner.replace(u"\\'", u"'").replace(u'\\\\', u'\\')
+        return inner.replace(u'\\"', u'"').replace(u'\\\\', u'\\')
+    return value
+
+
+def _unescape(entry):
+    """A `- cmd:` value as fish wrote it, back to the command."""
+    out = []
+    characters = iter(entry)
+    for character in characters:
+        if character == u'\\':
+            following = next(characters, u'')
+            out.append(u'\n' if following == u'n' else following)
+        else:
+            out.append(character)
+    return u''.join(out)
 
 
 class Fish(Generic):
@@ -172,9 +198,14 @@ exit
                 '  set -l tb_status $pipestatus[1]\n'
                 '  if test $tb_status -eq {3}\n'
                 '    {4}\n'
+                '    set tb_status 0\n'
                 '  else if [ "$fixed_command" != "" ]\n'
-                '    eval $fixed_command\n{1}'
+                '    eval $fixed_command\n'
+                # What the correction exited with is what this returns, so a
+                # second `bleep` sees it fail if it failed; it was always 0.
+                '    set tb_status $status\n{1}'
                 '  end\n'
+                '  return $tb_status\n'
                 'end').format(alias_name, alter_history, ARGUMENT_PLACEHOLDER,
                               EXIT_EDIT, self._edit_line(),
                               self._invocation(), limit=TRANSPORT_LIMIT)
@@ -297,11 +328,15 @@ end
         return history_file_name
 
     def _get_history_line(self, command_script):
-        return u'- cmd: {}\n   when: {}\n'.format(command_script, int(time()))
+        # Escaped the way fish writes its own entries: a backslash doubled and
+        # a newline as `\\n`. Written raw, fish read `git commit -m "it's a\\"`
+        # back cut short, and a multi-line command as several broken ones.
+        escaped = command_script.replace(u'\\', u'\\\\').replace(u'\n', u'\\n')
+        return u'- cmd: {}\n   when: {}\n'.format(escaped, int(time()))
 
     def _script_from_history(self, line):
         if '- cmd: ' in line:
-            return line.split('- cmd: ', 1)[1]
+            return _unescape(line.split('- cmd: ', 1)[1])
         else:
             return ''
 

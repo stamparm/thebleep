@@ -181,3 +181,9 @@ def main():
         finally:
             os.close(devnull)
         sys.exit(0)
+    except KeyboardInterrupt:
+        # Ctrl-C during a slow replay, or just after typing the alias, printed
+        # thirty lines of traceback. It is an answer -- no -- and 130 is what a
+        # shell says for one. Nothing goes to stdout: the alias evaluates it.
+        sys.stderr.write('\n')
+        sys.exit(130)

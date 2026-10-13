@@ -22,6 +22,10 @@ _FAILURES = ('cannot access',
 
 @for_app('ls')
 def match(command):
+    # `ls` alone: in `ls | grpe notes` the listing is not what failed, and
+    # `ls -lah | grpe notes` was offered for it.
+    if len(command.command_model.segments) > 1:
+        return False
     start = command_word_index(command.script_parts)
     if start == len(command.script_parts) or any(
             part.startswith('-') for part in command.script_parts[start + 1:]):

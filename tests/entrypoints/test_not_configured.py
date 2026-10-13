@@ -76,15 +76,22 @@ def logs(mocker):
                         new_callable=MagicMock)
 
 
+def _not_configured():
+    """Nothing was corrected, so the exit status says so."""
+    with pytest.raises(SystemExit) as raised:
+        main()
+    assert raised.value.code == 1
+
+
 def test_for_generic_shell(shell, logs):
     shell.how_to_configure.return_value = None
-    main()
+    _not_configured()
     logs.how_to_configure_alias.assert_called_once()
 
 
 def test_on_first_run(tracker, shell_pid, logs):
     shell_pid.return_value = 12
-    main()
+    _not_configured()
     _assert_tracker_updated(tracker, 12)
     logs.how_to_configure_alias.assert_called_once()
 
@@ -93,7 +100,7 @@ def test_on_run_after_other_commands(tracker, shell_pid, shell, logs):
     shell_pid.return_value = 12
     shell.get_history.return_value = ['bleep', 'ls']
     _change_tracker(tracker, 12)
-    main()
+    _not_configured()
     logs.how_to_configure_alias.assert_called_once()
 
 
@@ -101,7 +108,7 @@ def test_on_first_run_from_current_shell(tracker, shell_pid,
                                          shell, logs):
     shell.get_history.return_value = ['bleep']
     shell_pid.return_value = 12
-    main()
+    _not_configured()
     _assert_tracker_updated(tracker, 12)
     logs.how_to_configure_alias.assert_called_once()
 
@@ -113,7 +120,7 @@ def test_when_cant_configure_automatically(shell_pid, shell, logs):
         path='/tmp/.bashrc',
         reload='bash',
         can_configure_automatically=False)
-    main()
+    _not_configured()
     logs.how_to_configure_alias.assert_called_once()
 
 

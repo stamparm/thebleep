@@ -105,6 +105,14 @@ case "$installer" in
     pip)
         [ -n "$python" ] || fail "no python3 3.9 or newer found; install one, \
 or install uv (https://docs.astral.sh/uv/) and run this again"
+        # A distribution that manages its own Python (PEP 668: Debian 12,
+        # Ubuntu 23.04 and later, Fedora 38 and later) will not let pip write
+        # there, so "install python3-pip" only leads to the next refusal.
+        if "$python" -c 'import os, sys, sysconfig; sys.exit(sys.prefix != sys.base_prefix or not os.path.exists(os.path.join(sysconfig.get_path("stdlib"), "EXTERNALLY-MANAGED")))' 2>/dev/null; then
+            fail "$python is managed by your distribution (PEP 668), so pip \
+cannot install into it. Install pipx (Debian/Ubuntu: sudo apt install pipx) \
+or uv (https://docs.astral.sh/uv/) and run this again"
+        fi
         "$python" -m pip --version >/dev/null 2>&1 \
             || fail "$python has no pip; install python3-pip, or install uv"
         ;;

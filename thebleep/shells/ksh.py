@@ -78,6 +78,20 @@ class Ksh(Generic):
             'eval "$(TB_ALIAS={0} TB_SHELL={1} {2} "$(fc -ln -1 -1)")"'.format(
                 alias_name, self.program, self._invocation())))
 
+    def app_alias_loader(self, alias_name):
+        """The alias itself: it needs nothing worked out at run time.
+
+        Not the generic stub. That is a *function* which evals the real
+        definition and then calls `{name} "$@"` -- and here the real definition
+        is an alias, which ksh expands only in lines it parses afterwards. The
+        stub's call had been parsed already, so it called the stub, which
+        called itself: the first `bleep` of every session hung for half a
+        minute and ended in `recursion too deep`. The alias costs no
+        interpreter at startup, which is what the stub was for.
+
+        """
+        return self.app_alias(alias_name)
+
     def _parse_alias(self, line):
         """`name='value'` as ksh prints it, the quoting undone."""
         name, _, value = line.partition('=')

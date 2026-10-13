@@ -44,7 +44,15 @@ def get_new_command(command):
         dest = dest[:-1]
 
     absolute = os.path.isabs(typed)
-    if absolute:
+    home = os.path.expanduser('~')
+    if dest[0] == '~' and home != '~':
+        # `cd ~/Dowloads`: the shell had already expanded the `~` when it
+        # failed, and read as a directory called `~` in the working directory
+        # it matched nothing -- so this offered `mkdir -p ~/Dowloads`.
+        root = '~' + separator
+        cwd = home
+        dest = dest[1:]
+    elif absolute:
         # `/x` splits to ['', 'x']; `C:\x` to ['C:', 'x'].
         root = dest[0] + separator
         cwd = (dest[0] + os.sep) if dest[0] else os.sep
@@ -70,7 +78,10 @@ def get_new_command(command):
             corrected.append(best_matches[0])
         else:
             return cd_mkdir.get_new_command(command)
-    fixed = root + separator.join(corrected)
+    if root.startswith('~'):
+        # The `~` stays outside the quotes, or it is not expanded.
+        fixed = root + shell.quote(separator.join(corrected))
+    else:
+        fixed = shell.quote(root + separator.join(corrected))
     return replace_argument(command.script,
-                            command.script_parts[start + 1],
-                            shell.quote(fixed))
+                            command.script_parts[start + 1], fixed)

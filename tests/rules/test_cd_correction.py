@@ -56,3 +56,16 @@ def test_an_absolute_destination_stays_absolute(tmp_path, monkeypatch):
                       'cd: ' + typo + ': No such file or directory')
     assert get_new_command(command) == 'cd ' + tmp_path.joinpath(
         'Documents').as_posix()
+
+
+def test_a_destination_under_home_is_looked_for_there(tmp_path, monkeypatch,
+                                                      os_environ):
+    """`cd ~/Dowloads` was `mkdir -p ~/Dowloads && cd ~/Dowloads` at 95%."""
+    home = tmp_path.joinpath('home')
+    home.joinpath('Downloads').mkdir(parents=True)
+    os_environ['HOME'] = str(home)
+    os_environ['USERPROFILE'] = str(home)
+    monkeypatch.chdir(str(tmp_path))
+    command = Command('cd ~/Dowloads',
+                      'cd: ~/Dowloads: No such file or directory')
+    assert get_new_command(command) == 'cd ~/Downloads'

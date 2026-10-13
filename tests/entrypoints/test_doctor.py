@@ -193,6 +193,19 @@ class TestIntegration(object):
         _, output = _run(capsys)
         assert '--alias-loader' in output
 
+    def test_the_loader_written_out_is_the_loader(self, capsys, home,
+                                                  monkeypatch):
+        """`thebleep --alias-loader >> ~/.bashrc` leaves the loader's output,
+        which never says `--alias-loader`; the doctor recommended it anyway."""
+        from thebleep.shells.bash import Bash
+
+        rc = home.join('.bashrc')
+        rc.write_text(Bash().app_alias_loader('bleep') + u'\n', 'utf-8')
+        self._configure(monkeypatch, rc)
+        _, output = _run(capsys)
+        assert 'alias loader in' in output
+        assert 'defines the alias on first use instead' not in output
+
 
 class TestConfig(object):
     def _settings(self, home, source):
