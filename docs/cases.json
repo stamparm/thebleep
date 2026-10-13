@@ -1237,48 +1237,6 @@
        "risk_factors": [],
        "rule": "no_command",
        "side_effect": false
-      },
-      {
-       "command": "ls -la",
-       "confidence": {
-        "basis": [
-         "the rule matched the command or local context"
-        ],
-        "level": "medium",
-        "score": 0.75
-       },
-       "edits": [
-        {
-         "end": 2,
-         "replacement": " -",
-         "source": "",
-         "start": 2
-        },
-        {
-         "end": 3,
-         "replacement": "a",
-         "source": "",
-         "start": 3
-        }
-       ],
-       "evidence": [
-        {
-         "kind": "source",
-         "text": "history (bundled)"
-        },
-        {
-         "kind": "match",
-         "text": "a condition this rule works out for itself"
-        },
-        {
-         "kind": "context",
-         "text": "only the command you typed, not its output"
-        }
-       ],
-       "risk": "low",
-       "risk_factors": [],
-       "rule": "history",
-       "side_effect": false
       }
      ]
     },
@@ -2696,48 +2654,6 @@
        "risk_factors": [],
        "rule": "no_command",
        "side_effect": false
-      },
-      {
-       "command": "npm run build",
-       "confidence": {
-        "basis": [
-         "the rule matched the command or local context"
-        ],
-        "level": "medium",
-        "score": 0.75
-       },
-       "edits": [
-        {
-         "end": 1,
-         "replacement": "npm ",
-         "source": "c",
-         "start": 0
-        },
-        {
-         "end": 4,
-         "replacement": "un",
-         "source": "go",
-         "start": 2
-        }
-       ],
-       "evidence": [
-        {
-         "kind": "source",
-         "text": "history (bundled)"
-        },
-        {
-         "kind": "match",
-         "text": "a condition this rule works out for itself"
-        },
-        {
-         "kind": "context",
-         "text": "only the command you typed, not its output"
-        }
-       ],
-       "risk": "low",
-       "risk_factors": [],
-       "rule": "history",
-       "side_effect": false
       }
      ]
     },
@@ -2781,48 +2697,6 @@
        "risk": "low",
        "risk_factors": [],
        "rule": "no_command",
-       "side_effect": false
-      },
-      {
-       "command": "npm run build",
-       "confidence": {
-        "basis": [
-         "the rule matched the command or local context"
-        ],
-        "level": "medium",
-        "score": 0.75
-       },
-       "edits": [
-        {
-         "end": 2,
-         "replacement": "npm ",
-         "source": "ca",
-         "start": 0
-        },
-        {
-         "end": 4,
-         "replacement": "un",
-         "source": "g",
-         "start": 3
-        }
-       ],
-       "evidence": [
-        {
-         "kind": "source",
-         "text": "history (bundled)"
-        },
-        {
-         "kind": "match",
-         "text": "a condition this rule works out for itself"
-        },
-        {
-         "kind": "context",
-         "text": "only the command you typed, not its output"
-        }
-       ],
-       "risk": "low",
-       "risk_factors": [],
-       "rule": "history",
        "side_effect": false
       }
      ]
@@ -3524,48 +3398,6 @@
        "risk_factors": [],
        "rule": "no_command",
        "side_effect": false
-      },
-      {
-       "command": "which bleep",
-       "confidence": {
-        "basis": [
-         "the rule matched the command or local context"
-        ],
-        "level": "medium",
-        "score": 0.75
-       },
-       "edits": [
-        {
-         "end": 5,
-         "replacement": "which",
-         "source": "whcih",
-         "start": 0
-        },
-        {
-         "end": 8,
-         "replacement": "bleep",
-         "source": "ls",
-         "start": 6
-        }
-       ],
-       "evidence": [
-        {
-         "kind": "source",
-         "text": "history (bundled)"
-        },
-        {
-         "kind": "match",
-         "text": "a condition this rule works out for itself"
-        },
-        {
-         "kind": "context",
-         "text": "only the command you typed, not its output"
-        }
-       ],
-       "risk": "low",
-       "risk_factors": [],
-       "rule": "history",
-       "side_effect": false
       }
      ]
     },
@@ -4120,48 +3952,6 @@
        "risk_factors": [],
        "rule": "git_fix_stash",
        "side_effect": false
-      },
-      {
-       "command": "git status",
-       "confidence": {
-        "basis": [
-         "the rule matched the command or local context"
-        ],
-        "level": "medium",
-        "score": 0.75
-       },
-       "edits": [
-        {
-         "end": 7,
-         "replacement": "tu",
-         "source": "",
-         "start": 7
-        },
-        {
-         "end": 12,
-         "replacement": "",
-         "source": "h pp",
-         "start": 8
-        }
-       ],
-       "evidence": [
-        {
-         "kind": "source",
-         "text": "history (bundled)"
-        },
-        {
-         "kind": "match",
-         "text": "a condition this rule works out for itself"
-        },
-        {
-         "kind": "context",
-         "text": "only the command you typed, not its output"
-        }
-       ],
-       "risk": "low",
-       "risk_factors": [],
-       "rule": "history",
-       "side_effect": false
       }
      ]
     },
@@ -4698,66 +4488,6 @@
        "risk_factors": [],
        "rule": "pip_unknown_command",
        "side_effect": false
-      },
-      {
-       "command": "pip install -r requirements.txt",
-       "confidence": {
-        "basis": [
-         "the rule matched the command or local context"
-        ],
-        "level": "medium",
-        "score": 0.75
-       },
-       "edits": [
-        {
-         "end": 10,
-         "replacement": "",
-         "source": "t",
-         "start": 9
-        },
-        {
-         "end": 11,
-         "replacement": "l -r",
-         "source": "",
-         "start": 11
-        },
-        {
-         "end": 16,
-         "replacement": "ir",
-         "source": "",
-         "start": 16
-        },
-        {
-         "end": 18,
-         "replacement": "men",
-         "source": "s",
-         "start": 17
-        },
-        {
-         "end": 20,
-         "replacement": ".txt",
-         "source": "",
-         "start": 20
-        }
-       ],
-       "evidence": [
-        {
-         "kind": "source",
-         "text": "history (bundled)"
-        },
-        {
-         "kind": "match",
-         "text": "a condition this rule works out for itself"
-        },
-        {
-         "kind": "context",
-         "text": "only the command you typed, not its output"
-        }
-       ],
-       "risk": "low",
-       "risk_factors": [],
-       "rule": "history",
-       "side_effect": false
       }
      ]
     },
@@ -4801,72 +4531,6 @@
        "risk": "low",
        "risk_factors": [],
        "rule": "pip_unknown_command",
-       "side_effect": false
-      },
-      {
-       "command": "pip install -r requirements.txt",
-       "confidence": {
-        "basis": [
-         "the rule matched the command or local context"
-        ],
-        "level": "medium",
-        "score": 0.75
-       },
-       "edits": [
-        {
-         "end": 5,
-         "replacement": "i",
-         "source": "u",
-         "start": 4
-        },
-        {
-         "end": 7,
-         "replacement": "",
-         "source": "i",
-         "start": 6
-        },
-        {
-         "end": 13,
-         "replacement": "-r ",
-         "source": "",
-         "start": 13
-        },
-        {
-         "end": 17,
-         "replacement": "ir",
-         "source": "",
-         "start": 17
-        },
-        {
-         "end": 19,
-         "replacement": "men",
-         "source": "s",
-         "start": 18
-        },
-        {
-         "end": 21,
-         "replacement": ".txt",
-         "source": "",
-         "start": 21
-        }
-       ],
-       "evidence": [
-        {
-         "kind": "source",
-         "text": "history (bundled)"
-        },
-        {
-         "kind": "match",
-         "text": "a condition this rule works out for itself"
-        },
-        {
-         "kind": "context",
-         "text": "only the command you typed, not its output"
-        }
-       ],
-       "risk": "low",
-       "risk_factors": [],
-       "rule": "history",
        "side_effect": false
       }
      ]
@@ -4915,60 +4579,6 @@
        "risk": "low",
        "risk_factors": [],
        "rule": "clap_suggestion",
-       "side_effect": false
-      },
-      {
-       "command": "pip install -r requirements.txt",
-       "confidence": {
-        "basis": [
-         "the rule matched the command or local context"
-        ],
-        "level": "medium",
-        "score": 0.75
-       },
-       "edits": [
-        {
-         "end": 2,
-         "replacement": "pip",
-         "source": "uv",
-         "start": 0
-        },
-        {
-         "end": 7,
-         "replacement": "install",
-         "source": "piip",
-         "start": 3
-        },
-        {
-         "end": 15,
-         "replacement": "-r",
-         "source": "install",
-         "start": 8
-        },
-        {
-         "end": 24,
-         "replacement": "requirements.txt",
-         "source": "requests",
-         "start": 16
-        }
-       ],
-       "evidence": [
-        {
-         "kind": "source",
-         "text": "history (bundled)"
-        },
-        {
-         "kind": "match",
-         "text": "a condition this rule works out for itself"
-        },
-        {
-         "kind": "context",
-         "text": "only the command you typed, not its output"
-        }
-       ],
-       "risk": "low",
-       "risk_factors": [],
-       "rule": "history",
        "side_effect": false
       }
      ]
@@ -5341,42 +4951,6 @@
        "risk": "low",
        "risk_factors": [],
        "rule": "option_typo",
-       "side_effect": false
-      },
-      {
-       "command": "git status",
-       "confidence": {
-        "basis": [
-         "the rule matched the command or local context"
-        ],
-        "level": "medium",
-        "score": 0.75
-       },
-       "edits": [
-        {
-         "end": 18,
-         "replacement": "",
-         "source": " --shrot",
-         "start": 10
-        }
-       ],
-       "evidence": [
-        {
-         "kind": "source",
-         "text": "history (bundled)"
-        },
-        {
-         "kind": "match",
-         "text": "a condition this rule works out for itself"
-        },
-        {
-         "kind": "context",
-         "text": "only the command you typed, not its output"
-        }
-       ],
-       "risk": "low",
-       "risk_factors": [],
-       "rule": "history",
        "side_effect": false
       }
      ]

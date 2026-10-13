@@ -91,6 +91,22 @@
   under `-c`, and it only cost ksh users a question. fish 3.3 or later is
   needed for the replay.
 
+### Fixed
+
+- **Confident answers that destroyed work.** `git push origin mastr` in a
+  repository with commits became `git commit -m "Initial commit" && git push
+  origin mastr`, at 95% and low risk, so `auto_run_confidence` committed what
+  was staged and pushed the typo; that rule now wants git's own word that the
+  branch has no commits. `git checkout -b feature` on an existing branch
+  offered to delete it first, with `git branch -D` third -- now it is `git
+  checkout feature` (or `git switch`), then `-d` and the command as typed.
+  `git branch -d` on the checked-out branch no longer comes back as `-D`.
+  The `history` rule offered any line within difflib's 0.6 of the command,
+  failed or not: `mkdir dir1` got `git rm dir1`, `git push origin mian` got
+  `git push --force origin main`. A history line now has to be the same
+  command with one word near-spelt differently, add no `sudo`, deletion or
+  `--force`, and follow a command that failed.
+
 ## 4.0.4 — 2026-09-03
 
 ### Added

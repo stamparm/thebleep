@@ -67,6 +67,7 @@ def get_new_command(command):
                                 'checkout {}'.format(marker))
     checkout = checkout[:checkout.index(marker)] + marker
     checkout = checkout.replace(marker, shell.quote(_default_branch(command)), 1)
-    return shell.and_(
-        checkout,
-        replace_argument(command.script, "-d", "-D"))
+    # The delete as typed. It used to come back as `-D`, which drops
+    # unmerged commits -- a different request from the one `-d` made, and the
+    # reason `-d` exists.
+    return shell.and_(checkout, command.script)

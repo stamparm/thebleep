@@ -42,7 +42,7 @@ def test_branch_delete_text_in_an_argument_is_not_a_command(output):
 @pytest.mark.parametrize(
     "script, new_command",
     [
-        ("git branch -d foo", "git checkout master && git branch -D foo"),
+        ("git branch -d foo", "git checkout master && git branch -d foo"),
         ("git branch -D foo", "git checkout master && git branch -D foo"),
     ],
 )
@@ -54,7 +54,7 @@ def test_global_options_are_preserved(output):
     command = Command('git -C worktree branch -d foo', output)
     assert get_new_command(command) == (
         'git -C worktree checkout master && '
-        'git -C worktree branch -D foo')
+        'git -C worktree branch -d foo')
 
 
 @pytest.mark.usefixtures('no_memoize')
@@ -62,7 +62,7 @@ def test_the_repositorys_own_default_branch_is_used(output, default_branch):
     """Checking out `master` fails in a repository that has never had one."""
     default_branch.return_value = 'origin/trunk'
     assert get_new_command(Command('git branch -d foo', output)) \
-        == 'git checkout trunk && git branch -D foo'
+        == 'git checkout trunk && git branch -d foo'
 
 
 @pytest.mark.usefixtures('no_memoize')
@@ -82,7 +82,7 @@ def test_falling_back_when_there_is_no_remote(answers, expected, output,
 
     default_branch.side_effect = answer
     assert get_new_command(Command('git branch -d foo', output)) \
-        == 'git checkout {} && git branch -D foo'.format(expected)
+        == 'git checkout {} && git branch -d foo'.format(expected)
 
 
 @pytest.mark.usefixtures('no_memoize')
@@ -93,4 +93,4 @@ def test_git_not_being_there_is_not_fatal(mocker, output):
     mocker.patch.object(git_branch_delete_checked_out, 'tool_output',
                         return_value='')
     assert get_new_command(Command('git branch -d foo', output)) \
-        == 'git checkout master && git branch -D foo'
+        == 'git checkout master && git branch -d foo'

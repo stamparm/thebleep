@@ -15,12 +15,9 @@ def output(request, src_branch_name):
 
 
 @pytest.fixture
-def new_command(branch_name):
-    return [cmd.format(branch_name) for cmd in [
-        'git branch -d {0} && git branch {0}',
-        'git branch -d {0} && git checkout -b {0}',
-        'git branch -D {0} && git branch {0}',
-        'git branch -D {0} && git checkout -b {0}', 'git checkout {0}']]
+def new_command(branch_name, script):
+    return ['git checkout {}'.format(branch_name),
+            'git branch -d {} && {}'.format(branch_name, script)]
 
 
 @pytest.fixture(params=["fatal: A branch named 'foo' already exists.",
@@ -73,3 +70,14 @@ def test_global_options_and_switch_creation_match(script, branch_exists_output):
     ('git branch f', 'feature&&id', "'feature&&id'")])
 def test_get_new_command(output, new_command, script, src_branch_name, branch_name):
     assert get_new_command(Command(script, output)) == new_command
+
+
+def test_switch_gets_switch_and_nothing_throws_away_unmerged_work():
+    """`git branch -D` was the third answer, and it drops unmerged commits."""
+    output = "fatal: a branch named 'feature' already exists"
+    assert get_new_command(Command('git switch -c feature', output)) == [
+        'git switch feature',
+        'git branch -d feature && git switch -c feature']
+    for script in ('git branch feature', 'git checkout -b feature origin/x'):
+        assert not any('-D' in suggestion for suggestion in
+                       get_new_command(Command(script, output)))

@@ -50,9 +50,11 @@ def get_new_command(command):
     # git accepts a branch called `feature;rm -rf ~`, so this went to the shell
     # as two commands.
     branch = shell.quote(branch_name)
-    for template in ([u'git branch -d {0}', u'git branch {0}'],
-                     [u'git branch -d {0}', u'git checkout -b {0}'],
-                     [u'git branch -D {0}', u'git branch {0}'],
-                     [u'git branch -D {0}', u'git checkout -b {0}'],
-                     [u'git checkout {0}']):
-        yield shell.and_(*[part.format(branch) for part in template])
+    parts = command.script_parts
+    switch = parts[git_subcommand_index(parts)] == 'switch'
+    # The branch is there, so the likeliest want is to be on it -- in the verb
+    # that was typed. Deleting it came first and `-D` third, which threw away
+    # unmerged commits two keystrokes from the prompt; `-d` refuses to, and
+    # then the command runs again as typed, start point and all.
+    yield u'git {} {}'.format('switch' if switch else 'checkout', branch)
+    yield shell.and_(u'git branch -d {}'.format(branch), command.script)
