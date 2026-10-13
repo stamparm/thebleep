@@ -111,7 +111,7 @@ def _permission(env):
 
 
 def _chmod(env):
-    if env.powershell:
+    if env.powershell or os.name == 'nt':
         return {'na': 'no execute bit on Windows'}
     return {'run': './script.sh',
             'expect': r'^chmod \+x script\.sh(?: &&|;) \./script\.sh$',

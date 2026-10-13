@@ -10,6 +10,9 @@ from .generic import Generic, fit_transport, instant_log_path
 class Zsh(Generic):
     friendly_name = 'ZSH'
 
+    def native_path(self, path):
+        return self._msys_path(path)
+
     def replay_argv(self, script):
         """See `Generic.replay_argv`."""
         return self._posix_replay_argv(['zsh', '-f', '-c', script])

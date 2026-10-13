@@ -188,6 +188,12 @@
   really ran, and when it is not the history line's, `bleep` says why there
   is nothing to correct and exits 1.
 
+- **Git Bash on Windows** got `'C:\Users\me\.local\bin\tool'` for a
+  program installed off `PATH` -- backslashes bash reads as escapes, a drive
+  colon it reads as a separator. The POSIX drivers spell a Windows path
+  `/c/Users/me/...` there; the compatibility matrix now records a Git Bash
+  row, which is how this was found.
+
 - **Rule slips found by typing at real shells.** `ls | grpe notes` was
   offered `ls -lah | grpe notes`; `cd ~/Dowloads` offered to create it
   rather than finding `~/Downloads`; `echo hi | tee /etc/x` became `sudo echo

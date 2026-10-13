@@ -44,6 +44,9 @@ FRAMING = re.compile(u'^[\\x00-\\x1f\\x7f-\\x9f�]+|[\\x00-\\x1f\\x7f-\\x9f�]
 class Ksh(Generic):
     friendly_name = 'ksh'
 
+    def native_path(self, path):
+        return self._msys_path(path)
+
     def __init__(self):
         self.program = self._program()
         # `mksh R59 ...` in `--version` and `--doctor`, not `ksh` for all three.

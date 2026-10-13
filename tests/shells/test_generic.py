@@ -291,3 +291,31 @@ class TestWhatInfoIsAllowedToSay(object):
         mocker.patch.object(driver, '_get_version', return_value='1.2.3')
         assert driver().info().endswith('1.2.3')
         assert capsys.readouterr()[1] == ''
+
+
+@pytest.mark.parametrize('name, msys', [
+    ('Bash', True), ('Zsh', True), ('Fish', True), ('Tcsh', True),
+    ('Ksh', True), ('Powershell', False), ('Nushell', False)])
+def test_a_windows_path_as_each_shell_on_windows_spells_it(name, msys, mocker):
+    """Git Bash read `C:\\Users\\me` as escapes and a PATH separator: the
+    compatibility row offered `'C:\\Users\\...\\hellotool'`, which bash could
+    not run. The shells that run natively on Windows keep its own spelling."""
+    from thebleep import shells
+    from thebleep.shells.generic import Generic
+
+    converted = mocker.patch.object(Generic, '_msys_path',
+                                    return_value='/c/x')
+    shell = getattr(shells, name)()
+    assert shell.native_path(r'C:\x') == ('/c/x' if msys else r'C:\x')
+    assert converted.called is msys
+
+
+@pytest.mark.parametrize('platform, path, expected', [
+    ('nt', r'C:\Users\me\.local\bin', '/c/Users/me/.local/bin'),
+    ('nt', '/already/posix', '/already/posix'),
+    ('posix', r'C:\Users\me', r'C:\Users\me'),
+])
+def test_the_msys_spelling(platform, path, expected):
+    from thebleep.shells.generic import Generic
+
+    assert Generic()._msys_path(path, platform) == expected

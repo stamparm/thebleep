@@ -254,7 +254,7 @@ def get_new_command(command):
             shown = _relative(path, cwd)
             evidence = u'{} is in this project at {}'.format(word, shown)
         else:
-            shown = path
+            shown = shell.native_path(path)
             evidence = u'{} is installed at {}, which is not on PATH'.format(
                 word, path)
         suggestions.append(Suggestion(

@@ -74,6 +74,9 @@ def _unescape(entry):
 class Fish(Generic):
     friendly_name = 'Fish Shell'
 
+    def native_path(self, path):
+        return self._msys_path(path)
+
     def replay_argv(self, script):
         """See `Generic.replay_argv`. fish's syntax is its own throughout --
         `set`, `and`, no `$?` -- so `sh` running a fish command line is not
@@ -421,7 +424,8 @@ function __thebleep_fixed
         # `set -gx`, not `fish_add_path`: the latter writes a universal
         # variable that outlives the shell, and a correction has no business
         # changing anything past the session it runs in.
-        return u'set -gx PATH {} $PATH'.format(self.quote(directory))
+        return u'set -gx PATH {} $PATH'.format(
+            self.quote(self.native_path(directory)))
 
     def or_(self, *commands):
         return u'; or '.join(commands)

@@ -395,7 +395,25 @@ class Generic(object):
         off PATH, so the line on the screen is also the line to keep.
 
         """
-        return u'export PATH={}:"$PATH"'.format(self.quote(directory))
+        return u'export PATH={}:"$PATH"'.format(
+            self.quote(self.native_path(directory)))
+
+    def native_path(self, path):
+        """`path` as this shell spells it: as it is, unless a driver says."""
+        return path
+
+    def _msys_path(self, path, platform=None):
+        """`C:\\Users\\me` as `/c/Users/me`, on Windows.
+
+        A POSIX shell there -- Git Bash, MSYS2, Cygwin's -- reads the
+        backslashes as escapes and the drive's colon as PATH's separator, so a
+        directory has to be written the way it writes one itself.
+
+        """
+        if (platform or os.name) != 'nt' or len(path) < 2 or path[1] != ':':
+            return path
+        return u'/{}{}'.format(path[0].lower(),
+                               path[2:].replace(u'\\', u'/'))
 
     def or_(self, *commands):
         return u' || '.join(commands)
