@@ -419,6 +419,25 @@ def entries_for(paths, stats=None):
 
 def load_module(name, path, code_bytes):
     """Executes a cached code object as a module, like an import would."""
+    if kept_modules is not None:
+        # The warm server answers many questions, and executing every
+        # candidate rule again for each was most of what one cost. Kept per
+        # `PATH` as well as per code: a rule may ask `which` while it is
+        # being imported, and the client's `PATH` comes with each question.
+        key = (path, code_bytes, os.environ.get('PATH'))
+        module = kept_modules.get(key)
+        if module is None:
+            module = kept_modules[key] = _execute(name, path, code_bytes)
+        return module
+    return _execute(name, path, code_bytes)
+
+
+# A dict while the warm server runs, and None in a one-shot correction, where
+# every module is executed once anyway.
+kept_modules = None
+
+
+def _execute(name, path, code_bytes):
     module = pytypes.ModuleType(name)
     module.__file__ = path
     exec(marshal.loads(code_bytes), module.__dict__)

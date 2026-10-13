@@ -148,8 +148,11 @@ def _one_edit_away(word):
                  if name not in known)
     names.extend(name for name in WRAPPERS if name not in known)
 
-    best = matching.rank_with_distance(word, names, limit=1)
-    return bool(best) and best[0][1] <= 1
+    # Is anything one edit away -- not "rank everything, then look at the
+    # first": a full ranking of every name on PATH was most of this rule.
+    folded = matching._fold(word)
+    return any(matching.distance(folded, matching._fold(name), limit=1) <= 1
+               for name in names if name)
 
 
 def split_at(command):

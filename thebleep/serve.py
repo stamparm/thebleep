@@ -130,10 +130,14 @@ def _reload_settings_if_changed():
     """
     stamp = _settings_stamp()
     if stamp != _settings_seen[0]:
+        from . import rulepack
         from .conf import settings
 
         settings.init()
         _settings_seen[0] = _settings_stamp()
+        # A rule's module may have read the settings as it was executed.
+        if rulepack.kept_modules is not None:
+            rulepack.kept_modules.clear()
 
 
 def _answer(request):
@@ -226,6 +230,9 @@ def serve(shell_name, idle=IDLE_SECONDS, ready=None):
 
     settings.init()
     _settings_seen[0] = _settings_stamp()
+    from . import rulepack
+
+    rulepack.kept_modules = {}
     # Warm what a correction will need, so the first question is as fast as
     # the tenth.
     correct('gti status')
@@ -236,6 +243,7 @@ def serve(shell_name, idle=IDLE_SECONDS, ready=None):
         listener.bind(path)
     except OSError as error:
         logs.failed(u'Could not listen on {}: {}'.format(path, error))
+        rulepack.kept_modules = None
         return 2
     finally:
         os.umask(old_umask)
@@ -260,6 +268,7 @@ def serve(shell_name, idle=IDLE_SECONDS, ready=None):
                     pass
     finally:
         listener.close()
+        rulepack.kept_modules = None
         try:
             os.unlink(path)
         except OSError:

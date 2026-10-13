@@ -118,12 +118,16 @@ class TestRerun(object):
         of bytes -- a test suite in a loop can put hundreds of megabytes through
         the pipe in three seconds, and all of it used to be accumulated in
         memory and then decoded into a second copy of itself."""
-        limit = 4096
-        with patch.object(rerun, 'MAX_OUTPUT', limit):
-            popen = _popen(b'x' * 100000 + b'the error is here')
+        limit, head = 4096, 1024
+        with patch.object(rerun, 'MAX_OUTPUT', limit), \
+                patch.object(rerun, 'MAX_OUTPUT_HEAD', head):
+            popen = _popen(b'usage: up here' + b'x' * 100000
+                           + b'the error is here')
             output = rerun._wait_output(popen, False)
-        assert len(output) == limit
+        assert len(output) == limit + head
+        # The end, where the error is, and the start, where a usage is.
         assert output.endswith(b'the error is here')
+        assert output.startswith(b'usage: up here')
 
     def test_wait_output_closes_stdin(self):
         """`communicate` used to do this. A command left waiting for input

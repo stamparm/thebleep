@@ -108,14 +108,27 @@ def distance(first, second, limit=None):
     if not second:
         return len(first)
 
+    # With a limit, only the band of cells within `limit` of the diagonal can
+    # hold an answer under it; everything outside is "too far" without being
+    # worked out. Asked of every name on PATH, that is most of the cost.
+    far = (limit + 1) if limit is not None else None
     previous = None
     current = list(range(len(second) + 1))
+    if far is not None:
+        current = [min(value, far) for value in current]
 
     for i, first_char in enumerate(first):
-        before, previous, current = previous, current, [i + 1] + [0] * len(
-            second)
+        before, previous = previous, current
+        current = [i + 1 if far is None else min(i + 1, far)] + (
+            [0] * len(second) if far is None else [far] * len(second))
 
-        for j, second_char in enumerate(second):
+        if far is None:
+            columns = range(len(second))
+        else:
+            columns = range(max(0, i - limit - 1),
+                            min(len(second), i + limit + 1))
+        for j in columns:
+            second_char = second[j]
             cost = 0 if first_char == second_char else 1
             current[j + 1] = min(
                 previous[j + 1] + 1,        # deletion
@@ -130,6 +143,8 @@ def distance(first, second, limit=None):
         if limit is not None and min(current) > limit:
             return limit + 1
 
+    if far is not None:
+        return min(current[-1], far)
     return current[-1]
 
 

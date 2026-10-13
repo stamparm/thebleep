@@ -660,6 +660,14 @@ class TestGetValidHistoryWithoutCurrent(object):
         command = Command(script, '')
         assert get_valid_history_without_current(command) == result
 
+    def test_each_line_once_at_its_latest_place(self, history):
+        """A history is mostly the same commands again, and every rule that
+        reads this compares against each line it is given."""
+        history.return_value = ['ls cat', 'diff x', 'ls cat', 'diff y',
+                                'ls cat']
+        assert get_valid_history_without_current(Command('x', '')) == [
+            'diff x', 'diff y', 'ls cat']
+
 
 class TestInstallationVersion(object):
     def test_the_installed_version_is_reported(self):

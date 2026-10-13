@@ -193,6 +193,19 @@
   `--doctor` suggests the setting a misspelt one was meant to be, and `--why`
   with no previous command says so and exits 1.
 
+### Changed
+
+- **Faster where machines are big.** `history_limit` defaults to 10000
+  rather than no limit, and history lines are compared once each: a
+  million-line history cost 0.8 to 2 seconds a correction. The replay keeps
+  the first 64 KB and the last 256 KB of what a command printed, not the last
+  8 MB, which the rules' regexes then read whole -- 740 ms at 8 MB. The edit
+  distance is worked out only within its limit of the diagonal, and "is
+  anything one edit away?" stops at the first. The warm server keeps the rule
+  modules it has executed, per `PATH`, as its description always said it did.
+  The README's ambient line is written into the startup file rather than
+  `eval`'d, which started Python at every shell start.
+
 ## 4.0.4 — 2026-09-03
 
 ### Added

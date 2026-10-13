@@ -88,13 +88,23 @@ class Tail(object):
 
     """
 
-    def __init__(self, limit):
+    def __init__(self, limit, head=0):
         self._limit = limit
         self._chunks = []
         self._size = 0
         self.truncated = False
+        # The first `head` bytes too, when asked for: where a program prints
+        # its usage before the noise that follows.
+        self._head_limit = head
+        self._head = b''
 
     def append(self, chunk):
+        if len(self._head) < self._head_limit:
+            room = self._head_limit - len(self._head)
+            self._head += chunk[:room]
+            chunk = chunk[room:]
+            if not chunk:
+                return
         self._chunks.append(chunk)
         self._size += len(chunk)
         while self._size - len(self._chunks[0]) >= self._limit:
@@ -106,7 +116,7 @@ class Tail(object):
         if len(joined) > self._limit:
             self.truncated = True
             joined = joined[-self._limit:]
-        return joined
+        return self._head + joined
 
 
 def drain(stream, sink):
@@ -1175,9 +1185,20 @@ def get_valid_history_without_current(command):
     executables = set(get_all_executables())\
         .union(shell.get_builtin_commands())
 
-    return [line for line in _not_corrected(history, tb_alias)
-            if not line.startswith(tb_alias) and not line == command.script
-            and line.split(' ')[0] in executables]
+    # Each line once, at its most recent place: a history is mostly the same
+    # few dozen commands again, and every rule that reads this compares the
+    # command against each line it is given.
+    seen = set()
+    unique = []
+    for line in reversed(list(_not_corrected(history, tb_alias))):
+        if line in seen:
+            continue
+        seen.add(line)
+        if not line.startswith(tb_alias) and not line == command.script \
+                and line.split(' ')[0] in executables:
+            unique.append(line)
+    unique.reverse()
+    return unique
 
 
 def format_raw_script(raw_script):

@@ -62,7 +62,13 @@ def _kill_tree(popen):
 # being accumulated in memory and then decoded into a second copy. A rule reads
 # an error message, so what is kept is the end of the output; the recording
 # reader has always worked to a fixed size for the same reason.
-MAX_OUTPUT = 8 * 1024 * 1024
+#
+# It was 8 MB, and the rules read all of it: case-insensitive regexes over the
+# whole buffer cost 740 ms at 8 MB against 70 ms at a quarter of a megabyte.
+# An error is at the end of what a program printed, and a usage block at the
+# start, so the start is kept as well as the end.
+MAX_OUTPUT = 256 * 1024
+MAX_OUTPUT_HEAD = 64 * 1024
 
 
 def _wait_output(popen, is_slow):
@@ -95,7 +101,7 @@ def _wait_output(popen, is_slow):
         except Exception:                                    # noqa: BLE001
             pass
 
-    sink = Tail(MAX_OUTPUT)
+    sink = Tail(MAX_OUTPUT, head=MAX_OUTPUT_HEAD)
     reader = threading.Thread(target=drain, args=(popen.stdout, sink))
     reader.daemon = True
     reader.start()

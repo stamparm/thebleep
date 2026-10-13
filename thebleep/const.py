@@ -98,7 +98,10 @@ DEFAULT_SETTINGS = {'rules': DEFAULT_RULES,
                     'no_colors': False,
                     'debug': False,
                     'priority': {},
-                    'history_limit': None,
+                    # The tail of the history file that is read. Unlimited,
+                    # a million-line history cost two seconds a correction;
+                    # ten thousand is more than any rule looks back at.
+                    'history_limit': 10000,
                     'alter_history': True,
                     'wait_slow_command': 15,
                     'slow_commands': ['lein', 'react-native', 'gradle',

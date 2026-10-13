@@ -377,14 +377,18 @@ Only the first suggestion is ever considered, because that is the one
 
 ## Without typing bleep
 
-Typing `bleep` is the part that can go. Add this after the alias loader in
-your startup file:
+Typing `bleep` is the part that can go. Write it into your startup file once,
+in place of the plain loader:
 
 ```bash
-eval "$(thebleep --alias-loader --ambient)"      # bash, zsh: one line does both
+thebleep --alias-loader --ambient >> ~/.bashrc   # or ~/.zshrc
 thebleep --alias-loader --ambient >> ~/.config/fish/config.fish
 thebleep --alias-loader --ambient >> $profile    # PowerShell
 ```
+
+Written out, not `eval "$(...)"`: the text is the same every time, and an
+`eval` would start Python at every shell start to print it -- 25 to 50 ms
+per new shell, measured in bash, zsh and fish.
 
 `thebleep --ambient` on its own prints just the bindings, for a startup file
 that already has the loader.
@@ -1857,7 +1861,7 @@ Several *The Bleep* parameters can be changed in the file `$XDG_CONFIG_HOME/theb
 * `no_colors` — disable colored output;
 * `priority` — dict with rules priorities, rule with lower `priority` will be matched first;
 * `debug` — enables debug output, by default `False`;
-* `history_limit` — the numeric value of how many history commands will be scanned, like `2000`;
+* `history_limit` — the numeric value of how many history commands will be scanned, like `2000` (10000 by default);
 * `alter_history` — push fixed command to history, by default `True`;
 * `wait_slow_command` — max amount of time in seconds for getting previous command output if it in `slow_commands` list;
 * `slow_commands` — list of slow commands;

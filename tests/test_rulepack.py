@@ -573,3 +573,23 @@ class TestEquivalence(object):
                     misses.append('{}: {!r} would have matched {}'.format(
                         origin, script, rule.name))
         assert not misses, '\n'.join(misses[:20])
+
+
+def test_the_warm_server_keeps_executed_modules_per_path(os_environ,
+                                                         monkeypatch):
+    """Executing every candidate rule again was most of what a warm answer
+    cost; a rule may read `PATH` while it is executed, so that is the key."""
+    import marshal
+
+    code = marshal.dumps(compile('import os\nseen = os.environ["PATH"]\n',
+                                 'rule.py', 'exec'))
+    monkeypatch.setattr(rulepack, 'kept_modules', {})
+    os_environ['PATH'] = '/one'
+    first = rulepack.load_module('rule', 'rule.py', code)
+    assert rulepack.load_module('rule', 'rule.py', code) is first
+    os_environ['PATH'] = '/two'
+    second = rulepack.load_module('rule', 'rule.py', code)
+    assert second is not first and second.seen == '/two'
+
+    monkeypatch.setattr(rulepack, 'kept_modules', None)
+    assert rulepack.load_module('rule', 'rule.py', code) is not second
