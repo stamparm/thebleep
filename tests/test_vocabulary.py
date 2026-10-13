@@ -239,3 +239,24 @@ class TestDirectories(object):
     def test_missing_directories_are_not_listed(self, home):
         assert all(os.path.isdir(directory)
                    for directory in vocabulary.completion_directories())
+
+
+def test_roff_spacing_escapes_are_not_part_of_a_name():
+    """grep's page writes `\\-\\^\\-exclude\\-dir`; with `\\^` kept in, not one of
+    grep's long options was read."""
+    page = ('.TP\n.BR \\-\\^\\-exclude\\-dir= \\c\n.I GLOB\n'
+            '.TP\n.B \\-\\^\\-line\\-buffered\n.TP\n\\fB\\-\\|\\-null\\fR\n')
+    assert {'exclude-dir', 'line-buffered', 'null'} <= \
+        vocabulary._options_in_page(page)
+
+
+def test_bundled_fish_flags_still_name_the_command():
+    """`complete -rc grep -l exclude-dir`: `-rc` is `-r -c`, and read as one
+    unknown word it left the line belonging to no command."""
+    subcommands, options = set(), set()
+    for line in ("complete -rc grep -l exclude-dir -d 'Skip dirs'",
+                 "complete -xc grep -l color -a 'never always auto'",
+                 "complete -c grep -s r -l recursive"):
+        vocabulary._fish_line(vocabulary._fish_words(line), 'grep',
+                              subcommands, options)
+    assert {'exclude-dir', 'color', 'recursive'} <= options

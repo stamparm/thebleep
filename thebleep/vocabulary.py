@@ -40,7 +40,7 @@ import re
 from . import cachefile
 
 # Bumped when what is gathered or how changes, so an older cache is a miss.
-FORMAT = 1
+FORMAT = 2
 
 MAX_PAGE = 2 * 1024 * 1024
 MAX_COMPLETION = 1024 * 1024
@@ -201,9 +201,17 @@ def _options_in_page(text):
 _ROFF_FONT = re.compile(r'\\f(?:\[[^\]]*\]|\(..|.)')
 
 
+# Spacing and the zero-width escapes: `\^` and `\|` are narrow spaces, `\&`
+# and `\%` print nothing. grep's page writes its long options as
+# `\-\^\-exclude\-dir`, and with the `\^` left in no long option of grep's
+# was read at all.
+_ROFF_SPACING = re.compile(r'\\[\^|&%]')
+
+
 def _plain(text):
     """Roff text with the escapes that hide a command line taken out."""
-    return _ROFF_FONT.sub('', text).replace('\\-', '-').replace('\\ ', ' ')
+    text = _ROFF_SPACING.sub('', _ROFF_FONT.sub('', text))
+    return text.replace('\\-', '-').replace('\\ ', ' ')
 
 
 def _spelled(tool, rest, text):
@@ -256,9 +264,20 @@ def _fish_words(line):
     import shlex
 
     try:
-        return shlex.split(stripped, comments=False, posix=True)
+        words = shlex.split(stripped, comments=False, posix=True)
     except ValueError:
         return None
+    # `complete -rc grep -l exclude-dir`: short flags bundled, the last of
+    # them taking the next word. Read as one unknown word, the `-c` in it was
+    # never seen and 141 lines of 12 completions, grep's among them, belonged
+    # to no command.
+    expanded = []
+    for word in words:
+        if re.match(r'^-[A-Za-z]{2,}$', word):
+            expanded.extend('-' + letter for letter in word[1:])
+        else:
+            expanded.append(word)
+    return expanded
 
 
 def _fish_facts(tool, directories):

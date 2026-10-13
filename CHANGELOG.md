@@ -241,6 +241,13 @@
   expectations written first and never edited to agree -- are scored beside
   it, offline and with no tool asked, and the README publishes both.
 
+- **Options read from manual pages and fish completions.** grep's page writes
+  `\-\^\-exclude\-dir`, and the `\^` stayed in the name, so not one of
+  grep's long options was read and `grep --exculde-dir` got nothing. fish
+  completions written `complete -rc grep ...` bundle `-c` with another flag,
+  and those lines belonged to no command. Both are read now, and the cache of
+  what was read before is retired.
+
 - **`pip freez` is not asked about any more.** Re-running a command to read
   its output is skipped only when the program can be shown to refuse the
   subcommand again, and until now only git and cargo could be. pip lists
