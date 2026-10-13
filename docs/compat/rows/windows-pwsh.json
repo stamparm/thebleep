@@ -11,7 +11,7 @@
     "cd_typo": {
       "correction": "cd Documents",
       "exit_status": 0,
-      "output": "Set-Location: Cannot find path 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\thebleep-compat-7z7m6mi0\\scenario-j2hbz7c7\\Documnets' because it does not exist.",
+      "output": "Set-Location: Cannot find path 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\thebleep-compat-i8c6vzl4\\scenario-4j7mflxf\\Documnets' because it does not exist.",
       "ran": "cd Documnets",
       "rule": "cd_correction",
       "status": "ok",
@@ -33,8 +33,7 @@
       "status": "ok",
       "suggestions": [
         "docker ps",
-        "docker push",
-        "docker stats"
+        "docker --help"
       ]
     },
     "git_subcommand": {
@@ -90,7 +89,7 @@
     "npm": {
       "correction": "npm run build",
       "exit_status": 0,
-      "output": "npm error Missing script: \"bulid\"\r\nnpm error\r\nnpm error To see a list of scripts, run:\r\nnpm error   npm run\r\nnpm error A complete log of this run can be found in: C:\\npm\\cache\\_logs\\2026-10-01T11_01_17_850Z-debug-0.log",
+      "output": "npm error Missing script: \"bulid\"\r\nnpm error\r\nnpm error To see a list of scripts, run:\r\nnpm error   npm run\r\nnpm error A complete log of this run can be found in: C:\\npm\\cache\\_logs\\2026-10-13T02_12_45_347Z-debug-0.log",
       "ran": "npm run bulid",
       "rule": "npm_missing_script",
       "status": "ok",
@@ -107,8 +106,7 @@
       "status": "ok",
       "suggestions": [
         "winget install vim",
-        "winget uninstall vim",
-        "winget list vim"
+        "winget uninstall vim"
       ],
       "tool": "winget"
     },
@@ -134,10 +132,10 @@
   },
   "kernel": "2025Server",
   "label": "windows-pwsh",
-  "latency_ms": 166,
+  "latency_ms": 140,
   "machine": "AMD64",
   "python": "3.12.10",
-  "recorded_at": "2026-10-01",
+  "recorded_at": "2026-10-13",
   "recorded_by": "ci",
   "schema": 1,
   "shell": "pwsh 7.6.6",

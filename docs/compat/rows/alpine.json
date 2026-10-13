@@ -113,9 +113,7 @@
       "rule": "apk_unknown_command",
       "status": "ok",
       "suggestions": [
-        "apk add vim",
-        "apk list vim",
-        "apk stats vim"
+        "apk add vim"
       ],
       "tool": "apk"
     },
@@ -155,10 +153,10 @@
   },
   "kernel": "6.17.0-1022-azure",
   "label": "alpine",
-  "latency_ms": 114,
+  "latency_ms": 115,
   "machine": "x86_64",
-  "python": "3.14.7",
-  "recorded_at": "2026-10-01",
+  "python": "3.14.8",
+  "recorded_at": "2026-10-13",
   "recorded_by": "ci",
   "schema": 1,
   "shell": "sh sh",

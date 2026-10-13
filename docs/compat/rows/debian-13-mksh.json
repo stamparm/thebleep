@@ -114,8 +114,7 @@
       "status": "ok",
       "suggestions": [
         "apt install vim",
-        "apt reinstall vim",
-        "apt list vim"
+        "apt reinstall vim"
       ],
       "tool": "apt"
     },
@@ -158,7 +157,7 @@
   "latency_ms": 60,
   "machine": "x86_64",
   "python": "3.13.5",
-  "recorded_at": "2026-10-01",
+  "recorded_at": "2026-10-13",
   "recorded_by": "ci",
   "schema": 1,
   "shell": "mksh 59",
