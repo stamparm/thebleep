@@ -219,6 +219,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -253,5 +254,10 @@ jobs:
           # master may have moved while the rows were being recorded.
           git pull --rebase origin master
           git push origin HEAD:master
+          # Pushed with this workflow's token, which starts no workflow: the
+          # tests are asked for by name, or the commit is never tested.
+          gh workflow run test.yml --ref master
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Every recorded row was published
         run: test "${{ steps.render.outputs.status }}" = 0

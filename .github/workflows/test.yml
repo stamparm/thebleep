@@ -13,6 +13,11 @@ on:
   push:
     branches-ignore: ['dependabot/**']
   pull_request:
+  # For the compatibility workflow, whose commit to master is pushed with the
+  # workflow's own token -- and a push made with that token starts no
+  # workflow, so the commit would otherwise never be tested. A dispatch is the
+  # one event that token is allowed to start.
+  workflow_dispatch:
 
 # Read-only. Nothing here needs to write to the repository, and a pull request
 # from a fork must never run with anything more. Publishing is a separate
