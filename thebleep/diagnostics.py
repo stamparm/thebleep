@@ -85,6 +85,9 @@ _POSIX_MISSING_PATH = re.compile(
     r'''(?im)^[^:\r\n]+:\s+(?:(?:cannot|can't)[^'"\r\n]+[ ])?
         (?P<quote>['"]?)(?P<path>[^'"\r\n]+?)(?P=quote):
         \s*no[ ]such[ ]file[ ]or[ ]directory''', re.VERBOSE)
+# uutils coreutils 0.10 (Ubuntu 26.04) `mkdir` leaves the path out entirely.
+_POSIX_PATHLESS_MISSING = re.compile(
+    r'(?im)^(?P<program>[^:\s]+):\s*no such file or directory\s*$')
 _POSIX_EXISTING_PATH = re.compile(
     r'''(?im)^[^:\r\n]+:\s+(?:failed[ ]to[ ]create[ ]symbolic[ ]link[ ])?
         (?P<quote>['"]?)(?P<path>[^'"\r\n]+?)(?P=quote):
@@ -176,6 +179,24 @@ def _posix_missing_path(output):
             paths.append(value)
         return move, paths
     return _posix_path(output, _POSIX_MISSING_PATH)
+
+
+def _pathless_missing_path(script, output, platform_name):
+    """Read the path from the command when the tool did not print it."""
+    match = _POSIX_PATHLESS_MISSING.search(output)
+    if not match:
+        return None
+    try:
+        parts = shlex.split(script, posix=platform_name != 'nt')
+    except ValueError:
+        return None
+    if not parts or os.path.basename(parts[0]) != os.path.basename(
+            match.group('program')):
+        return None
+    operands = [part for part in parts[1:] if not part.startswith('-')]
+    if len(operands) != 1:
+        return None
+    return match, operands[0]
 
 
 def _posix_existing_path(output):
@@ -483,6 +504,8 @@ def _missing_python_path(script, output, platform_name):
     # command still needs to be PowerShell-native.
     if not path_error:
         path_error = _posix_missing_path(output)
+    if not path_error:
+        path_error = _pathless_missing_path(script, output, platform_name)
     if not path_error:
         return None
     match, paths = path_error

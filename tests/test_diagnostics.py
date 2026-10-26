@@ -346,6 +346,29 @@ def test_windows_posix_tool_missing_path_is_explained():
         "Get-Item -LiteralPath 'missing-dir/destination'")
 
 
+@pytest.mark.parametrize('platform_name, command', [
+    ('posix', 'ls -ld missing-dir/destination'),
+    ('nt', "Get-Item -LiteralPath 'missing-dir/destination'")])
+def test_pathless_missing_path_reads_the_command(platform_name, command):
+    """uutils coreutils 0.10 ``mkdir`` prints no path at all."""
+    result = diagnostics.diagnose(
+        'mkdir missing-dir/destination',
+        'mkdir: No such file or directory\n', platform_name=platform_name)
+
+    assert result['diagnoses'][0]['kind'] == 'missing_path'
+    assert result['diagnoses'][0]['next_steps'][0]['command'] == command
+
+
+@pytest.mark.parametrize('script', [
+    'mkdir a b', 'rmdir missing-dir', 'mkdir'])
+def test_pathless_missing_path_needs_one_operand_of_that_program(script):
+    result = diagnostics.diagnose(
+        script, 'mkdir: No such file or directory\n', platform_name='posix')
+
+    assert all(diagnosis['kind'] != 'missing_path'
+               for diagnosis in result['diagnoses'])
+
+
 def test_git_outside_a_repository_is_explained():
     result = diagnostics.diagnose(
         'git status',
