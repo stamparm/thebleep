@@ -83,8 +83,11 @@ exit 0
 
 # Records the context handed to an inline correction. The shell alias list is
 # needed to recognise commands that exist only as aliases, but it must not be
-# left exported after the callback returns.
+# left exported after the callback returns. The binding also starts
+# `--serve` in the background when there is no socket, which is this same
+# stub with no alias list: it must not write the marker over the answer.
 FAKE_INLINE_ALIASES = u"""#!/bin/sh
+case "$1" in --serve) exit 0;; esac
 printf '%s' "${TB_SHELL_ALIASES-}" > "$THEBLEEP_INLINE_ENV_MARKER"
 echo 'echo INLINE-DONE'
 exit 0
