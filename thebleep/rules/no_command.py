@@ -552,6 +552,27 @@ def _demote_impossible(ranked, arguments):
     return possible + impossible
 
 
+def _named_by_the_next_word(ranked, equal, arguments):
+    """The same names, with the closest ones whose manual documents the next
+    word as a subcommand moved to the front.
+
+    `bit status` is one key from `bat` and one from `git`, and spelling
+    cannot choose; `status` can, being a git subcommand and nothing of
+    bat's. Only among the equally close (`equal`), and only a plain word.
+
+    """
+    if not arguments or len(equal) < 2 \
+            or not re.match(r'^[a-z][a-z0-9-]*$', arguments[0]):
+        return ranked
+    from thebleep import vocabulary
+
+    named = [name for name in equal
+             if arguments[0] in (vocabulary.subcommands(name) or ())]
+    if not named:
+        return ranked
+    return named + [name for name in ranked if name not in named]
+
+
 def _word_spans(script, old, require_separator=False):
     """Find standalone, unquoted occurrences of ``old`` in ``script``.
 
@@ -720,7 +741,13 @@ def get_new_command(command):
 
     command_index, old_command = unknown
 
-    scored = _ranked(old_command)
+    # A name the typed word merely starts with is not a slip of it but a
+    # word dropped: `manls` was `man ls`, never `man`. One letter over is
+    # still a stray key (`catt`); two or more are the next word, and the
+    # space rules answer for that.
+    scored = [(name, distance) for name, distance in _ranked(old_command)
+              if not (old_command.startswith(name)
+                      and len(old_command) - len(name) > 1)]
     if not scored:
         return []
 
@@ -761,6 +788,9 @@ def get_new_command(command):
     # `go` -- `o` and `i` are neighbours, so both are real explanations and
     # your history is the right thing to choose between them.
     equal = matching.plausible_slips(old_command, scored)
+    # And one slip goes ahead of an equally distant edit that no finger
+    # makes: `bit` is `git` with a neighbouring key, `bat` two keys apart.
+    ranked = equal + [name for name in ranked if name not in equal]
     if len(equal) > 1:
         familiar = [name for name in equal if name in used]
         if familiar:
@@ -768,6 +798,7 @@ def get_new_command(command):
                                  if name not in familiar]
 
     parts = _compound_parts(inner) if substitution else _compound_parts(command)
+    ranked = _named_by_the_next_word(ranked, equal, parts[command_index + 1:])
     ranked = _demote_impossible(ranked, parts[command_index + 1:])
 
     from thebleep.conf import settings

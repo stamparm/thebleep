@@ -1054,19 +1054,23 @@ def replace_command(command, broken, matched, guessed=False):
     from thebleep.shells import shell
     from .command_model import replace_span
 
-    # Still `difflib` here, deliberately. `thebleep.matching` is a better
-    # measure of a typo and is what the `PATH` guess uses -- but the corpus has
-    # nothing to say about the order of a tool's *own* suggestions, and changing
-    # twenty pinned orderings on a hunch is how unmeasured churn gets in. The
-    # first suggestion is the one that matters and it does not differ here.
+    # Still `difflib` for what the tool itself named: the corpus has nothing to
+    # say about the order of a tool's *own* suggestions.
+    ranked = []
     if guessed:
         from .matching import rank
 
         matched = list(matched)
-        near = set(rank(broken, matched)).union(
+        ranked = rank(broken, matched)
+        near = set(ranked).union(
             get_close_matches(broken, matched, n=len(matched) or 1))
         matched = [candidate for candidate in matched if candidate in near]
     new_cmds = get_close_matches(broken, matched, cutoff=0.1)
+    # Except that difflib has no idea of two keys swapped: `docker sp` put
+    # `stop` ahead of `ps`. In a list the rule enumerated, what is within a
+    # slip of the word goes first, nearest first.
+    if ranked:
+        new_cmds = ranked + [new for new in new_cmds if new not in ranked]
     model_matches = _model_argument_matches(command, broken)
     result = []
     for new_cmd in new_cmds:

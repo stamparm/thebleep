@@ -287,7 +287,7 @@ def test_get_new_management_command(wrong, fixed):
 @pytest.mark.usefixtures('no_memoize', 'docker_help_new')
 @pytest.mark.parametrize('wrong, fixed, output', [
     ('swarm int', ['swarm init'], _DOCKER_SWARM_OUTPUT),
-    ('image la', ['image load', 'image ls'], _DOCKER_IMAGE_OUTPUT)])
+    ('image la', ['image ls', 'image load'], _DOCKER_IMAGE_OUTPUT)])
 def test_get_new_management_command_subcommand(wrong, fixed, output):
     command = Command('docker {}'.format(wrong), output)
     assert get_new_command(command) == ['docker {}'.format(x) for x in fixed]
@@ -334,7 +334,7 @@ def test_a_management_subcommand_is_looked_up_under_its_command(mocker):
 
     command = Command('docker image la',
                       unknown_subcommand('image la', 'image'))
-    assert get_new_command(command) == ['docker image load', 'docker image ls']
+    assert get_new_command(command) == ['docker image ls', 'docker image load']
     assert listed.call_args[0][0] == ('docker', 'image', '--help')
 
 

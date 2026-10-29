@@ -625,42 +625,6 @@
        "risk_factors": [],
        "rule": "no_command",
        "side_effect": false
-      },
-      {
-       "command": "who",
-       "confidence": {
-        "basis": [
-         "the rule matched the command or local context"
-        ],
-        "level": "medium",
-        "score": 0.75
-       },
-       "edits": [
-        {
-         "end": 5,
-         "replacement": "who",
-         "source": "whomi",
-         "start": 0
-        }
-       ],
-       "evidence": [
-        {
-         "kind": "source",
-         "text": "no_command (bundled)"
-        },
-        {
-         "kind": "match",
-         "text": "a condition this rule works out for itself"
-        },
-        {
-         "kind": "context",
-         "text": "only the command you typed, not its output"
-        }
-       ],
-       "risk": "low",
-       "risk_factors": [],
-       "rule": "no_command",
-       "side_effect": false
       }
      ]
     },
@@ -683,42 +647,6 @@
         {
          "end": 5,
          "replacement": "whoami",
-         "source": "whomi",
-         "start": 0
-        }
-       ],
-       "evidence": [
-        {
-         "kind": "source",
-         "text": "no_command (bundled)"
-        },
-        {
-         "kind": "match",
-         "text": "a condition this rule works out for itself"
-        },
-        {
-         "kind": "context",
-         "text": "only the command you typed, not its output"
-        }
-       ],
-       "risk": "low",
-       "risk_factors": [],
-       "rule": "no_command",
-       "side_effect": false
-      },
-      {
-       "command": "who",
-       "confidence": {
-        "basis": [
-         "the rule matched the command or local context"
-        ],
-        "level": "medium",
-        "score": 0.75
-       },
-       "edits": [
-        {
-         "end": 5,
-         "replacement": "who",
          "source": "whomi",
          "start": 0
         }
@@ -2552,42 +2480,6 @@
         {
          "end": 5,
          "replacement": "pip3",
-         "source": "pip3l",
-         "start": 0
-        }
-       ],
-       "evidence": [
-        {
-         "kind": "source",
-         "text": "no_command (bundled)"
-        },
-        {
-         "kind": "match",
-         "text": "a condition this rule works out for itself"
-        },
-        {
-         "kind": "context",
-         "text": "only the command you typed, not its output"
-        }
-       ],
-       "risk": "low",
-       "risk_factors": [],
-       "rule": "no_command",
-       "side_effect": false
-      },
-      {
-       "command": "pip install x",
-       "confidence": {
-        "basis": [
-         "the rule matched the command or local context"
-        ],
-        "level": "medium",
-        "score": 0.75
-       },
-       "edits": [
-        {
-         "end": 5,
-         "replacement": "pip",
          "source": "pip3l",
          "start": 0
         }

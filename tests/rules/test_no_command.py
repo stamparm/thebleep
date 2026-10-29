@@ -10,6 +10,13 @@ def get_all_executables(mocker):
 
 
 @pytest.fixture(autouse=True)
+def documented(mocker):
+    """No manual on this machine documents a subcommand, unless a test says
+    so: the real ones would make the order depend on what is installed."""
+    return mocker.patch('thebleep.vocabulary.subcommands', return_value=[])
+
+
+@pytest.fixture(autouse=True)
 def history_without_current(mocker):
     return mocker.patch(
         'thebleep.rules.no_command.get_valid_history_without_current',
@@ -502,3 +509,34 @@ def test_a_builtin_inside_the_failed_word_is_not_the_failed_word(mocker):
     assert suggestions
     assert all(suggestion.startswith('cd src && ')
                for suggestion in suggestions)
+
+
+@pytest.mark.usefixtures('no_memoize')
+def test_one_slip_goes_ahead_of_an_edit_no_finger_makes(mocker):
+    """`bit status` -> `git status`: `b` is beside `g`; `i` is not beside
+    `a`, so `bat` is the same distance but no one slip."""
+    mocker.patch('thebleep.rules.no_command.get_all_executables',
+                 return_value=['bat', 'git'])
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+    assert get_new_command(Command('bit status', ''))[0] == 'git status'
+
+
+@pytest.mark.usefixtures('no_memoize')
+def test_the_next_word_names_the_program(mocker, documented):
+    """`pm install` is one key from `npm` and from `pym`; npm documents
+    `install`."""
+    mocker.patch('thebleep.rules.no_command.get_all_executables',
+                 return_value=['pym', 'npm'])
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+    documented.side_effect = lambda tool, prefix=(): (
+        ['install', 'test'] if tool == 'npm' else [])
+    assert get_new_command(Command('pm install', ''))[0] == 'npm install'
+
+
+@pytest.mark.usefixtures('no_memoize')
+def test_a_word_cut_short_is_not_offered(mocker):
+    """`manls` is `man ls`; `man` would drop the `ls`."""
+    mocker.patch('thebleep.rules.no_command.get_all_executables',
+                 return_value=['man'])
+    mocker.patch('thebleep.rules.no_command.which', return_value=None)
+    assert 'man' not in get_new_command(Command('manls', ''))
