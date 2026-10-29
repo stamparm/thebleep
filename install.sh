@@ -264,32 +264,39 @@ case "$shell" in
     *) rc="" ;;
 esac
 
+# Correcting the line before it runs is the point, so the line printed asks
+# for it wherever the shell has a binding for it: tcsh, ksh and Nushell do not.
+case "$shell" in
+    bash|zsh|fish|xonsh|elvish|pwsh|powershell) ambient=" --ambient" ;;
+    *) ambient="" ;;
+esac
+
 say ""
 if [ -n "$rc" ]; then
     say "One more line, and it is yours to run:"
     say ""
-    say "    $PACKAGE --alias-loader $ALIAS >> $rc"
+    say "    $PACKAGE --alias-loader $ALIAS$ambient >> $rc"
 elif [ "$shell" = "pwsh" ] || [ "$shell" = "powershell" ]; then
     # PowerShell has no `>>` that appends bytes, and $PROFILE usually does not
     # exist yet.
     say "Two more lines, and they are yours to run, in PowerShell:"
     say ""
     say "    New-Item -ItemType File -Path \$PROFILE -Force"
-    say "    $PACKAGE --alias-loader $ALIAS | Add-Content \$PROFILE"
+    say "    $PACKAGE --alias-loader $ALIAS$ambient | Add-Content \$PROFILE"
 else
     say "One more line to add -- but \$SHELL says '${shell:-nothing}', which is not"
     say "one of the shells this knows, so it is not going to guess which file"
     say "yours reads. Whichever of these is yours:"
     say ""
-    say "    bash        $PACKAGE --alias-loader $ALIAS >> ~/.bashrc"
-    say "    zsh         $PACKAGE --alias-loader $ALIAS >> ~/.zshrc"
-    say "    fish        $PACKAGE --alias-loader $ALIAS >> ~/.config/fish/config.fish"
+    say "    bash        $PACKAGE --alias-loader $ALIAS --ambient >> ~/.bashrc"
+    say "    zsh         $PACKAGE --alias-loader $ALIAS --ambient >> ~/.zshrc"
+    say "    fish        $PACKAGE --alias-loader $ALIAS --ambient >> ~/.config/fish/config.fish"
     say "    tcsh        $PACKAGE --alias-loader $ALIAS >> ~/.cshrc"
     say "    ksh         $PACKAGE --alias-loader $ALIAS >> ~/.kshrc"
-    say "    xonsh       $PACKAGE --alias-loader $ALIAS >> ~/.config/xonsh/rc.xsh"
-    say "    elvish      $PACKAGE --alias-loader $ALIAS >> ~/.config/elvish/rc.elv"
+    say "    xonsh       $PACKAGE --alias-loader $ALIAS --ambient >> ~/.config/xonsh/rc.xsh"
+    say "    elvish      $PACKAGE --alias-loader $ALIAS --ambient >> ~/.config/elvish/rc.elv"
     say "    nushell     $PACKAGE --alias-loader $ALIAS >> ~/.config/nushell/config.nu"
-    say "    powershell  $PACKAGE --alias-loader $ALIAS | Add-Content \$PROFILE"
+    say "    powershell  $PACKAGE --alias-loader $ALIAS --ambient | Add-Content \$PROFILE"
     say ""
     say "Or say which and run this again: THEBLEEP_SHELL=zsh sh install.sh"
 fi

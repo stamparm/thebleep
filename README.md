@@ -29,10 +29,13 @@ the one line to add to your shell's startup file. Prefer to do it yourself:
 
 ```bash
 uv tool install thebleep          # or: pipx install thebleep
-thebleep --alias-loader >> ~/.bashrc
+thebleep --alias-loader --ambient >> ~/.bashrc
 ```
 
-Open a new shell, and the next time you mistype something, type `bleep`.
+Open a new shell and mistype something: `--ambient` is what fixes the line
+*before* it runs, in bash, zsh, fish, PowerShell, xonsh and Elvish. Whatever
+it cannot see coming -- a missing `sudo`, a branch with no upstream -- type
+`bleep` after it fails. Leave `--ambient` off and return is never touched.
 [The long version](#installation), including the muscle memory you already
 have:
 
@@ -46,7 +49,7 @@ thebleep --alias-loader fuck >> ~/.bashrc
   fish, xonsh, Elvish or PowerShell replaces the line with `git status` and
   waits for a second return. In all but PowerShell `git satus` is caught the
   same way, from git's own manual, with nothing run. Nobody types `bleep`
-  for the commonest mistakes there are.
+  for the commonest mistakes there are. One flag, `--ambient`, at install.
   [Without typing bleep](#without-typing-bleep).
 - **Reads the answer off the screen.** When git says `the most similar command
   is status`, or npm lists the scripts, or `ls --sort=nmae` prints what `--sort`
