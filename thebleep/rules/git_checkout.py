@@ -22,9 +22,12 @@ def match(command):
         index = git_subcommand_index(parts)
         return (parts[index:index + 1] == ['switch']
                 and INVALID_REFERENCE.search(command.output) is not None)
+    found = MISSING.search(command.output)
+    # `-` is no branch git would create: `git commit - m x` is a stray
+    # space, and `git branch - && ...` was offered for it.
     return ('did not match any file(s) known to git' in command.output
             and "Did you forget to 'git add'?" not in command.output
-            and MISSING.search(command.output) is not None)
+            and found is not None and not found.group(1).startswith('-'))
 
 
 def get_branches():

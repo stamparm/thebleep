@@ -185,13 +185,19 @@ def known_program_correction(script, cwd=None):
     candidates = vocabulary.subcommands(program)
     if not candidates or word in candidates:
         return None
+    # Caps lock, or Shift held a key too long: `git STATUS`.
+    if word != word.lower() and word.lower() in candidates:
+        return replace_argument(script, word, word.lower())
     if any(candidate.startswith(word) for candidate in candidates) and (
             program in ABBREVIATING or len(word) < MIN_PREFIX):
         return None
-    ranked = matching.rank(word, candidates, limit=1)
-    if not ranked:
+    scored = matching.rank_with_distance(word, candidates)
+    if not scored:
         return None
+    # One slip of a finger before an equally distant edit nobody makes:
+    # `npm teat` is `test` (`a` beside `s`), not `team`.
+    best = (matching.plausible_slips(word, scored) or [scored[0][0]])[0]
     if _known_elsewhere(program, word, cwd):
         return None
-    fixed = replace_argument(script, word, shell.quote(ranked[0]))
+    fixed = replace_argument(script, word, shell.quote(best))
     return fixed if fixed != script else None

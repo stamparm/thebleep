@@ -56,6 +56,7 @@ class TestKnownProgramCorrection(object):
         ('docker pss', 'docker ps'),
         ('npm isntall', 'npm install'),
         ('git dif', 'git diff'),     # a dropped key: git takes no prefix
+        ('git STATUS', 'git status'),  # caps lock
         ('git statu', 'git status'),
         ('docker pul', 'docker pull'),
     ])
@@ -150,3 +151,12 @@ def test_git_aliases_reads_every_file_git_would(home):
 def test_git_aliases_without_any_file_is_empty(home):
     assert ambient.git_aliases() == set()
     assert not os.path.exists(str(home / '.gitconfig'))
+
+
+@pytest.mark.usefixtures('path', 'home', 'no_memoize')
+def test_one_slip_goes_ahead_of_an_equally_distant_edit(mocker):
+    """`npm teat`: `team` and `test` are one substitution each, but `a` is
+    beside `s` and nowhere near `m`."""
+    mocker.patch('thebleep.vocabulary.subcommands',
+                 side_effect=lambda tool, prefix=(): ['team', 'test'])
+    assert ambient.known_program_correction('npm teat') == 'npm test'
