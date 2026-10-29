@@ -14,6 +14,8 @@ def executables(mocker):
 def subcommands(mocker):
     """git documents a few subcommands; nothing else documents any."""
     known = {'git': ['log', 'status', 'commit']}
+    # Not git itself: asking the real one is a race with the probe timeout.
+    mocker.patch('thebleep.replay._subcommands', return_value=set())
     return mocker.patch('thebleep.vocabulary.subcommands',
                         side_effect=lambda tool, prefix=(): list(
                             known.get(tool, [])))
@@ -91,3 +93,30 @@ def test_an_undocumented_second_half_is_no_split(mocker):
     mocker.patch('thebleep.rules.misplaced_space.which', return_value=None)
 
     assert not match(Command('gi tfoo', ''))
+
+
+@pytest.mark.usefixtures('no_memoize')
+@pytest.mark.parametrize('script, fixed', [
+    ('l s-la', 'ls -la'),
+    ('tai l-f log', 'tail -f log'),
+])
+def test_the_second_half_may_be_a_flag(mocker, script, fixed):
+    mocker.patch(
+        'thebleep.rules.missing_space_before_subcommand.get_all_executables',
+        return_value=['ls', 'tail', 'git'])
+    mocker.patch('thebleep.rules.misplaced_space.which', return_value=None)
+
+    assert get_new_command(Command(script, '')) == [fixed]
+
+
+@pytest.mark.usefixtures('no_memoize')
+@pytest.mark.parametrize('script', ['grep-r foo .', 'ls-la /tmp'])
+def test_a_flag_never_swallows_the_next_word(mocker, script):
+    """`grep-r foo` is a space left out, not one moved: `grep -rfoo` was
+    offered for it."""
+    mocker.patch(
+        'thebleep.rules.missing_space_before_subcommand.get_all_executables',
+        return_value=['ls', 'grep'])
+    mocker.patch('thebleep.rules.misplaced_space.which', return_value=None)
+
+    assert not match(Command(script, ''))

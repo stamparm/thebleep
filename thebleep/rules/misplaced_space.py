@@ -23,15 +23,16 @@ nothing is left over, and nothing was invented. That is the same shape of
 certainty as `missing_space_before_known_subcommand`, so it answers ahead of
 `no_command` too.
 
-The second half may also be a subcommand the first documents in its manual
-or completions, which is the same certainty: `gi tlog` is `git log`.
+The second half may also be a subcommand the first documents, or a flag,
+which is the same certainty: `gi tlog` is `git log`, `l s-la` is `ls -la`.
 
 Only the first two words are ever considered. A third `sud osu foo` slip is
 still two words wrong, and everything after them rides along untouched.
 
 """
 
-from thebleep.rules.missing_space_before_subcommand import _is_a_command_already
+from thebleep.rules.missing_space_before_subcommand import (
+    _ARGUMENT, _is_a_command_already, documented_subcommand)
 from thebleep.utils import which
 
 # Below this, a split is one coincidence away from two real but unrelated
@@ -47,13 +48,6 @@ def _splits(merged):
         yield merged[:i], merged[i:]
 
 
-def _is_a_subcommand(program, word):
-    """`gi tlog` -> `git log`: the second half is not a program, but one of
-    the subcommands the first documents."""
-    from thebleep import vocabulary
-    return word in (vocabulary.subcommands(program) or ())
-
-
 def _respaced(command):
     """The two known names hiding in the first two words, or `None`.
 
@@ -66,9 +60,13 @@ def _respaced(command):
         return None
 
     merged = parts[0] + parts[1]
+    # A flag only when the space came early, taking the dash with it: `l s-la`.
+    # Moved the other way, `grep-r foo` would become `grep -rfoo`; that is
+    # a space left out, and `missing_space_before_known_subcommand` says so.
     found = [(a, b) for a, b in _splits(merged)
              if _is_a_command_already(a)
-             and (_is_a_command_already(b) or _is_a_subcommand(a, b))]
+             and (_is_a_command_already(b) or documented_subcommand(a, b)
+                  or (len(a) > len(parts[0]) and _ARGUMENT.match(b)))]
 
     if len(found) != 1:
         return None

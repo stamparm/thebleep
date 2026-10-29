@@ -36,6 +36,7 @@ or a flag (`ls-la`) that lost its space.
 """
 
 import os
+import re
 
 from thebleep.shells import shell
 from thebleep.utils import (command_word_index, get_all_executables, memoize,
@@ -73,14 +74,31 @@ def _known_name(word):
     return word in WRAPPERS
 
 
+# What may follow a program name with no space, and is never part of one:
+# `ls-la`, `chmod+x`, `ls/tmp`, `cd~`, and `find.` or `cd..` for the
+# directories. A dot otherwise is left alone: `python3.12` is a name.
+_ARGUMENT = re.compile(r'^(?:[-+/~]|\.{1,2}(?:/|$))')
+
+
 @memoize
 def _get_executable(script_part):
+    """The program `script_part` starts with: the one whose remainder is
+    certain to be an argument if there is one, otherwise the longest --
+    `sshhost` is `ssh host`, not `ss hhost`."""
+    found = []
     for executable in get_all_executables():
         if len(executable) <= 1 or not script_part.startswith(executable):
             continue
-        if len(script_part) - len(executable) < SHORTEST_REMAINDER:
+        remainder = script_part[len(executable):]
+        if len(remainder) < SHORTEST_REMAINDER \
+                and not _ARGUMENT.match(remainder):
             continue
-        return executable
+        found.append(executable)
+    if not found:
+        return None
+    return max(found, key=lambda executable: (
+        bool(_ARGUMENT.match(script_part[len(executable):])),
+        len(executable)))
 
 
 def _is_a_command_already(word):
@@ -123,7 +141,7 @@ def match(command):
 
 
 @memoize
-def _one_edit_away(word):
+def _one_edit_away(word, besides=None):
     """Whether something you could type is a single edit from `word`.
 
     Programs *and* builtins, which is the set `no_command` guesses from: `exti`
@@ -139,6 +157,9 @@ def _one_edit_away(word):
     is one key from a command this tool has a model of, which is a typo and
     not a missing space, installed or not. The same argument as the exact-name
     guard in `match`, one edit out.
+
+    `besides` is the program the word is being split at, which does not
+    count: `find.` is one deletion from `find` because it *is* `find .`.
 
     """
     from thebleep import matching
@@ -157,7 +178,7 @@ def _one_edit_away(word):
     # first": a full ranking of every name on PATH was most of this rule.
     folded = matching._fold(word)
     return any(matching.distance(folded, matching._fold(name), limit=1) <= 1
-               for name in names if name)
+               for name in names if name and name != besides)
 
 
 def split_at(command):
@@ -207,12 +228,12 @@ def certain(command):
     # not `apt -gte install x` -- a hyphen is not a flag when the word is
     # itself a hyphenated program name, and `apt-get`, `docker-compose` and
     # `pip-tools` are all that shape.
-    if _one_edit_away(word):
+    if _one_edit_away(word, besides=executable):
         return False
 
     # A flag. `ls-la` is `ls -la` and nothing else -- nobody has ever meant a
     # program called `ls-la`, and no spelling correction competes with it.
-    if remainder.startswith('-'):
+    if _ARGUMENT.match(remainder):
         return True
 
     # Or a subcommand the program itself admits to. `git` and `cargo` are the
@@ -220,16 +241,23 @@ def certain(command):
     # `git status` for the same reason `git satus` is: git said so.
     #
     # npm, docker and the rest are deliberately absent from that set, for a
-    # reason that belongs to replay safety rather than to this. They fall back
-    # to the guess, which is what they got before.
-    from thebleep import replay
+    # reason that belongs to replay safety rather than to this. What their
+    # manual pages and completions document is the same evidence without
+    # running anything -- `dockerps` came back as `docker`, `ps` dropped.
+    return documented_subcommand(executable, remainder)
+
+
+def documented_subcommand(executable, word):
+    """Whether `executable` says `word` is one of its subcommands: asked of
+    git and cargo themselves, read from the manual for the rest."""
+    from thebleep import replay, vocabulary
 
     question = replay.DISPATCHERS.get(executable)
-    if question is None:
-        return False
-
-    known = replay._subcommands(executable, question)
-    return bool(known) and remainder in known
+    if question is not None:
+        known = replay._subcommands(executable, question)
+        if known:
+            return word in known
+    return word in (vocabulary.subcommands(executable) or ())
 
 
 def get_new_command(command):

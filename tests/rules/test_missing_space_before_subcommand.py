@@ -13,6 +13,13 @@ def all_executables(mocker):
         return_value=['git', 'ls', 'npm', 'w', 'watch'])
 
 
+@pytest.fixture(autouse=True)
+def documented(mocker):
+    """No manual page documents a subcommand, unless a test says one does:
+    the real ones made `npminstall` certain on a machine with npm's."""
+    return mocker.patch('thebleep.vocabulary.subcommands', return_value=[])
+
+
 @pytest.mark.parametrize('script', ['npminstall', 'watchls'])
 def test_match(script):
     assert match(Command(script, ''))
@@ -35,6 +42,20 @@ def test_the_certain_splits_are_the_other_rules(script, mocker):
                  return_value={'branch', 'status', 'push'})
     assert not match(Command(script, ''))
     assert known.match(Command(script, ''))
+
+
+def test_a_subcommand_the_manual_documents_is_certain(mocker, documented):
+    """`dockerps` came back as `docker`, `ps` dropped: docker is not one of
+    the programs replay asks, but its manual lists `ps`."""
+    from thebleep.rules import missing_space_before_known_subcommand as known
+
+    mocker.patch(
+        'thebleep.rules.missing_space_before_subcommand.get_all_executables',
+        return_value=['docker'])
+    documented.return_value = ['ps', 'pull']
+    assert known.match(Command('dockerps', ''))
+    assert known.get_new_command(Command('dockerps', '')) == 'docker ps'
+    assert not match(Command('dockerps', ''))
 
 
 @pytest.mark.parametrize('script', ['git branch', 'vimfile'])
