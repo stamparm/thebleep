@@ -118,7 +118,7 @@ DEFAULT_SETTINGS = {'rules': DEFAULT_RULES,
                     'why_command': None,
                     'why_timeout': 30,
                     'suggest_command': None,
-                    'warm_server': False}
+                    'warm_server': True}
 
 ENV_TO_ATTR = {'THEBLEEP_RULES': 'rules',
                'THEBLEEP_EXCLUDE_RULES': 'exclude_rules',

@@ -278,3 +278,10 @@ def test_the_ambient_check_asks_the_warm_server_through_socat_or_nc(settings):
     binding = Fish().ambient_binding()
     assert 'command -q socat' in binding and 'command -q nc' in binding
     assert '__thebleep_fixed "$buffer" "$shell_aliases"' in binding
+    import sys
+
+    from thebleep import serve
+
+    assert 'else if test -x {}'.format(Fish().quote(sys.executable)) in binding
+    assert '{} -S -I -c {} "$sock"'.format(
+        Fish().quote(sys.executable), Fish().quote(serve.CLIENT)) in binding

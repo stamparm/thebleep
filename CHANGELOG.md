@@ -1,5 +1,21 @@
 # Changelog
 
+## 4.0.6 — unreleased
+
+### Changed
+
+- **The warm server is on by default, and bash and fish can reach it with
+  nothing installed.** `warm_server` was off, and the bash and fish
+  `--ambient` bindings could only ask the socket through `socat` or `nc -U`,
+  so most installs started Python for every ambient check: 41 ms on the
+  machine the benchmarks come from, against 7 for the server. The bindings
+  now try the socket by default, and when neither `socat` nor `nc` is there
+  they ask through the interpreter alone -- `python -S -I -c` and a one-line
+  client, 10 ms, with no site directory and no environment read -- before
+  falling back to a full start. The server still runs nothing, keeps nothing
+  and leaves after half an hour; `warm_server = False` puts the old bindings
+  back.
+
 ## 4.0.5 — 2026-10-13
 
 ### Added

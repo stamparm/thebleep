@@ -48,6 +48,20 @@ class ShellConfiguration(object):
 TRANSPORT_WINDOWS = (2, 1)
 
 
+def fill(template, **words):
+    """`template` with each placeholder word replaced, in one pass.
+
+    One pass, not a chain of `replace`: a chain re-reads what the earlier
+    replacements put in, so an interpreter under a directory called
+    `PYTHON`, or a socket path with `COMMAND` in it, came out mangled.
+
+    """
+    import re
+
+    return re.sub('|'.join(sorted(words, key=len, reverse=True)),
+                  lambda found: words[found.group()], template)
+
+
 def fit_transport():
     """Shell that cuts the transported shell state down to what will fit.
 

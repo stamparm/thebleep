@@ -18,9 +18,11 @@ aliases and quoting are its own.
 
 zsh asks through a socket client of its own (`zsh/net/socket`); bash's and
 fish's `--ambient` bindings through `socat`, or a netcat that speaks `-U`,
-when one is installed, and start Python as before when neither is. It is off
-by default: `warm_server = True` makes the bindings try the socket, and start
-the server in the background when it is not there yet.
+when one is installed, and otherwise through `CLIENT` below: the interpreter
+started bare, which is a quarter of what a full start costs. The bindings try
+the socket by default, and start the server in the background when it is not
+there yet; `warm_server = False` leaves the socket alone and starts Python as
+before.
 
 """
 
@@ -42,6 +44,21 @@ BACKLOG = 8
 # fifty, so the place is chosen with the whole path in mind.
 MAX_SOCKET_PATH = 100
 LONGEST_NAME = 'inline-powershell.sock'
+
+
+# A socket client in the interpreter alone, for a shell with no socket client
+# of its own when neither `socat` nor `nc` is installed:
+#
+#     printf '%s\n' "$question" | python -S -I -c "$CLIENT" "$socket"
+#
+# `-S -I` is what makes it quick -- no site directory, no `.pth` files, no
+# `PYTHON*` variables, and the current directory kept off `sys.path`, so a
+# module planted there is never the one imported. No `shutdown`: the newline
+# ends the question, and macOS refuses a shutdown the server has already
+# answered.
+CLIENT = ('import socket,sys;s=socket.socket(socket.AF_UNIX);s.settimeout(2);'
+          's.connect(sys.argv[1]);s.sendall(sys.stdin.buffer.read());'
+          'sys.stdout.buffer.write(b"".join(iter(lambda:s.recv(65536),b"")))')
 
 
 def _fits(directory):

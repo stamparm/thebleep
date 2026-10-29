@@ -226,3 +226,23 @@ def test_the_ambient_check_asks_the_warm_server_through_socat_or_nc(settings):
     assert 'command -v socat' in binding and 'command -v nc' in binding
     assert 'UNIX-CONNECT:$sock' in binding and 'nc -U "$sock"' in binding
     assert '"path\\": \\"$tb_path\\"' in binding
+    # With neither, the interpreter alone, bare, running `serve.CLIENT`.
+    import sys
+
+    from thebleep import serve
+
+    assert 'elif [ -x {} ]; then'.format(Bash().quote(sys.executable)) \
+        in binding
+    assert '{} -S -I -c {} "$sock"'.format(
+        Bash().quote(sys.executable), Bash().quote(serve.CLIENT)) in binding
+
+
+def test_the_placeholders_are_filled_in_one_pass(settings, mocker):
+    """A chain of `replace` re-read what the earlier ones put in: an
+    interpreter under a directory called `COMMAND` came out mangled."""
+    from thebleep.shells.bash import Bash
+
+    settings.warm_server = True
+    mocker.patch('sys.executable', '/opt/COMMAND/SOCK/CLIENT/python')
+    assert '/opt/COMMAND/SOCK/CLIENT/python -S -I -c' \
+        in Bash().ambient_binding()

@@ -141,3 +141,46 @@ def test_zsh_asks_the_warm_server_once_it_is_up(warm_zsh, TIMEOUT):
     # `--inline` process a hit could have started is none.
     warm_zsh.sendline(u'pgrep -fc "thebleep --serve" && echo SERVER_$(echo)RUNS')
     assert warm_zsh.expect([TIMEOUT, u'SERVER_RUNS'])
+
+
+wait_for_socket = (u'for i in 1 2 3 4 5 6 7 8 9 10; do '
+                   u'[ -S ~/.cache/thebleep/serve/inline-{0}.sock ] '
+                   u'&& break; sleep 1; done; '
+                   u'[ -S ~/.cache/thebleep/serve/inline-{0}.sock ] '
+                   u'&& echo SOCKET_$(echo)UP')
+
+
+@pytest.mark.functional
+def test_bash_asks_the_warm_server_through_the_bare_interpreter(bash,
+                                                                TIMEOUT):
+    """The container has neither `socat` nor `nc`, so once the socket is
+    there the question goes through `python -S -I -c` and `serve.CLIENT`.
+    The proof: `thebleep` itself is shadowed by a function that fails, so
+    only the socket can have answered the second miss."""
+    bash.sendline(u'gti --version')
+    assert bash.expect([TIMEOUT, u'\\$ git --version'])
+    bash.send(u'\r')
+    assert bash.expect([TIMEOUT, u'git version'])
+    bash.sendline(wait_for_socket.format(u'bash'))
+    assert bash.expect([TIMEOUT, u'SOCKET_UP'])
+    bash.sendline(u'thebleep() { return 1; }')
+    bash.sendline(u'gti --version')
+    assert bash.expect([TIMEOUT, u'\\$ git --version'])
+    bash.send(u'\r')
+    assert bash.expect([TIMEOUT, u'git version'])
+
+
+@pytest.mark.functional
+def test_fish_asks_the_warm_server_through_the_bare_interpreter(fish,
+                                                                TIMEOUT):
+    fish.send(u'gti --version\r')
+    assert fish.expect([TIMEOUT, u'bleep: gti is not a command'])
+    fish.send(u'\r')
+    assert fish.expect([TIMEOUT, u'git version'])
+    fish.sendline(u'sh -c ' + repr(wait_for_socket.format(u'fish')))
+    assert fish.expect([TIMEOUT, u'SOCKET_UP'])
+    fish.sendline(u'function thebleep; return 1; end')
+    fish.send(u'gti --version\r')
+    assert fish.expect([TIMEOUT, u'bleep: gti is not a command'])
+    fish.send(u'\r')
+    assert fish.expect([TIMEOUT, u'git version'])

@@ -58,6 +58,27 @@ class TestServing(object):
     def test_no_correction(self, server):
         assert serve.ask('zsh', 'ls -la') is None
 
+    def test_the_bare_interpreter_client_asks_and_answers(self, server):
+        """`CLIENT` is what the bash and fish bindings run through
+        `python -S -I -c` when neither `socat` nor `nc` is installed; the
+        proof is the real thing: the interpreter, bare, against a server."""
+        import json
+        import subprocess
+        import sys
+
+        def ask(script):
+            question = json.dumps({'script': script, 'aliases': '',
+                                   'cwd': os.getcwd(),
+                                   'path': os.environ.get('PATH', '')})
+            return subprocess.run(
+                [sys.executable, '-S', '-I', '-c', serve.CLIENT,
+                 serve.socket_path('zsh')],
+                input=(question + '\n').encode('utf-8'),
+                stdout=subprocess.PIPE, timeout=10).stdout
+
+        assert ask('gti status') == b'ok\ngit status'
+        assert ask('ls -la') == b'none\n'
+
     def test_the_aliases_travel_with_the_question(self, server, os_environ):
         serve.ask('zsh', 'gti status', aliases='g=git')
         assert os.environ.get('TB_SHELL_ALIASES') == 'g=git'

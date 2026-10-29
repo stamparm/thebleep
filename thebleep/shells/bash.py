@@ -4,7 +4,7 @@ from ..conf import settings
 from ..const import (ARGUMENT_PLACEHOLDER, EXIT_EDIT, USER_COMMAND_MARK,
                      get_alias)
 from ..utils import memoize, tool_output
-from .generic import Generic, fit_transport, instant_log_path
+from .generic import Generic, fill, fit_transport, instant_log_path
 
 
 class Bash(Generic):
@@ -102,8 +102,11 @@ fi
         server, and starting Python is most of what an ambient check costs.
         Each is looked for with `command -v` first: inside
         `command_not_found_handle`, running a missing `socat` would be one
-        more trip through the handler. A socket that is not there yet starts
-        the server for next time, and this time Python answers as before.
+        more trip through the handler. With neither, the interpreter The
+        Bleep runs in is started bare (`-S -I`) with `serve.CLIENT`: ten
+        milliseconds against forty for a full start. A socket that is not
+        there yet starts the server for next time, and this time Python
+        answers as before.
 
         """
         direct = '''
@@ -113,13 +116,14 @@ fi
             REPLY=$fixed
             return 0
         fi
-        return 1'''.replace('COMMAND', self._invocation())
+        return 1'''
         if not settings.warm_server:
-            return '    __thebleep_fixed() {' + direct + '\n    }'
+            return fill('    __thebleep_fixed() {' + direct + '\n    }',
+                        COMMAND=self._invocation())
 
-        from ..serve import socket_path
+        from ..serve import CLIENT, socket_path
 
-        return (r'''    __thebleep_json() {
+        client = r'''    __thebleep_json() {
         local s=$1
         s=${s//\\/\\\\}
         s=${s//\"/\\\"}
@@ -140,6 +144,8 @@ fi
                 answer=$(printf '%s\n' "$question" | socat - "UNIX-CONNECT:$sock" 2>/dev/null)
             elif command -v nc >/dev/null 2>&1; then
                 answer=$(printf '%s\n' "$question" | nc -U "$sock" 2>/dev/null)
+            elif [ -x PYTHON ]; then
+                answer=$(printf '%s\n' "$question" | PYTHON -S -I -c CLIENT "$sock" 2>/dev/null)
             fi
             case "${answer%%$'\n'*}" in
                 ok) REPLY=${answer#*$'\n'}; [ -n "$REPLY" ] && return 0 ;;
@@ -147,8 +153,11 @@ fi
             esac
         else
             (TB_SHELL=bash COMMAND --serve </dev/null >/dev/null 2>&1 &)
-        fi''' + direct + '\n    }').replace('SOCK', self.quote(socket_path('bash'))).replace(
-            'COMMAND', self._invocation())
+        fi''' + direct + '\n    }'
+        return fill(client, SOCK=self.quote(socket_path('bash')),
+                    COMMAND=self._invocation(),
+                    PYTHON=self.quote(sys.executable or ''),
+                    CLIENT=self.quote(CLIENT))
 
     def ambient_binding(self):
         """Correct a misspelled program without `bleep` being typed.

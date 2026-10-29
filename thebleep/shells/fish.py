@@ -6,7 +6,7 @@ from ..conf import settings
 from ..const import ARGUMENT_PLACEHOLDER, EXIT_EDIT, TRANSPORT_LIMIT, \
     USER_COMMAND_MARK, get_alias
 from ..utils import cache, tool_lines, tool_output
-from .generic import Generic, instant_log_path
+from .generic import Generic, fill, instant_log_path
 
 
 @cache('~/.config/fish/config.fish', '~/.config/fish/functions')
@@ -273,8 +273,9 @@ end
         """`__thebleep_fixed LINE ALIASES` prints the correction, or fails.
 
         bash's client, in fish: with `warm_server` on, the socket is asked
-        through `socat` or `nc -U` before Python is started, and a socket that
-        is not there yet starts the server for next time.
+        through `socat`, `nc -U` or the bare interpreter with `serve.CLIENT`
+        before The Bleep is started, and a socket that is not there yet
+        starts the server for next time.
 
         """
         direct = '''
@@ -285,13 +286,14 @@ end
     end
     return 1
 end
-'''.replace('COMMAND', self._invocation())
+'''
         if not settings.warm_server:
-            return '\nfunction __thebleep_fixed' + direct
+            return fill('\nfunction __thebleep_fixed' + direct,
+                        COMMAND=self._invocation())
 
-        from ..serve import socket_path
+        from ..serve import CLIENT, socket_path
 
-        return (r'''
+        client = r'''
 function __thebleep_json
     set -l lines (string split \n -- $argv[1])
     set lines (string replace -a '\\' '\\\\' -- $lines)
@@ -313,6 +315,8 @@ function __thebleep_fixed
             set answer (printf '%s\n' "$question" | socat - "UNIX-CONNECT:$sock" 2>/dev/null)
         else if command -q nc
             set answer (printf '%s\n' "$question" | nc -U "$sock" 2>/dev/null)
+        else if test -x PYTHON
+            set answer (printf '%s\n' "$question" | PYTHON -S -I -c CLIENT "$sock" 2>/dev/null)
         end
         if test "$answer[1]" = ok; and set -q answer[2]
             string join \n -- $answer[2..-1]
@@ -323,8 +327,11 @@ function __thebleep_fixed
     else
         env TB_SHELL=fish COMMAND --serve </dev/null >/dev/null 2>&1 &
         disown 2>/dev/null
-    end''' + direct).replace('SOCK', self.quote(socket_path('fish'))).replace(
-            'COMMAND', self._invocation())
+    end''' + direct
+        return fill(client, SOCK=self.quote(socket_path('fish')),
+                    COMMAND=self._invocation(),
+                    PYTHON=self.quote(sys.executable or ''),
+                    CLIENT=self.quote(CLIENT))
 
     def _edit_line(self):
         """`commandline -r` writes fish's own line editor.
