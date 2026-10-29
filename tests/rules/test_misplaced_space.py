@@ -11,6 +11,15 @@ def executables(mocker):
 
 
 @pytest.fixture(autouse=True)
+def subcommands(mocker):
+    """git documents a few subcommands; nothing else documents any."""
+    known = {'git': ['log', 'status', 'commit']}
+    return mocker.patch('thebleep.vocabulary.subcommands',
+                        side_effect=lambda tool, prefix=(): list(
+                            known.get(tool, [])))
+
+
+@pytest.fixture(autouse=True)
 def builtins(mocker):
     mocker.patch(
         'thebleep.rules.missing_space_before_subcommand.shell'
@@ -61,3 +70,24 @@ def test_not_match_when_second_word_is_too_short(mocker):
         'thebleep.rules.misplaced_space.which', return_value=None)
 
     assert not match(Command('rmm f', "Command 'rmm' not found"))
+
+
+@pytest.mark.usefixtures('no_memoize')
+@pytest.mark.parametrize('script, fixed', [
+    ('gi tlog', 'git log'),
+    ('gi tstatus -s', 'git status -s'),
+])
+def test_the_second_half_may_be_a_subcommand(mocker, script, fixed):
+    """`gi tlog` used to be `git tlog`: `log` is no program, so the split
+    was not seen and `no_command` fixed the first word alone."""
+    mocker.patch('thebleep.rules.misplaced_space.which', return_value=None)
+
+    assert match(Command(script, ''))
+    assert get_new_command(Command(script, '')) == [fixed]
+
+
+@pytest.mark.usefixtures('no_memoize')
+def test_an_undocumented_second_half_is_no_split(mocker):
+    mocker.patch('thebleep.rules.misplaced_space.which', return_value=None)
+
+    assert not match(Command('gi tfoo', ''))

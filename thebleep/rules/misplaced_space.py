@@ -23,6 +23,9 @@ nothing is left over, and nothing was invented. That is the same shape of
 certainty as `missing_space_before_known_subcommand`, so it answers ahead of
 `no_command` too.
 
+The second half may also be a subcommand the first documents in its manual
+or completions, which is the same certainty: `gi tlog` is `git log`.
+
 Only the first two words are ever considered. A third `sud osu foo` slip is
 still two words wrong, and everything after them rides along untouched.
 
@@ -44,6 +47,13 @@ def _splits(merged):
         yield merged[:i], merged[i:]
 
 
+def _is_a_subcommand(program, word):
+    """`gi tlog` -> `git log`: the second half is not a program, but one of
+    the subcommands the first documents."""
+    from thebleep import vocabulary
+    return word in (vocabulary.subcommands(program) or ())
+
+
 def _respaced(command):
     """The two known names hiding in the first two words, or `None`.
 
@@ -57,7 +67,8 @@ def _respaced(command):
 
     merged = parts[0] + parts[1]
     found = [(a, b) for a, b in _splits(merged)
-             if _is_a_command_already(a) and _is_a_command_already(b)]
+             if _is_a_command_already(a)
+             and (_is_a_command_already(b) or _is_a_subcommand(a, b))]
 
     if len(found) != 1:
         return None
