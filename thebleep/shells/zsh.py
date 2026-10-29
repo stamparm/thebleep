@@ -94,6 +94,12 @@ bindkey '\\e\\e' __thebleep_inline
         is not there yet starts the server in the background for next time and
         falls through to the ordinary call this time.
 
+        `__thebleep_fixed BUFFER known` asks the other question -- the first
+        word is a command, is the word after it one the command has
+        (`thebleep.ambient`)? -- and only of the socket: it is asked at
+        every return of an ordinary line, and starting Python for each is
+        not on. Without a socket it starts the server and says no.
+
         """
         from ..conf import settings
 
@@ -120,14 +126,15 @@ bindkey '\\e\\e' __thebleep_inline
     REPLY=$s
 }}
 __thebleep_fixed() {{
-    local sock={sock} fd answer
+    local sock={sock} fd answer known=false
+    [[ $2 == known ]] && known=true
     if [[ -S $sock ]] && zmodload zsh/net/socket 2>/dev/null && zsocket $sock 2>/dev/null; then
         fd=$REPLY
         __thebleep_json "$1"; local script=$REPLY
         __thebleep_json "$TB_SHELL_ALIASES"; local aliases=$REPLY
         __thebleep_json "$PWD"; local cwd=$REPLY
         __thebleep_json "$PATH"; local tb_path=$REPLY
-        print -r -- "{{\\"script\\": \\"$script\\", \\"aliases\\": \\"$aliases\\", \\"cwd\\": \\"$cwd\\", \\"path\\": \\"$tb_path\\"}}" >&$fd
+        print -r -- "{{\\"script\\": \\"$script\\", \\"aliases\\": \\"$aliases\\", \\"cwd\\": \\"$cwd\\", \\"path\\": \\"$tb_path\\", \\"known\\": $known}}" >&$fd
         IFS= read -r answer <&$fd
         REPLY=$(cat <&$fd)
         exec {{fd}}>&-
@@ -135,7 +142,8 @@ __thebleep_fixed() {{
         [[ $answer == none ]] && return 1
     elif [[ ! -S $sock ]]; then
         (TB_SHELL=zsh {command} --serve </dev/null >/dev/null 2>&1 &)
-    fi{direct}
+    fi
+    [[ $known == true ]] && return 1{direct}
 }}'''.format(sock=self.quote(socket_path('zsh')), command=self._invocation(),
              direct=direct)
 
@@ -147,9 +155,19 @@ __thebleep_fixed() {{
         says `none` -- the line is offered to The Bleep as a command-only
         correction, and if one comes back it replaces the buffer with a
         message underneath, so that return runs the corrected line and
-        nothing has run yet. Any other line is accepted exactly as before,
-        by whatever `accept-line` was bound to before this, so another
-        plugin's wrapper is not lost.
+        nothing has run yet.
+
+        When the first word *is* a command and a plain word follows it, on a
+        line with no operator, quote, variable or path in it, the warm
+        server is asked whether that word is one the command has
+        (`thebleep.ambient`): `git satus` becomes `git status` the same way.
+        Only the socket is asked -- this runs at nearly every return -- and
+        the server answers from files, so a line it has no opinion on costs
+        a few milliseconds and is accepted as it was.
+
+        Any other line is accepted exactly as before, by whatever
+        `accept-line` was bound to before this, so another plugin's wrapper
+        is not lost.
 
         """
         return '''
@@ -158,8 +176,11 @@ if [[ ${{widgets[accept-line]}} == user:* ]]; then
 fi
 {client}
 __thebleep_ambient_accept_line() {{
-    local first fixed TB_SHELL_ALIASES TB_HISTORY
-    first=${{${{(z)BUFFER}}[1]}}
+    local first second fixed TB_SHELL_ALIASES TB_HISTORY
+    local -a words
+    words=(${{(z)BUFFER}})
+    first=$words[1]
+    second=$words[2]
     if [[ -n $BUFFER && -n $first && $first != *[/=\\$\\'\\"\\`]* && "$(whence -w -- "$first" 2>/dev/null)" == *": none" ]]; then
         TB_SHELL_ALIASES=$(alias)
         TB_HISTORY=
@@ -167,6 +188,16 @@ __thebleep_ambient_accept_line() {{
         if __thebleep_fixed "$BUFFER" && [[ $REPLY != "$BUFFER" ]]; then
             fixed=$REPLY
             zle -M "bleep: $first is not a command; return runs \\`$fixed\\`, ctrl+_ puts yours back"
+            BUFFER=$fixed
+            CURSOR=${{#BUFFER}}
+            return 0
+        fi
+    elif [[ -n $second && $first == [A-Za-z0-9]* && $second == [A-Za-z0-9]* && $BUFFER != *[/=\\|\\;\\&\\<\\>\\(\\)\\{{\\}}\\$\\'\\"\\`\\\\]* && "$(whence -w -- "$first" 2>/dev/null)" == *": command" ]]; then
+        TB_SHELL_ALIASES=
+        TB_HISTORY=
+        if __thebleep_fixed "$BUFFER" known && [[ $REPLY != "$BUFFER" ]]; then
+            fixed=$REPLY
+            zle -M "bleep: $second is not a $first command; return runs \\`$fixed\\`, ctrl+_ puts yours back"
             BUFFER=$fixed
             CURSOR=${{#BUFFER}}
             return 0

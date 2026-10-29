@@ -283,5 +283,11 @@ def test_the_ambient_check_asks_the_warm_server_through_socat_or_nc(settings):
     from thebleep import serve
 
     assert 'else if test -x {}'.format(Fish().quote(sys.executable)) in binding
+    # And the subcommand question, of the socket alone.
+    assert '__thebleep_fixed "$buffer" "" known' in binding
+    assert 'string match -q file -- (type -t -- "$first" 2>/dev/null)' \
+        in binding
+    assert '\\"known\\": $known}' in binding
+    assert 'if test $known = true\n        return 1' in binding
     assert '{} -S -I -c {} "$sock"'.format(
         Fish().quote(sys.executable), Fish().quote(serve.CLIENT)) in binding

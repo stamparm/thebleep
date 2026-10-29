@@ -184,10 +184,26 @@ class TestWarmServer(object):
         # ...and Python answers this time.
         assert '--inline --command "$1"' in binding
 
+    def test_a_known_program_is_asked_about_its_second_word(
+            self, shell, settings):
+        """`git satus`: the socket is asked the subcommand question, and
+        only the socket -- without one the server is started and Python is
+        not, since this runs at nearly every return."""
+        settings.warm_server = True
+        binding = shell.ambient_binding()
+        assert '"$(whence -w -- "$first" 2>/dev/null)" == *": command"' \
+            in binding
+        assert '__thebleep_fixed "$BUFFER" known' in binding
+        assert 'is not a $first command' in binding
+        assert '[[ $known == true ]] && return 1' in binding
+        # A line with an operator, quote, variable or path in it is not.
+        assert '$BUFFER != *[/=\\|\\;\\&\\<\\>\\(\\)\\{\\}\\$' in binding
+
     def test_the_question_is_json_the_server_can_read(self, shell, settings):
         settings.warm_server = True
         binding = shell.ambient_binding()
         assert '__thebleep_json' in binding
         assert 'print -r -- "{\\"script\\": \\"$script\\", ' \
                '\\"aliases\\": \\"$aliases\\", \\"cwd\\": \\"$cwd\\", ' \
-               '\\"path\\": \\"$tb_path\\"}" >&$fd' in binding
+               '\\"path\\": \\"$tb_path\\", \\"known\\": $known}" >&$fd' \
+            in binding

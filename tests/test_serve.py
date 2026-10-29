@@ -58,6 +58,19 @@ class TestServing(object):
     def test_no_correction(self, server):
         assert serve.ask('zsh', 'ls -la') is None
 
+    def test_a_known_program_gets_the_subcommand_question(
+            self, server, mocker):
+        asked = mocker.patch('thebleep.ambient.known_program_correction',
+                             return_value='git status')
+        assert serve.ask('zsh', 'git satus', known=True) == 'git status'
+        asked.assert_called_once_with('git satus')
+        # The other question is not asked of a known program...
+        assert serve.ask('zsh', 'gti status', known=True) == 'git status'
+        assert asked.call_count == 2
+        # ...and the subcommand question is not asked of an unknown one.
+        assert serve.ask('zsh', 'gti status') == 'git status'
+        assert asked.call_count == 2
+
     def test_the_bare_interpreter_client_asks_and_answers(self, server):
         """`CLIENT` is what the bash and fish bindings run through
         `python -S -I -c` when neither `socat` nor `nc` is installed; the

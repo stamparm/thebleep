@@ -2,6 +2,23 @@
 
 ## 4.0.6 — unreleased
 
+### Added
+
+- **`git satus` is corrected before it runs.** The `--ambient` bindings
+  caught one thing: a first word the shell had never heard of. `git satus`
+  ran and failed as it always had, because `git` exists and the shell cannot
+  know what git thinks of `satus`. In zsh and fish, return now puts the line
+  to the warm server when its first word is a command and a plain word
+  follows, and `thebleep.ambient` answers from the same manual pages and fish
+  completions the rules read after a failure: `git-status.1` is there and
+  `git-satus.1` is not. Nothing is offered unless the line is certain to
+  fail -- the program documents its subcommands, the word is none of them,
+  nor a `git-lg` on `PATH`, a git alias in any configuration file git reads,
+  or a docker plugin, nor an abbreviation of one -- and a line the server
+  has no opinion on costs a few milliseconds and is accepted as it was. The
+  Claude Code and Cursor hooks make the same check before an agent's command
+  runs, so `git satus` is refused with `git status` as the reason.
+
 ### Changed
 
 - **The warm server is on by default, and bash and fish can reach it with

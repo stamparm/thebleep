@@ -44,8 +44,10 @@ thebleep --alias-loader fuck >> ~/.bashrc
 
 - **Fixes the typo before it runs.** Return on `gti status` in zsh, fish or
   PowerShell replaces the line with `git status` and waits for a second
-  return; bash has the fix waiting at the next prompt. Nobody types `bleep`
-  for the commonest mistake there is. [Without typing bleep](#without-typing-bleep).
+  return; bash has the fix waiting at the next prompt. In zsh and fish
+  `git satus` is caught the same way, from git's own manual, with nothing
+  run. Nobody types `bleep` for the commonest mistakes there are.
+  [Without typing bleep](#without-typing-bleep).
 - **Reads the answer off the screen.** When git says `the most similar command
   is status`, or npm lists the scripts, or `ls --sort=nmae` prints what `--sort`
   accepts, nothing is guessed; it is read. [How it works](#how-it-works).
@@ -447,11 +449,37 @@ in your settings leaves the socket alone and starts Python every time.
 
 The check is deliberately narrow: only the first word, only when the shell
 itself has never heard of it, and never for a word with a slash, a quote, a
-variable or an assignment in it. `git satus` runs and fails as before,
-because `git` exists and the shell cannot know what git will think of
-`satus`; that correction is one `bleep` away, as it always was. What this
-removes is the failed run and the second command for the commonest mistake
-there is, and what it costs is nothing for a line the shell recognises.
+variable or an assignment in it.
+
+The second word gets a check of its own in zsh and fish, on stricter terms,
+because the shell *does* know `git` and cannot know what git will think of
+`satus`. The machine can: git documents its commands one manual page each,
+`git-status.1` is there and `git-satus.1` is not, and the
+[same files](#words-from-the-manual) the rules read after a failure are
+read before the line runs:
+
+```zsh
+$ git satus⏎
+$ git status
+bleep: satus is not a git command; return runs `git status`, ctrl+_ puts yours back
+```
+
+A line the shell can run is being rewritten without the program having said
+a word, so nothing is offered unless the line is certain to fail: the
+program documents its subcommands at all; the word right after it is not one
+of them, nor a `git-lg` on `PATH`, a git alias in any of git's configuration
+files, or a docker plugin; it is not an abbreviation of one, since `npm i`
+and `npm inst` are things npm accepts and the manual does not say which; and
+one documented subcommand is within the edit distance everything else is
+held to. Only the word right after the program, on a line that is one simple
+command with no option, operator, quote, variable or path in it. This
+question is asked of the warm server alone -- it runs at nearly every return
+-- and answered from files, so a line it has no opinion on costs a few
+milliseconds and is accepted as it was.
+
+What this removes is the failed run and the second command for the two
+commonest mistakes there are, and what it costs is nothing for a line the
+shell recognises.
 
 ##### [Back to Contents](#contents)
 
@@ -976,7 +1004,10 @@ Two moments, both read-only, neither running the agent's command:
   that could put a program on `PATH` first — `source .venv/bin/activate &&
   pytest`, `nvm use 20 && npm test`, anything behind `npx`, `uv`, `docker`
   or `sudo` — is left alone, as is anything whose program is a substitution
-  or a variable.
+  or a variable. When every program is there, the word after it gets the
+  [same check the shells make at return](#without-typing-bleep): `git satus`
+  is refused with `git status`, because git's manual has no such command and
+  nothing else on the machine accounts for it.
 - **After it failed.** The failure text the agent would have read anyway goes
   to the same rules and the same [`--why`](#structured-api) fingerprints as
   an interactive correction, and the answer is attached beside the failed

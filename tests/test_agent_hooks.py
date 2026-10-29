@@ -84,8 +84,19 @@ class TestCheckBefore(object):
         assert agent_hooks.check_before('cd /tmp && pytets -q')['command'] \
             == 'cd /tmp && pytest -q'
 
-    def test_a_program_that_exists_is_not_second_guessed(self):
+    def test_a_program_that_exists_gets_the_subcommand_question(self, mocker):
+        """The same check the shells make at return, `thebleep.ambient`,
+        which says nothing unless the manual is certain."""
+        asked = mocker.patch('thebleep.ambient.known_program_correction',
+                             return_value=None)
         assert agent_hooks.check_before('git stauts') is None
+        asked.assert_called_once_with('git stauts')
+        asked.return_value = 'git status'
+        found = agent_hooks.check_before('git stauts')
+        assert found['missing'] == 'stauts'
+        assert found['command'] == 'git status'
+        assert found['reason'] == \
+            '`stauts` is not a git command. The Bleep suggests: `git status`'
 
     def test_nothing_close_says_nothing(self):
         assert agent_hooks.check_before('zzzzqqqq now') is None

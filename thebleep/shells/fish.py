@@ -238,14 +238,18 @@ bind \\e\\e __thebleep_inline
         Return is bound to a function that looks at the first word of the
         line: when `type -q` knows nothing by that name, the line is offered
         to The Bleep as a command-only correction, and a fix replaces the
-        buffer and repaints, so that return runs the corrected line. Anything
-        else is `commandline -f execute`, which is what return did before.
+        buffer and repaints, so that return runs the corrected line. A first
+        word that is a file on `PATH` with a plain word after it, on a line
+        with nothing else in it, is put to the warm server's subcommand
+        question (`thebleep.ambient`), as in zsh. Anything else is
+        `commandline -f execute`, which is what return did before.
 
         """
         return self._warm_client() + '''
 function __thebleep_ambient_execute
     set -l buffer (commandline | string collect)
-    set -l first (string split -m1 ' ' -- (string trim -l -- "$buffer"))[1]
+    set -l words (string split ' ' -- (string trim -l -- "$buffer"))
+    set -l first $words[1]
     if test -n "$first"; and not string match -qr '[/=$\\'"`]' -- "$first"; and not type -q -- "$first"
         set -l shell_aliases (alias | string collect)
         if test (string length -- "$shell_aliases") -gt {limit}
@@ -254,6 +258,14 @@ function __thebleep_ambient_execute
         set -l fixed (__thebleep_fixed "$buffer" "$shell_aliases" | string collect)
         if test -n "$fixed"; and test "$fixed" != "$buffer"
             printf '\\nbleep: %s is not a command; return runs `%s`\\n' "$first" "$fixed" >&2
+            commandline -r -- $fixed
+            commandline -f repaint
+            return
+        end
+    else if set -q words[2]; and string match -qr '^[A-Za-z0-9]' -- "$first"; and string match -qr '^[A-Za-z0-9]' -- "$words[2]"; and not string match -qr '[/=|;&<>(){{}}$\\'"`\\\\]' -- "$buffer"; and string match -q file -- (type -t -- "$first" 2>/dev/null)
+        set -l fixed (__thebleep_fixed "$buffer" "" known | string collect)
+        if test -n "$fixed"; and test "$fixed" != "$buffer"
+            printf '\\nbleep: %s is not a %s command; return runs `%s`\\n' "$words[2]" "$first" "$fixed" >&2
             commandline -r -- $fixed
             commandline -f repaint
             return
@@ -271,6 +283,10 @@ end
 
     def _warm_client(self):
         """`__thebleep_fixed LINE ALIASES` prints the correction, or fails.
+
+        `__thebleep_fixed LINE "" known` asks the subcommand question
+        (`thebleep.ambient`) of the socket alone, as zsh does: without one
+        it starts the server and fails.
 
         bash's client, in fish: with `warm_server` on, the socket is asked
         through `socat`, `nc -U` or the bare interpreter with `serve.CLIENT`
@@ -304,12 +320,16 @@ function __thebleep_json
 end
 function __thebleep_fixed
     set -l sock SOCK
+    set -l known false
+    if test "$argv[3]" = known
+        set known true
+    end
     if test -S $sock
         set -l script (__thebleep_json $argv[1])
         set -l aliases (__thebleep_json $argv[2])
         set -l cwd (__thebleep_json $PWD)
         set -l tb_path (__thebleep_json (string join : -- $PATH))
-        set -l question "{\"script\": \"$script\", \"aliases\": \"$aliases\", \"cwd\": \"$cwd\", \"path\": \"$tb_path\"}"
+        set -l question "{\"script\": \"$script\", \"aliases\": \"$aliases\", \"cwd\": \"$cwd\", \"path\": \"$tb_path\", \"known\": $known}"
         set -l answer
         if command -q socat
             set answer (printf '%s\n' "$question" | socat - "UNIX-CONNECT:$sock" 2>/dev/null)
@@ -327,6 +347,9 @@ function __thebleep_fixed
     else
         env TB_SHELL=fish COMMAND --serve </dev/null >/dev/null 2>&1 &
         disown 2>/dev/null
+    end
+    if test $known = true
+        return 1
     end''' + direct
         return fill(client, SOCK=self.quote(socket_path('fish')),
                     COMMAND=self._invocation(),

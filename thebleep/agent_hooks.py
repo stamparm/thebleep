@@ -16,7 +16,10 @@ Two moments, both read-only, neither running the agent's command:
   the *program* words are checked -- `gti` in `gti status`, `pytets` in
   `cd tests && pytets -q` -- and only when the line does nothing that could
   put a program on `PATH` first, such as `source venv/bin/activate` or
-  `nvm use`. A word this cannot account for is left to run.
+  `nvm use`. A word this cannot account for is left to run. When every
+  program is there, the word after it gets the same treatment on stricter
+  terms (`thebleep.ambient`): `git satus` is refused with `git status`,
+  because git's manual has no such page and nothing else accounts for it.
 
 - **After it failed.** The failure text the agent would have read anyway is
   given to the same rules and the same `--why` fingerprints as an interactive
@@ -179,6 +182,29 @@ def _shell_said_not_found(missing):
     return u'bash: line 1: {}: command not found'.format(missing)
 
 
+def _subcommand_before(script):
+    """`git satus`: every program is there, and the word after one of them
+    is not one it has. The same check the shells make at return, on the same
+    terms: certain, from files, running nothing."""
+    from .ambient import known_program_correction
+
+    fixed = known_program_correction(script)
+    if fixed is None:
+        return None
+    from .shells import shell
+
+    before, after = shell.split_command(script), shell.split_command(fixed)
+    if len(before) != len(after) or len(before) < 2:
+        return None
+    return {
+        'missing': before[1],
+        'command': fixed,
+        'confidence': None,
+        'reason': (u'`{}` is not a {} command. The Bleep suggests: `{}`'
+                   .format(before[1], before[0], fixed)),
+    }
+
+
 def check_before(script):
     """The correction for a command about to run, or None to say nothing.
 
@@ -191,10 +217,12 @@ def check_before(script):
     if not words:
         return None
     missing = _missing_programs(words)
+    if not missing:
+        return _subcommand_before(script)
     if len(missing) != 1:
-        # None: nothing to say. Several: `no_command` can fix them together,
-        # but two wrong program names in one agent line is rare enough that a
-        # confident answer is unlikely; let the shell report both.
+        # Several: `no_command` can fix them together, but two wrong program
+        # names in one agent line is rare enough that a confident answer is
+        # unlikely; let the shell report both.
         return None
 
     suggestion = _suggestion_for(script, _shell_said_not_found(missing[0]),

@@ -171,6 +171,43 @@ def test_bash_asks_the_warm_server_through_the_bare_interpreter(bash,
 
 
 @pytest.mark.functional
+def test_zsh_corrects_the_second_word_once_the_server_is_up(zsh, TIMEOUT):
+    """`git satus`: git is a command, so the shell's own check passes; the
+    warm server reads git's manual pages in the container and answers."""
+    zsh.send(u'gti --version\r')
+    assert zsh.expect([TIMEOUT, u'bleep: gti is not a command'])
+    zsh.send(u'\r')
+    assert zsh.expect([TIMEOUT, u'git version'])
+    zsh.sendline(wait_for_socket.format(u'zsh'))
+    assert zsh.expect([TIMEOUT, u'SOCKET_UP'])
+    zsh.send(u'git satus\r')
+    assert zsh.expect([TIMEOUT, u'bleep: satus is not a git command'])
+    zsh.send(u'\r')
+    # `git status` ran, outside any repository.
+    assert zsh.expect([TIMEOUT, u'not a git repository'])
+    # A line git has is accepted as it was.
+    zsh.send(u'git version\r')
+    assert zsh.expect([TIMEOUT, u'git version'])
+
+
+@pytest.mark.functional
+def test_fish_corrects_the_second_word_once_the_server_is_up(fish, TIMEOUT):
+    fish.send(u'gti --version\r')
+    assert fish.expect([TIMEOUT, u'bleep: gti is not a command'])
+    fish.send(u'\r')
+    assert fish.expect([TIMEOUT, u'git version'])
+    fish.sendline(u'sh -c ' + repr(wait_for_socket.format(u'fish')))
+    assert fish.expect([TIMEOUT, u'SOCKET_UP'])
+    fish.send(u'git satus\r')
+    assert fish.expect([TIMEOUT, u'bleep: satus is not a git command'])
+    assert fish.expect([TIMEOUT, shown(u'git status')])
+    fish.send(u'\r')
+    assert fish.expect([TIMEOUT, u'not a git repository'])
+    fish.send(u'git version\r')
+    assert fish.expect([TIMEOUT, u'git version'])
+
+
+@pytest.mark.functional
 def test_fish_asks_the_warm_server_through_the_bare_interpreter(fish,
                                                                 TIMEOUT):
     fish.send(u'gti --version\r')

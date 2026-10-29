@@ -10,8 +10,9 @@ does not know, and the answer should be there before the eye moves.
 
 `thebleep --serve` is that process kept warm. It listens on a Unix socket in
 a directory only this user can enter, answers one question per connection --
-"what is the command-only correction of this line?" -- from the rule pack it
-already has in memory, and exits after half an hour without a question. It
+"what is the command-only correction of this line?", or, for a line whose
+program the shell knows, "is the word after it one the program has?"
+(`thebleep.ambient`) -- from the rule pack it already has in memory, and exits after half an hour without a question. It
 runs nothing, reads no output, keeps no state between questions beyond the
 loaded rules, and answers only the shell it was started for, because a shell's
 aliases and quoting are its own.
@@ -166,6 +167,9 @@ def _answer(request):
         aliases = payload.get('aliases')
         cwd = payload.get('cwd')
         path = payload.get('path')
+        # `known`: the shell can run the first word, and asks whether the
+        # word after it is one the program has -- see `thebleep.ambient`.
+        known = payload.get('known') is True
     except (ValueError, AttributeError, UnicodeDecodeError):
         # Not "no correction": a question that could not be read, which the
         # client answers by asking Python directly.
@@ -196,7 +200,12 @@ def _answer(request):
 
     forget_memoized()
     try:
-        fixed = correct(script)
+        if known:
+            from .ambient import known_program_correction
+
+            fixed = known_program_correction(script)
+        else:
+            fixed = correct(script)
     except Exception as error:                                 # noqa: BLE001
         logs.debug(u'Server could not correct {!r}: {!r}'.format(
             script, error))
@@ -293,17 +302,19 @@ def serve(shell_name, idle=IDLE_SECONDS, ready=None):
             pass
 
 
-def ask(shell_name, script, aliases=None, timeout=1.0, cwd=None, path=None):
-    """A client, for tests and for a shell with no socket client of its own.
-    Returns the correction, None for "no correction", or raises OSError when
-    there is no server."""
+def ask(shell_name, script, aliases=None, timeout=1.0, cwd=None, path=None,
+        known=False):
+    """A client, for the tests. Returns the correction, None for "no
+    correction", or raises OSError when there is no server. `known` asks the
+    subcommand question instead of the program one."""
     connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     connection.settimeout(timeout)
     try:
         connection.connect(socket_path(shell_name))
         connection.sendall(json.dumps({'script': script, 'aliases': aliases,
                                        'cwd': cwd or os.getcwd(),
-                                       'path': path or os.environ.get('PATH')})
+                                       'path': path or os.environ.get('PATH'),
+                                       'known': known})
                            .encode('utf-8') + b'\n')
         try:
             connection.shutdown(socket.SHUT_WR)
