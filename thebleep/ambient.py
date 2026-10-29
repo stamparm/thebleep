@@ -20,8 +20,10 @@ offered unless it is certain the line would fail:
 - it is not one the manual could not know about either: `git-lg` on `PATH`
   (git, cargo and kubectl all find subcommands that way), a git alias in any
   of git's configuration files, a docker CLI plugin;
-- it is not an abbreviation of one -- `npm i`, `npm inst` -- because some
-  tools accept those and the manual does not say which;
+- it is not an abbreviation of one -- `npm i`, `npm inst` -- for the tools
+  that accept those (`ABBREVIATING`), nor shorter than three letters for
+  any tool. Everywhere else `git dif` and `git statu` are a dropped key, and
+  fail as surely as `git satus` does;
 - and one documented subcommand is within the edit distance `matching` holds
   everything else to.
 
@@ -52,6 +54,14 @@ MAX_CONFIG_FILES = 8
 _SECTION = re.compile(r'^\s*\[\s*([^\]\s]+)(?:\s+"[^"]*")?\s*\]')
 _KEY = re.compile(r'^\s*([^\s=#;]+)\s*=\s*(.*?)\s*$')
 _WORD = re.compile(r'^[A-Za-z][A-Za-z0-9_.-]*$')
+# Tools that take a shortened subcommand, some of them resolving an ambiguous
+# one by their own order (`ip a` is `ip address`), so a prefix of a real
+# subcommand may be exactly what was meant. Listing one that does not costs a
+# correction; leaving out one that does rewrites a line that worked.
+ABBREVIATING = frozenset(('npm', 'pnpm', 'yarn', 'hg', 'ip', 'nmcli',
+                          'bridge', 'tc', 'gem', 'svn', 'bluetoothctl'))
+MIN_PREFIX = 3
+
 _WRAPPERS = frozenset(('sudo', 'doas', 'env', 'command', 'exec', 'nohup',
                        'time', 'nice', 'xargs', 'watch'))
 
@@ -175,7 +185,8 @@ def known_program_correction(script, cwd=None):
     candidates = vocabulary.subcommands(program)
     if not candidates or word in candidates:
         return None
-    if any(candidate.startswith(word) for candidate in candidates):
+    if any(candidate.startswith(word) for candidate in candidates) and (
+            program in ABBREVIATING or len(word) < MIN_PREFIX):
         return None
     ranked = matching.rank(word, candidates, limit=1)
     if not ranked:

@@ -8,8 +8,8 @@ import pytest
 
 from thebleep import ambient
 
-GIT = ['add', 'branch', 'checkout', 'citool', 'commit', 'config', 'log',
-       'status', 'stash']
+GIT = ['add', 'branch', 'checkout', 'citool', 'commit', 'config', 'diff',
+       'diff-files', 'difftool', 'log', 'status', 'stash']
 
 
 @pytest.fixture
@@ -55,16 +55,20 @@ class TestKnownProgramCorrection(object):
         ('git comit -m x', 'git commit -m x'),
         ('docker pss', 'docker ps'),
         ('npm isntall', 'npm install'),
+        ('git dif', 'git diff'),     # a dropped key: git takes no prefix
+        ('git statu', 'git status'),
+        ('docker pul', 'docker pull'),
     ])
     def test_a_documented_subcommand_one_slip_away(self, script, fixed):
         assert ambient.known_program_correction(script) == fixed
 
     @pytest.mark.parametrize('script', [
         'git status',            # it is one
-        'git st',                # an abbreviation of one: some tools take it
+        'git st',                # too short a prefix to say which
         'git co',                # of commit and config
-        'npm i',
+        'npm i',                 # npm takes abbreviations
         'npm inst',
+        'npm tes',
         'git lg',                # `git-lg` is on PATH
         'git zzzz',              # nothing is close
         'git -C .. satus',       # an option first: left to the tool
