@@ -46,10 +46,25 @@
   `git-satus.1` is not. Nothing is offered unless the line is certain to
   fail -- the program documents its subcommands, the word is none of them,
   nor a `git-lg` on `PATH`, a git alias in any configuration file git reads,
-  or a docker plugin, nor an abbreviation of one -- and a line the server
+  or a docker plugin, nor, for npm, ip, hg and the others that take them,
+  an abbreviation of one (`git dif` is a dropped key) -- and a line the server
   has no opinion on costs a few milliseconds and is accepted as it was. The
   Claude Code and Cursor hooks make the same check before an agent's command
   runs, so `git satus` is refused with `git status` as the reason.
+
+- **Caps lock, Shift and a space after the dash.** `wrong_case` lowers
+  `GIT STATUS`, `Git status` and `git STATUS` (a subcommand the manual
+  documents), before the line runs too. `stray_dash_space` joins `ls - la`,
+  `git log - p` and `git commit - m x` after they fail, and only when the
+  tool named the `-` or the letters as an operand it could not use: a bare
+  `-` is standard input, the last directory or the last branch.
+
+- **`bench/typo_classes.py`**, which makes typing slips by machine -- a
+  space left out, typed early or after a dash, a key dropped, doubled,
+  swapped or hit beside, caps lock -- across 52 commands and scores what
+  return does under `--ambient`. On the machine it was written on it went
+  from 71.4% right and 8.1% wrong rewrites to 74.0% and 5.5% with the fixes
+  below.
 
 ### Changed
 
@@ -64,6 +79,27 @@
   falling back to a full start. The server still runs nothing, keeps nothing
   and leaves after half an hour; `warm_server = False` puts the old bindings
   back.
+
+### Fixed
+
+- **A space in the wrong place is read as one.** `gi tlog` was `git tlog`,
+  `l s-la` was `ls s-la`, `dockerps` was `docker` with `ps` dropped,
+  `sshhost` was `ss hhost` and `find.` was `find`: the split now takes a
+  subcommand the manual documents or a flag as its second half, splits at
+  the longest program name, and takes `+`, `/`, `~` and a lone `.` as
+  arguments as surely as `-`.
+- **The second word and the keyboard choose between equal guesses.**
+  `bit status` was `bat status` and `pm install` `pym install`: among first
+  words equally far from what was typed, a one-key slip now goes before an
+  edit no finger makes, and a program whose manual documents the next word
+  before one that does not. `npm teat` is `test` before it runs, not
+  `team`, and `docker sp` is `ps` after it fails, not `stop`. A name the
+  typed word merely starts with (`man` for `manls`) is no longer offered.
+- **`git commit - m x` no longer offers `git branch -`**, a branch git would
+  refuse to create.
+- **A killed warm server no longer turns the subcommand check off.** Its
+  socket stayed behind and the shells took it for a live server; they now
+  start another, and the server removes its socket on SIGTERM and SIGHUP.
 
 ## 4.0.5 — 2026-10-13
 
