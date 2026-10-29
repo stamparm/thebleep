@@ -156,6 +156,8 @@ fi
             case "${answer%%$'\n'*}" in
                 ok) REPLY=${answer#*$'\n'}; [ -n "$REPLY" ] && return 0 ;;
                 none) return 1 ;;
+                # Nothing at all: a socket left by a server that was killed.
+                '') (TB_SHELL=bash COMMAND --serve </dev/null >/dev/null 2>&1 &) ;;
             esac
         else
             (TB_SHELL=bash COMMAND --serve </dev/null >/dev/null 2>&1 &)

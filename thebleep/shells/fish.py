@@ -343,6 +343,10 @@ function __thebleep_fixed
             return 0
         else if test "$answer[1]" = none
             return 1
+        else if not set -q answer[1]
+            # Nothing at all: a socket left by a server that was killed.
+            env TB_SHELL=fish COMMAND --serve </dev/null >/dev/null 2>&1 &
+            disown 2>/dev/null
         end
     else
         env TB_SHELL=fish COMMAND --serve </dev/null >/dev/null 2>&1 &

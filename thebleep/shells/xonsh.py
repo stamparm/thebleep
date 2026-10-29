@@ -55,15 +55,16 @@ def _thebleep_ambient_install():
         out = done.stdout.decode('utf-8', 'replace').strip()
         return out if done.returncode == 0 and out else None
 
+    def start():
+        subprocess.Popen(words + ['--serve'], env=environment(),
+                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                         stderr=subprocess.DEVNULL, start_new_session=True)
+
     def ask(line, known):
         if not sock:
             return None if known else directly(line)
         if not os.path.exists(sock):
-            env = environment()
-            subprocess.Popen(words + ['--serve'], env=env,
-                             stdin=subprocess.DEVNULL,
-                             stdout=subprocess.DEVNULL,
-                             stderr=subprocess.DEVNULL, start_new_session=True)
+            start()
             return None if known else directly(line)
         try:
             connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -76,7 +77,10 @@ def _thebleep_ambient_install():
                 'known': known}).encode('utf-8') + b'\\n')
             data = b''.join(iter(lambda: connection.recv(65536), b''))
             connection.close()
-        except OSError:
+        except OSError as error:
+            # Refused: a socket left by a server that was killed.
+            if isinstance(error, ConnectionRefusedError):
+                start()
             return None if known else directly(line)
         status, _, body = data.partition(b'\\n')
         if status == b'ok' and body:

@@ -140,7 +140,8 @@ __thebleep_fixed() {{
         exec {{fd}}>&-
         [[ $answer == ok && -n $REPLY ]] && return 0
         [[ $answer == none ]] && return 1
-    elif [[ ! -S $sock ]]; then
+    elif [[ ! -S $sock ]] || zmodload zsh/net/socket 2>/dev/null; then
+        # No socket, or one nothing listens on: a server that was killed.
         (TB_SHELL=zsh {command} --serve </dev/null >/dev/null 2>&1 &)
     fi
     [[ $known == true ]] && return 1{direct}
@@ -265,7 +266,12 @@ __thebleep_ask() {
         (TB_SHELL=zsh COMMAND --serve </dev/null >/dev/null 2>&1 &)
         return
     fi
-    zmodload zsh/net/socket 2>/dev/null && zsocket $sock 2>/dev/null || return
+    zmodload zsh/net/socket 2>/dev/null || return
+    if ! zsocket $sock 2>/dev/null; then
+        # A socket nothing listens on: a server that was killed.
+        (TB_SHELL=zsh COMMAND --serve </dev/null >/dev/null 2>&1 &)
+        return
+    fi
     fd=$REPLY
     __thebleep_json "$1"; script=$REPLY
     __thebleep_json "$__thebleep_aliases"; aliases=$REPLY

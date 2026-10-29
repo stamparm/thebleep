@@ -212,3 +212,71 @@ def test_correct_is_the_inline_correction(mocker):
                           return_value='git status')
     assert serve.correct('gti status') == 'git status'
     inline.assert_called_once_with('gti status')
+
+
+def _stale_socket(path):
+    """A socket file nothing listens on: what a server killed with SIGKILL,
+    or by the OOM killer, leaves behind."""
+    os.makedirs(os.path.dirname(path), mode=0o700, exist_ok=True)
+    stale = socket.socket(socket.AF_UNIX)
+    stale.bind(path)
+    stale.close()
+
+
+@pytest.mark.parametrize('name', ['bash', 'zsh'])
+def test_a_socket_nothing_listens_on_starts_a_server(
+        runtime, settings, mocker, tmp_path, name):
+    """The clients took a socket file for a live server, so one left behind
+    turned the subcommand check off until something deleted it."""
+    import shutil
+    import subprocess
+    import time
+
+    from thebleep.shells.bash import Bash
+    from thebleep.shells.zsh import Zsh
+
+    if not shutil.which(name):
+        pytest.skip('{} is not installed'.format(name))
+    marker = tmp_path / 'started'
+    stub = tmp_path / 'stub'
+    stub.write_text(u'#!/bin/sh\necho "$@" > "{}"\n'.format(marker.as_posix()))
+    stub.chmod(0o755)
+    settings.warm_server = True
+    shell = {'bash': Bash, 'zsh': Zsh}[name]()
+    mocker.patch.object(type(shell), '_invocation',
+                        return_value=shell.quote(stub.as_posix()))
+    _stale_socket(serve.socket_path(name))
+    script = shell._warm_client() + '\n__thebleep_fixed "git dif" known\n'
+    subprocess.run([name, '-c', script], timeout=10,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    deadline = time.time() + 10
+    while not marker.exists() and time.time() < deadline:
+        time.sleep(0.05)
+    assert marker.read_text().strip() == '--serve'
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='no SIGTERM to send')
+def test_sigterm_takes_the_socket_with_it(runtime, tmp_path):
+    import signal
+    import subprocess
+    import sys
+    import time
+
+    env = dict(os.environ, TB_SHELL='bash',
+               PYTHONPATH=os.path.dirname(os.path.dirname(
+                   os.path.abspath(serve.__file__))))
+    path = serve.socket_path('bash')
+    server = subprocess.Popen([sys.executable, '-m', 'thebleep', '--serve'],
+                              env=env, stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL)
+    try:
+        deadline = time.time() + 30
+        while not os.path.exists(path) and time.time() < deadline:
+            time.sleep(0.05)
+        assert os.path.exists(path), 'the server never started listening'
+        server.send_signal(signal.SIGTERM)
+        assert server.wait(10) == 0
+        assert not os.path.exists(path)
+    finally:
+        if server.poll() is None:
+            server.kill()

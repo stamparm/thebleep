@@ -29,6 +29,7 @@ before.
 
 import json
 import os
+import signal
 import socket
 import stat
 import sys
@@ -235,6 +236,22 @@ def _read_request(connection):
     return b''.join(chunks)
 
 
+def _leave(signum, frame):
+    raise SystemExit(0)
+
+
+def _leave_on_signals():
+    """`kill`, or the session going away, ends the server through its
+    `finally`, which takes the socket with it: one left behind is a socket
+    nothing listens on, and the shells used to take it for a live server."""
+    for name in ('SIGTERM', 'SIGHUP'):
+        if hasattr(signal, name):
+            try:
+                signal.signal(getattr(signal, name), _leave)
+            except ValueError:
+                pass            # not the main thread: the tests' servers
+
+
 def serve(shell_name, idle=IDLE_SECONDS, ready=None):
     """Listen until `idle` seconds pass without a question. Returns an exit
     status. `ready`, when given, is called with the socket path once
@@ -276,6 +293,7 @@ def serve(shell_name, idle=IDLE_SECONDS, ready=None):
         os.umask(old_umask)
     listener.listen(BACKLOG)
     listener.settimeout(idle)
+    _leave_on_signals()
     if ready is not None:
         ready(path)
     logs.debug(u'Serving {} corrections on {}'.format(shell_name, path))
