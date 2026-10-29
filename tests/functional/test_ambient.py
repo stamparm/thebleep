@@ -68,6 +68,34 @@ def warm_zsh(spawnu, TIMEOUT):
 
 
 @pytest.fixture
+def xonsh(spawnu, TIMEOUT):
+    proc = spawnu(*python_3)
+    proc.sendline(u'mkdir -p ~/.config/xonsh; '
+                  u'thebleep --shell xonsh --alias-loader --ambient '
+                  u'> ~/.config/xonsh/rc.xsh')
+    proc.sendline(u'xonsh')
+    # xonsh loses what is typed while it starts up, and with an rc file it
+    # prints no welcome: wait for the prompt, then prove it answers.
+    assert proc.expect([TIMEOUT, u'@#'])
+    proc.sendline(u'print("READY_" + "NOW")')
+    assert proc.expect([TIMEOUT, u'READY_NOW'])
+    assert proc.expect([TIMEOUT, u'@#'])
+    return proc
+
+
+@pytest.fixture
+def elvish(spawnu, TIMEOUT):
+    proc = spawnu(*python_3)
+    proc.sendline(u'mkdir -p ~/.config/elvish; '
+                  u'thebleep --shell elvish --alias-loader --ambient '
+                  u'> ~/.config/elvish/rc.elv')
+    proc.sendline(u'elvish')
+    proc.sendline(u'echo READY_(echo)NOW')
+    assert proc.expect([TIMEOUT, u'READY_NOW'])
+    return proc
+
+
+@pytest.fixture
 def fish(spawnu, TIMEOUT):
     proc = spawnu(u'thebleep/python3', u'', u'fish')
     proc.sendline(u'thebleep --alias-loader > ~/.config/fish/config.fish')
@@ -283,6 +311,45 @@ def test_fish_corrects_the_second_word_once_the_server_is_up(fish, TIMEOUT):
     assert fish.expect([TIMEOUT, u'not a git repository'])
     fish.send(u'git version\r')
     assert fish.expect([TIMEOUT, u'git version'])
+
+
+@pytest.mark.functional
+def test_xonsh_puts_the_fix_in_the_next_prompt(xonsh, TIMEOUT):
+    """`on_transform_command` runs nothing for the typo, prints the message
+    and fills the next prompt through `$XONSH_PROMPT_NEXT_CMD`; return then
+    runs the fix. With the server up, the second word too."""
+    xonsh.send(u'gti --version\r')
+    assert xonsh.expect([TIMEOUT, u'bleep: gti is not a command'])
+    xonsh.send(u'\r')
+    assert xonsh.expect([TIMEOUT, u'git version'])
+    xonsh.sendline(u'echo un$(true)touched')
+    assert xonsh.expect([TIMEOUT, u'untouched'])
+    xonsh.sendline(u'$(sh -c ' + repr(wait_for_socket.format(u'xonsh')) + u')')
+    assert xonsh.expect([TIMEOUT, u'SOCKET_UP'])
+    xonsh.send(u'git satus\r')
+    assert xonsh.expect([TIMEOUT, u'bleep: satus is not a git command'])
+    xonsh.send(u'\r')
+    assert xonsh.expect([TIMEOUT, u'not a git repository'])
+    # Python stays Python.
+    xonsh.sendline(u'x = 20 + 1')
+    xonsh.sendline(u'print(x * 2)')
+    assert xonsh.expect([TIMEOUT, u'42'])
+
+
+@pytest.mark.functional
+def test_elvish_replaces_the_line_before_anything_runs(elvish, TIMEOUT):
+    elvish.send(u'gti --version\r')
+    assert elvish.expect([TIMEOUT, u'bleep: gti is not a command'])
+    elvish.send(u'\r')
+    assert elvish.expect([TIMEOUT, u'git version'])
+    elvish.sendline(u'sh -c ' + repr(wait_for_socket.format(u'elvish')))
+    assert elvish.expect([TIMEOUT, u'SOCKET_UP'])
+    elvish.send(u'git satus\r')
+    assert elvish.expect([TIMEOUT, u'bleep: satus is not a git command'])
+    elvish.send(u'\r')
+    assert elvish.expect([TIMEOUT, u'not a git repository'])
+    elvish.send(u'echo un(echo)touched\r')
+    assert elvish.expect([TIMEOUT, u'untouched'])
 
 
 @pytest.mark.functional

@@ -70,6 +70,84 @@ class Elvish(Generic):
         # A function definition is already what a stub would be.
         return self.app_alias(alias_name)
 
+    def ambient_binding(self):
+        """Correct a misspelled program before it runs.
+
+        Enter's binding is wrapped: the line is `$edit:current-command`,
+        the first word is a command the shell has never heard of when
+        `resolve` calls it external and `has-external` says no, and a word
+        after a command it does have gets the subcommand question
+        (`thebleep.ambient`). A fix goes back into `edit:current-command`
+        with `edit:notify` saying so, and nothing runs until the next Enter;
+        every other line goes to whatever Enter was bound to before.
+
+        Elvish has no socket client, so the warm server is asked through
+        the bare interpreter and `serve.CLIENT`; a connection the client
+        cannot make is an exception in Elvish, which is where the server is
+        started for next time and, for the first question only, The Bleep
+        is started to answer this time. `echo`, not `print`: the newline is
+        what ends the question, and without it both sides sat out their
+        timeouts.
+
+        """
+        import sys
+
+        from ..conf import settings
+        from ..serve import CLIENT, socket_path
+
+        if settings.warm_server:
+            ask = (
+                "  try {\n"
+                "    set answer = (echo $question | PYTHON -S -I -c CLIENT SOCK 2>/dev/null | slurp)\n"
+                "  } catch _ {\n"
+                "    sh -c 'TB_SHELL=elvish COMMAND --serve </dev/null >/dev/null 2>&1 &'\n"
+                "    if (eq $known true) { put ''; return }\n"
+                "    DIRECT\n"
+                "  }\n")
+        else:
+            ask = ("  if (eq $known true) { put ''; return }\n"
+                   "  DIRECT\n")
+        ask = ask.replace('DIRECT', "try { set answer = 'ok'\"\\n\"(env TB_SHELL=elvish COMMAND --inline --command $line 2>/dev/null | slurp) } catch _ { set answer = '' }")
+        code = (
+            'use re\n'
+            'use str\n'
+            'fn -thebleep-fixed {|line known|\n'
+            "  var question = '{\"script\": '(put $line | to-json)', \"aliases\": \"\", \"cwd\": '(put $pwd | to-json)', \"path\": '(put $E:PATH | to-json)', \"known\": '$known'}'\n"
+            "  var answer = ''\n"
+            + ask +
+            '  var lines = [(str:split "\\n" $answer)]\n'
+            "  if (and (> (count $lines) 1) (eq $lines[0] ok)) { put (str:trim-space $lines[1]) } else { put '' }\n"
+            '}\n'
+            'var -thebleep-previous-enter = $edit:insert:binding[Enter]\n'
+            'set edit:insert:binding[Enter] = {\n'
+            '  var line = $edit:current-command\n'
+            '  var words = [(str:fields $line)]\n'
+            "  if (and (> (count $words) 0) (re:match '^[A-Za-z0-9][A-Za-z0-9_.+-]*$' $words[0])) {\n"
+            '    var first = $words[0]\n'
+            "    var fixed = ''\n"
+            "    var what = ''\n"
+            "    if (and (str:has-prefix (resolve $first) '(external') (not (has-external $first))) {\n"
+            '      set fixed = (-thebleep-fixed $line false)\n'
+            "      set what = $first' is not a command'\n"
+            "    } elif (and (> (count $words) 1) (has-external $first) (re:match '^[A-Za-z0-9]' $words[1]) (not (re:match '[/=|;&<>(){}\\[\\]$''\"`\\\\~*?]' $line))) {\n"
+            '      set fixed = (-thebleep-fixed $line true)\n'
+            "      set what = $words[1]' is not a '$first' command'\n"
+            '    }\n'
+            "    if (and (not-eq $fixed '') (not-eq $fixed $line)) {\n"
+            "      edit:notify 'bleep: '$what'; return runs `'$fixed'`'\n"
+            '      set edit:current-command = $fixed\n'
+            '      return\n'
+            '    }\n'
+            '  }\n'
+            '  $-thebleep-previous-enter\n'
+            '}\n')
+        from .generic import fill
+
+        return fill(code, SOCK=self.quote(socket_path('elvish')),
+                    COMMAND=self._invocation(),
+                    PYTHON=self.quote(sys.executable or ''),
+                    CLIENT=self.quote(CLIENT))
+
     def can_edit_buffer(self):
         return True
 

@@ -14,6 +14,16 @@
   on bash 4.3 through 5.2 and in vi insert mode, in containers. Ctrl+j and
   the handler underneath keep the old way.
 
+- **`--ambient` for xonsh and Elvish.** xonsh fires `on_transform_command`
+  with the line as accepted; the handler is Python, speaks to the warm
+  server's socket itself, and on a fix runs nothing, prints the message and
+  puts the fix in `$XONSH_PROMPT_NEXT_CMD` for the next prompt. Elvish's
+  Enter binding is wrapped: `resolve` and `has-external` say what the first
+  word is, the bare interpreter carries the question, a fix goes back into
+  `edit:current-command` with `edit:notify` saying so, and every other line
+  goes to whatever Enter did before. Both answer the second-word question
+  too. Driven in containers, xonsh 0.25 and Elvish 0.21.
+
 - **zsh asks while you type.** Once the first word of the line is finished,
   every keystroke puts the line to the warm server through `zle -F`, and the
   answer -- a millisecond later, if it is for the line as it still stands --

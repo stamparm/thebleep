@@ -84,3 +84,26 @@ class TestXonsh(object):
 
     def test_no_inline_editing(self, shell):
         assert not shell.can_edit_buffer()
+
+    def test_the_ambient_handler_is_python_that_compiles(
+            self, shell, settings):
+        """`on_transform_command` is the hook; a fix runs nothing and goes
+        into `$XONSH_PROMPT_NEXT_CMD` for the next prompt; the socket is
+        spoken to directly, and only with the server on."""
+        from thebleep import serve
+
+        settings.warm_server = True
+        binding = shell.ambient_binding()
+        compile(binding, 'ambient', 'exec')
+        assert '@events.on_transform_command' in binding
+        assert "__xonsh__.env['XONSH_PROMPT_NEXT_CMD'] = fixed" in binding
+        assert 'sock = {!r}'.format(serve.socket_path('xonsh')) in binding
+        assert "'known': known" in binding
+        assert 'socket.AF_UNIX' in binding
+        assert "['--inline', '--command', line]" in binding
+        # Python-shaped lines are left alone.
+        assert 'keyword.iskeyword(word)' in binding
+        settings.warm_server = False
+        binding = shell.ambient_binding()
+        compile(binding, 'ambient', 'exec')
+        assert "sock = ''" in binding

@@ -65,6 +65,37 @@ class TestElvish(object):
         assert shell.get_aliases() == {}
         assert shell.get_history() == []
 
+    def test_enter_is_wrapped_for_ambient_correction(self, shell, settings):
+        """The first word through `resolve` and `has-external`, the second
+        through the server's subcommand question; a fix goes back into the
+        line with `edit:notify` saying so, and Enter's previous binding
+        keeps every other line."""
+        import sys
+
+        from thebleep import serve
+
+        settings.warm_server = True
+        binding = shell.ambient_binding()
+        assert 'var -thebleep-previous-enter = $edit:insert:binding[Enter]' \
+            in binding
+        assert 'set edit:insert:binding[Enter] = {' in binding
+        assert "(str:has-prefix (resolve $first) '(external') " \
+            "(not (has-external $first))" in binding
+        assert '(-thebleep-fixed $line true)' in binding
+        assert 'set edit:current-command = $fixed' in binding
+        assert "edit:notify 'bleep: '$what'; return runs `'$fixed'`'" \
+            in binding
+        assert '  $-thebleep-previous-enter\n' in binding
+        # `echo`, not `print`: the newline ends the question.
+        assert 'echo $question | {} -S -I -c {} {}'.format(
+            shell.quote(sys.executable), shell.quote(serve.CLIENT),
+            shell.quote(serve.socket_path('elvish'))) in binding
+        assert "\"known\": '$known'" in binding
+        settings.warm_server = False
+        binding = shell.ambient_binding()
+        assert '-S -I -c' not in binding
+        assert '--inline --command $line' in binding
+
     def test_version(self, shell):
         assert shell.info() == 'Elvish 0.21.0+Debian-2+b7'
 

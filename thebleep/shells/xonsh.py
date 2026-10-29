@@ -28,6 +28,103 @@ from ..utils import memoize, tool_output
 from .generic import Generic
 
 
+# The `--ambient` handler, as Python for xonsh to run. `__SOCK__` is the
+# warm server's socket, or '' with `warm_server` off; `__WORDS__` the words
+# that reach The Bleep.
+AMBIENT = '''\
+def _thebleep_ambient_install():
+    import json, keyword, os, re, socket, subprocess, sys
+    sock = __SOCK__
+    words = __WORDS__
+    plain = re.compile(r'^[A-Za-z_][A-Za-z0-9_.+-]*$')
+    python = re.compile(r"[=()\\[\\]{}'\\"`$@|;&<>\\\\]|(?:^|\\s)(?:[-+*/%]+|==|!=|<=|>=|in|is|not|and|or|if|else|for|lambda)(?:\\s|$)")
+    last = {}
+
+    def environment():
+        env = dict(__xonsh__.env.detype())
+        env['TB_SHELL'] = __SHELL__
+        env['TB_SHELL_ALIASES'] = '\\n'.join(
+            k + '=' + ' '.join(v) for k, v in aliases.items()
+            if isinstance(v, list) and v)
+        return env
+
+    def directly(line):
+        done = subprocess.run(words + ['--inline', '--command', line],
+                              env=environment(), stdout=subprocess.PIPE,
+                              stderr=subprocess.DEVNULL)
+        out = done.stdout.decode('utf-8', 'replace').strip()
+        return out if done.returncode == 0 and out else None
+
+    def ask(line, known):
+        if not sock:
+            return None if known else directly(line)
+        if not os.path.exists(sock):
+            env = environment()
+            subprocess.Popen(words + ['--serve'], env=env,
+                             stdin=subprocess.DEVNULL,
+                             stdout=subprocess.DEVNULL,
+                             stderr=subprocess.DEVNULL, start_new_session=True)
+            return None if known else directly(line)
+        try:
+            connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            connection.settimeout(1)
+            connection.connect(sock)
+            env = environment()
+            connection.sendall(json.dumps({
+                'script': line, 'aliases': env['TB_SHELL_ALIASES'],
+                'cwd': os.getcwd(), 'path': env.get('PATH', ''),
+                'known': known}).encode('utf-8') + b'\\n')
+            data = b''.join(iter(lambda: connection.recv(65536), b''))
+            connection.close()
+        except OSError:
+            return None if known else directly(line)
+        status, _, body = data.partition(b'\\n')
+        if status == b'ok' and body:
+            return body.decode('utf-8', 'replace')
+        if status == b'none':
+            return None
+        return None if known else directly(line)
+
+    def runnable(word):
+        return (keyword.iskeyword(word) or word in __xonsh__.ctx
+                or hasattr(__builtins__, word) or (
+                    isinstance(__builtins__, dict) and word in __builtins__)
+                or word in aliases or word in __xonsh__.commands_cache)
+
+    @events.on_transform_command
+    def _thebleep_ambient(cmd, **kw):
+        # Fired more than once per line, by design: answer the same way.
+        if last.get('cmd') == cmd:
+            return last['result']
+        result = cmd
+        line = cmd.strip()
+        parts = line.split()
+        if parts and '\\n' not in line and not python.search(line) \\
+                and plain.match(parts[0]):
+            first = parts[0]
+            second = parts[1] if len(parts) > 1 else ''
+            fixed = what = None
+            if not runnable(first):
+                fixed = ask(line, False)
+                what = first + ' is not a command'
+            elif second and plain.match(second) and first not in aliases \\
+                    and first in __xonsh__.commands_cache:
+                fixed = ask(line, True)
+                what = second + ' is not a ' + first + ' command'
+            if fixed and fixed != line:
+                print('bleep: ' + what + '; return runs `' + fixed + '`',
+                      file=sys.stderr)
+                if __xonsh__.env.get_docs('XONSH_PROMPT_NEXT_CMD').doc:
+                    __xonsh__.env['XONSH_PROMPT_NEXT_CMD'] = fixed
+                result = ''
+        last['cmd'], last['result'] = cmd, result
+        return result
+
+_thebleep_ambient_install()
+del _thebleep_ambient_install
+'''
+
+
 class Xonsh(Generic):
     friendly_name = 'xonsh'
 
@@ -85,6 +182,41 @@ aliases[{name!r}] = _thebleep_{name}'''.format(name=alias_name, words=words)
         # The alias itself: a function definition is already the cheap thing
         # a loader stub would stand in for.
         return self.app_alias(alias_name)
+
+    def ambient_binding(self):
+        """Correct a misspelled program before it runs, in Python.
+
+        xonsh fires `on_transform_command` with the line as it was accepted
+        and runs whatever the handler returns, which is the hook the other
+        shells' return bindings stand in for. The handler asks the same two
+        questions zsh asks -- is the first word something the shell can run
+        (a command, an alias, a keyword, a builtin or a name in the
+        session), and if it is a command, is the word after it one the
+        program has (`thebleep.ambient`) -- and on a fix returns nothing to
+        run, prints the message, and puts the fix in
+        `$XONSH_PROMPT_NEXT_CMD`, which is what the next prompt opens with.
+        So nothing runs, the corrected line is there, and return runs it:
+        the same shape as everywhere else. A xonsh without that variable
+        gets the message alone.
+
+        xonsh is Python, so it speaks to the warm server's socket itself,
+        with no helper. A line with anything that could be Python in it --
+        an operator, a bracket, a quote, an assignment -- is left alone.
+
+        """
+        from .. import invocation
+        from ..conf import settings
+        from ..serve import socket_path
+
+        override = invocation.override()
+        if override:
+            words = ['sh', '-c', override + ' "$@"', 'thebleep']
+        else:
+            words = invocation.parts() or [invocation.ENTRY_POINT]
+        return (AMBIENT.replace('__WORDS__', repr(words))
+                .replace('__SOCK__', repr(socket_path('xonsh')
+                                          if settings.warm_server else ''))
+                .replace('__SHELL__', repr('xonsh')))
 
     @memoize
     def get_aliases(self):

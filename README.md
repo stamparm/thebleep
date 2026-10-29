@@ -43,10 +43,10 @@ thebleep --alias-loader fuck >> ~/.bashrc
 ## What it does
 
 - **Fixes the typo before it runs.** Return on `gti status` in bash, zsh,
-  fish or PowerShell replaces the line with `git status` and waits for a
-  second return. In bash, zsh and fish `git satus` is caught the same way,
-  from git's own manual, with nothing run. Nobody types `bleep` for the
-  commonest mistakes there are.
+  fish, xonsh, Elvish or PowerShell replaces the line with `git status` and
+  waits for a second return. In all but PowerShell `git satus` is caught the
+  same way, from git's own manual, with nothing run. Nobody types `bleep`
+  for the commonest mistakes there are.
   [Without typing bleep](#without-typing-bleep).
 - **Reads the answer off the screen.** When git says `the most similar command
   is status`, or npm lists the scripts, or `ls --sort=nmae` prints what `--sort`
@@ -399,6 +399,8 @@ in place of the plain loader:
 thebleep --alias-loader --ambient >> ~/.bashrc   # or ~/.zshrc
 thebleep --alias-loader --ambient >> ~/.config/fish/config.fish
 thebleep --alias-loader --ambient >> $profile    # PowerShell
+thebleep --alias-loader --ambient >> ~/.config/xonsh/rc.xsh
+thebleep --alias-loader --ambient >> ~/.config/elvish/rc.elv
 ```
 
 Written out, not `eval "$(...)"`: the text is the same every time, and an
@@ -416,16 +418,25 @@ $ git status
 bleep: gti is not a command; return runs `git status`, ctrl+_ puts yours back
 ```
 
-In zsh, fish, bash and PowerShell, return is bound to a check: when the first
-word of the line is not a command, function, alias or builtin the shell knows
-— `whence -w`, `type -q`, `type -t` and `Get-Command` are asked, and cost
-nothing — the line is offered to the same command-only rules
-<kbd>Esc</kbd> <kbd>Esc</kbd> uses, and a correction replaces the line.
-Nothing has run yet, and return runs the corrected line. zsh says so in a
-message underneath, naming the undo key that puts yours back; fish and bash
-print the message without an undo hint; PowerShell replaces the line without
-a message. Every other line is accepted exactly as before, by whatever return
-was bound to before this, so another plugin's binding is kept.
+In zsh, fish, bash, Elvish and PowerShell, return is bound to a check: when
+the first word of the line is not a command, function, alias or builtin the
+shell knows — `whence -w`, `type -q`, `type -t`, `has-external` and
+`Get-Command` are asked, and cost nothing — the line is offered to the same
+command-only rules <kbd>Esc</kbd> <kbd>Esc</kbd> uses, and a correction
+replaces the line. Nothing has run yet, and return runs the corrected line.
+zsh says so in a message underneath, naming the undo key that puts yours
+back; fish, bash and Elvish print the message without an undo hint;
+PowerShell replaces the line without a message. Every other line is accepted
+exactly as before, by whatever return was bound to before this, so another
+plugin's binding is kept.
+
+xonsh has no return binding to wrap, and does not need one: it fires
+`on_transform_command` with the line as accepted and runs what the handler
+returns. The handler is Python, speaks to the warm server's socket itself,
+and on a fix returns nothing to run, prints the message, and puts the fix in
+`$XONSH_PROMPT_NEXT_CMD`, which is what the next prompt opens with — the
+same shape as everywhere else. A line with anything that could be Python in
+it, an operator, a bracket, a quote, an assignment, is left alone.
 
 Bash has no `accept-line` hook, so return there is a readline macro of two
 keys: a `bind -x` function that reads the line, and `accept-line`. When the
@@ -455,7 +466,7 @@ The check is deliberately narrow: only the first word, only when the shell
 itself has never heard of it, and never for a word with a slash, a quote, a
 variable or an assignment in it.
 
-The second word gets a check of its own in zsh, fish and bash, on stricter terms,
+The second word gets a check of its own in zsh, fish, bash, xonsh and Elvish, on stricter terms,
 because the shell *does* know `git` and cannot know what git will think of
 `satus`. The machine can: git documents its commands one manual page each,
 `git-status.1` is there and `git-satus.1` is not, and the
@@ -1435,11 +1446,13 @@ The few things worth knowing per shell:
   have. The alias is a Python function: it reads the failed command from
   `__xonsh__.history`, hands your aliases over in the environment, and runs the
   correction with `execx`, so a correction in xonsh syntax stays xonsh syntax.
+  [`--ambient`](#without-typing-bleep) is an `on_transform_command` handler.
 - **Elvish.** `~/.config/elvish/rc.elv`. The alias is a function that reads
   the failed command from `edit:command-history`; Elvish has no aliases to
   expand and keeps its history in a database only its daemon reads, so
   neither is consulted. Corrections are joined with `;`, which in Elvish stops
   at the first failure the way `&&` does elsewhere.
+  [`--ambient`](#without-typing-bleep) wraps Enter's binding.
 - **Nushell.** `$XDG_CONFIG_HOME/nushell/config.nu` if that is set — on every
   platform, which is the order Nushell itself reads them in — otherwise
   `~/.config/nushell/config.nu`, `%APPDATA%\nushell` on Windows or
