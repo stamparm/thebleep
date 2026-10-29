@@ -199,6 +199,32 @@ class TestWarmServer(object):
         # A line with an operator, quote, variable or path in it is not.
         assert '$BUFFER != *[/=\\|\\;\\&\\<\\>\\(\\)\\{\\}\\$' in binding
 
+    def test_the_server_is_asked_while_the_line_is_typed(
+            self, shell, settings):
+        """`zle-line-pre-redraw` asks at each keystroke, `zle -F` collects,
+        a widget checks the answer against the line and shows it; return
+        takes a kept answer without asking. No fork in the gate: the shell's
+        own hashes say what a word is."""
+        settings.warm_server = True
+        binding = shell.ambient_binding()
+        assert 'add-zle-hook-widget line-pre-redraw __thebleep_watch' \
+            in binding
+        assert 'add-zle-hook-widget line-init __thebleep_line_init' in binding
+        assert 'add-zle-hook-widget line-finish __thebleep_cancel' in binding
+        assert 'zle -F $fd __thebleep_arrived' in binding
+        assert 'zle __thebleep_show -- "$fixed" "$__thebleep_asked"' in binding
+        gate = ('$+commands[$first] + $+aliases[$first] + $+functions[$first]'
+                ' + $+builtins[$first] + $+reswords[$first]')
+        assert gate in binding
+        assert '$BUFFER == *[[:space:]]*' in binding
+        assert 'if [[ -n $__thebleep_answer && $BUFFER == $__thebleep_asked' \
+            in binding
+        # Without a socket the server is started and nothing else happens.
+        assert '--serve </dev/null >/dev/null 2>&1 &)\n        return' \
+            in binding
+        settings.warm_server = False
+        assert '__thebleep_watch' not in shell.ambient_binding()
+
     def test_the_question_is_json_the_server_can_read(self, shell, settings):
         settings.warm_server = True
         binding = shell.ambient_binding()

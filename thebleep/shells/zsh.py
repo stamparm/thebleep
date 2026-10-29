@@ -181,7 +181,14 @@ __thebleep_ambient_accept_line() {{
     words=(${{(z)BUFFER}})
     first=$words[1]
     second=$words[2]
-    if [[ -n $BUFFER && -n $first && $first != *[/=\\$\\'\\"\\`]* && "$(whence -w -- "$first" 2>/dev/null)" == *": none" ]]; then
+    if [[ -n $__thebleep_answer && $BUFFER == $__thebleep_asked && $__thebleep_answer != $BUFFER ]]; then
+        fixed=$__thebleep_answer
+        __thebleep_answer=
+        zle -M "bleep: $__thebleep_what; return runs \\`$fixed\\`, ctrl+_ puts yours back"
+        BUFFER=$fixed
+        CURSOR=${{#BUFFER}}
+        return 0
+    elif [[ -n $BUFFER && -n $first && $first != *[/=\\$\\'\\"\\`]* && "$(whence -w -- "$first" 2>/dev/null)" == *": none" ]]; then
         TB_SHELL_ALIASES=$(alias)
         TB_HISTORY=
         {fit_transport}
@@ -210,7 +217,122 @@ __thebleep_ambient_accept_line() {{
     fi
 }}
 zle -N accept-line __thebleep_ambient_accept_line
-'''.format(fit_transport=fit_transport(), client=self._warm_client())
+{watch}'''.format(
+            fit_transport=fit_transport(), client=self._warm_client(),
+            watch=self._watch_while_typing())
+
+    def _watch_while_typing(self):
+        """Ask the warm server while the line is being typed.
+
+        `zle-line-pre-redraw` runs after every keystroke. When the first
+        word is finished and is nothing the shell knows -- the `commands`,
+        `aliases`, `functions`, `builtins` and `reswords` hashes, no fork --
+        or is a command with a plain word after it, the question is written
+        to the socket and `zle -F` is told to call back when the answer is
+        readable. The callback has no editor state of its own -- `BUFFER` is
+        empty there -- so it hands the answer to a widget, which has. The
+        answer, if it is for the line as it still stands, is kept and shown
+        underneath; return then takes it without asking, so
+        the correction costs nothing at the keystroke that matters. A
+        keystroke that changes the line drops a pending question and a
+        stale answer. Nothing is asked without a socket, beyond starting the
+        server for next time: this runs at every keystroke, and Python is
+        not started for one.
+
+        """
+        from ..conf import settings
+
+        if not settings.warm_server:
+            return ''
+
+        from ..serve import socket_path
+
+        return r'''typeset -g __thebleep_asked __thebleep_answer __thebleep_what __thebleep_fd __thebleep_aliases __thebleep_shown
+__thebleep_cancel() {
+    if [[ -n $__thebleep_fd ]]; then
+        zle -F $__thebleep_fd 2>/dev/null
+        exec {__thebleep_fd}>&-
+        __thebleep_fd=
+    fi
+}
+__thebleep_ask() {
+    local sock=SOCK fd script aliases cwd tb_path known=false
+    [[ $2 == known ]] && known=true
+    __thebleep_cancel
+    __thebleep_asked=$1
+    __thebleep_answer=
+    if [[ ! -S $sock ]]; then
+        (TB_SHELL=zsh COMMAND --serve </dev/null >/dev/null 2>&1 &)
+        return
+    fi
+    zmodload zsh/net/socket 2>/dev/null && zsocket $sock 2>/dev/null || return
+    fd=$REPLY
+    __thebleep_json "$1"; script=$REPLY
+    __thebleep_json "$__thebleep_aliases"; aliases=$REPLY
+    __thebleep_json "$PWD"; cwd=$REPLY
+    __thebleep_json "$PATH"; tb_path=$REPLY
+    print -r -- "{\"script\": \"$script\", \"aliases\": \"$aliases\", \"cwd\": \"$cwd\", \"path\": \"$tb_path\", \"known\": $known}" >&$fd
+    __thebleep_fd=$fd
+    zle -F $fd __thebleep_arrived
+}
+__thebleep_arrived() {
+    local fd=$1 answer fixed
+    zle -F $fd
+    __thebleep_fd=
+    if [[ $2 != err ]]; then
+        IFS= read -r -t 1 answer <&$fd
+        IFS= read -r -t 1 fixed <&$fd
+    fi
+    exec {fd}>&-
+    # The editor's state is not in scope here, `BUFFER` included; a widget
+    # called from here has it, which is how the answer is checked against
+    # the line as it stands now.
+    [[ $answer == ok && -n $fixed ]] && zle __thebleep_show -- "$fixed" "$__thebleep_asked"
+}
+__thebleep_show() {
+    if [[ $BUFFER == $2 && $1 != $BUFFER ]]; then
+        __thebleep_answer=$1
+        __thebleep_shown=1
+        zle -M "bleep: $__thebleep_what; return runs \`$1\`"
+    fi
+}
+zle -N __thebleep_show
+__thebleep_watch() {
+    local first second
+    local -a words
+    words=(${(z)BUFFER})
+    first=$words[1]
+    second=$words[2]
+    [[ $BUFFER == $__thebleep_asked ]] && return
+    if [[ -n $first && $BUFFER == *[[:space:]]* && $first != *[/=\$\'\"\`]* ]] && ! (( $+commands[$first] + $+aliases[$first] + $+functions[$first] + $+builtins[$first] + $+reswords[$first] )); then
+        [[ -z $__thebleep_aliases ]] && __thebleep_aliases=$(alias)
+        __thebleep_what="$first is not a command"
+        __thebleep_ask "$BUFFER"
+    elif [[ -n $second && $first == [A-Za-z0-9]* && $second == [A-Za-z0-9]* && $BUFFER != *[/=\|\;\&\<\>\(\)\{\}\$\'\"\`\\]* ]] && (( $+commands[$first] )); then
+        __thebleep_what="$second is not a $first command"
+        __thebleep_ask "$BUFFER" known
+    else
+        __thebleep_cancel
+        __thebleep_asked=
+        __thebleep_answer=
+    fi
+    if [[ -n $__thebleep_shown && -z $__thebleep_answer ]]; then
+        __thebleep_shown=
+        zle -M ''
+    fi
+}
+__thebleep_line_init() {
+    __thebleep_asked=
+    __thebleep_answer=
+    __thebleep_aliases=
+    __thebleep_shown=
+}
+autoload -Uz add-zle-hook-widget
+add-zle-hook-widget line-pre-redraw __thebleep_watch
+add-zle-hook-widget line-init __thebleep_line_init
+add-zle-hook-widget line-finish __thebleep_cancel
+'''.replace('SOCK', self.quote(socket_path('zsh'))).replace(
+            'COMMAND', self._invocation())
 
     def _edit_line(self):
         """`print -z` is zsh's own answer to this, and has been for decades.

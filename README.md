@@ -481,6 +481,24 @@ question is asked of the warm server alone -- it runs at nearly every return
 -- and answered from files, so a line it has no opinion on costs a few
 milliseconds and is accepted as it was.
 
+In zsh the question is asked while the line is still being typed. Once the
+first word is finished, each keystroke puts the line to the warm server and
+carries on; the answer arrives a millisecond later through `zle -F`, and if
+it is for the line as it still stands, it is shown underneath and kept:
+
+```zsh
+$ gti --vers▌
+bleep: gti is not a command; return runs `git --vers`
+```
+
+Return then takes the answer it already has, so the correction costs
+nothing at the keystroke that matters. A keystroke that changes the line
+drops a pending question and a stale answer, and clearing the line clears
+the message. The hooks go in through `add-zle-hook-widget`, beside anything
+else that uses `zle-line-pre-redraw`, and the gate reads zsh's own
+`commands`, `aliases`, `functions`, `builtins` and `reswords` hashes, so a
+keystroke forks nothing.
+
 What this removes is the failed run and the second command for the two
 commonest mistakes there are, and what it costs is nothing for a line the
 shell recognises.

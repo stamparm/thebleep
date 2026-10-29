@@ -207,6 +207,47 @@ def test_bash_corrects_the_second_word_once_the_server_is_up(bash, TIMEOUT):
     assert bash.expect([TIMEOUT, u'git version'])
 
 
+def typed(proc, text, pause=0.08):
+    """Type `text` a character at a time, as a person does."""
+    import time
+
+    for character in text:
+        proc.send(character)
+        time.sleep(pause)
+
+
+@pytest.mark.functional
+def test_zsh_shows_the_fix_while_the_line_is_typed(zsh, TIMEOUT):
+    """With the server up, the message is there before return is pressed,
+    follows the line as it grows, and return takes the answer it already
+    has."""
+    zsh.send(u'gti --version\r')
+    assert zsh.expect([TIMEOUT, u'bleep: gti is not a command'])
+    zsh.send(u'\r')
+    assert zsh.expect([TIMEOUT, u'git version'])
+    zsh.sendline(wait_for_socket.format(u'zsh'))
+    assert zsh.expect([TIMEOUT, u'SOCKET_UP'])
+    typed(zsh, u'gti --vers')
+    assert zsh.expect([TIMEOUT, u'return runs `git --vers`'])
+    typed(zsh, u'ion')
+    assert zsh.expect([TIMEOUT, u'return runs `git --version`'])
+    zsh.send(u'\r')
+    assert zsh.expect([TIMEOUT, u'ctrl\\+_ puts yours back'])
+    zsh.send(u'\r')
+    assert zsh.expect([TIMEOUT, u'git version'])
+    # The second word too.
+    typed(zsh, u'git satus')
+    assert zsh.expect([TIMEOUT, u'satus is not a git command; '
+                                u'return runs `git status`'])
+    zsh.send(u'\r')
+    zsh.send(u'\r')
+    assert zsh.expect([TIMEOUT, u'not a git repository'])
+    # A line the shell knows shows nothing and runs as typed.
+    typed(zsh, u'echo un$(true)touched')
+    zsh.send(u'\r')
+    assert zsh.expect([TIMEOUT, u'untouched'])
+
+
 @pytest.mark.functional
 def test_zsh_corrects_the_second_word_once_the_server_is_up(zsh, TIMEOUT):
     """`git satus`: git is a command, so the shell's own check passes; the

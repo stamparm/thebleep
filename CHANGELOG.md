@@ -14,6 +14,18 @@
   on bash 4.3 through 5.2 and in vi insert mode, in containers. Ctrl+j and
   the handler underneath keep the old way.
 
+- **zsh asks while you type.** Once the first word of the line is finished,
+  every keystroke puts the line to the warm server through `zle -F`, and the
+  answer -- a millisecond later, if it is for the line as it still stands --
+  is shown underneath and kept, so return takes it without asking: the
+  correction costs nothing at the keystroke that matters. The hooks go in
+  through `add-zle-hook-widget`, the gate reads zsh's own `commands`,
+  `aliases`, `functions`, `builtins` and `reswords` hashes rather than
+  forking `whence`, and a keystroke that changes the line drops a pending
+  question and a stale answer. The callback has no editor state of its own,
+  so it hands the answer to a widget, which has; that is also how
+  zsh-autosuggestions does it.
+
 - **`git satus` is corrected before it runs.** The `--ambient` bindings
   caught one thing: a first word the shell had never heard of. `git satus`
   ran and failed as it always had, because `git` exists and the shell cannot
