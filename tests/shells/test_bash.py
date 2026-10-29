@@ -237,6 +237,33 @@ def test_the_ambient_check_asks_the_warm_server_through_socat_or_nc(settings):
         Bash().quote(sys.executable), Bash().quote(serve.CLIENT)) in binding
 
 
+def test_return_corrects_the_line_before_it_runs(settings):
+    """The macro chain: a `bind -x` check, then `accept-line` -- which a fix
+    turns into `redraw-current-line` for that one return."""
+    from thebleep.shells.bash import Bash
+
+    settings.warm_server = True
+    binding = Bash().ambient_binding()
+    for keymap in ('emacs', 'vi-insert'):
+        assert 'bind -m {} -x \'"\\C-x\\C-]": __thebleep_return\''.format(
+            keymap) in binding
+        assert 'bind -m {} \'"\\C-x\\C-^": accept-line\''.format(keymap) \
+            in binding
+        assert 'bind -m {} \'"\\C-m": "\\C-x\\C-]\\C-x\\C-^"\''.format(
+            keymap) in binding
+    assert '\'"\\C-j"' not in binding
+    assert 'read -r first second _ <<< "$READLINE_LINE"' in binding
+    assert '__thebleep_fixed "$READLINE_LINE" && fixed=$REPLY' in binding
+    assert '__thebleep_fixed "$READLINE_LINE" known && fixed=$REPLY' in binding
+    assert '$(type -t -- "$first" 2>/dev/null) == file' in binding
+    assert 'bind \'"\\C-x\\C-^": redraw-current-line\'' in binding
+    assert '[ "$known" = true ] && return 1' in binding
+    assert '\\"known\\": $known}' in binding
+    # The handler and the next-prompt hook stay underneath.
+    assert 'command_not_found_handle()' in binding
+    assert 'PROMPT_COMMAND+=(__thebleep_ambient)' in binding
+
+
 def test_the_placeholders_are_filled_in_one_pass(settings, mocker):
     """A chain of `replace` re-read what the earlier ones put in: an
     interpreter under a directory called `COMMAND` came out mangled."""

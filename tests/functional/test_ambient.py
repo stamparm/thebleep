@@ -36,6 +36,13 @@ def bash(spawnu, TIMEOUT):
     proc = spawnu(*python_3)
     proc.sendline(init_bashrc)
     proc.sendline(u'bash')
+    # Wait until readline has the terminal: a `\r` typed ahead of it reaches
+    # a tty still in canonical mode, which turns it into a newline -- ctrl+j,
+    # the key that is deliberately not bound. The marker's output comes after
+    # readline read the line, so the prompt after it is readline's own.
+    proc.sendline(u'echo READY_$(echo)NOW')
+    assert proc.expect([TIMEOUT, u'READY_NOW'])
+    assert proc.expect([TIMEOUT, u'\\$ '])
     return proc
 
 
@@ -71,7 +78,21 @@ def fish(spawnu, TIMEOUT):
 
 
 @pytest.mark.functional
-def test_bash_offers_the_fix_at_the_next_prompt(bash, TIMEOUT):
+def test_bash_replaces_the_line_before_anything_runs(bash, TIMEOUT):
+    """Return is a macro: a `bind -x` check, then accept-line. The check
+    rewrites the line and turns that one accept-line into a redraw."""
+    bash.send(u'gti --version\r')
+    assert bash.expect([TIMEOUT, u'bleep: gti is not a command'])
+    bash.send(u'\r')
+    assert bash.expect([TIMEOUT, u'git version'])
+
+
+@pytest.mark.functional
+def test_bash_ctrl_j_runs_the_line_and_offers_the_fix_at_the_next_prompt(
+        bash, TIMEOUT):
+    """`sendline` ends with a newline, which is ctrl+j, which is not bound:
+    the line runs and fails as it always did, and the handler underneath
+    leaves the fix at the next prompt."""
     bash.sendline(u'gti --version')
     assert bash.expect([TIMEOUT, u'gti: command not found'])
     # The corrected line, already in readline at the user's own prompt.
@@ -164,9 +185,25 @@ def test_bash_asks_the_warm_server_through_the_bare_interpreter(bash,
     bash.sendline(wait_for_socket.format(u'bash'))
     assert bash.expect([TIMEOUT, u'SOCKET_UP'])
     bash.sendline(u'thebleep() { return 1; }')
-    bash.sendline(u'gti --version')
-    assert bash.expect([TIMEOUT, u'\\$ git --version'])
+    bash.send(u'gti --version\r')
+    assert bash.expect([TIMEOUT, u'bleep: gti is not a command'])
     bash.send(u'\r')
+    assert bash.expect([TIMEOUT, u'git version'])
+
+
+@pytest.mark.functional
+def test_bash_corrects_the_second_word_once_the_server_is_up(bash, TIMEOUT):
+    bash.send(u'gti --version\r')
+    assert bash.expect([TIMEOUT, u'bleep: gti is not a command'])
+    bash.send(u'\r')
+    assert bash.expect([TIMEOUT, u'git version'])
+    bash.sendline(wait_for_socket.format(u'bash'))
+    assert bash.expect([TIMEOUT, u'SOCKET_UP'])
+    bash.send(u'git satus\r')
+    assert bash.expect([TIMEOUT, u'bleep: satus is not a git command'])
+    bash.send(u'\r')
+    assert bash.expect([TIMEOUT, u'not a git repository'])
+    bash.send(u'git version\r')
     assert bash.expect([TIMEOUT, u'git version'])
 
 

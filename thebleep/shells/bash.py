@@ -96,6 +96,11 @@ fi
     def _warm_client(self):
         """`__thebleep_fixed LINE`: the correction in `REPLY`, or status 1.
 
+        `__thebleep_fixed LINE known` asks the subcommand question
+        (`thebleep.ambient`) of the socket alone, as zsh and fish do: it is
+        asked at nearly every return, and without a socket it starts the
+        server and says no.
+
         With `warm_server` on, the server's socket is asked first, through
         `socat` or a netcat that speaks `-U`, whichever is installed -- bash
         has no socket client of its own, which is why only zsh used the
@@ -133,13 +138,14 @@ fi
         REPLY=$s
     }
     __thebleep_fixed() {
-        local sock=SOCK question answer script aliases cwd tb_path
+        local sock=SOCK question answer script aliases cwd tb_path known=false
+        [ "$2" = known ] && known=true
         if [ -S "$sock" ]; then
             __thebleep_json "$1"; script=$REPLY
             __thebleep_json "$TB_SHELL_ALIASES"; aliases=$REPLY
             __thebleep_json "$PWD"; cwd=$REPLY
             __thebleep_json "$PATH"; tb_path=$REPLY
-            question="{\"script\": \"$script\", \"aliases\": \"$aliases\", \"cwd\": \"$cwd\", \"path\": \"$tb_path\"}"
+            question="{\"script\": \"$script\", \"aliases\": \"$aliases\", \"cwd\": \"$cwd\", \"path\": \"$tb_path\", \"known\": $known}"
             if command -v socat >/dev/null 2>&1; then
                 answer=$(printf '%s\n' "$question" | socat - "UNIX-CONNECT:$sock" 2>/dev/null)
             elif command -v nc >/dev/null 2>&1; then
@@ -153,7 +159,8 @@ fi
             esac
         else
             (TB_SHELL=bash COMMAND --serve </dev/null >/dev/null 2>&1 &)
-        fi''' + direct + '\n    }'
+        fi
+        [ "$known" = true ] && return 1''' + direct + '\n    }'
         return fill(client, SOCK=self.quote(socket_path('bash')),
                     COMMAND=self._invocation(),
                     PYTHON=self.quote(sys.executable or ''),
@@ -162,12 +169,28 @@ fi
     def ambient_binding(self):
         """Correct a misspelled program without `bleep` being typed.
 
-        Bash runs `command_not_found_handle` in a subshell, so the handler
-        cannot put anything in the parent's line editor. It hands the fix to
-        the parent through a file of its own -- `$$` is the parent's pid even
-        in the subshell, and the file lives in The Bleep's cache directory,
-        created with a private mode -- and a `PROMPT_COMMAND` hook picks it
-        up before the next prompt and opens it in readline with `read -e -i`,
+        Return is bound to a macro of two keys: `C-x C-]`, a `bind -x`
+        function that reads `READLINE_LINE`, and `C-x C-^`, `accept-line`.
+        The function asks the same two questions zsh asks at return -- is the
+        first word a command the shell knows, and if it is, is the word
+        after it one the program has (`thebleep.ambient`) -- and on a fix it
+        rewrites the line, prints a message and rebinds `C-x C-^` to
+        `redraw-current-line` so that the macro's second half does nothing:
+        the corrected line sits in readline, nothing has run, and the next
+        return (which restores the binding first) runs it. Proven on bash
+        4.3 through 5.2 and in vi insert mode, in containers. Both keymaps
+        are bound explicitly: `bind -x` alone binds the keymap current at
+        the time, and a macro naming a key the other keymap lacks would
+        leave return broken after `set -o vi`.
+
+        `C-j` is not bound, and neither is anything else that accepts a
+        line, so there is still the handler underneath. Bash runs
+        `command_not_found_handle` in a subshell, so the handler cannot put
+        anything in the parent's line editor. It hands the fix to the parent
+        through a file of its own -- `$$` is the parent's pid even in the
+        subshell, and the file lives in The Bleep's cache directory, created
+        with a private mode -- and a `PROMPT_COMMAND` hook picks it up
+        before the next prompt and opens it in readline with `read -e -i`,
         exactly as tab does for an ordinary correction. Nothing runs until
         return is pressed on a line that is already the corrected command.
 
@@ -209,6 +232,35 @@ if [ "${{BASH_VERSINFO[0]:-0}}" -ge 4 ]; then
     else
         PROMPT_COMMAND="__thebleep_ambient${{PROMPT_COMMAND:+;$PROMPT_COMMAND}}"
     fi
+    __thebleep_return() {{
+        bind '"\\C-x\\C-^": accept-line'
+        local first second fixed what TB_SHELL_ALIASES TB_HISTORY
+        read -r first second _ <<< "$READLINE_LINE"
+        if [[ -n $first && $first != *[/=\\$\\'\\"\\`]* ]] && ! type -t -- "$first" >/dev/null 2>&1; then
+            TB_SHELL_ALIASES=$(alias)
+            TB_HISTORY=
+            {fit_transport}
+            __thebleep_fixed "$READLINE_LINE" && fixed=$REPLY
+            what="$first is not a command"
+        elif [[ -n $second && $first == [A-Za-z0-9]* && $second == [A-Za-z0-9]* && $READLINE_LINE != *[/=\\|\\;\\&\\<\\>\\(\\)\\{{\\}}\\$\\'\\"\\`\\\\]* && $(type -t -- "$first" 2>/dev/null) == file ]]; then
+            TB_SHELL_ALIASES=
+            TB_HISTORY=
+            __thebleep_fixed "$READLINE_LINE" known && fixed=$REPLY
+            what="$second is not a $first command"
+        fi
+        if [[ -n $fixed && $fixed != "$READLINE_LINE" ]]; then
+            READLINE_LINE=$fixed
+            READLINE_POINT=${{#fixed}}
+            printf '\\nbleep: %s; return runs `%s`\\n' "$what" "$fixed" >&2
+            bind '"\\C-x\\C-^": redraw-current-line'
+        fi
+    }}
+    bind -m emacs -x '"\\C-x\\C-]": __thebleep_return'
+    bind -m emacs '"\\C-x\\C-^": accept-line'
+    bind -m emacs '"\\C-m": "\\C-x\\C-]\\C-x\\C-^"'
+    bind -m vi-insert -x '"\\C-x\\C-]": __thebleep_return'
+    bind -m vi-insert '"\\C-x\\C-^": accept-line'
+    bind -m vi-insert '"\\C-m": "\\C-x\\C-]\\C-x\\C-^"'
 fi
 '''.format(fit_transport=fit_transport(), client=self._warm_client(),
            cache=self.quote(self._ambient_directory()),

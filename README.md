@@ -42,11 +42,11 @@ thebleep --alias-loader fuck >> ~/.bashrc
 
 ## What it does
 
-- **Fixes the typo before it runs.** Return on `gti status` in zsh, fish or
-  PowerShell replaces the line with `git status` and waits for a second
-  return; bash has the fix waiting at the next prompt. In zsh and fish
-  `git satus` is caught the same way, from git's own manual, with nothing
-  run. Nobody types `bleep` for the commonest mistakes there are.
+- **Fixes the typo before it runs.** Return on `gti status` in bash, zsh,
+  fish or PowerShell replaces the line with `git status` and waits for a
+  second return. In bash, zsh and fish `git satus` is caught the same way,
+  from git's own manual, with nothing run. Nobody types `bleep` for the
+  commonest mistakes there are.
   [Without typing bleep](#without-typing-bleep).
 - **Reads the answer off the screen.** When git says `the most similar command
   is status`, or npm lists the scripts, or `ls --sort=nmae` prints what `--sort`
@@ -416,23 +416,27 @@ $ git status
 bleep: gti is not a command; return runs `git status`, ctrl+_ puts yours back
 ```
 
-In zsh, fish and PowerShell, return is bound to a check: when the first word of the line
-is not a command, function, alias or builtin the shell knows — `whence -w`,
-`type -q` and `Get-Command` are asked, and cost nothing — the line is offered to the same
-command-only rules <kbd>Esc</kbd> <kbd>Esc</kbd> uses, and a correction
-replaces the line. Nothing has run yet, and return runs the corrected line. zsh
-says so in a message underneath, naming the undo key that puts yours back; fish
-prints the message without an undo hint; PowerShell replaces the line without
-a message. Every other line is accepted
-exactly as before, by whatever return was bound to before this, so another
-plugin's binding is kept.
+In zsh, fish, bash and PowerShell, return is bound to a check: when the first
+word of the line is not a command, function, alias or builtin the shell knows
+— `whence -w`, `type -q`, `type -t` and `Get-Command` are asked, and cost
+nothing — the line is offered to the same command-only rules
+<kbd>Esc</kbd> <kbd>Esc</kbd> uses, and a correction replaces the line.
+Nothing has run yet, and return runs the corrected line. zsh says so in a
+message underneath, naming the undo key that puts yours back; fish and bash
+print the message without an undo hint; PowerShell replaces the line without
+a message. Every other line is accepted exactly as before, by whatever return
+was bound to before this, so another plugin's binding is kept.
 
-Bash cannot reach its line editor from a handler — `command_not_found_handle`
-runs in a subshell — so there the command runs and fails as it always did,
-and the fix is waiting at the next prompt, already in readline, exactly as
-<kbd>tab</kbd> leaves an ordinary correction. It travels through a private
-file in The Bleep's cache directory, keyed by the shell's pid. Bash 4 or
-newer.
+Bash has no `accept-line` hook, so return there is a readline macro of two
+keys: a `bind -x` function that reads the line, and `accept-line`. When the
+function has a fix it rewrites the line and rebinds the second key to a
+redraw for that one press, so the corrected line sits in readline and the
+next return runs it. Proven on bash 4.3 through 5.2 and in vi insert mode.
+<kbd>ctrl</kbd>+<kbd>j</kbd> is left as it was, and so is anything else that
+accepts a line: those run the command, which fails as it always did, and the
+fix is waiting at the next prompt — `command_not_found_handle` runs in a
+subshell and hands it over through a private file in The Bleep's cache
+directory, keyed by the shell's pid. Bash 4 or newer.
 
 The check runs on a keystroke, so it is worth making fast. Starting Python
 costs about forty milliseconds, so the bindings ask a warm `thebleep --serve`
@@ -451,7 +455,7 @@ The check is deliberately narrow: only the first word, only when the shell
 itself has never heard of it, and never for a word with a slash, a quote, a
 variable or an assignment in it.
 
-The second word gets a check of its own in zsh and fish, on stricter terms,
+The second word gets a check of its own in zsh, fish and bash, on stricter terms,
 because the shell *does* know `git` and cannot know what git will think of
 `satus`. The machine can: git documents its commands one manual page each,
 `git-status.1` is there and `git-satus.1` is not, and the

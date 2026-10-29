@@ -4,10 +4,20 @@
 
 ### Added
 
+- **Bash corrects the line before it runs, like the others.** Bash's
+  `--ambient` ran the typo, failed, and left the fix at the next prompt,
+  because `command_not_found_handle` runs in a subshell. Return is now a
+  readline macro of two keys -- a `bind -x` function that reads the line and
+  asks the same questions zsh asks, then `accept-line` -- and a fix rewrites
+  the line and turns that one `accept-line` into a redraw, so `gti status`
+  becomes `git status` with nothing run and the next return runs it. Proven
+  on bash 4.3 through 5.2 and in vi insert mode, in containers. Ctrl+j and
+  the handler underneath keep the old way.
+
 - **`git satus` is corrected before it runs.** The `--ambient` bindings
   caught one thing: a first word the shell had never heard of. `git satus`
   ran and failed as it always had, because `git` exists and the shell cannot
-  know what git thinks of `satus`. In zsh and fish, return now puts the line
+  know what git thinks of `satus`. In bash, zsh and fish, return now puts the line
   to the warm server when its first word is a command and a plain word
   follows, and `thebleep.ambient` answers from the same manual pages and fish
   completions the rules read after a failure: `git-status.1` is there and
