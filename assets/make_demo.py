@@ -122,6 +122,47 @@ class Scene(object):
             self.wait(1000)
             self.blank()
 
+    def ambient(self, wrong, what, fixed, output=None):
+        """One mistake under `--ambient`, as zsh draws it: the answer shown
+        under the line while it is typed, the line rewritten by the first
+        return with nothing run, and the fix run by the second -- or, with
+        no `output`, left waiting for that return, to end the loop on."""
+        started = self.now
+        typed = started + len(wrong) * TYPE_MS
+        returned = typed + 1500
+        run = returned + 1700
+        row = self.row
+        self.parts.append({'kind': 'prompt', 'row': row, 'column': 0,
+                           'text': '$ ', 'from': started})
+        self.parts.append({'kind': 'text', 'row': row, 'column': 2,
+                           'text': wrong, 'from': started, 'typed_by': typed,
+                           'until': returned})
+        self.parts.append({'kind': 'cursor', 'row': row, 'column': 2,
+                           'text': wrong, 'from': started, 'typed_by': typed,
+                           'until': returned})
+        hint = 'bleep: %s; return runs `%s`' % (what, fixed)
+        self.parts.append({'kind': 'dim', 'row': row + 1, 'column': 0,
+                           'text': hint, 'from': typed + 120,
+                           'until': returned})
+        self.parts.append({'kind': 'text', 'row': row, 'column': 2,
+                           'text': fixed, 'from': returned})
+        waiting = {'kind': 'cursor', 'row': row, 'column': 2 + len(fixed),
+                   'text': '', 'from': returned, 'typed_by': returned}
+        message = {'kind': 'accent', 'row': row + 1, 'column': 0,
+                   'text': hint + ', ctrl+_ puts yours back',
+                   'from': returned}
+        self.parts.extend([waiting, message])
+        if output is None:
+            self.now = returned
+            self.row += 2
+            return
+        waiting['until'] = message['until'] = run
+        self.now = run + KEY_MS
+        self.row += 1
+        for line in output:
+            self.line(('text', line))
+        self.wait(900)
+
     # -- geometry ---------------------------------------------------------
 
     @property
@@ -258,29 +299,23 @@ MARKER = '❯'
 
 
 def demo():
-    """Four mistakes, four kinds of correction.
+    """Slips caught before they run, and two fixed after they failed.
 
     Every suggestion here is the one the rules really produce: each was run
     through `match` and `get_new_command` before being drawn, and the errors
-    above them are what the tools themselves print.
+    above them are what the tools themselves print. The `--ambient` lines
+    and their messages are what zsh showed when driven through them.
 
     """
     scene = Scene()
     scene.wait(500)
 
-    # A mistyped program name, by the `no_command` rule.
-    scene.case('gti status',
-               [('error', 'gti: command not found')],
-               [('accent', 'git'), ('text', ' status')],
-               '75%  from the command')
-
-    # A mistyped subcommand, by `pip_unknown_command`.
-    scene.case('pip instatl requests',
-               [('error', 'ERROR: unknown command "instatl" - maybe you meant '
-                          '"install"')],
-               [('text', 'pip '), ('accent', 'install'),
-                ('text', ' requests')],
-               '95%  from what it printed')
+    # A mistyped program, and a mistyped subcommand, caught at return.
+    scene.ambient('gti status', 'gti is not a command', 'git status',
+                  ['On branch bleep', 'nothing to commit, working tree clean'])
+    scene.ambient('git satus', 'satus is not a git command', 'git status',
+                  ['On branch bleep', 'nothing to commit, working tree clean'])
+    scene.blank()
 
     # Something that needed to be root, by the `sudo` rule.
     scene.case('apt-get install vim',
@@ -299,7 +334,9 @@ def demo():
     scene.wait(700)
     scene.line(('cyan', "Branch 'bleep' set up to track 'origin/bleep'."))
     scene.wait(200)
-    scene.waiting('$ ')
+
+    # And the loop ends where it began, on a line not yet run.
+    scene.ambient('dokcer ps', 'dokcer is not a command', 'docker ps')
 
     return scene, scene.now + END_MS
 
