@@ -323,8 +323,21 @@ def test_an_ordinary_command_draws_what_plain_bash_draws(settings, tmpdir):
 
 
 def test_a_typo_fails_and_its_fix_waits_at_the_next_prompt(settings, tmpdir):
-    """The old way, kept: bash's own error, then the fix in readline."""
+    """The old way, kept: bash's own error, then the fix in readline. Bash 4
+    or newer, which the binding asks for: macOS ships 3.2 as `bash`."""
+    import subprocess
+
     from thebleep.shells.bash import Bash
+
+    try:
+        major = subprocess.run(
+            ['bash', '-c', 'echo ${BASH_VERSINFO[0]}'],
+            stdout=subprocess.PIPE, timeout=10).stdout.decode().strip()
+    except (OSError, subprocess.SubprocessError):
+        major = ''
+    if not major.isdigit() or int(major) < 4:
+        pytest.skip('the binding needs bash 4 or newer; this is {!r}'.format(
+            major))
 
     settings.warm_server = True
     bash = _interactive_bash(tmpdir, Bash().ambient_binding() + u"""
