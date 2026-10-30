@@ -42,10 +42,18 @@ SHORTEST_HALF = 2
 
 
 def _splits(merged):
-    """`(first, second)` for every way to cut `merged` in two, both halves
-    long enough to mean something."""
-    for i in range(SHORTEST_HALF, len(merged) - SHORTEST_HALF + 1):
+    """`(first, second)` for every way to cut `merged` in two, the first
+    long enough to mean something; a one-character second half is weighed
+    by `_respaced`, which wants more than a name for it."""
+    for i in range(SHORTEST_HALF, len(merged)):
         yield merged[:i], merged[i:]
+
+
+def _a_path_instead(parts, second):
+    """`ca tf` -> `cat f`: `f` is a file here and `tf` is not."""
+    import os
+
+    return os.path.exists(second) and not os.path.exists(parts[1])
 
 
 def _respaced(command):
@@ -65,8 +73,11 @@ def _respaced(command):
     # a space left out, and `missing_space_before_known_subcommand` says so.
     found = [(a, b) for a, b in _splits(merged)
              if _is_a_command_already(a)
-             and (_is_a_command_already(b) or documented_subcommand(a, b)
-                  or (len(a) > len(parts[0]) and _ARGUMENT.match(b)))]
+             and ((len(b) >= SHORTEST_HALF
+                   and (_is_a_command_already(b)
+                        or documented_subcommand(a, b)))
+                  or (len(a) > len(parts[0])
+                      and (_ARGUMENT.match(b) or _a_path_instead(parts, b))))]
 
     if len(found) != 1:
         return None

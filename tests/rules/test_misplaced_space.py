@@ -120,3 +120,19 @@ def test_a_flag_never_swallows_the_next_word(mocker, script):
     mocker.patch('thebleep.rules.misplaced_space.which', return_value=None)
 
     assert not match(Command(script, ''))
+
+
+@pytest.mark.usefixtures('no_memoize')
+def test_a_file_here_is_evidence_for_the_space(mocker, tmpdir, monkeypatch):
+    """`ca tf` -> `cat f`: `f` is in the directory and `tf` is not."""
+    mocker.patch(
+        'thebleep.rules.missing_space_before_subcommand.get_all_executables',
+        return_value=['cat', 'find'])
+    mocker.patch('thebleep.rules.misplaced_space.which', return_value=None)
+    monkeypatch.chdir(tmpdir)
+    tmpdir.join('f').write('')
+
+    assert get_new_command(Command('ca tf', '')) == ['cat f']
+    assert get_new_command(Command('fin d. -name x', '')) == [
+        'find . -name x']
+    assert not match(Command('ca tnotes', ''))

@@ -82,9 +82,9 @@ _ARGUMENT = re.compile(r'^(?:[-+/~]|\.{1,2}(?:/|$))')
 
 @memoize
 def _get_executable(script_part):
-    """The program `script_part` starts with: the one whose remainder is
-    certain to be an argument if there is one, otherwise the longest --
-    `sshhost` is `ssh host`, not `ss hhost`."""
+    """The program `script_part` starts with: the longest -- `sshhost` is
+    `ssh host`, not `ss hhost`, and `apt-getupdate` is `apt-get update`, not
+    `apt -getupdate`."""
     found = []
     for executable in get_all_executables():
         if len(executable) <= 1 or not script_part.startswith(executable):
@@ -96,9 +96,7 @@ def _get_executable(script_part):
         found.append(executable)
     if not found:
         return None
-    return max(found, key=lambda executable: (
-        bool(_ARGUMENT.match(script_part[len(executable):])),
-        len(executable)))
+    return max(found, key=len)
 
 
 def _is_a_command_already(word):

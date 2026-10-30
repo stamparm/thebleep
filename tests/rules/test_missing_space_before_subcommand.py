@@ -153,3 +153,15 @@ def test_a_file_of_that_name_here_is_not_split(tmpdir, monkeypatch):
     monkeypatch.chdir(tmpdir)
     tmpdir.join('script.sh').write('#!/bin/sh\n')
     assert not match(Command('script.sh', 'fish: Unknown command: script.sh'))
+
+
+def test_the_longest_program_is_split_off(mocker):
+    """`apt-getupdate` is `apt-get update`; `apt -getupdate` was offered
+    because a dash looked like a flag."""
+    from thebleep.rules.missing_space_before_subcommand import split_at
+
+    mocker.patch(
+        'thebleep.rules.missing_space_before_subcommand.get_all_executables',
+        return_value=['apt', 'apt-get', 'ss', 'ssh'])
+    assert split_at(Command('apt-getupdate', '')) == 'apt-get update'
+    assert split_at(Command('sshhost', '')) == 'ssh host'
