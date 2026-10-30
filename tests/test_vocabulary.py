@@ -157,7 +157,17 @@ class TestPagesOfOtherPrograms(object):
     host -- to `ssh add` before it ran."""
 
     @pytest.fixture
-    def pages(self, home, os_environ, monkeypatch):
+    def on_path(self, mocker):
+        """What `which` finds, named rather than made: an executable script
+        on `PATH` is found on POSIX and not on Windows, where only PATHEXT's
+        extensions run."""
+        found = {'tool-add'}
+        mocker.patch('thebleep.utils.which',
+                     side_effect=lambda name: name if name in found else None)
+        return found
+
+    @pytest.fixture
+    def pages(self, home, os_environ, monkeypatch, on_path):
         man1 = home.join('man', 'man1')
         man1.join('tool-add.1').write(
             u'.SH NAME\ntool-add \\- adds keys\n.SH SYNOPSIS\n'
@@ -167,11 +177,6 @@ class TestPagesOfOtherPrograms(object):
             u'.SH NAME\ntool-login\n.SH Synopsis\n.SH Description\n')
         man1.join('tool-keysign.1').write(
             u'.SH NAME\ntool-keysign \\- a helper\n')
-        bin_ = home.mkdir('bin')
-        program = bin_.join('tool-add')
-        program.write('#!/bin/sh\n')
-        program.chmod(0o755)
-        os_environ['PATH'] = str(bin_)
         libexec = home.mkdir('libexec').mkdir('tool')
         libexec.join('tool-keysign').write('')
         monkeypatch.setattr(vocabulary, 'HELPER_DIRECTORIES',
@@ -187,10 +192,8 @@ class TestPagesOfOtherPrograms(object):
     def test_a_page_that_says_nothing_still_names_a_subcommand(self, pages):
         assert 'login' in vocabulary.subcommands('tool')
 
-    def test_a_page_that_spells_it_wins_over_path(self, pages, os_environ):
-        program = pages.join('bin', 'tool-cherry')
-        program.write('#!/bin/sh\n')
-        program.chmod(0o755)
+    def test_a_page_that_spells_it_wins_over_path(self, pages, on_path):
+        on_path.add('tool-cherry')
         assert 'cherry' in vocabulary.subcommands('tool')
 
 
