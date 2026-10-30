@@ -248,7 +248,7 @@ class TestAmbient(object):
     def test_the_word_test_is_one_fish_string(self, shell):
         """A quote inside a single-quoted fish string has to be escaped, or
         the pattern ends there and the rest is shell syntax."""
-        expected = "string match -qr '[/=$\\'\"`]' -- \"$first\""
+        expected = "string match -qr '[/=$\\'\"`;&|<>()]' -- \"$first\""
         assert expected in shell.ambient_binding()
 
 
@@ -291,3 +291,27 @@ def test_the_ambient_check_asks_the_warm_server_through_socat_or_nc(settings):
     assert 'if test $known = true\n        return 1' in binding
     assert '{} -S -I -c {} "$sock"'.format(
         Fish().quote(sys.executable), Fish().quote(serve.CLIENT)) in binding
+
+
+# The first word of `reset; ssh me@host`, as a split on spaces sees it.
+NOT_A_PROGRAM_NAME = ['reset;', 'true&&', 'true||', 'true|', 'true>',
+                      'true<', '(true)', 'true&']
+
+
+def test_a_first_word_with_shell_syntax_in_it_is_not_asked_about(settings):
+    """fish splits the line on spaces, so `reset;` was the first word, was
+    no command, and `reset; ssh me@web-server` was asked about -- and came
+    back from the history rule with another host in it. The pattern that
+    turns such a word away, taken from the binding and run here."""
+    import re
+
+    settings.warm_server = True
+    binding = Fish().ambient_binding()
+    found = re.search(r"string match -qr '((?:\\'|[^'])*)' -- \"\$first\";"
+                      r" and not type -q", binding)
+    assert found, 'the first-word pattern moved; find it again'
+    pattern = re.compile(found.group(1).replace("\\'", "'"))
+    for word in NOT_A_PROGRAM_NAME:
+        assert pattern.search(word), word
+    for word in ('gti', 'git', 'docker-compose', 'python3.12'):
+        assert not pattern.search(word), word

@@ -139,7 +139,7 @@ Set-PSReadLineKeyHandler -Key Enter -BriefDescription 'TheBleepAmbient' -Descrip
     $cursor = $null
     [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
     $first = ($line.TrimStart() -split '\\s+', 2)[0]
-    if (-not [string]::IsNullOrWhiteSpace($first) -and $first -notmatch '[\\\\/=$`"'']' -and -not (Get-Command -Name $first -ErrorAction SilentlyContinue)) {{
+    if (-not [string]::IsNullOrWhiteSpace($first) -and $first -notmatch '[\\\\/=$`"'';&|<>()]' -and -not (Get-Command -Name $first -ErrorAction SilentlyContinue)) {{
         $shell = $env:TB_SHELL
         $env:TB_SHELL = 'powershell'
         try {{

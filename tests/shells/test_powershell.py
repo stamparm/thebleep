@@ -127,6 +127,25 @@ class TestKeyHandlers(object):
 
     def test_a_word_with_syntax_in_it_is_left_alone(self, shell):
         """The pattern is one PowerShell string: a doubled quote inside it.
-        Verified against pwsh 7: `a"b`, `x/y`, `$env`, `FOO=1`, `it's`,
-        `` a`b `` and `C:\\x` all fail the test, `gti` passes it."""
-        assert '''-notmatch '[\\\\/=$`"'']\'''' in shell.ambient_binding()
+        Verified against pwsh 7.5: `a"b`, `x/y`, `$env`, `FOO=1`, `it's`,
+        `` a`b ``, `C:\\x`, `reset;`, `true&&`, `true|`, `true>` and `(true)`
+        all fail the test, `gti` and `Get-ChildItem` pass it."""
+        assert '''-notmatch '[\\\\/=$`"'';&|<>()]\'''' in shell.ambient_binding()
+
+
+def test_a_first_word_with_shell_syntax_in_it_is_not_asked_about(settings):
+    """`reset; ssh me@web-server` split on whitespace has `reset;` for a first
+    word, which is no command -- and was asked about, and came back from the
+    history rule with another host in it. The pattern that turns it away,
+    taken from the binding and run here as .NET would."""
+    import re
+
+    binding = Powershell().ambient_binding()
+    found = re.search(r"\$first -notmatch '((?:[^']|'')*)'", binding)
+    assert found, 'the first-word pattern moved; find it again'
+    pattern = re.compile(found.group(1).replace("''", "'"))
+    for word in ('reset;', 'true&&', 'true||', 'true|', 'true>', 'true<',
+                 '(true)', 'true&'):
+        assert pattern.search(word), word
+    for word in ('gti', 'git', 'Get-ChildItem', 'docker-compose'):
+        assert not pattern.search(word), word

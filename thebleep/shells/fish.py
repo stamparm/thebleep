@@ -250,7 +250,7 @@ function __thebleep_ambient_execute
     set -l buffer (commandline | string collect)
     set -l words (string split ' ' -- (string trim -l -- "$buffer"))
     set -l first $words[1]
-    if test -n "$first"; and not string match -qr '[/=$\\'"`]' -- "$first"; and not type -q -- "$first"
+    if test -n "$first"; and not string match -qr '[/=$\\'"`;&|<>()]' -- "$first"; and not type -q -- "$first"
         set -l shell_aliases (alias | string collect)
         if test (string length -- "$shell_aliases") -gt {limit}
             set shell_aliases
