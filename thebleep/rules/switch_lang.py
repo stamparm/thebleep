@@ -100,6 +100,11 @@ def _decompose_korean(command):
 def match(command):
     if 'not found' not in command.output:
         return False
+    # Every layout maps onto English, so a line already all ASCII has nothing
+    # to switch -- and the Hebrew row carries the Latin capitals, so
+    # `GO TEST ./...` "matched" it and came back as `GO TEST /q///`.
+    if all(ord(ch) < 128 for ch in command.script):
+        return False
     if any(u'ㄱ' <= ch <= u'ㅎ' or u'ㅏ' <= ch <= u'ㅣ' or u'가' <= ch <= u'힣'
             for ch in command.script):
         return True

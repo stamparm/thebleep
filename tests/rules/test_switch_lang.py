@@ -66,3 +66,12 @@ def test_a_layout_it_cannot_place_is_not_a_crash():
 
     command = Command(u'ㅣㄴ mixed with latin', 'command not found')
     assert switch_lang.get_new_command(command) is not None
+
+
+@pytest.mark.parametrize('script', ['GO TEST ./...', 'DOCKER BUILD .',
+                                    'LS -LA /TMP'])
+def test_a_line_already_in_ascii_has_no_layout_to_switch(script):
+    """The Hebrew row carries the Latin capitals, so caps lock "matched" it:
+    `GO TEST ./...` came back as `GO TEST /q///`."""
+    assert not switch_lang.match(Command(
+        script, 'bash: {}: command not found'.format(script.split()[0])))
