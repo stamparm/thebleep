@@ -17,6 +17,22 @@ manual pages and completions -- so the numbers are this machine's.
 replaces what was typed; `none` only leaves the line to fail as it would
 have. A seed whose program is not installed is skipped, and said so.
 
+Two more classes: `keep`, lines that are right as typed with the arguments
+people really give them (`ssh adm`, `make ssl`, `npm ci`) -- any rewrite is
+wrong -- and `alias`, a program's first letter fused to its subcommand
+(`gcomit`). The keyboard is a physical one: rows staggered, neighbours within
+1.3 key widths, the same geometry `thebleep.matching` measures with.
+
+After a failure is measured in containers, one per family, where the typos
+run for real with no network and the engine reads what they printed:
+
+    python3 bench/typo_classes.py --emit debian \\
+        | docker run --rm -i --network none -v "$PWD:/src:ro" <image> \\
+            python3 /src/bench/typo_after.py /work
+
+`<image>` is the family's base with the tool, Python, `psutil` and `pyte`
+installed and `PYTHONPATH=/src`; `typo_after.py` prints one JSON row per typo.
+
 """
 
 import collections
@@ -33,28 +49,69 @@ from thebleep import ambient  # noqa: E402
 from thebleep.serve import correct  # noqa: E402
 from thebleep.utils import forget_memoized  # noqa: E402
 
-SEEDS = ['git status', 'git commit -m x', 'git push', 'git pull', 'git log',
-         'git diff', 'git branch', 'git checkout main', 'git stash',
-         'git merge dev', 'git rebase main', 'git fetch', 'git clone url',
-         'docker ps', 'docker images', 'docker run x', 'docker exec x sh',
-         'docker build .', 'docker pull x', 'ls -la', 'grep -r foo .',
-         'python3 -V', 'pip install x', 'pip list', 'npm install', 'npm test',
-         'cargo build', 'make clean', 'df -h', 'du -sh .', 'ps aux',
-         'cat f', 'head -n 3 f', 'tail -f log', 'systemctl status x',
-         'journalctl -u x', 'apt install x', 'ssh host', 'curl -s url',
-         'tar -xf a.tar', 'find . -name x', 'kill -9 1', 'chmod +x f',
-         'mkdir -p a', 'less f', 'vim f', 'man ls', 'which ls',
-         'sudo apt update', 'go build', 'node -v', 'kubectl get pods']
+FAMILIES = {
+    'debian': ['git status', 'git commit -m x', 'git push', 'git log',
+               'git diff', 'git branch', 'git checkout main', 'git stash',
+               'git merge dev', 'git rebase main', 'git fetch',
+               'apt install vim', 'apt-get update', 'apt search vim',
+               'pip install requests', 'pip list', 'python3 -V', 'ls -la',
+               'grep -r foo .', 'tar -xf a.tar', 'make clean', 'cat f',
+               'head -n 3 f', 'du -sh .', 'df -h', 'chmod +x f', 'mkdir -p a',
+               'find . -name x', 'ps aux', 'ssh host', 'less f', 'man ls',
+               'which ls', 'kill -9 1', 'tail -f log', 'curl -s url'],
+    'node': ['npm install', 'npm test', 'npm run build', 'npm ls',
+             'yarn add x', 'yarn install', 'pnpm install', 'node -v'],
+    'rust': ['cargo build', 'cargo test', 'cargo run', 'cargo check',
+             'cargo clippy', 'rustup update'],
+    'golang': ['go build', 'go test ./...', 'go mod tidy', 'go run .',
+               'go vet ./...'],
+    'fedora': ['dnf install vim', 'dnf search vim', 'dnf upgrade',
+               'rpm -qa'],
+    'opensuse': ['zypper install vim', 'zypper search vim',
+                 'zypper refresh'],
+    'alpine': ['apk add vim', 'apk search vim', 'apk update'],
+    'arch': ['pacman -S vim', 'pacman -Ss vim', 'pacman -Syu'],
+    'docker': ['docker ps', 'docker images', 'docker run x',
+               'docker exec x sh', 'docker build .', 'docker pull x',
+               'docker logs x', 'docker compose up'],
+    'local': ['kubectl get pods', 'systemctl status x', 'journalctl -u x',
+              'node -v', 'go build', 'gh pr list', 'helm list', 'uv sync',
+              'snap list', 'flatpak list', 'openssl version', 'ip addr',
+              'sudo apt update', 'vim f', 'tmux ls', 'gpg --list-keys'],
+}
+SEEDS = sorted({seed for seeds in FAMILIES.values() for seed in seeds})
 
-ROWS = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm']
+# Lines that are right as typed, with the arguments real people give them:
+# hostnames, targets, files, branches, scripts. Any rewrite is wrong.
+KEEP = ['ssh adm', 'ssh web1', 'ssh db', 'ssh arm', 'ssh pi', 'ssh nas',
+        'ssh dev', 'ssh addr', 'ssh agnet', 'ping gw', 'make all',
+        'make test', 'make install', 'make ssl', 'make dist', 'make docs',
+        'cat notes', 'cat stauts', 'git checkout dev', 'git checkout fix',
+        'git log main', 'git rm f', 'git mv a b', 'git show', 'git tag',
+        'npm run dev', 'npm ci', 'npm ls', 'npm i', 'npm init',
+        'docker cp a b', 'docker rm x', 'docker rmi x', 'docker top x',
+        'docker logs web', 'docker run nginx', 'apt show git',
+        'apt list', 'apt remove x', 'apt purge x', 'apt autoremove',
+        'pip show x', 'pip freeze', 'pip check', 'cargo run', 'cargo add x',
+        'go run .', 'go get x', 'python3 app.py', 'node app', 'man ssh',
+        'which python', 'cd src', 'ls src', 'vim notes', 'less log',
+        'ip a', 'ip r', 'ip link', 'kubectl logs api', 'kubectl cp a b',
+        'systemctl restart nginx', 'systemctl stop x', 'journalctl -f',
+        'gpg --list-keys', 'openssl rand 8', 'flatpak run x', 'snap run x',
+        'tmux a', 'tmux new', 'gh repo view', 'helm ls', 'uv run x',
+        'git st', 'git co main', 'git ci', 'git br', 'npm t', 'npm rb',
+        'docker ps -a', 'kill %1', 'tar tf a.tar', 'grep -rn x .']
+
+# A physical QWERTY: each row starts further right than the one above it,
+# and two keys are neighbours when their centres are within 1.3 key widths.
+ROWS = ((0.50, 'qwertyuiop'), (0.75, 'asdfghjkl'), (1.25, 'zxcvbnm'))
+PLACE = {ch: (offset + col, row) for row, (offset, keys) in enumerate(ROWS)
+         for col, ch in enumerate(keys)}
 NEAR = collections.defaultdict(set)
-for r, row in enumerate(ROWS):
-    for c, ch in enumerate(row):
-        for dr in (-1, 0, 1):
-            if 0 <= r + dr < 3:
-                for dc in (-1, 0, 1):
-                    if (dr, dc) != (0, 0) and 0 <= c + dc < len(ROWS[r + dr]):
-                        NEAR[ch].add(ROWS[r + dr][c + dc])
+for a, (ax, ay) in PLACE.items():
+    for b, (bx, by) in PLACE.items():
+        if a != b and ((ax - bx) ** 2 + (ay - by) ** 2) ** 0.5 <= 1.3:
+            NEAR[a].add(b)
 
 
 def in_word(words, i, f):
@@ -100,6 +157,9 @@ def mutations(seed):
     for i, w in enumerate(words):
         if re.match(r'^-[a-z]+$', w):
             m['stray'].append(' '.join(words[:i] + ['-', w[1:]] + words[i + 1:]))
+    if len(words) > 1 and plain_words(words):
+        m['alias'] += [words[0][0] + words[1]] + [
+            words[0][0] + new for new in omit(words[1]) if len(new) > 2]
     m['case'] += [seed.upper(), ' '.join([words[0].capitalize()] + words[1:]),
                   ' '.join([words[0].upper()] + words[1:])]
     if len(words) > 1 and words[1] in plain_words(words):
@@ -135,7 +195,20 @@ def at_return(line):
     return None
 
 
+def emit(family):
+    import json
+    for seed in FAMILIES[family]:
+        for cls, lines in sorted(mutations(seed).items()):
+            if cls in ('alias',):
+                continue
+            for line in dict.fromkeys(lines):
+                if line != seed:
+                    print(json.dumps([cls, line, seed]))
+
+
 def main(argv):
+    if argv[:1] == ['--emit']:
+        return emit(argv[1])
     settings.init()
     seeds = [s for s in SEEDS if kind(s.split()[0])]
     stats = collections.defaultdict(collections.Counter)
@@ -155,6 +228,15 @@ def main(argv):
                 else:
                     stats[cls]['wrong'] += 1
                     wrong[cls].append((line, got, seed))
+    for line in KEEP:
+        if not kind(line.split()[0]):
+            continue
+        got = at_return(line)
+        if got is None:
+            stats['keep']['right'] += 1
+        else:
+            stats['keep']['wrong'] += 1
+            wrong['keep'].append((line, got, line))
     print('seeds %d (skipped, not installed: %s)'
           % (len(seeds), [s for s in SEEDS if s not in seeds]))
     tr = tw = tn = 0
