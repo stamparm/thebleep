@@ -54,8 +54,13 @@ def machine(tmpdir, os_environ, monkeypatch, mocker):
     monkeypatch.chdir(work)
     # `which` is memoized for the process; the machine here is a new one.
     from thebleep import utils
+    from thebleep.rules import not_on_path
 
     monkeypatch.setattr(utils.memoize, 'disabled', True)
+    # Nor the real machine's system directories: a `/usr/local/bin/pytest`
+    # turned up as a second answer wherever one was installed.
+    monkeypatch.setattr(not_on_path, 'HOMES', tuple(
+        place for place in not_on_path.HOMES if place.startswith('~')))
     return tmpdir
 
 
