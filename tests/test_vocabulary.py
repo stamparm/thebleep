@@ -150,6 +150,50 @@ class TestSubcommands(object):
         assert vocabulary.options('nothing') == []
 
 
+@pytest.mark.usefixtures('no_memoize')
+class TestPagesOfOtherPrograms(object):
+    """`ssh-add.1` is not `ssh add`: it says `ssh-add`, and `ssh-add` is a
+    program of its own. Taking it for a subcommand rewrote `ssh adm` -- a
+    host -- to `ssh add` before it ran."""
+
+    @pytest.fixture
+    def pages(self, home, os_environ, monkeypatch):
+        man1 = home.join('man', 'man1')
+        man1.join('tool-add.1').write(
+            u'.SH NAME\ntool-add \\- adds keys\n.SH SYNOPSIS\n'
+            u'\\fBtool-add\\fR [\\-c]\n')
+        # npm's pages, as Debian ships them: a synopsis with nothing in it.
+        man1.join('tool-login.1').write(
+            u'.SH NAME\ntool-login\n.SH Synopsis\n.SH Description\n')
+        man1.join('tool-keysign.1').write(
+            u'.SH NAME\ntool-keysign \\- a helper\n')
+        bin_ = home.mkdir('bin')
+        program = bin_.join('tool-add')
+        program.write('#!/bin/sh\n')
+        program.chmod(0o755)
+        os_environ['PATH'] = str(bin_)
+        libexec = home.mkdir('libexec').mkdir('tool')
+        libexec.join('tool-keysign').write('')
+        monkeypatch.setattr(vocabulary, 'HELPER_DIRECTORIES',
+                            (str(home.join('libexec', '*')),), raising=False)
+        return home
+
+    def test_a_program_on_path_is_its_own_command(self, pages):
+        assert 'add' not in vocabulary.subcommands('tool')
+
+    def test_a_helper_the_package_runs_is_too(self, pages):
+        assert 'keysign' not in vocabulary.subcommands('tool')
+
+    def test_a_page_that_says_nothing_still_names_a_subcommand(self, pages):
+        assert 'login' in vocabulary.subcommands('tool')
+
+    def test_a_page_that_spells_it_wins_over_path(self, pages, os_environ):
+        program = pages.join('bin', 'tool-cherry')
+        program.write('#!/bin/sh\n')
+        program.chmod(0o755)
+        assert 'cherry' in vocabulary.subcommands('tool')
+
+
 class TestOptions(object):
     def test_roff_escaped_dashes(self, home):
         assert set(vocabulary.options('tool')) >= {'color', 'verbose', 'dry-run'}

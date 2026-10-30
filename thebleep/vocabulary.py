@@ -40,7 +40,7 @@ import re
 from . import cachefile
 
 # Bumped when what is gathered or how changes, so an older cache is a miss.
-FORMAT = 2
+FORMAT = 3
 
 MAX_PAGE = 2 * 1024 * 1024
 MAX_COMPLETION = 1024 * 1024
@@ -236,13 +236,36 @@ def _spelled(tool, rest, text):
     return None
 
 
+# Where a package keeps the programs it runs itself: `ssh-keysign`,
+# `snap-confine`, `gpg-check-pattern`. A page named after one of those is
+# about that program. git keeps every subcommand in `/usr/lib/git-core` too,
+# but git's pages spell `git add`, so they never get this far.
+HELPER_DIRECTORIES = ('/usr/lib/*', '/usr/libexec', '/usr/libexec/*',
+                      '/usr/local/libexec')
+
+
+def _helper(name):
+    import glob
+
+    return any(os.path.isfile(os.path.join(directory, name))
+               for pattern in HELPER_DIRECTORIES
+               for directory in glob.glob(pattern))
+
+
 def _subcommands_from_pages(tool, pages, spelling):
     """The command words of every page, as `tool a b` tuples.
 
     `spelling` is what `_spelled` found per page; a page that did not say is
-    read as one command with dashes, which is what most tools mean.
+    read as one command with dashes, which is what most tools mean -- unless
+    `tool-rest` is a program of its own on `PATH`. `ssh-add`, `apt-cache`,
+    `gpg-agent` and `dpkg-deb` are, their pages say `ssh-add` and never
+    `ssh add`, and taking them for subcommands rewrote `ssh adm` (a host)
+    to `ssh add` before it ran. npm's pages say nothing either way, and
+    `npm-login` is no program, so they still count.
 
     """
+    from .utils import which
+
     commands = set()
     prefix = tool + '-'
     for name in pages:
@@ -251,7 +274,11 @@ def _subcommands_from_pages(tool, pages, spelling):
         rest = name[len(prefix):]
         if not rest or rest.startswith('-') or '--' in rest:
             continue
-        words = spelling.get(name) or (rest,)
+        words = spelling.get(name)
+        if not words:
+            if which(name) or _helper(name):
+                continue
+            words = (rest,)
         commands.add(tuple(words))
     return commands
 
