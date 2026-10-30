@@ -1,5 +1,60 @@
 # Changelog
 
+## 4.0.7 — unreleased
+
+### Fixed
+
+- **Bash no longer redraws the prompt after every command.** 4.0.6 bound
+  return in bash to a `bind -x` check that corrected the line before it
+  ran, and bash erases and redraws the prompt line after every `bind -x`
+  function -- so with `--ambient`, every command flickered, typo or not.
+  Return is no longer bound in bash: the typo runs and fails with bash's own
+  message, and the fix is waiting at the next prompt, as before 4.0.6. zsh,
+  fish, PowerShell, xonsh and Elvish still correct the line before it runs.
+
+- **A line is never rewritten to one from history before it has run.**
+  `reset; ssh user@web-server` came back at return as `reset; ssh
+  user@build-server` -- another host, a different one each time history
+  moved. The bash check read `reset;` as a program it had never heard of,
+  and the history rule, asked about a line that had not run, matched a past
+  one whose host shared the `user@`. Now: the bash, fish and PowerShell
+  checks leave a first word with `;`, `&`, `|`, `<`, `>`, `(` or `)` in it
+  alone; the history rule says nothing for a line that has not run; and a
+  word counts as near a past one only within one slip, measured as every
+  other rule measures it, not by what the two have in common.
+
+- **`ssh adm` is no longer rewritten to `ssh add` before it runs.** A man
+  page that never spells `tool word` and names a program of its own on
+  `PATH` or a package's helper -- `ssh-add`, `apt-cache`, `gpg-agent`,
+  `dpkg-deb` -- was read as a subcommand, so a host one letter from `add`
+  or `agent` was "corrected", and `apt cahce` became `apt cache`, which apt
+  does not have. Those pages are now taken for the programs they are; the
+  vocabulary cache is rebuilt on upgrade.
+
+- **Before a line runs, an unknown program is rewritten only for one
+  plausible slip.** Two edits away (`dbild` was `bind`), a single letter
+  (`g build` was `rg build`), or a short word with two equal answers (`ho`
+  is `go` and `who`) now leave the line alone, unless your history or the
+  next word picks one. After a failure the list is what it was.
+
+- **`GO TEST ./...` is no longer turned into `GO TEST /q///`.** The
+  keyboard-layout rule took a line in capitals for Hebrew, whose row carries
+  the Latin capitals; it now wants a character that is not ASCII.
+
+- **`apt-getupdate` is `apt-get update`**, not `apt -getupdate`: a fused word
+  is split at the longest program. And `ca tf` is `cat f`, `fin d.` is
+  `find .`, when the file is there and the other is not.
+
+### Changed
+
+- **`bench/typo_classes.py` measures about twenty tools on both paths.** A
+  physical keyboard, a class of lines that are right as typed and must be
+  left alone (`ssh adm`, `make ssl`, `npm ci`, compound lines), the `gcomit`
+  shape, and `bench/typo_after.py` to run each typo for real in a container
+  and score what `bleep` offers after it fails. Before a line runs, wrong
+  rewrites went from 8.3% to 4.0% with nothing that was right as typed
+  touched; after a failure, across nine distributions, from 6.1% to 5.8%.
+
 ## 4.0.6 — 2026-10-30
 
 ### Added
