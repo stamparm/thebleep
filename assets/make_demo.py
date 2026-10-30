@@ -106,11 +106,11 @@ class Scene(object):
 
     def case(self, wrong, error, correction, confidence, separate=True):
         """One mistake: what was typed, what came back, what to run instead."""
-        self.type('$ ', wrong, then=260)
+        self.type(PROMPT, wrong, then=260)
         for run in error:
             self.line(run)
         self.wait(READ_MS)
-        self.type('$ ', 'bleep', then=380)
+        self.type(PROMPT, 'bleep', then=380)
         # The suggestion list as `menu` draws it: the chosen row marked, the
         # confidence at the right edge, the keys on the line below.
         shown = sum(len(text) for _, text in correction)
@@ -133,20 +133,20 @@ class Scene(object):
         run = returned + 1700
         row = self.row
         self.parts.append({'kind': 'prompt', 'row': row, 'column': 0,
-                           'text': '$ ', 'from': started})
-        self.parts.append({'kind': 'text', 'row': row, 'column': 2,
+                           'text': PROMPT, 'from': started})
+        self.parts.append({'kind': 'text', 'row': row, 'column': len(PROMPT),
                            'text': wrong, 'from': started, 'typed_by': typed,
                            'until': returned})
-        self.parts.append({'kind': 'cursor', 'row': row, 'column': 2,
+        self.parts.append({'kind': 'cursor', 'row': row, 'column': len(PROMPT),
                            'text': wrong, 'from': started, 'typed_by': typed,
                            'until': returned})
         hint = 'bleep: %s; return runs `%s`' % (what, fixed)
         self.parts.append({'kind': 'dim', 'row': row + 1, 'column': 0,
                            'text': hint, 'from': typed + 120,
                            'until': returned})
-        self.parts.append({'kind': 'text', 'row': row, 'column': 2,
+        self.parts.append({'kind': 'text', 'row': row, 'column': len(PROMPT),
                            'text': fixed, 'from': returned})
-        waiting = {'kind': 'cursor', 'row': row, 'column': 2 + len(fixed),
+        waiting = {'kind': 'cursor', 'row': row, 'column': len(PROMPT) + len(fixed),
                    'text': '', 'from': returned, 'typed_by': returned}
         message = {'kind': 'accent', 'row': row + 1, 'column': 0,
                    'text': hint + ', ctrl+_ puts yours back',
@@ -276,8 +276,8 @@ def render(scene, total, at=None):
     return '\n'.join([
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %g %g"'
         ' width="%g" height="%g" role="img"'
-        ' aria-label="The Bleep correcting a command in a terminal">'
-        % (width, height, width, height),
+        ' aria-label="The Bleep correcting commands in %s">'
+        % (width, height, width, height, SHELL_TITLE),
         '<title>The Bleep</title>',
         '<style>%s</style>' % ''.join(css),
         '<rect width="%g" height="%g" rx="10" fill="#15181f"/>'
@@ -288,13 +288,19 @@ def render(scene, total, at=None):
         '<circle cx="43" cy="18" r="5" fill="#42474f"/>',
         '<circle cx="62" cy="18" r="5" fill="#42474f"/>',
         '<text x="%g" y="22.5" text-anchor="middle" fill="#6d7682"'
-        ' font-size="12.5">bleep</text>' % (width / 2),
+        ' font-size="12.5">%s</text>' % (width / 2, SHELL_TITLE),
         '\n'.join(body),
         '</svg>',
         ''])
 
 
 KEYS = '[enter/↑/↓/tab=edit/?/ctrl+c/esc]'
+# The shell this is, in the title bar: what return does under `--ambient`
+# differs by shell -- zsh rewrites the line before it runs, bash lets it fail
+# and has the fix at the next prompt -- and the messages drawn are zsh's own.
+SHELL_TITLE = 'zsh'
+# And its prompt as zsh draws it by default for a user who is not root.
+PROMPT = '% '
 MARKER = '❯'
 
 
