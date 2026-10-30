@@ -284,9 +284,10 @@ def render(scene, total, at=None):
         % (width, height),
         '<rect x="0.5" y="0.5" width="%g" height="%g" rx="9.5" fill="none"'
         ' stroke="#2b313c"/>' % (width - 1, height - 1),
-        '<circle cx="24" cy="18" r="5" fill="#42474f"/>',
-        '<circle cx="43" cy="18" r="5" fill="#42474f"/>',
-        '<circle cx="62" cy="18" r="5" fill="#42474f"/>',
+        # The three buttons of a focused macOS window: close, minimise, zoom.
+        '<circle cx="24" cy="18" r="5" fill="#ff5f57" stroke="#e0443e" stroke-width="0.5"/>',
+        '<circle cx="43" cy="18" r="5" fill="#febc2e" stroke="#dea123" stroke-width="0.5"/>',
+        '<circle cx="62" cy="18" r="5" fill="#28c840" stroke="#1aab29" stroke-width="0.5"/>',
         '<text x="%g" y="22.5" text-anchor="middle" fill="#6d7682"'
         ' font-size="12.5">%s</text>' % (width / 2, SHELL_TITLE),
         '\n'.join(body),
