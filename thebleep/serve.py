@@ -265,6 +265,46 @@ def serve(shell_name, idle=IDLE_SECONDS, ready=None):
                     .format(socket_directory()))
         return 2
     path = socket_path(shell_name)
+    lock = _only_server(path)
+    if lock is False:
+        logs.debug(u'Another server has {}; leaving it be'.format(path))
+        return 0
+    try:
+        return _serve(shell_name, path, idle, ready)
+    finally:
+        if lock is not None:
+            lock.close()
+
+
+def _only_server(path):
+    """The lock that makes this the one server for `path`: an open file, or
+    False when another server holds it, or None where there is no `fcntl`.
+
+    The shells start a server whenever they find no socket, and while one is
+    warming up there is none -- so a few keystrokes start a few servers, and
+    each used to delete the socket and make its own. On a slow machine they
+    finished seconds apart, the socket came and went, and the questions
+    asked in between were lost: `git satus` ran uncorrected in CI one time
+    in six. Only the server holding the lock may touch the socket now; the
+    rest leave before they start.
+
+    """
+    try:
+        import fcntl
+    except ImportError:
+        return None
+    lock = open(path + '.lock', 'a')
+    try:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        lock.close()
+        return False
+    return lock
+
+
+def _serve(shell_name, path, idle, ready):
+    # Ours alone, by the lock: anything here is a socket a server that died
+    # left behind.
     try:
         os.unlink(path)
     except OSError:

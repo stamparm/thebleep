@@ -37,6 +37,14 @@
   is `go` and `who`) now leave the line alone, unless your history or the
   next word picks one. After a failure the list is what it was.
 
+- **The first seconds of a session no longer lose corrections.** With no
+  warm server yet, every keystroke and return that found no socket started
+  one, and each deleted the socket before warming up and made its own when
+  done -- so on a slow machine the socket came and went for seconds and the
+  questions asked meanwhile were lost: in CI, zsh ran `git satus`
+  uncorrected about one time in six. One server per shell now, by a lock;
+  the others leave before they start, and the first answer comes sooner.
+
 - **`GO TEST ./...` is no longer turned into `GO TEST /q///`.** The
   keyboard-layout rule took a line in capitals for Hebrew, whose row carries
   the Latin capitals; it now wants a character that is not ASCII.

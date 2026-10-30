@@ -280,3 +280,41 @@ def test_sigterm_takes_the_socket_with_it(runtime, tmp_path):
     finally:
         if server.poll() is None:
             server.kill()
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='no fcntl: one server is not '
+                    'enforced there')
+def test_a_second_server_leaves_the_first_alone(server, runtime):
+    """The shells start a server whenever they find no socket, so a few
+    keystrokes during the first one's warm-up start a few. Each used to
+    delete the socket and make its own; the socket came and went, and the
+    questions in between were lost. The second leaves before it starts."""
+    import time
+
+    path = serve.socket_path('zsh')
+    inode = os.stat(path).st_ino
+    started = time.time()
+    assert serve.serve('zsh', idle=5) == 0
+    assert time.time() - started < 5, 'it served instead of leaving'
+    assert os.stat(path).st_ino == inode
+    assert serve.ask('zsh', 'gti status') == 'git status'
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='no fcntl')
+def test_a_dead_servers_socket_is_still_replaced(runtime, mocker):
+    """The lock is free once its server is gone, so the next one may clear
+    the socket that one left."""
+    import threading
+
+    mocker.patch('thebleep.serve.correct', return_value='git status')
+    path = serve.socket_path('zsh')
+    _stale_socket(path)
+    ready = threading.Event()
+    thread = threading.Thread(target=serve.serve, args=('zsh',),
+                              kwargs={'idle': 1.5,
+                                      'ready': lambda path: ready.set()})
+    thread.daemon = True
+    thread.start()
+    assert ready.wait(10)
+    assert serve.ask('zsh', 'gti status') == 'git status'
+    thread.join(10)
