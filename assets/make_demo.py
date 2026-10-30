@@ -30,19 +30,28 @@ CHAR = FONT_SIZE * 0.6
 LINE = 23.0
 COLUMNS = 79
 PADDING = 24.5           # 79 columns and this padding make the chart's width
-CHROME = 36.0
+CHROME = 28.0            # the title bar, as tall as a macOS window's
 
-# Terminal colours, close enough to a default palette to look familiar and
-# picked to sit on the window's own dark ground rather than the page's, so the
-# demo reads the same in GitHub's light and dark themes.
+# Room around the window for its shadow, which a macOS window always has.
+MARGIN = 32.0
+
+# The colours a terminal draws, and only those: what zsh, git and docker print
+# is plain text, and what The Bleep's menu colours is what `menu.py` colours --
+# the marker and the chosen row bold, the changed word bold green, the
+# confidence dim, and the keys green, blue and red. Picked to sit on the
+# window's own dark ground, so the demo reads the same in GitHub's light and
+# dark themes.
 INK = {
     'text': '#d5dae3',
+    'bold': '#ffffff',
+    'green': '#5fd38d',
+    'boldgreen': '#5fd38d',
+    'blue': '#6cb6ff',
+    'red': '#ff7b72',
     'dim': '#7d8794',
-    'prompt': '#5fd38d',
-    'error': '#ff7b72',
-    'accent': '#ffb454',
-    'cyan': '#6cb6ff',
+    'prompt': '#d5dae3',
 }
+BOLD = ('bold', 'boldgreen')
 
 TYPE_MS = 52      # per character
 KEY_MS = 190      # after a line is submitted
@@ -92,36 +101,6 @@ class Scene(object):
             column += len(text)
         self.row += 1
 
-    def waiting(self, prompt):
-        """Leaves a prompt with the cursor blinking on it."""
-        self.parts.append({'kind': 'prompt', 'row': self.row, 'column': 0,
-                           'text': prompt, 'from': self.now})
-        self.parts.append({'kind': 'cursor', 'row': self.row,
-                           'column': len(prompt), 'text': '',
-                           'from': self.now, 'typed_by': self.now})
-        self.row += 1
-
-    def blank(self):
-        self.row += 1
-
-    def case(self, wrong, error, correction, confidence, separate=True):
-        """One mistake: what was typed, what came back, what to run instead."""
-        self.type(PROMPT, wrong, then=260)
-        for run in error:
-            self.line(run)
-        self.wait(READ_MS)
-        self.type(PROMPT, 'bleep', then=380)
-        # The suggestion list as `menu` draws it: the chosen row marked, the
-        # confidence at the right edge, the keys on the line below.
-        shown = sum(len(text) for _, text in correction)
-        gap = ' ' * max(COLUMNS - 2 - shown - len(confidence), 2)
-        self.line(*([('accent', MARKER + ' ')] + list(correction)
-                    + [('dim', gap + confidence)]))
-        self.line(('dim', KEYS))
-        if separate:
-            self.wait(1000)
-            self.blank()
-
     def ambient(self, wrong, what, fixed, output=None):
         """One mistake under `--ambient`, as zsh draws it: the answer shown
         under the line while it is typed, the line rewritten by the first
@@ -141,14 +120,14 @@ class Scene(object):
                            'text': wrong, 'from': started, 'typed_by': typed,
                            'until': returned})
         hint = 'bleep: %s; return runs `%s`' % (what, fixed)
-        self.parts.append({'kind': 'dim', 'row': row + 1, 'column': 0,
+        self.parts.append({'kind': 'text', 'row': row + 1, 'column': 0,
                            'text': hint, 'from': typed + 120,
                            'until': returned})
         self.parts.append({'kind': 'text', 'row': row, 'column': len(PROMPT),
                            'text': fixed, 'from': returned})
         waiting = {'kind': 'cursor', 'row': row, 'column': len(PROMPT) + len(fixed),
                    'text': '', 'from': returned, 'typed_by': returned}
-        message = {'kind': 'accent', 'row': row + 1, 'column': 0,
+        message = {'kind': 'text', 'row': row + 1, 'column': 0,
                    'text': hint + ', ctrl+_ puts yours back',
                    'from': returned}
         self.parts.extend([waiting, message])
@@ -244,11 +223,11 @@ def render(scene, total, at=None):
                    FONT_SIZE * 1.06, INK['text']))
             continue
 
-        colour = INK['prompt'] if kind == 'prompt' else INK.get(kind,
-                                                                INK['text'])
+        colour = INK.get(kind, INK['text'])
+        weight = ' font-weight="bold"' if kind in BOLD else ''
         chunk = ('<text x="%g" y="%g" textLength="%g" lengthAdjust="spacing"'
-                 ' fill="%s">%s</text>'
-                 % (x, y, len(text) * CHAR, colour, escape(text)))
+                 ' fill="%s"%s>%s</text>'
+                 % (x, y, len(text) * CHAR, colour, weight, escape(text)))
 
         if 'typed_by' not in part:
             body.append('<g class="w" style="animation-name:%s">%s</g>'
@@ -273,40 +252,68 @@ def render(scene, total, at=None):
                     % (window, clip, chunk))
 
     width, height = scene.width, scene.height
+    # A dark-mode macOS window: a title bar a shade lighter than the
+    # terminal, a hairline under it, the three buttons at their own size and
+    # spacing, a faint light outline, and the shadow every window casts.
+    chrome = (
+        '.title{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",'
+        '"Helvetica Neue","Segoe UI",Roboto,sans-serif;font-size:13px;'
+        'font-weight:500}')
     return '\n'.join([
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %g %g"'
         ' width="%g" height="%g" role="img"'
         ' aria-label="The Bleep correcting commands in %s">'
-        % (width, height, width, height, SHELL_TITLE),
+        % (width + MARGIN * 2, height + MARGIN * 2,
+           width + MARGIN * 2, height + MARGIN * 2, SHELL_TITLE),
         '<title>The Bleep</title>',
-        '<style>%s</style>' % ''.join(css),
-        '<rect width="%g" height="%g" rx="10" fill="#15181f"/>'
-        % (width, height),
+        '<style>%s%s</style>' % (''.join(css), chrome),
+        '<defs>'
+        '<filter id="shadow" x="-10%%" y="-10%%" width="120%%" height="130%%">'
+        '<feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000"'
+        ' flood-opacity="0.38"/></filter>'
+        '<clipPath id="window"><rect width="%g" height="%g" rx="10"/>'
+        '</clipPath>'
+        '<linearGradient id="bar" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0" stop-color="#30333a"/>'
+        '<stop offset="1" stop-color="#282b31"/></linearGradient>'
+        '</defs>' % (width, height),
+        '<g transform="translate(%g,%g)">' % (MARGIN, MARGIN),
+        '<rect width="%g" height="%g" rx="10" fill="#15181f"'
+        ' filter="url(#shadow)"/>' % (width, height),
+        '<g clip-path="url(#window)">'
+        '<rect width="%g" height="%g" fill="url(#bar)"/>'
+        '<rect y="%g" width="%g" height="1" fill="#0c0e12"/></g>'
+        % (width, CHROME, CHROME, width),
         '<rect x="0.5" y="0.5" width="%g" height="%g" rx="9.5" fill="none"'
-        ' stroke="#2b313c"/>' % (width - 1, height - 1),
-        # The three buttons of a focused macOS window: close, minimise, zoom.
-        '<circle cx="24" cy="18" r="5" fill="#ff5f57" stroke="#e0443e" stroke-width="0.5"/>',
-        '<circle cx="43" cy="18" r="5" fill="#febc2e" stroke="#dea123" stroke-width="0.5"/>',
-        '<circle cx="62" cy="18" r="5" fill="#28c840" stroke="#1aab29" stroke-width="0.5"/>',
-        '<text x="%g" y="22.5" text-anchor="middle" fill="#6d7682"'
-        ' font-size="12.5">%s</text>' % (width / 2, SHELL_TITLE),
+        ' stroke="#ffffff" stroke-opacity="0.13"/>' % (width - 1, height - 1),
+        # Close, minimise and zoom, as a focused window has them.
+        '<circle cx="20" cy="14" r="6" fill="#ff5f57" stroke="#e0443e"'
+        ' stroke-width="0.5"/>',
+        '<circle cx="40" cy="14" r="6" fill="#febc2e" stroke="#dea123"'
+        ' stroke-width="0.5"/>',
+        '<circle cx="60" cy="14" r="6" fill="#28c840" stroke="#1aab29"'
+        ' stroke-width="0.5"/>',
+        '<text class="title" x="%g" y="18.5" text-anchor="middle"'
+        ' fill="#a9aeb6">%s</text>' % (width / 2, escape(TITLE)),
         '\n'.join(body),
+        '</g>',
         '</svg>',
         ''])
 
 
-KEYS = '[enter/↑/↓/tab=edit/?/ctrl+c/esc]'
 # The shell this is, in the title bar: what return does under `--ambient`
 # differs by shell -- zsh rewrites the line before it runs, bash lets it fail
 # and has the fix at the next prompt -- and the messages drawn are zsh's own.
 SHELL_TITLE = 'zsh'
+# What Terminal puts in that bar: the directory, then the shell.
+TITLE = u'project \u2014 %s' % SHELL_TITLE
 # And its prompt as zsh draws it by default for a user who is not root.
 PROMPT = '% '
 MARKER = '❯'
 
 
 def demo():
-    """Slips caught before they run, and two fixed after they failed.
+    """Slips caught before they run, and one fixed after it failed.
 
     Every suggestion here is the one the rules really produce: each was run
     through `match` and `get_new_command` before being drawn, and the errors
@@ -318,29 +325,44 @@ def demo():
     scene.wait(500)
 
     # A mistyped program, and a mistyped subcommand, caught at return.
-    scene.ambient('gti status', 'gti is not a command', 'git status',
-                  ['On branch bleep', 'nothing to commit, working tree clean'])
+    status = ['On branch feature', 'nothing to commit, working tree clean']
+    scene.ambient('gti status', 'gti is not a command', 'git status', status)
     scene.ambient('git satus', 'satus is not a git command', 'git status',
-                  ['On branch bleep', 'nothing to commit, working tree clean'])
-    scene.blank()
+                  status)
 
-    # Something that needed to be root, by the `sudo` rule.
-    scene.case('apt-get install vim',
-               [('error', 'E: Could not open lock file /var/lib/dpkg/lock-'
-                          'frontend (13: Permission denied)')],
-               [('accent', 'sudo '), ('text', 'apt-get install vim')],
-               '95%  from what it printed')
-
-    # And the one that writes out the flags you would have had to look up.
-    scene.case('git push',
-               [('error', 'fatal: The current branch bleep has no upstream '
-                          'branch')],
-               [('text', 'git push '),
-                ('accent', '--set-upstream origin bleep')],
-               '95%  from what it printed', separate=False)
+    # One that has to fail first: a branch that is not there. With nothing
+    # reading the terminal, `bleep` asks before running it again to read what
+    # it printed -- the line wraps where an 79-column terminal wraps it.
+    scene.type(PROMPT, 'git checkout mian', then=260)
+    scene.line(('text', "error: pathspec 'mian' did not match any file(s) "
+                        "known to git"))
+    scene.wait(READ_MS)
+    scene.type(PROMPT, 'bleep', then=380)
+    scene.line(('bold', 'git checkout mian'),
+               ('text', ' has to run again to be read, and anything it '
+                        'changes will cha'))
+    scene.line(('text', 'nge twice. Run it? ['), ('green', 'y'),
+               ('text', '/'), ('red', 'N'), ('text', '] '))
+    scene.wait(900)
+    scene.parts.append({'kind': 'text', 'row': scene.row - 1,
+                        'column': len('nge twice. Run it? [y/N] '),
+                        'text': 'yes', 'from': scene.now})
+    scene.wait(600)
+    confidence = '95%  from what it printed'
+    chosen = MARKER + ' git checkout main'
+    scene.line(('bold', MARKER), ('text', ' '), ('bold', 'git'),
+               ('text', ' '), ('bold', 'checkout'), ('text', ' '),
+               ('boldgreen', 'main'),
+               ('text', ' ' * (COLUMNS - len(chosen) - len(confidence))),
+               ('dim', confidence))
+    scene.line(('text', '['), ('green', 'enter'), ('text', '/'),
+               ('blue', '\u2191'), ('text', '/'), ('blue', '\u2193'),
+               ('text', '/'), ('blue', 'tab'), ('text', '=edit/'),
+               ('blue', '?'), ('text', '/'), ('red', 'ctrl+c'), ('text', '/'),
+               ('red', 'esc'), ('text', ']'))
+    scene.wait(1300)
+    scene.line(('text', "Switched to branch 'main'"))
     scene.wait(700)
-    scene.line(('cyan', "Branch 'bleep' set up to track 'origin/bleep'."))
-    scene.wait(200)
 
     # And the loop ends where it began, on a line not yet run.
     scene.ambient('dokcer ps', 'dokcer is not a command', 'docker ps')
