@@ -540,3 +540,55 @@ def test_a_word_cut_short_is_not_offered(mocker):
                  return_value=['man'])
     mocker.patch('thebleep.rules.no_command.which', return_value=None)
     assert 'man' not in get_new_command(Command('manls', ''))
+
+
+@pytest.mark.usefixtures('no_memoize')
+class TestBeforeItRuns(object):
+    """No output: `--ambient` is asking, and the line has not run. One
+    plausible slip and one answer, or nothing."""
+
+    @pytest.fixture(autouse=True)
+    def machine(self, mocker, history_without_current):
+        mocker.patch('thebleep.rules.no_command.which', return_value=None)
+        history_without_current.return_value = []
+
+    def executables(self, mocker, names):
+        mocker.patch('thebleep.rules.no_command.get_all_executables',
+                     return_value=names)
+
+    def test_one_slip_is_answered(self, mocker):
+        self.executables(mocker, ['git', 'tig'])
+        assert get_new_command(Command('gti status', None)) == ['git status']
+
+    def test_two_edits_are_not(self, mocker):
+        """`dbild` is two edits from `bind`; after a failure that is a guess
+        in a list, before it runs it is the line rewritten."""
+        self.executables(mocker, ['bind'])
+        assert get_new_command(Command('dbild', None)) == []
+        assert get_new_command(Command('dbild', 'dbild: not found'))
+
+    def test_a_long_word_may_be_two_edits_away(self, mocker):
+        self.executables(mocker, ['terraform'])
+        assert get_new_command(Command('terrafrm plan', None)) == [
+            'terraform plan']
+
+    def test_a_short_word_with_two_answers_has_none(self, mocker):
+        """`ho` is one key from `go` and one from `who`."""
+        self.executables(mocker, ['go', 'who'])
+        assert get_new_command(Command('ho build', None)) == []
+
+    def test_history_may_choose(self, mocker, history_without_current):
+        self.executables(mocker, ['go', 'who'])
+        history_without_current.return_value = ['go test']
+        assert get_new_command(Command('ho build', None)) == ['go build']
+
+    def test_the_next_word_may_choose(self, mocker, documented):
+        self.executables(mocker, ['pip', 'php'])
+        documented.side_effect = lambda tool, prefix=(): (
+            ['install'] if tool == 'pip' else [])
+        assert get_new_command(Command('pp install x', None)) == [
+            'pip install x']
+
+    def test_a_single_letter_is_never_rewritten(self, mocker):
+        self.executables(mocker, ['rg', 'go'])
+        assert get_new_command(Command('g build', None)) == []

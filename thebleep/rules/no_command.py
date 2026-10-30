@@ -552,6 +552,32 @@ def _demote_impossible(ranked, arguments):
     return possible + impossible
 
 
+def _before_it_runs(word, scored, equal, ranked, used, arguments):
+    """What may replace `word` with nothing run yet: one answer or none.
+
+    With no output there is nothing to confirm a guess, and `--ambient`
+    rewrites the line on return, so the bar is a single plausible slip --
+    two edits only for a word of eight letters or more -- and a short word
+    must have one such answer, not several. `ho build` is one key from `go`
+    and one from `who`, `pp` one from `pip` and from `php`; spelling cannot
+    choose, and a wrong rewrite is worse than leaving the line to fail.
+    Your history, or a next word that one of them documents, may choose.
+    A single letter is never rewritten.
+
+    """
+    if len(word) < 2 or not equal:
+        return []
+    if scored[0][1] > (2 if len(word) >= 8 else 1):
+        return []
+    if len(word) > 3 or len(equal) == 1:
+        return [name for name in ranked if name in equal][:1]
+    familiar = [name for name in equal if name in used]
+    if len(familiar) == 1:
+        return familiar
+    named = _documenting(equal, arguments)
+    return named if len(named) == 1 else []
+
+
 def _named_by_the_next_word(ranked, equal, arguments):
     """The same names, with the closest ones whose manual documents the next
     word as a subcommand moved to the front.
@@ -561,16 +587,23 @@ def _named_by_the_next_word(ranked, equal, arguments):
     bat's. Only among the equally close (`equal`), and only a plain word.
 
     """
-    if not arguments or len(equal) < 2 \
-            or not re.match(r'^[a-z][a-z0-9-]*$', arguments[0]):
+    if len(equal) < 2:
         return ranked
-    from thebleep import vocabulary
-
-    named = [name for name in equal
-             if arguments[0] in (vocabulary.subcommands(name) or ())]
+    named = _documenting(equal, arguments)
     if not named:
         return ranked
     return named + [name for name in ranked if name not in named]
+
+
+def _documenting(names, arguments):
+    """Those of `names` whose manual documents the next word, a plain one, as
+    a subcommand."""
+    if not arguments or not re.match(r'^[a-z][a-z0-9-]*$', arguments[0]):
+        return []
+    from thebleep import vocabulary
+
+    return [name for name in names
+            if arguments[0] in (vocabulary.subcommands(name) or ())]
 
 
 def _word_spans(script, old, require_separator=False):
@@ -800,6 +833,10 @@ def get_new_command(command):
     parts = _compound_parts(inner) if substitution else _compound_parts(command)
     ranked = _named_by_the_next_word(ranked, equal, parts[command_index + 1:])
     ranked = _demote_impossible(ranked, parts[command_index + 1:])
+
+    if command.output is None:
+        ranked = _before_it_runs(old_command, scored, equal, ranked, used,
+                                 parts[command_index + 1:])
 
     from thebleep.conf import settings
 
