@@ -267,7 +267,18 @@ TRACE_ZSH = (
     u"functions -c __thebleep_ambient_accept_line __tb_accept; "
     u"__thebleep_ambient_accept_line() { print -r -- \"accept [$BUFFER] "
     u"answer=[$__thebleep_answer] asked=[$__thebleep_asked]\" >> /tmp/tb.trace; "
-    u"__tb_accept \"$@\" }")
+    u"__tb_accept \"$@\" }; "
+    u"functions -c __thebleep_ask __tb_ask; "
+    u"__thebleep_ask() { print -r -- \"ask [$1|$2] buffer=[$BUFFER]\" "
+    u">> /tmp/tb.trace; __tb_ask \"$@\"; print -r -- \"asked fd=[$__thebleep_fd]\" "
+    u">> /tmp/tb.trace }; "
+    u"functions -c __thebleep_arrived __tb_arrived; "
+    u"__thebleep_arrived() { print -r -- \"arrived [$1|$2]\" >> /tmp/tb.trace; "
+    u"__tb_arrived \"$@\" }; "
+    u"functions -c __thebleep_show __tb_show; "
+    u"__thebleep_show() { print -r -- \"show [$1|$2] buffer=[$BUFFER]\" "
+    u">> /tmp/tb.trace; __tb_show \"$@\" }; "
+    u"zle -N __thebleep_show")
 
 
 def expect_or_explain(proc, TIMEOUT, text, shell, script, known):
@@ -279,6 +290,8 @@ def expect_or_explain(proc, TIMEOUT, text, shell, script, known):
     if proc.expect([TIMEOUT, text]):
         return
     shown_before = proc.before[-600:]
+    # Whatever is half typed goes, so what follows runs as a line of its own.
+    proc.sendcontrol('c')
     code = base64.b64encode((DIAGNOSE % {
         'shell': shell, 'script': script, 'known': known}).encode()).decode()
     proc.sendline(u'python -c "import base64; exec(base64.b64decode(\'{}\'))"'
