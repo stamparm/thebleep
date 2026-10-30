@@ -231,6 +231,54 @@ def test_bash_leaves_a_known_program_to_say_what_is_wrong(bash, TIMEOUT):
     assert bash.expect([TIMEOUT, u"'satus' is not a git command"])
 
 
+# Asked of the warm server directly, the way the shell asks it, when the shell
+# never showed what a test waited for: the answer -- or why there was none --
+# and whether the server's idea of git's subcommands has `status` in it. The
+# warm-server tests fail now and then in CI and never here; this is so a
+# failure says why.
+DIAGNOSE = u'''
+import json, os, socket
+path = os.path.expanduser("~/.cache/thebleep/serve/inline-%(shell)s.sock")
+question = json.dumps({"script": %(script)r, "aliases": "", "cwd": os.getcwd(),
+                       "path": os.environ.get("PATH", ""), "known": %(known)r})
+try:
+    client = socket.socket(socket.AF_UNIX)
+    client.settimeout(30)
+    client.connect(path)
+    client.sendall(question.encode() + b"\\n")
+    answer = b"".join(iter(lambda: client.recv(65536), b""))
+except Exception as error:
+    answer = repr(error).encode()
+from thebleep import vocabulary
+known = vocabulary.subcommands("git")
+print("DIAG_%%s %%r subcommands=%%d status=%%s DIAG_END" %% (
+    "BEGIN", answer, len(known), "status" in known))
+'''
+
+
+def expect_or_explain(proc, TIMEOUT, text, shell, script, known):
+    """`proc.expect(text)`, and when it times out, a failure that says what
+    the shell showed and what the warm server answers to the same
+    question."""
+    import base64
+
+    if proc.expect([TIMEOUT, text]):
+        return
+    shown_before = proc.before[-600:]
+    code = base64.b64encode((DIAGNOSE % {
+        'shell': shell, 'script': script, 'known': known}).encode()).decode()
+    proc.sendline(u'python -c "import base64; exec(base64.b64decode(\'{}\'))"'
+                  .format(code))
+    if proc.expect([TIMEOUT, u'DIAG_BEGIN (.*) DIAG_END']):
+        diagnosis = proc.match.group(1)
+    else:
+        diagnosis = u'no diagnosis; the shell showed {!r}'.format(
+            proc.before[-300:])
+    pytest.fail(u'{!r} never came.\nThe shell showed: {!r}\nThe server, '
+                u'asked {!r} (known={}): {}'.format(
+                    text, shown_before, script, known, diagnosis))
+
+
 def typed(proc, text, pause=0.08):
     """Type `text` a character at a time, as a person does."""
     import time
@@ -252,9 +300,11 @@ def test_zsh_shows_the_fix_while_the_line_is_typed(zsh, TIMEOUT):
     zsh.sendline(wait_for_socket.format(u'zsh'))
     assert zsh.expect([TIMEOUT, u'SOCKET_UP'])
     typed(zsh, u'gti --vers')
-    assert zsh.expect([TIMEOUT, u'return runs `git --vers`'])
+    expect_or_explain(zsh, TIMEOUT, u'return runs `git --vers`', u'zsh',
+                      u'gti --vers', False)
     typed(zsh, u'ion')
-    assert zsh.expect([TIMEOUT, u'return runs `git --version`'])
+    expect_or_explain(zsh, TIMEOUT, u'return runs `git --version`', u'zsh',
+                      u'gti --version', False)
     zsh.send(u'\r')
     assert zsh.expect([TIMEOUT, u'ctrl\\+_ puts yours back'])
     zsh.send(u'\r')
@@ -283,7 +333,8 @@ def test_zsh_corrects_the_second_word_once_the_server_is_up(zsh, TIMEOUT):
     zsh.sendline(wait_for_socket.format(u'zsh'))
     assert zsh.expect([TIMEOUT, u'SOCKET_UP'])
     zsh.send(u'git satus\r')
-    assert zsh.expect([TIMEOUT, u'bleep: satus is not a git command'])
+    expect_or_explain(zsh, TIMEOUT, u'bleep: satus is not a git command',
+                      u'zsh', u'git satus', True)
     zsh.send(u'\r')
     # `git status` ran, outside any repository.
     assert zsh.expect([TIMEOUT, u'not a git repository'])
@@ -301,7 +352,8 @@ def test_fish_corrects_the_second_word_once_the_server_is_up(fish, TIMEOUT):
     fish.sendline(u'sh -c ' + repr(wait_for_socket.format(u'fish')))
     assert fish.expect([TIMEOUT, u'SOCKET_UP'])
     fish.send(u'git satus\r')
-    assert fish.expect([TIMEOUT, u'bleep: satus is not a git command'])
+    expect_or_explain(fish, TIMEOUT, u'bleep: satus is not a git command',
+                      u'fish', u'git satus', True)
     assert fish.expect([TIMEOUT, shown(u'git status')])
     fish.send(u'\r')
     assert fish.expect([TIMEOUT, u'not a git repository'])
