@@ -7,7 +7,14 @@ dir1`, `git push origin mian` offered `git push --force origin main`, and an
 history line only stands in for the command now when it has the same number
 of words and differs in exactly one of them, that one is a near spelling of
 it, and it adds no privilege, deletion or `--force` the command did not
-already have. A command that exited 0 is not corrected from history at all.
+already have. A command that exited 0 is not corrected from history at all,
+and nor is one that has not run: with no output this is `--ambient` asking
+at return, and a line is not rewritten to a past one before it has done
+anything. `reset; ssh me@web-server` became `reset; ssh me@build-server` that
+way -- a different host every time, as history moved.
+
+"Near" is the distance every other rule uses, on the word itself: difflib
+called `me@web-server` near `me@build-server` for the `me@` they share.
 
 """
 
@@ -36,9 +43,9 @@ def _markers(script):
 def _one_slip_away(command):
     """History lines that are `command` with one word spelled differently,
     in the order history has them."""
-    from thebleep import replay
+    from thebleep import matching, replay
 
-    if replay.previous_status() == 0:
+    if command.output is None or replay.previous_status() == 0:
         return []
     typed = command.script_parts
     if not typed:
@@ -54,7 +61,7 @@ def _one_slip_away(command):
         if len(changed) != 1:
             continue
         mine, theirs = changed[0]
-        if not get_close_matches(mine, [theirs], 1):
+        if not matching.rank(mine, [theirs]):
             continue
         if allowed is None:
             allowed = _markers(command.script)

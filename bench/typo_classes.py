@@ -100,7 +100,12 @@ KEEP = ['ssh adm', 'ssh web1', 'ssh db', 'ssh arm', 'ssh pi', 'ssh nas',
         'gpg --list-keys', 'openssl rand 8', 'flatpak run x', 'snap run x',
         'tmux a', 'tmux new', 'gh repo view', 'helm ls', 'uv run x',
         'git st', 'git co main', 'git ci', 'git br', 'npm t', 'npm rb',
-        'docker ps -a', 'kill %1', 'tar tf a.tar', 'grep -rn x .']
+        'docker ps -a', 'kill %1', 'tar tf a.tar', 'grep -rn x .',
+        # A real command, then another: `reset;` was taken for a program
+        # and `reset; ssh me@web-server` came back with a host from history.
+        'reset; ssh user@web-server', 'true; ssh user@web-server',
+        'true&& ssh host', 'true| cat', 'true> /dev/null', '(true) ; ls',
+        'cd /tmp && make', 'ls | grep x', 'true; gti status']
 
 # A physical QWERTY: each row starts further right than the one above it,
 # and two keys are neighbours when their centres are within 1.3 key widths.
