@@ -237,29 +237,17 @@ def test_the_ambient_check_asks_the_warm_server_through_socat_or_nc(settings):
         Bash().quote(sys.executable), Bash().quote(serve.CLIENT)) in binding
 
 
-def test_return_corrects_the_line_before_it_runs(settings):
-    """The macro chain: a `bind -x` check, then `accept-line` -- which a fix
-    turns into `redraw-current-line` for that one return."""
+def test_return_is_left_alone(settings):
+    """Return is not bound: bash erases and redraws the prompt line after
+    every `bind -x` function, so a check bound to return made every command
+    flicker, not only a typo. The handler and the next-prompt hook do the
+    work, after the typo has failed."""
     from thebleep.shells.bash import Bash
 
     settings.warm_server = True
     binding = Bash().ambient_binding()
-    for keymap in ('emacs', 'vi-insert'):
-        assert 'bind -m {} -x \'"\\C-x\\C-]": __thebleep_return\''.format(
-            keymap) in binding
-        assert 'bind -m {} \'"\\C-x\\C-^": accept-line\''.format(keymap) \
-            in binding
-        assert 'bind -m {} \'"\\C-m": "\\C-x\\C-]\\C-x\\C-^"\''.format(
-            keymap) in binding
-    assert '\'"\\C-j"' not in binding
-    assert 'read -r first second _ <<< "$READLINE_LINE"' in binding
-    assert '__thebleep_fixed "$READLINE_LINE" && fixed=$REPLY' in binding
-    assert '__thebleep_fixed "$READLINE_LINE" known && fixed=$REPLY' in binding
-    assert '$(type -t -- "$first" 2>/dev/null) == file' in binding
-    assert 'bind \'"\\C-x\\C-^": redraw-current-line\'' in binding
-    assert '[ "$known" = true ] && return 1' in binding
-    assert '\\"known\\": $known}' in binding
-    # The handler and the next-prompt hook stay underneath.
+    assert 'bind ' not in binding
+    assert 'READLINE_LINE' not in binding
     assert 'command_not_found_handle()' in binding
     assert 'PROMPT_COMMAND+=(__thebleep_ambient)' in binding
 
@@ -273,3 +261,79 @@ def test_the_placeholders_are_filled_in_one_pass(settings, mocker):
     mocker.patch('sys.executable', '/opt/COMMAND/SOCK/CLIENT/python')
     assert '/opt/COMMAND/SOCK/CLIENT/python -S -I -c' \
         in Bash().ambient_binding()
+
+
+def _interactive_bash(tmpdir, extra):
+    """A real interactive bash on a terminal, `PS1='$ '`, with `extra` in its
+    startup file; returns a function that types a line and gives back the
+    bytes bash drew for it."""
+    import shutil
+    import time
+
+    pexpect = pytest.importorskip('pexpect')
+    if os.name == 'nt' or not shutil.which('bash'):
+        pytest.skip('a POSIX bash on a terminal')
+    rc = tmpdir.join('rc')
+    rc.write(u"PS1='$ '\n" + extra)
+    env = dict(os.environ, TERM='xterm', HOME=tmpdir.strpath)
+    env.pop('PROMPT_COMMAND', None)
+    child = pexpect.spawn('bash', ['--rcfile', rc.strpath, '-i'], env=env,
+                          cwd=tmpdir.strpath, dimensions=(24, 80))
+
+    def drain(seconds):
+        out, end = b'', time.time() + seconds
+        while time.time() < end:
+            try:
+                out += child.read_nonblocking(65536, timeout=0.1)
+            except pexpect.TIMEOUT:
+                pass
+            except pexpect.EOF:
+                break
+        return out
+
+    drain(2)
+
+    def typed(line):
+        for byte in line.encode():
+            child.send(bytes([byte]))
+            time.sleep(0.01)
+        drain(0.3)
+        child.send(b'\r')
+        return drain(1.5)
+
+    typed.close = child.close
+    return typed
+
+
+def test_an_ordinary_command_draws_what_plain_bash_draws(settings, tmpdir):
+    """Byte for byte, with `--ambient` and without. The return binding drew
+    `\\r ESC[K \\r` and the prompt again after every command."""
+    from thebleep.shells.bash import Bash
+
+    settings.warm_server = True
+    plain = _interactive_bash(tmpdir.mkdir('plain'), u'')
+    ambient = _interactive_bash(tmpdir.mkdir('ambient'),
+                                Bash().ambient_binding())
+    try:
+        for line in ('echo hi', 'true; echo there', 'cd .'):
+            assert ambient(line) == plain(line), line
+    finally:
+        plain.close()
+        ambient.close()
+
+
+def test_a_typo_fails_and_its_fix_waits_at_the_next_prompt(settings, tmpdir):
+    """The old way, kept: bash's own error, then the fix in readline."""
+    from thebleep.shells.bash import Bash
+
+    settings.warm_server = True
+    bash = _interactive_bash(tmpdir, Bash().ambient_binding() + u"""
+__thebleep_fixed() { REPLY='echo fixed'; return 0; }
+""")
+    try:
+        shown = bash('gti status').decode('utf-8', 'replace')
+        assert 'gti: command not found' in shown
+        assert '$ echo fixed' in shown
+        assert 'fixed' in bash('').decode('utf-8', 'replace')
+    finally:
+        bash.close()

@@ -106,11 +106,14 @@ def fish(spawnu, TIMEOUT):
 
 
 @pytest.mark.functional
-def test_bash_replaces_the_line_before_anything_runs(bash, TIMEOUT):
-    """Return is a macro: a `bind -x` check, then accept-line. The check
-    rewrites the line and turns that one accept-line into a redraw."""
+def test_bash_runs_the_typo_and_offers_the_fix_at_the_next_prompt(
+        bash, TIMEOUT):
+    """Return is not bound in bash -- a `bind -x` on it redrew the prompt
+    after every command -- so the typo runs, fails with bash's own message,
+    and the fix is waiting at the next prompt."""
     bash.send(u'gti --version\r')
-    assert bash.expect([TIMEOUT, u'bleep: gti is not a command'])
+    assert bash.expect([TIMEOUT, u'gti: command not found'])
+    assert bash.expect([TIMEOUT, u'\\$ git --version'])
     bash.send(u'\r')
     assert bash.expect([TIMEOUT, u'git version'])
 
@@ -214,25 +217,18 @@ def test_bash_asks_the_warm_server_through_the_bare_interpreter(bash,
     assert bash.expect([TIMEOUT, u'SOCKET_UP'])
     bash.sendline(u'thebleep() { return 1; }')
     bash.send(u'gti --version\r')
-    assert bash.expect([TIMEOUT, u'bleep: gti is not a command'])
+    assert bash.expect([TIMEOUT, u'gti: command not found'])
+    assert bash.expect([TIMEOUT, u'\\$ git --version'])
     bash.send(u'\r')
     assert bash.expect([TIMEOUT, u'git version'])
 
 
 @pytest.mark.functional
-def test_bash_corrects_the_second_word_once_the_server_is_up(bash, TIMEOUT):
-    bash.send(u'gti --version\r')
-    assert bash.expect([TIMEOUT, u'bleep: gti is not a command'])
-    bash.send(u'\r')
-    assert bash.expect([TIMEOUT, u'git version'])
-    bash.sendline(wait_for_socket.format(u'bash'))
-    assert bash.expect([TIMEOUT, u'SOCKET_UP'])
+def test_bash_leaves_a_known_program_to_say_what_is_wrong(bash, TIMEOUT):
+    """`git satus` runs and git says so: nothing in bash looks at a line
+    before it runs any more."""
     bash.send(u'git satus\r')
-    assert bash.expect([TIMEOUT, u'bleep: satus is not a git command'])
-    bash.send(u'\r')
-    assert bash.expect([TIMEOUT, u'not a git repository'])
-    bash.send(u'git version\r')
-    assert bash.expect([TIMEOUT, u'git version'])
+    assert bash.expect([TIMEOUT, u"'satus' is not a git command"])
 
 
 def typed(proc, text, pause=0.08):

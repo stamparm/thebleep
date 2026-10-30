@@ -33,9 +33,10 @@ thebleep --alias-loader --ambient >> ~/.bashrc
 ```
 
 Open a new shell and mistype something: `--ambient` is what fixes the line
-*before* it runs, in bash, zsh, fish, PowerShell, xonsh and Elvish. Whatever
-it cannot see coming -- a missing `sudo`, a branch with no upstream -- type
-`bleep` after it fails. Leave `--ambient` off and return is never touched.
+*before* it runs, in zsh, fish, PowerShell, xonsh and Elvish, and puts the
+fix at the next prompt in bash. Whatever it cannot see coming -- a missing
+`sudo`, a branch with no upstream -- type `bleep` after it fails. Leave
+`--ambient` off and return is never touched.
 [The long version](#installation), including the muscle memory you already
 have:
 
@@ -45,10 +46,11 @@ thebleep --alias-loader fuck >> ~/.bashrc
 
 ## What it does
 
-- **Fixes the typo before it runs.** Return on `gti status` in bash, zsh,
-  fish, xonsh, Elvish or PowerShell replaces the line with `git status` and
-  waits for a second return. In all but PowerShell `git satus` is caught the
-  same way, from git's own manual, with nothing run. Nobody types `bleep`
+- **Fixes the typo before it runs.** Return on `gti status` in zsh, fish,
+  xonsh, Elvish or PowerShell replaces the line with `git status` and waits
+  for a second return. In all but PowerShell `git satus` is caught the same
+  way, from git's own manual, with nothing run. In bash the typo fails as
+  usual and `git status` is waiting at the next prompt. Nobody types `bleep`
   for the commonest mistakes there are. One flag, `--ambient`, at install.
   [Without typing bleep](#without-typing-bleep).
 - **Reads the answer off the screen.** When git says `the most similar command
@@ -421,14 +423,14 @@ $ git status
 bleep: gti is not a command; return runs `git status`, ctrl+_ puts yours back
 ```
 
-In zsh, fish, bash, Elvish and PowerShell, return is bound to a check: when
+In zsh, fish, Elvish and PowerShell, return is bound to a check: when
 the first word of the line is not a command, function, alias or builtin the
-shell knows — `whence -w`, `type -q`, `type -t`, `has-external` and
+shell knows — `whence -w`, `type -q`, `has-external` and
 `Get-Command` are asked, and cost nothing — the line is offered to the same
 command-only rules <kbd>Esc</kbd> <kbd>Esc</kbd> uses, and a correction
 replaces the line. Nothing has run yet, and return runs the corrected line.
 zsh says so in a message underneath, naming the undo key that puts yours
-back; fish, bash and Elvish print the message without an undo hint;
+back; fish and Elvish print the message without an undo hint;
 PowerShell replaces the line without a message. Every other line is accepted
 exactly as before, by whatever return was bound to before this, so another
 plugin's binding is kept.
@@ -441,16 +443,14 @@ and on a fix returns nothing to run, prints the message, and puts the fix in
 same shape as everywhere else. A line with anything that could be Python in
 it, an operator, a bracket, a quote, an assignment, is left alone.
 
-Bash has no `accept-line` hook, so return there is a readline macro of two
-keys: a `bind -x` function that reads the line, and `accept-line`. When the
-function has a fix it rewrites the line and rebinds the second key to a
-redraw for that one press, so the corrected line sits in readline and the
-next return runs it. Proven on bash 4.3 through 5.2 and in vi insert mode.
-<kbd>ctrl</kbd>+<kbd>j</kbd> is left as it was, and so is anything else that
-accepts a line: those run the command, which fails as it always did, and the
-fix is waiting at the next prompt — `command_not_found_handle` runs in a
+Bash is the exception: return is not bound there. Bash has no
+`accept-line` hook, and a `bind -x` function on return -- the only way in --
+makes bash erase and redraw the prompt line after every command, typo or
+not. So in bash the typo runs and fails with bash's own message, and the
+fix is waiting at the next prompt: `command_not_found_handle` runs in a
 subshell and hands it over through a private file in The Bleep's cache
-directory, keyed by the shell's pid. Bash 4 or newer.
+directory, keyed by the shell's pid, and the next prompt opens it in
+readline. Return runs it. Bash 4 or newer.
 
 The check runs on a keystroke, so it is worth making fast. Starting Python
 costs about forty milliseconds, so the bindings ask a warm `thebleep --serve`
@@ -469,7 +469,7 @@ The check is deliberately narrow: only the first word, only when the shell
 itself has never heard of it, and never for a word with a slash, a quote, a
 variable or an assignment in it.
 
-The second word gets a check of its own in zsh, fish, bash, xonsh and Elvish, on stricter terms,
+The second word gets a check of its own in zsh, fish, xonsh and Elvish, on stricter terms,
 because the shell *does* know `git` and cannot know what git will think of
 `satus`. The machine can: git documents its commands one manual page each,
 `git-status.1` is there and `git-satus.1` is not, and the
