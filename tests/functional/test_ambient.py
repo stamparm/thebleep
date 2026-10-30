@@ -256,6 +256,20 @@ print("DIAG_%%s %%r subcommands=%%d status=%%s DIAG_END" %% (
 '''
 
 
+# zsh's own side, traced from the test: The Bleep's return widget and its
+# question to the server are wrapped -- in the test's shell only -- so that
+# each call leaves a line in a file the failure prints.
+TRACE_ZSH = (
+    u"functions -c __thebleep_fixed __tb_fixed; "
+    u"__thebleep_fixed() { __tb_fixed \"$@\"; local rc=$?; "
+    u"print -r -- \"fixed [$1|$2] rc=$rc reply=[$REPLY]\" >> /tmp/tb.trace; "
+    u"return $rc }; "
+    u"functions -c __thebleep_ambient_accept_line __tb_accept; "
+    u"__thebleep_ambient_accept_line() { print -r -- \"accept [$BUFFER] "
+    u"answer=[$__thebleep_answer] asked=[$__thebleep_asked]\" >> /tmp/tb.trace; "
+    u"__tb_accept \"$@\" }")
+
+
 def expect_or_explain(proc, TIMEOUT, text, shell, script, known):
     """`proc.expect(text)`, and when it times out, a failure that says what
     the shell showed and what the warm server answers to the same
@@ -274,6 +288,10 @@ def expect_or_explain(proc, TIMEOUT, text, shell, script, known):
     else:
         diagnosis = u'no diagnosis; the shell showed {!r}'.format(
             proc.before[-300:])
+    proc.sendline(u'echo TRACE_$(echo)BEGIN; cat /tmp/tb.trace; '
+                  u'echo TRACE_$(echo)END')
+    if proc.expect([TIMEOUT, u'TRACE_BEGIN(.*)TRACE_END']):
+        diagnosis += u'\nzsh traced: {!r}'.format(proc.match.group(1))
     pytest.fail(u'{!r} never came.\nThe shell showed: {!r}\nThe server, '
                 u'asked {!r} (known={}): {}'.format(
                     text, shown_before, script, known, diagnosis))
@@ -299,6 +317,7 @@ def test_zsh_shows_the_fix_while_the_line_is_typed(zsh, TIMEOUT):
     assert zsh.expect([TIMEOUT, u'git version'])
     zsh.sendline(wait_for_socket.format(u'zsh'))
     assert zsh.expect([TIMEOUT, u'SOCKET_UP'])
+    zsh.sendline(TRACE_ZSH)
     typed(zsh, u'gti --vers')
     expect_or_explain(zsh, TIMEOUT, u'return runs `git --vers`', u'zsh',
                       u'gti --vers', False)
@@ -332,6 +351,7 @@ def test_zsh_corrects_the_second_word_once_the_server_is_up(zsh, TIMEOUT):
     assert zsh.expect([TIMEOUT, u'git version'])
     zsh.sendline(wait_for_socket.format(u'zsh'))
     assert zsh.expect([TIMEOUT, u'SOCKET_UP'])
+    zsh.sendline(TRACE_ZSH)
     zsh.send(u'git satus\r')
     expect_or_explain(zsh, TIMEOUT, u'bleep: satus is not a git command',
                       u'zsh', u'git satus', True)
