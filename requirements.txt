@@ -4,7 +4,7 @@ pytest-mock
 pytest-xdist
 wheel
 build
-setuptools>=61
+setuptools>=84.2.1
 pexpect
 pytest-benchmark
 pytest-docker-pexpect
