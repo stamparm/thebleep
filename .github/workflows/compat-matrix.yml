@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Record the row in a container
         run: ci/compat_linux.sh '${{ matrix.image }}' '${{ matrix.label }}' "$RUNNER_TEMP/rows" "$SOURCE" '${{ matrix.shell }}'
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: compat-row-${{ matrix.label }}
           path: ${{ runner.temp }}/rows/${{ matrix.label }}.json
@@ -93,7 +93,7 @@ jobs:
           python ci/compat_matrix.py record --label '${{ matrix.label }}' \
             --shell '${{ matrix.shell }}' --recorded-by ci --source "$SOURCE" \
             --output "$RUNNER_TEMP/rows/${{ matrix.label }}.json"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: compat-row-${{ matrix.label }}
           path: ${{ runner.temp }}/rows/${{ matrix.label }}.json
@@ -128,7 +128,7 @@ jobs:
             # user cannot enter, and sh then reports every missing command as
             # "Permission denied" instead of "not found".
             su -l bleeper -c 'sh /tmp/src/ci/compat_unix.sh freebsd /tmp/src '"$PWD"'/rows '"$SOURCE"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: compat-row-freebsd
           path: rows/freebsd.json
@@ -153,7 +153,7 @@ jobs:
             mkdir -p rows && chown bleeper rows
             # OpenBSD's own shell is its ksh; that is the row worth having.
             su bleeper -c 'sh /tmp/src/ci/compat_unix.sh openbsd /tmp/src '"$PWD"'/rows '"$SOURCE"' ksh'
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: compat-row-openbsd
           path: rows/openbsd.json
@@ -179,7 +179,7 @@ jobs:
             cp -R "$GITHUB_WORKSPACE" /tmp/src && chown -R bleeper /tmp/src
             mkdir -p rows && chown bleeper rows
             su bleeper -c 'sh /tmp/src/ci/compat_unix.sh netbsd /tmp/src '"$PWD"'/rows '"$SOURCE"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: compat-row-netbsd
           path: rows/netbsd.json
@@ -206,7 +206,7 @@ jobs:
           cp -r . /tmp/src && mkdir -p rows
           sed -i 's/\r$//' /tmp/src/ci/*.sh
           sh /tmp/src/ci/compat_unix.sh ubuntu-wsl /tmp/src "$PWD/rows" '${{ env.SOURCE }}'
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: compat-row-ubuntu-wsl
           path: rows/ubuntu-wsl.json
