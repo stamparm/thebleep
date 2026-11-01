@@ -75,7 +75,7 @@
       "suggestions": [
         "ls -la",
         "sln -la",
-        "su -la"
+        "psl -la"
       ]
     },
     "mkdir_parents": {
@@ -151,16 +151,16 @@
       ]
     }
   },
-  "kernel": "6.17.0-1022-azure",
+  "kernel": "7.0.0-1017-azure",
   "label": "arch",
-  "latency_ms": 64,
+  "latency_ms": 50,
   "machine": "x86_64",
-  "python": "3.14.8",
-  "recorded_at": "2026-10-13",
+  "python": "3.14.9",
+  "recorded_at": "2026-11-01",
   "recorded_by": "ci",
   "schema": 1,
   "shell": "bash 5.3.20(1)-release",
   "source": "checkout",
   "system": "Arch Linux",
-  "thebleep": "4.0.5"
+  "thebleep": "4.0.7"
 }

@@ -151,16 +151,16 @@
       ]
     }
   },
-  "kernel": "6.17.0-1022-azure",
+  "kernel": "7.0.0-1017-azure",
   "label": "opensuse-tumbleweed",
-  "latency_ms": 58,
+  "latency_ms": 71,
   "machine": "x86_64",
-  "python": "3.13.15",
-  "recorded_at": "2026-10-13",
+  "python": "3.13.16",
+  "recorded_at": "2026-11-01",
   "recorded_by": "ci",
   "schema": 1,
   "shell": "bash 5.3.20(1)-release",
   "source": "checkout",
   "system": "openSUSE Tumbleweed",
-  "thebleep": "4.0.5"
+  "thebleep": "4.0.7"
 }

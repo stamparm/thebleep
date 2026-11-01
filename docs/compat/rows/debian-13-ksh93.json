@@ -152,16 +152,16 @@
       ]
     }
   },
-  "kernel": "6.17.0-1022-azure",
+  "kernel": "7.0.0-1014-aws",
   "label": "debian-13-ksh93",
-  "latency_ms": 61,
+  "latency_ms": 46,
   "machine": "x86_64",
   "python": "3.13.5",
-  "recorded_at": "2026-10-13",
+  "recorded_at": "2026-11-01",
   "recorded_by": "ci",
   "schema": 1,
   "shell": "ksh93 93u+m/1.0.10",
   "source": "checkout",
   "system": "Debian GNU/Linux 13 (trixie)",
-  "thebleep": "4.0.5"
+  "thebleep": "4.0.7"
 }

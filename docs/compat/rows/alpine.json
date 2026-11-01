@@ -151,16 +151,16 @@
       ]
     }
   },
-  "kernel": "6.17.0-1022-azure",
+  "kernel": "7.0.0-1017-azure",
   "label": "alpine",
-  "latency_ms": 71,
+  "latency_ms": 117,
   "machine": "x86_64",
-  "python": "3.14.8",
-  "recorded_at": "2026-10-13",
+  "python": "3.14.10",
+  "recorded_at": "2026-11-01",
   "recorded_by": "ci",
   "schema": 1,
   "shell": "sh sh",
   "source": "checkout",
   "system": "Alpine Linux v3.24",
-  "thebleep": "4.0.5"
+  "thebleep": "4.0.7"
 }

@@ -152,16 +152,16 @@
       ]
     }
   },
-  "kernel": "6.17.0-1022-azure",
+  "kernel": "7.0.0-1017-azure",
   "label": "almalinux-9",
-  "latency_ms": 49,
+  "latency_ms": 43,
   "machine": "x86_64",
   "python": "3.9.25",
-  "recorded_at": "2026-10-13",
+  "recorded_at": "2026-11-01",
   "recorded_by": "ci",
   "schema": 1,
   "shell": "bash 5.1.8(1)-release",
   "source": "checkout",
   "system": "AlmaLinux 9.8 (Olive Jaguar)",
-  "thebleep": "4.0.5"
+  "thebleep": "4.0.7"
 }

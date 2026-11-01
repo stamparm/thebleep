@@ -75,7 +75,7 @@
       "suggestions": [
         "ls -la",
         "sln -la",
-        "su -la"
+        "psl -la"
       ]
     },
     "mkdir_parents": {
@@ -151,16 +151,16 @@
       ]
     }
   },
-  "kernel": "6.17.0-1022-azure",
+  "kernel": "7.0.0-1017-azure",
   "label": "void",
-  "latency_ms": 58,
+  "latency_ms": 84,
   "machine": "x86_64",
   "python": "3.14.8",
-  "recorded_at": "2026-10-13",
+  "recorded_at": "2026-11-01",
   "recorded_by": "ci",
   "schema": 1,
   "shell": "bash 5.3.0(1)-release",
   "source": "checkout",
   "system": "Void Linux",
-  "thebleep": "4.0.5"
+  "thebleep": "4.0.7"
 }

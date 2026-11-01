@@ -154,14 +154,14 @@
   },
   "kernel": "7.9",
   "label": "openbsd",
-  "latency_ms": 200,
+  "latency_ms": 270,
   "machine": "amd64",
   "python": "3.13.14",
-  "recorded_at": "2026-10-13",
+  "recorded_at": "2026-11-01",
   "recorded_by": "ci",
   "schema": 1,
   "shell": "ksh 5.2.14",
   "source": "checkout",
   "system": "OpenBSD 7.9",
-  "thebleep": "4.0.5"
+  "thebleep": "4.0.7"
 }
